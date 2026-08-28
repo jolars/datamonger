@@ -40,13 +40,13 @@ external network access.
 
 ## Slice 0B: Complete the vertical proof
 
-- [ ] Specify canonical sparse matrices without changing the published vector
+- [x] Specify canonical sparse matrices without changing the published vector
   encoding; otherwise increment the provisional canonical-form version.
-- [ ] Implement the provisional LIBSVM decoder and sparse result type.
-- [ ] Author upstream-only manifests for UCI Iris and LIBSVM `heart_scale`.
-- [ ] Generate a prerelease index and publish it as a GitHub Release asset.
-- [ ] Fetch one real CSV and one real LIBSVM dataset through that index.
-- [ ] Run live-source smoke tests separately from hermetic CI.
+- [x] Implement the provisional LIBSVM decoder and sparse result type.
+- [x] Author upstream-only manifests for UCI Iris and LIBSVM `heart_scale`.
+- [x] Generate a prerelease index and publish it as a GitHub Release asset.
+- [x] Fetch one real CSV and one real LIBSVM dataset through that index.
+- [x] Run live-source smoke tests separately from hermetic CI.
 
 Exit criterion: both real datasets pass artifact and decoded verification when
 fetched through one strongly selected remote prerelease index.
