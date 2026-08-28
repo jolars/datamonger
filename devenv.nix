@@ -19,8 +19,8 @@
 
   enterTest = ''
     cd packages/python
-    uv run ruff format --check . ../../tools
-    uv run ruff check . ../../tools
+    ${pkgs.ruff}/bin/ruff format --check . ../../tools
+    ${pkgs.ruff}/bin/ruff check . ../../tools
     uv run mypy
     uv run pytest
     uv run python ../../tools/build_proof_index.py --check
