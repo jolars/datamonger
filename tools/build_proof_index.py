@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, cast
@@ -13,6 +14,13 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_RELEASE = ROOT / "registry" / "releases" / "proof-0001" / "release.yaml"
+
+# These grammars are normative in DESIGN.md and enforced by every client at
+# fetch time, so a value that violates them must never publish: releases are
+# immutable, and a malformed entry would be unfetchable by construction.
+_IDENTIFIER = re.compile(r"[a-z0-9][a-z0-9._-]*\Z")
+_VERSION = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]*\Z")
+_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
 
 def _mapping(value: object, field: str) -> Mapping[str, Any]:
@@ -38,12 +46,52 @@ def _load_yaml(path: Path) -> Mapping[str, Any]:
         return _mapping(yaml.safe_load(source), str(path))
 
 
+def _grammar(value: str, pattern: re.Pattern[str], field: str) -> str:
+    if pattern.fullmatch(value) is None:
+        raise ValueError(f"{field} {value!r} violates its normative grammar")
+    return value
+
+
+def _digest(value: object, field: str) -> str:
+    digest = _string(value, field)
+    if _SHA256.fullmatch(digest) is None:
+        raise ValueError(f"{field} {digest!r} must be lowercase SHA-256 hex")
+    return digest
+
+
 def _identifier(record: Mapping[str, Any], field: str) -> tuple[str, str, str]:
     return (
-        _string(record.get("source"), f"{field}.source"),
-        _string(record.get("name"), f"{field}.name"),
-        _string(record.get("version"), f"{field}.version"),
+        _grammar(
+            _string(record.get("source"), f"{field}.source"),
+            _IDENTIFIER,
+            f"{field}.source",
+        ),
+        _grammar(
+            _string(record.get("name"), f"{field}.name"),
+            _IDENTIFIER,
+            f"{field}.name",
+        ),
+        _grammar(
+            _string(record.get("version"), f"{field}.version"),
+            _VERSION,
+            f"{field}.version",
+        ),
     )
+
+
+def _validate_dataset(dataset: Mapping[str, Any]) -> None:
+    if dataset.get("schema_version") != 1:
+        raise ValueError(
+            f"unsupported manifest schema {dataset.get('schema_version')!r}"
+        )
+    for raw_artifact in _sequence(dataset.get("artifacts"), "artifacts"):
+        artifact = _mapping(raw_artifact, "artifact")
+        _digest(artifact.get("sha256"), "artifact.sha256")
+    representation = _mapping(dataset.get("representation"), "representation")
+    expect = _mapping(representation.get("expect"), "representation.expect")
+    for raw_record in _sequence(expect.get("verification"), "expect.verification"):
+        record = _mapping(raw_record, "verification record")
+        _digest(record.get("digest"), "verification.digest")
 
 
 def _json_bytes(value: object) -> bytes:
@@ -71,14 +119,19 @@ def build(release_path: Path) -> tuple[bytes, bytes]:
     identifiers = [_identifier(dataset, "dataset") for dataset in datasets]
     if len(identifiers) != len(set(identifiers)):
         raise ValueError("dataset identifiers must be unique")
+    for dataset in datasets:
+        _validate_dataset(dataset)
 
     defaults = [
         _mapping(value, "default")
         for value in _sequence(release_record.get("defaults"), "defaults")
     ]
     default_identifiers = [_identifier(default, "default") for default in defaults]
-    if len(default_identifiers) != len(set(default_identifiers)):
-        raise ValueError("default identifiers must be unique")
+    # Clients resolve a default by (source, name) alone, so uniqueness on the
+    # full triple would let two versions of one dataset both claim the default.
+    default_keys = [(source, name) for source, name, _ in default_identifiers]
+    if len(default_keys) != len(set(default_keys)):
+        raise ValueError("each dataset may declare at most one default version")
     unknown_defaults = set(default_identifiers) - set(identifiers)
     if unknown_defaults:
         raise ValueError(f"defaults refer to unknown datasets: {unknown_defaults}")
