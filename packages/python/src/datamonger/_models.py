@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 from os import PathLike
-from typing import Literal, TypeAlias
+from typing import Literal, TypeAlias, TypeVar, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -74,16 +74,52 @@ class LogicalComponent:
             raise ValueError(msg)
 
 
+_Scalar = TypeVar("_Scalar", np.int64, np.float64)
+
+
+def _typed_array(
+    value: object, dtype: type[_Scalar], field: str
+) -> npt.NDArray[_Scalar]:
+    array = np.asarray(value)
+    if array.ndim != 1:
+        raise ValueError(f"sparse {field} must be one-dimensional")
+    if array.dtype == dtype:
+        return cast(npt.NDArray[_Scalar], array)
+    if array.size == 0:
+        return np.zeros(0, dtype=dtype)
+    try:
+        return array.astype(dtype, casting="safe")
+    except TypeError as error:
+        raise TypeError(f"sparse {field} must have {dtype.__name__} values") from error
+
+
 @dataclass(frozen=True)
 class LogicalSparseMatrix:
-    """One logical float64 sparse matrix in canonical CSR order."""
+    """One logical float64 sparse matrix in canonical CSR order.
+
+    The arrays are stored unboxed so the canonical hash can be fed from them
+    directly instead of from a second, boxed copy of every value.
+    """
 
     name: str
     rows: int
     columns: int
-    row_offsets: tuple[int, ...]
-    column_indices: tuple[int, ...]
-    values: tuple[float, ...]
+    row_offsets: npt.NDArray[np.int64]
+    column_indices: npt.NDArray[np.int64]
+    values: npt.NDArray[np.float64]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self, "row_offsets", _typed_array(self.row_offsets, np.int64, "row offsets")
+        )
+        object.__setattr__(
+            self,
+            "column_indices",
+            _typed_array(self.column_indices, np.int64, "column indices"),
+        )
+        object.__setattr__(
+            self, "values", _typed_array(self.values, np.float64, "values")
+        )
 
     @property
     def logical_type(self) -> Literal["float64"]:

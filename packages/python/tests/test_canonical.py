@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import math
 
+import numpy as np
 import pytest
 
 from datamonger._canonical import canonical_bytes, canonical_sha256
@@ -102,6 +103,30 @@ def test_float64_csr_matrix_has_exact_provisional_encoding() -> None:
 
     assert canonical_bytes((component,)) == expected
     assert canonical_sha256((component,)) == hashlib.sha256(expected).hexdigest()
+
+
+def test_sparse_component_accepts_numpy_arrays_with_identical_encoding() -> None:
+    from_tuples = LogicalSparseMatrix(
+        "features", 2, 4, (0, 2, 3), (0, 3, 1), (1.5, -2.0, 3.0)
+    )
+    from_arrays = LogicalSparseMatrix(
+        "features",
+        2,
+        4,
+        np.asarray([0, 2, 3], dtype=np.int64),
+        np.asarray([0, 3, 1], dtype=np.int64),
+        np.asarray([1.5, -2.0, 3.0], dtype=np.float64),
+    )
+
+    assert canonical_bytes((from_arrays,)) == canonical_bytes((from_tuples,))
+
+
+def test_sparse_nan_values_are_normalized_to_the_canonical_quiet_nan() -> None:
+    component = LogicalSparseMatrix("x", 1, 1, (0, 1), (0,), (math.nan,))
+
+    encoded = canonical_bytes((component,))
+
+    assert encoded[-8:] == bytes.fromhex("000000000000f87f")
 
 
 @pytest.mark.parametrize(

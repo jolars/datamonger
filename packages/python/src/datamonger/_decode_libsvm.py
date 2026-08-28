@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 import re
+from array import array
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Literal, cast
@@ -121,9 +122,11 @@ def decode_libsvm(path: Pathish, options: Mapping[str, object]) -> DecodedSparse
 
     feature_count, label_type, target_name = _validate_options(options)
     labels: list[int | float] = []
-    row_offsets = [0]
-    column_indices: list[int] = []
-    feature_values: list[float] = []
+    # Unboxed accumulators keep decode-time memory near the size of the
+    # resulting arrays instead of a boxed object per stored value.
+    row_offsets = array("q", (0,))
+    column_indices = array("q")
+    feature_values = array("d")
 
     try:
         with Path(path).open(
@@ -187,21 +190,22 @@ def decode_libsvm(path: Pathish, options: Mapping[str, object]) -> DecodedSparse
         response = np.asarray(cast(list[int], labels), dtype=np.int64)
     else:
         response = np.asarray(cast(list[float], labels), dtype=np.float64)
+    # The CSR arrays double as the logical component, so no second complete
+    # copy of the matrix is materialized for canonical hashing.
+    offsets_array = np.frombuffer(row_offsets, dtype=np.int64)
+    indices_array = np.frombuffer(column_indices, dtype=np.int64)
+    values_array = np.frombuffer(feature_values, dtype=np.float64)
     features = sparse.csr_matrix(
-        (
-            np.asarray(feature_values, dtype=np.float64),
-            np.asarray(column_indices, dtype=np.int64),
-            np.asarray(row_offsets, dtype=np.int64),
-        ),
+        (values_array, indices_array, offsets_array),
         shape=(len(labels), feature_count),
     )
     matrix = LogicalSparseMatrix(
         name="features",
         rows=len(labels),
         columns=feature_count,
-        row_offsets=tuple(row_offsets),
-        column_indices=tuple(column_indices),
-        values=tuple(feature_values),
+        row_offsets=offsets_array,
+        column_indices=indices_array,
+        values=values_array,
     )
     response_component = LogicalComponent(
         name=target_name,

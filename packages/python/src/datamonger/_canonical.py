@@ -9,6 +9,9 @@ import struct
 from collections.abc import Callable, Iterable
 from typing import cast
 
+import numpy as np
+import numpy.typing as npt
+
 from datamonger._models import (
     LogicalComponent,
     LogicalSparseMatrix,
@@ -117,42 +120,60 @@ def _validate_sparse(component: LogicalSparseMatrix) -> None:
     _uint64(rows, "row count")
     _uint64(columns, "column count")
 
-    nonzeros = len(component.values)
+    offsets = component.row_offsets
+    indices = component.column_indices
+    values = component.values
+    nonzeros = len(values)
     _uint64(nonzeros, "nonzero count")
-    if len(component.column_indices) != nonzeros:
+    if len(indices) != nonzeros:
         raise ValueError("sparse columns and values must have equal lengths")
-    if len(component.row_offsets) != rows + 1:
+    if len(offsets) != rows + 1:
         raise ValueError("sparse row offsets must have rows plus one entries")
-    if not component.row_offsets or component.row_offsets[0] != 0:
+    if offsets[0] != 0:
         raise ValueError("sparse row offsets must begin at zero")
-    if component.row_offsets[-1] != nonzeros:
+    if offsets[-1] != nonzeros:
         raise ValueError("sparse final row offset must equal the nonzero count")
+    if bool(np.any(np.diff(offsets) < 0)) or bool(np.any(offsets > nonzeros)):
+        raise ValueError("sparse row offsets must be ordered and in range")
+    if nonzeros and (bool(np.any(indices < 0)) or bool(np.any(indices >= columns))):
+        raise ValueError("sparse column index is out of range")
 
-    previous_offset = 0
-    for offset in component.row_offsets:
-        _uint64(offset, "row offset")
-        if offset < previous_offset or offset > nonzeros:
-            raise ValueError("sparse row offsets must be ordered and in range")
-        previous_offset = offset
+    # Adjacent indices must increase except across a row boundary; interior
+    # offsets mark exactly those boundaries.
+    if nonzeros > 1:
+        increasing = np.diff(indices) > 0
+        starts = offsets[1:-1]
+        starts = starts[(starts > 0) & (starts < nonzeros)]
+        increasing[starts - 1] = True
+        if not bool(increasing.all()):
+            raise ValueError("sparse columns must increase within each row")
 
-    for row in range(rows):
-        previous_column = -1
-        start = component.row_offsets[row]
-        stop = component.row_offsets[row + 1]
-        for position in range(start, stop):
-            column = component.column_indices[position]
-            _uint64(column, "column index")
-            if column >= columns:
-                raise ValueError("sparse column index is out of range")
-            if column <= previous_column:
-                raise ValueError("sparse columns must increase within each row")
-            previous_column = column
+    if bool(np.any(values == 0.0)):
+        raise ValueError("sparse matrices must not store zero values")
 
-            value = component.values[position]
-            if not isinstance(value, float):
-                raise TypeError("float64 sparse values must be Python floats")
-            if value == 0.0:
-                raise ValueError("sparse matrices must not store zero values")
+
+# One-mebiword emission chunks keep hashing incremental without a complete
+# second copy of a large matrix.
+_EMIT_ELEMENTS = 131072
+
+
+def _write_uint64_array(
+    array: npt.NDArray[np.int64], write: Callable[[bytes], object]
+) -> None:
+    for start in range(0, len(array), _EMIT_ELEMENTS):
+        write(array[start : start + _EMIT_ELEMENTS].astype("<u8").tobytes())
+
+
+def _write_float64_array(
+    array: npt.NDArray[np.float64], write: Callable[[bytes], object]
+) -> None:
+    for start in range(0, len(array), _EMIT_ELEMENTS):
+        chunk = array[start : start + _EMIT_ELEMENTS].astype("<f8")
+        nans = np.isnan(chunk)
+        if bool(nans.any()):
+            # Normalize every NaN payload to the canonical quiet NaN.
+            chunk[nans] = np.float64("nan")
+        write(chunk.tobytes())
 
 
 def _write_sparse_matrix(
@@ -164,12 +185,9 @@ def _write_sparse_matrix(
     write(_uint64(component.rows, "row count"))
     write(_uint64(component.columns, "column count"))
     write(_uint64(len(component.values), "nonzero count"))
-    for offset in component.row_offsets:
-        write(_uint64(offset, "row offset"))
-    for column in component.column_indices:
-        write(_uint64(column, "column index"))
-    for value in component.values:
-        write(struct.pack("<Q", _float_bits(value, True)))
+    _write_uint64_array(component.row_offsets, write)
+    _write_uint64_array(component.column_indices, write)
+    _write_float64_array(component.values, write)
 
 
 def _write_canonical(
