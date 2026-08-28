@@ -2,9 +2,10 @@
 
 ## Overview
 
-Datamonger is a cross-language system for retrieving, caching, verifying, and loading public datasets reproducibly.
+Datamonger is a cross-language system for retrieving, caching, verifying, and
+decoding public research datasets reproducibly.
 
-It provides clients for R, Python, and Julia with a shared registry of datasets.
+It provides clients for R, Python, and Julia backed by a shared registry.
 
 Typical usage should be simple:
 
@@ -20,13 +21,47 @@ x = fetch_data("cadata", source="libsvm")
 x = fetch_data("cadata"; source="libsvm")
 ```
 
-The important property is that a registered dataset version refers to stable, verified data even if the original provider changes URLs, modifies files in place, or disappears.
+The important property is that a registered dataset version refers to stable,
+verified data with a stable, verified interpretation, even if the original
+provider changes URLs, modifies files in place, or disappears.
 
-Here, "verified" means that retrieved bytes and their interpretation match a
-trusted registry release. SHA-256 provides integrity relative to that registry;
-authenticating the registry itself is a separate concern.
+Datamonger is therefore best thought of as a **dataset registry and artifact
+system with language-specific clients**, rather than as a downloading library.
 
-Datamonger is therefore best thought of as a **dataset registry and artifact system with language-specific clients**, rather than merely a downloading library.
+---
+
+## What problem this actually solves
+
+Downloading a file, checking a hash, and caching it is solved in every target
+language already. Python has `pooch` and the `scikit-learn` fetchers, Julia has
+`DataDeps.jl` and `MLDatasets.jl`, and R has `pins` and `piggyback`. OpenML has
+mature clients in all three. Data Retriever provides a curated cross-language
+catalog, though it cleans and transforms data, which Datamonger deliberately
+does not.
+
+What none of these provide is the property Datamonger exists for:
+
+> The same registered dataset yields the same bytes **and the same logical
+> values** in R, Python, and Julia, today and in five years.
+
+Byte-level integrity is the easy half and is widely available. The hard half is
+decoding agreement. Three languages reading the same CSV with their default
+readers will disagree about type inference, missing-value tokens, quoting edge
+cases, and column naming. Two versions of the same language, years apart, may
+also disagree. A benchmark comparing an algorithm's R, Python, and Julia
+implementations is only meaningful if the inputs are identical, and today
+nothing guarantees that.
+
+This narrows the audience but sharpens the pitch. The primary user is a
+methods researcher who needs identical inputs across language ecosystems, or
+who needs to rerun an experiment years after publication. Everything else is a
+consequence.
+
+It also narrows the source list. LIBSVM and UCI mutate files in place, reshuffle
+URLs, and have no version concept at all, so pinning them is worth a great deal.
+OpenML already offers immutable versioned datasets with checksums, stable IDs,
+hosting, and good clients, so wrapping it adds surface area without adding much.
+OpenML is therefore deferred to a later provider adapter.
 
 ---
 
@@ -34,22 +69,31 @@ Datamonger is therefore best thought of as a **dataset registry and artifact sys
 
 Datamonger should make public research datasets:
 
-* easy to retrieve;
-* reproducible;
-* verifiable;
-* locally cacheable;
-* usable offline after retrieval;
-* consistently identifiable across R, Python, and Julia;
+* consistently identifiable and identically decoded across R, Python, and Julia;
+* verifiable at both the byte level and the decoded-value level;
 * independent of fragile upstream URLs;
-* explicit about provenance and licensing.
+* reproducible across time and machines;
+* locally cacheable and usable offline after retrieval;
+* explicit about provenance and licensing;
+* easy to retrieve.
 
-Datamonger is not intended to become another Kaggle, OpenML, or Hugging Face Hub. It should not require user accounts, provide arbitrary uploads, host models, perform remote computation, or become a general-purpose data publishing platform.
+Datamonger is not intended to become another Kaggle, OpenML, or Hugging Face
+Hub. It should not require user accounts, provide arbitrary uploads, host
+models, perform remote computation, or become a general-purpose data publishing
+platform.
 
 The central design principle is:
 
-> A published dataset version identifies immutable artifacts.
+> A published dataset version identifies immutable artifacts and an immutable
+> interpretation of them.
 
-URLs, mirrors, storage providers, and client implementations may change. The underlying artifact identity must not.
+URLs, mirrors, storage providers, and client implementations may change. The
+underlying artifact identity and decoded meaning must not.
+
+Here, "verified" means that retrieved bytes and their interpretation match a
+trusted registry release. SHA-256 provides integrity relative to that registry.
+Authenticating the registry itself is a separate concern, addressed under
+[Registry distribution](#registry-distribution).
 
 ---
 
@@ -64,13 +108,21 @@ datamonger/
 ├── LICENSE
 ├── CONTRIBUTING.md
 │
+├── spec/                     # normative specification
+│   ├── identity.md
+│   ├── retrieval.md
+│   ├── canonical-form.md
+│   ├── index.md
+│   ├── decoders/
+│   │   ├── delimited-text-v1.md
+│   │   └── libsvm-v1.md
+│   └── schema/               # JSON Schema for manifests and the index
+│
 ├── registry/
 │   ├── datasets/
 │   │   ├── libsvm/
-│   │   ├── uci/
-│   │   └── openml/
-│   ├── schema/
-│   └── index/
+│   │   └── uci/
+│   └── releases/             # generated, immutable indexes
 │
 ├── packages/
 │   ├── r/
@@ -78,19 +130,74 @@ datamonger/
 │   └── julia/
 │
 ├── tools/
+│   ├── dm-add                # manifest authoring
+│   ├── dm-index              # deterministic index generation
+│   └── dm-canary             # upstream drift checking
+│
 └── tests/
-    ├── fixtures/
+    ├── fixtures/             # tiny local artifacts
+    ├── golden/               # canonical decoded forms
     └── conformance/
 ```
 
-There is no shared native implementation initially.
+The specification lives at the top level rather than inside `registry/` because
+it governs clients, tooling, and registry content alike. It is the shared core
+of the system.
 
-The R, Python, and Julia clients independently implement the logic required for
-registry resolution, downloading, hashing, caching, and decoding.
+---
 
-Cross-language consistency is defined by the registry specification and shared conformance tests, not by shared implementation code.
+## Implementation strategy
 
-The registry is the shared core of the system.
+### One reference client first
+
+The clients should not be developed in lockstep from the start. Building three
+implementations against a specification that is still changing triples the cost
+of every specification change, during exactly the period when changes are most
+frequent.
+
+The sequence is therefore:
+
+1. Write the specification.
+2. Build one reference client end to end against it, and let real use break the
+   specification.
+3. Freeze the specification revision.
+4. Port to the remaining two clients, driven by the conformance suite.
+
+R is the recommended reference client. Its packaging environment has the
+tightest constraints, in particular CRAN's policy that a package must not write
+outside the session temporary directory without explicit user consent, and its
+dependency culture is the most conservative. Discovering those constraints
+first is cheaper than discovering them last. The choice is not load-bearing,
+though, and using whichever client will see daily use is a defensible
+alternative.
+
+Losing the "three languages on day one" story for a few months is worth a
+specification that has survived contact with reality before being paid for
+three times.
+
+### Independent implementations, for now
+
+There is no shared native implementation initially. Cross-language consistency
+is defined by the specification and the conformance suite, not by shared
+implementation code.
+
+This decision deserves periodic re-examination rather than being treated as
+settled. A Rust core exposed through extendr, PyO3, and a Julia binding would
+collapse the conformance problem precisely where it is hardest, which is
+decoding. The fetch, hash, and cache layer is easy to write three times.
+LIBSVM and delimited-text edge cases are not, and they are where silent
+divergence actually occurs.
+
+The arguments for staying independent are packaging weight, simpler
+contribution for language specialists, CRAN and Julia binary distribution
+friction, and the fact that pure-language clients install anywhere. The
+arguments against are the recurring cost of triplicated decoder work and the
+permanent risk of drift.
+
+The concrete decision rule: if the conformance suite repeatedly catches decoder
+divergence that is expensive to fix in three places, migrate decoding to a
+shared native core while keeping registry resolution, caching, and result
+construction idiomatic per language.
 
 ---
 
@@ -121,17 +228,17 @@ fetch_data("cadata", source = "libsvm", version = "1")
 This avoids forcing users to deal with a mini-language embedded in strings.
 
 A canonical serialized identifier must nevertheless exist for manifests,
-lockfiles, logs, URLs, and debugging. For example:
+lockfiles, logs, URLs, and debugging:
 
 ```text
 libsvm:cadata@1
 ```
 
-The registry specification must define this syntax normatively so all clients
-serialize it identically. Initially, `source` and `name` use lowercase ASCII
-identifiers matching `[a-z0-9][a-z0-9._-]*`. A version is an opaque ASCII
-string matching `[A-Za-z0-9][A-Za-z0-9._+-]*`. Versions are case sensitive,
-and clients must not infer version ordering from their spelling.
+The specification defines this syntax normatively so all clients serialize it
+identically. Initially, `source` and `name` use lowercase ASCII identifiers
+matching `[a-z0-9][a-z0-9._-]*`. A version is an opaque ASCII string matching
+`[A-Za-z0-9][A-Za-z0-9._+-]*`. Versions are case sensitive, and clients must
+not infer version ordering from their spelling.
 
 `source` is a stable registry namespace describing the provenance collection,
 not the URL or mirror used to retrieve an artifact.
@@ -144,30 +251,45 @@ an equally explicit idiomatic mechanism.
 
 A specific published version must never change meaning.
 
+### Identity-bearing fields
+
 The identity-bearing fields of a dataset version are:
 
 * its source, name, and version;
 * the names, sizes, digests, formats, and compression of its artifacts;
-* its modality and representation recipe;
-* decoder names, decoder specification versions, inputs, and options;
-* task definitions, when present.
+* its representation recipe, meaning decoder name, decoder specification
+  version, inputs, and every option.
 
-Changing any identity-bearing field requires a new dataset version. Retrieval
-locations and descriptive metadata, such as citations or license
-clarifications, may be updated by a later registry release without changing
-the dataset version. CI must compare new registry releases with published ones
-and reject changes to identity-bearing fields; validating only the current
-tree is insufficient.
+Changing any identity-bearing field requires a new dataset version.
+
+The following are **not** identity-bearing and may be updated by a later
+registry release without a new dataset version:
+
+* retrieval locations, provided they serve the registered bytes;
+* descriptive metadata such as titles, descriptions, citations, and license
+  clarifications;
+* cross-source relations;
+* task definitions, subject to the append-only rule below.
+
+`modality` and the expected decoded shape are **derived** from the
+representation rather than independently declared. They are recorded in the
+manifest for searchability and verification, and CI must check that they agree
+with the representation rather than trusting them.
+
+CI must compare new registry releases with every relevant published release and
+reject changes to identity-bearing fields. Validating only the current tree is
+insufficient.
 
 ---
 
 ## Data model
 
-Datamonger distinguishes four concepts:
+Datamonger distinguishes four concepts.
 
 ### Artifact
 
-An artifact is an immutable sequence of bytes identified by a cryptographic digest.
+An artifact is an immutable sequence of bytes identified by a cryptographic
+digest.
 
 Examples:
 
@@ -176,7 +298,7 @@ Examples:
 * a ZIP archive;
 * a collection of image files stored in an archive.
 
-Artifacts are the foundation of reproducibility.
+Artifacts are the foundation of byte-level reproducibility.
 
 ### Representation
 
@@ -187,61 +309,113 @@ contract, and every option that can affect the result.
 For example, a delimited-text representation specifies the character encoding,
 delimiter, quoting and escaping rules, header handling, missing-value tokens,
 and logical column types. A LIBSVM representation specifies the feature-index
-base, feature count, label handling, and ordering rules.
+base, feature count, label handling, duplicate-feature policy, and ordering
+rules.
 
 The representation contract concerns logical values, names, shapes, and
-ordering. Clients may use different native containers, integer widths, or
-sparse-matrix implementations as long as those logical properties agree.
+ordering, formalized by the [canonical logical
+form](#the-canonical-logical-form). Clients may use different native
+containers, integer widths, or sparse-matrix implementations as long as the
+canonical logical form agrees.
 
 ### Dataset
 
 A dataset is the meaningful data obtained by applying a representation recipe
 to one or more artifacts.
 
-A dataset may be:
-
-* tabular;
-* a dense or sparse matrix;
-* image data;
-* text;
-* a time series;
-* graph data;
-* audio;
-* or another modality.
-
-A dataset does not inherently need to have a response variable.
+A dataset may be tabular, a dense or sparse matrix, image data, text, a time
+series, graph data, audio, or another modality. A dataset does not inherently
+need to have a response variable.
 
 ### Task
 
-A task is an optional interpretation of a dataset for a statistical or machine-learning problem.
+A task is an optional interpretation of a dataset for a statistical or
+machine-learning problem, such as classification, regression, or multilabel
+classification. A task may specify a target, features, predefined splits, or
+related information.
 
-Examples:
+Tasks are metadata layered on top of datasets. They are not part of the
+fundamental definition of what a dataset is, and they are correspondingly not
+identity-bearing.
+
+Reproducibility is preserved by an **append-only, individually immutable**
+rule:
+
+* a published task definition may never be changed or removed;
+* a new task may be added to an existing dataset version in a later registry
+  release;
+* CI enforces both.
+
+The pair `(dataset version, task name)` therefore never changes meaning, which
+is the property users actually need, without forcing dataset version churn for
+reasons unrelated to the data. Clients report the registry release alongside
+task metadata so that "which tasks exist" remains answerable and pinnable.
+
+This distinction allows the same system to represent supervised, unsupervised,
+image, text, and other forms of data without forcing everything into an `X, y`
+abstraction.
+
+---
+
+## The canonical logical form
+
+Cross-language decoding agreement is only enforceable if "the same logical
+values" has a byte-exact definition. The specification defines a canonical
+logical form: a deterministic serialization of a decoded result, used for
+golden fixtures, for conformance testing, and for the per-dataset decoded
+digests described below.
+
+The canonical form is deliberately small and bespoke rather than reusing Arrow
+IPC. Arrow would add a heavy dependency to all three clients and introduces its
+own canonicalization questions around dictionary encoding, buffer padding, and
+schema metadata. A purpose-built format is a few hundred lines per client and
+has no ambiguity.
+
+The form serializes a decoded result as an ordered sequence of named logical
+components. Rules:
+
+* **Framing.** A magic header, the canonical-form version, then each component
+  as name, logical type, length, validity, and values.
+* **Names.** UTF-8 bytes, length-prefixed, compared and ordered bytewise.
+* **Missingness.** An explicit validity bitmap per component. Sentinel values
+  are never used to express missingness.
+* **Floats.** Raw IEEE 754 binary64 bit patterns, little-endian. Negative zero
+  is normalized to positive zero and all NaNs are normalized to the canonical
+  quiet NaN `0x7ff8000000000000`. Hashing bit patterns rather than formatted
+  decimals removes every float-formatting difference between languages.
+* **Integers.** Two's complement, little-endian, fixed width for the declared
+  logical type.
+* **Strings.** UTF-8 bytes, length-prefixed, with no normalization. Upstream
+  bytes are data, not something to canonicalize.
+* **Booleans.** One bit per element in a packed bitmap.
+* **Sparse matrices.** Explicit dimensions, entries in row-major order with
+  ascending column index within each row, no stored zeros.
+* **Row ordering.** Determined by the representation's `row_order` option, most
+  commonly `source`.
+
+The initial logical type set is deliberately minimal:
 
 ```text
-classification
-regression
-multilabel classification
+float64
+int64
+string
+bool
 ```
 
-A task may specify a target, features, predefined splits, or related information.
+Categorical, temporal, and decimal types are deferred. A categorical column is
+represented as `string` until a specification revision defines something
+better. This is a real scope reduction and it removes the largest remaining
+source of cross-language type-inference disagreement.
 
-Tasks are metadata layered on top of datasets. They are not part of the fundamental definition of what a dataset is.
-
-Nevertheless, a task definition published with a dataset version is frozen so
-that its target and interpretation cannot drift. Until tasks acquire their own
-versioned identities, adding or changing a task requires a new dataset version,
-even when the artifact digests remain the same. Content-addressed storage still
-deduplicates those unchanged artifacts.
-
-This distinction allows the same system to represent supervised, unsupervised, image, text, and other forms of data without forcing everything into an `X, y` abstraction.
+Clients never need to construct the canonical form during normal use. It exists
+for verification.
 
 ---
 
 ## Registry manifests
 
-Each dataset version is represented by a human-readable manifest, initially using YAML.
-
-For example:
+Each dataset version is represented by a human-readable manifest, authored in
+YAML.
 
 ```yaml
 schema_version: 1
@@ -266,6 +440,10 @@ provenance:
 license:
   status: unknown
 
+related:
+  - id: uci:california-housing@1
+    relation: same_upstream
+
 artifacts:
   - name: data
     format: libsvm
@@ -273,7 +451,6 @@ artifacts:
     size: 123456
     sha256: "..."
     distribution: upstream-only
-
     downloads:
       - kind: upstream
         url: https://...
@@ -290,6 +467,11 @@ representation:
     label_type: float64
     row_order: source
     target_name: response
+  expect:
+    components:
+      - {name: features, kind: sparse_matrix, rows: 20640, columns: 8}
+      - {name: response, kind: vector, type: float64, length: 20640}
+    canonical_sha256: "..."
 
 tasks:
   - name: default
@@ -309,6 +491,9 @@ artifacts:
     size: 12345
     sha256: "..."
     distribution: upstream-only
+    downloads:
+      - kind: upstream
+        url: https://...
 
 representation:
   decoder: delimited-text
@@ -322,31 +507,43 @@ representation:
     quote: '"'
     escape: double
     missing_values: [""]
+    row_order: source
     columns:
       - {name: x, type: float64}
       - {name: group, type: string}
+  expect:
+    components:
+      - {name: x, kind: vector, type: float64, length: 500}
+      - {name: group, kind: vector, type: string, length: 500}
+    canonical_sha256: "..."
 ```
 
-An image dataset may instead look roughly like:
+Every example must carry the fields CI requires, including `downloads`, since
+examples in this document are read as normative by implementers.
+
+### Multiple artifacts and predefined splits
+
+LIBSVM routinely ships a separate test file, so multi-artifact assembly and
+predefined splits appear immediately rather than eventually. A decoder contract
+defines the names and structure of its logical outputs, which makes this
+expressible without special-casing:
 
 ```yaml
-modality: image
-
 artifacts:
-  - name: images
-    format: idx
-    compression: none
-    size: 12345
+  - name: train
+    format: libsvm
+    compression: bzip2
+    size: 1234567
     sha256: "..."
     distribution: upstream-only
     downloads:
       - kind: upstream
         url: https://...
 
-  - name: labels
-    format: idx
-    compression: none
-    size: 123
+  - name: test
+    format: libsvm
+    compression: bzip2
+    size: 234567
     sha256: "..."
     distribution: upstream-only
     downloads:
@@ -354,36 +551,91 @@ artifacts:
         url: https://...
 
 representation:
-  decoder: idx-images
+  decoder: libsvm-split
   decoder_version: 1
   inputs:
-    images: images
-    labels: labels
-  options: {}
+    train: train
+    test: test
+  options:
+    index_base: 1
+    feature_count: 123
+    duplicate_features: error
+    label_type: int64
+    row_order: source
+    target_name: response
+  expect:
+    components:
+      - {name: train_features, kind: sparse_matrix, rows: 32561, columns: 123}
+      - {name: train_response, kind: vector, type: int64, length: 32561}
+      - {name: test_features,  kind: sparse_matrix, rows: 16281, columns: 123}
+      - {name: test_response,  kind: vector, type: int64, length: 16281}
+    canonical_sha256: "..."
 
 tasks:
   - name: default
     type: classification
-    target: labels
+    target: train_response
+    split:
+      train: train_features
+      test: test_features
 ```
 
-A text corpus might contain only a text artifact and no task.
+`fetch_data()` returns all four components in an idiomatic record. It does not
+silently concatenate the splits, and it does not silently discard the test set.
+
+### The `expect` block
+
+`expect` is the most important addition to the manifest schema. It records what
+the representation must produce:
+
+* the names, kinds, logical types, and shapes of the decoded components;
+* `canonical_sha256`, the SHA-256 of the [canonical logical
+  form](#the-canonical-logical-form) of the decoded result.
+
+This changes the guarantee from "we verified the bytes" to "we verified the
+meaning." Without it, cross-client decoding agreement is only tested against
+tiny local fixtures, and three clients can quietly diverge on a real dataset
+with nothing to catch it. With it, any client can verify its decoding of any
+registered dataset against the registry rather than against another client, and
+decoder bugs become loud instead of silent.
+
+The shape fields also make `list_data()` and any future search genuinely
+useful, since row and column counts are the first thing anyone filters on.
+
+`expect` is derived from the artifacts and the representation, so it is not
+independently identity-bearing. It is nevertheless immutable once published.
+Correcting a wrongly recorded `expect` requires an explicit erratum record with
+maintainer sign-off, so that a decoder change can never be laundered as a
+metadata fix. A client encountering a mismatch must report it as an integrity
+failure, distinct from a decoding failure.
+
+The digest is computed once, at manifest authoring time, by `dm-add`. Hermetic
+CI checks only presence, format, and internal consistency. The
+[canary](#operations) re-verifies it against real data on a schedule.
+
+### General manifest rules
 
 Artifact names must be unique within a dataset version. Each representation
 input refers to an artifact by name, making the required artifacts and their
 assembly explicit.
 
-Task targets refer to named elements of the decoded logical representation,
-not directly to raw artifacts. A decoder contract must therefore define the
-names and structure of its logical outputs.
+Task targets refer to named elements of the decoded logical representation, not
+directly to raw artifacts.
 
-Decoder contracts are part of the registry specification, not conventions
-inferred from file extensions. Schema versions and decoder versions are
-independent. A client must reject a manifest that uses a schema or decoder
-version it does not understand rather than guessing how to interpret it.
-Published decoder specification versions are immutable. A correction that can
-change logical output requires a new decoder version and new versions of the
-datasets whose representation recipes adopt it.
+Decoder contracts are part of the specification, not conventions inferred from
+file extensions. Schema versions and decoder versions are independent. A client
+must reject a manifest that uses a schema or decoder version it does not
+understand rather than guessing how to interpret it.
+
+`size` is not a second integrity check, since SHA-256 already covers that. It
+exists for early abort on obviously wrong responses, for preallocation, and for
+progress reporting.
+
+The `related` field records that the same underlying data appears in several
+source collections under different preprocessing. Nothing consumes it
+initially, but users will immediately ask which of several near-identical
+entries to use, and recording the relation at authoring time is far cheaper
+than reconstructing it later.
 
 The precise schema should remain conservative initially. It should be
 straightforward to add richer task and modality metadata later.
@@ -392,19 +644,44 @@ straightforward to add richer task and modality metadata later.
 
 ## Registry and artifact semantics
 
-Every artifact must have a size and a SHA-256 digest computed over
-the exact stored artifact bytes.
+Every artifact must have a size and a SHA-256 digest computed over the exact
+stored artifact bytes.
 
-For HTTP retrieval, transfer framing is not part of the artifact. Clients must
-disable transparent content decoding, request `identity` content encoding where
-possible, and hash the response representation before applying the artifact's
-declared compression or format decoder. Compression such as gzip or bzip2 must
-therefore be declared explicitly in the manifest rather than inferred from a
-URL or filename.
+### HTTP retrieval and what exactly gets hashed
+
+This needs to be precise, because `curl`, `httr2`, `requests`, and `HTTP.jl`
+have different defaults for transparent decompression, and this is exactly the
+kind of detail that produces silent cross-language divergence.
+
+In RFC 9110 terms, a representation includes its content codings. The artifact
+is defined as **the content after all HTTP content-codings have been removed,
+and before the artifact's own declared compression is touched.**
+
+The normative rule is therefore:
+
+1. Request `Accept-Encoding: identity`.
+2. Undo exactly the content-codings the server declares in `Content-Encoding`,
+   and no others.
+3. Hash the result.
+4. Only then apply the artifact's declared `compression` and format decoder.
+
+Transfer framing, such as chunked transfer encoding, is never part of the
+artifact.
+
+File-level compression must be declared explicitly in the manifest and must
+never be inferred from a URL or filename.
+
+There is a known hazard worth documenting rather than discovering later: some
+servers serve a `.gz` file with `Content-Encoding: gzip`, which means the same
+artifact hashes differently depending on which mirror answers. The policy is
+that such a location is misconfigured and must not be registered as a retrieval
+location for a compressed artifact. `dm-add` detects the condition at authoring
+time and refuses, and the canary reports it if a location develops the behavior
+later.
+
+### Retrieval
 
 A URL is only a retrieval location. It is never the identity of an artifact.
-
-Artifact retrieval follows this model:
 
 ```text
 resolve dataset/version
@@ -415,11 +692,13 @@ check local content-addressed cache
         ↓
 download if absent
         ↓
-verify SHA-256
+verify size and SHA-256
         ↓
 store atomically
         ↓
 decode
+        ↓
+verify canonical digest (optional, on request)
 ```
 
 Retrieval locations are tried in manifest order. On a transport error, size
@@ -430,15 +709,17 @@ unavailability from an integrity failure.
 
 If an upstream provider changes a file in place, Datamonger must report an
 integrity failure rather than silently accepting the new bytes. It may still
-succeed from another location that serves the registered bytes, but the failed
-location should be retained in diagnostic information.
+succeed from another location that serves the registered bytes, and the failed
+location must be retained in diagnostic information.
 
 Any change to the registered artifact bytes or representation semantics
 requires a new dataset version, even if the change appears statistically or
-semantically insignificant. Mirrors may be added or removed without a new
-dataset version only when they serve bytes with the existing digest.
+semantically insignificant. Retrieval locations may be added or removed without
+a new dataset version only when they serve bytes with the registered digest.
 
-The cache should be conceptually content-addressed:
+### Cache
+
+The cache is conceptually content-addressed:
 
 ```text
 cache/
@@ -447,45 +728,75 @@ cache/
         └── ...
 ```
 
-The exact physical layout is private implementation detail, but cache keys and
-their interpretation are shared semantics. A cache entry must not be accepted
-merely because it appears at a hash-derived path; clients must verify its size
-and digest before returning or decoding it. A later specification may permit a
-carefully defined verification shortcut for very large artifacts.
-
-Clients should use the standard application cache location for each operating system rather than assuming `~/.datamonger`.
+The exact physical layout is a private implementation detail, but cache keys
+and their interpretation are shared semantics. A cache entry must not be
+accepted merely because it appears at a hash-derived path. Clients must verify
+its size and digest before returning or decoding it. A later specification
+revision may permit a carefully defined verification shortcut for very large
+artifacts.
 
 Downloads must be written to temporary files, verified, and atomically
-committed to the cache. Cache publication must be safe when several processes
-request the same artifact concurrently. Interrupted, partial, or corrupt
-downloads must never appear as valid cache entries.
+committed. Cache publication must be safe when several processes request the
+same artifact concurrently. Interrupted, partial, or corrupt downloads must
+never appear as valid cache entries.
 
-Once artifacts are cached, normal retrieval should work offline.
+Once artifacts are cached, normal retrieval works offline.
+
+Clients use the standard application cache location for each operating system
+rather than assuming `~/.datamonger`. In R this means `tools::R_user_dir()`,
+and CRAN policy requires explicit user consent before first writing there. The
+R client must therefore prompt on first use in an interactive session, honor a
+configuration option in a non-interactive one, and fall back to the session
+temporary directory when consent is absent. Julia's `DataDeps.jl` has
+established a comparable consent norm, and the Julia client should follow it.
+Datamonger performs no telemetry of any kind, and this should be stated in each
+package's documentation.
+
+The cache needs management operations from the start, because unbounded growth
+is a real problem and eviction interacts with the offline guarantee:
+
+```text
+cache_info()
+cache_clean()
+```
+
+`cache_info()` reports location, total size, and per-artifact entries with the
+dataset versions that reference them. `cache_clean()` removes entries by
+dataset, by age, or entirely, and must never remove an entry while another
+process is publishing it. Eviction is manual. Datamonger never evicts
+automatically, since doing so would break offline reuse without warning.
 
 ---
 
 ## Mirrors, provenance, and licensing
 
-Datamonger should not depend exclusively on upstream providers.
+### Mirroring is deferred, and when it arrives it targets Zenodo
 
-An artifact may have several retrieval locations:
+Datamonger-controlled mirroring is **not** part of the MVP.
 
-```yaml
-downloads:
-  - kind: mirror
-    url: ...
+Upstream-only retrieval plus verification already delivers the core value:
+detecting when upstream data changes and refusing to hand back the wrong bytes.
+Mirroring, by contrast, is where the per-artifact legal review cost and the
+liability live, and it is the part most likely to stall the project before it
+has any users. Ship verification first, then mirror the datasets that actually
+demonstrate rot.
 
-  - kind: upstream
-    url: ...
-```
+When mirroring does arrive, the default host is Zenodo, not S3-compatible
+object storage. S3 costs money every month indefinitely, and it disappears when
+the grant, the payment method, or the maintainer's interest does, which defeats
+the entire purpose of the system. Zenodo is free, permanent, DOI-addressed, run
+by CERN, accepts large deposits, and carries an institutional framing that
+makes redistribution of research datasets normal rather than novel. A DOI is
+also a far better thing to cite in a paper than a bucket URL.
 
-The expected hash remains authoritative regardless of which location is used.
+Object storage such as R2 or S3 may later be added purely as a bandwidth cache
+in front of Zenodo, storing objects by content hash so identical artifacts
+deduplicate naturally. It should never be the only copy.
 
-Datamonger-controlled mirrors should use durable object storage such as S3-compatible storage. Objects should preferably be stored by content hash so identical artifacts are naturally deduplicated.
+### Distribution policy
 
-Mirroring must be conservative.
-
-Each artifact has a distribution policy:
+The manifest schema carries distribution policy from the start, even though
+mirroring is deferred, so that the field does not have to be retrofitted:
 
 ```text
 mirror
@@ -494,46 +805,40 @@ metadata-only
 ```
 
 `mirror` means redistribution is understood to be permitted and
-Datamonger-controlled storage may be listed.
+Datamonger-controlled storage may be listed. No MVP artifact uses it.
 
-`upstream-only` means Datamonger may retrieve and verify the artifact but should not host its own copy.
+`upstream-only` means Datamonger may retrieve and verify the artifact but does
+not host its own copy.
 
 `metadata-only` means Datamonger can describe the artifact but cannot
 automatically retrieve it. `fetch_artifact()` and any representation requiring
 that artifact must fail before attempting network access. Metadata-only entries
 are catalog records and do not satisfy Datamonger's retrieval guarantee.
 
-Distribution policy belongs to the artifact because artifacts in the same
+Distribution policy belongs to the artifact, because artifacts in the same
 dataset may have different terms. License metadata may be shared at the dataset
 level when it applies uniformly, or overridden per artifact.
 
-Every dataset should record licensing information when known. Useful fields
-include an SPDX expression when applicable, a license or terms URL, and the
-evidence used to make the distribution decision. An unclear license must
-prevent Datamonger-controlled mirroring. CI must reject a `mirror` artifact
-unless its license metadata records a reviewed basis for redistribution.
-
-CI must also enforce agreement between policy and locations: a `mirror`
-artifact has at least one Datamonger-controlled location, an `upstream-only`
-artifact has none, and a `metadata-only` artifact has no automatic download
-locations.
+Every dataset should record licensing information when known: an SPDX
+expression when applicable, a license or terms URL, and the evidence used to
+make the distribution decision. An unclear license must prevent
+Datamonger-controlled mirroring. CI must reject a `mirror` artifact unless its
+license metadata records a reviewed basis for redistribution, and must enforce
+agreement between policy and locations, so that a `mirror` artifact has at
+least one Datamonger-controlled location, an `upstream-only` artifact has none,
+and a `metadata-only` artifact has no automatic download locations.
 
 Public availability must not be treated as permission to redistribute.
 
-Kaggle should therefore not be part of the initial mirroring system. If supported later, it should normally use authenticated upstream retrieval with the user's own credentials.
+Kaggle is not part of the mirroring system. If supported later, it should use
+authenticated upstream retrieval with the user's own credentials.
 
-Provenance should distinguish where data originated from where Datamonger currently retrieves it.
+### Provenance
 
-Useful provenance includes:
-
-* provider;
-* upstream dataset identifier;
-* original name;
-* landing page;
-* authors;
-* citation;
-* upstream version;
-* retrieval date.
+Provenance distinguishes where data originated from where Datamonger currently
+retrieves it. Useful provenance includes the provider, upstream dataset
+identifier, original name, landing page, authors, citation, upstream version,
+and retrieval date.
 
 ---
 
@@ -545,59 +850,49 @@ The primary operation is:
 fetch_data()
 ```
 
-For example:
-
-```r
-fetch_data("cadata", source = "libsvm")
-```
-
-The operation means:
+It means:
 
 ```text
-resolve
-→ retrieve
-→ verify
-→ decode
+resolve → retrieve → verify → decode
 ```
 
 When `version` is omitted, resolution is relative to a specific registry
 release. The client must make both the resolved canonical identifier and that
-registry release available. Each client may use an idiomatic mechanism, such
-as an optional `return_info` argument, but users must not need to inspect cache
+registry release available. Each client may use an idiomatic mechanism, such as
+an optional `return_info` argument, but users must not need to inspect cache
 paths or internal state to discover what was fetched.
 
-The result should use a natural, documented representation in each language.
+The result uses a natural, documented representation in each language:
 
-For example:
+* tabular data becomes an R data frame, a pandas DataFrame, or a
+  Tables.jl-compatible table;
+* matrix data becomes dense or sparse native matrices;
+* text becomes an appropriate table or corpus representation;
+* multi-component results become an idiomatic record or named tuple.
 
-* tabular data may become an R data frame, pandas DataFrame, or Tables.jl-compatible table;
-* matrix data may become dense or sparse native matrices;
-* text may become an appropriate table or corpus representation;
-* images may become arrays or an appropriate lightweight dataset object.
+A LIBSVM representation, for example, contains a sparse feature matrix and a
+named response vector. That is faithful decoding of the complete dataset, not
+task-specific `X, y` extraction.
 
-A format containing several logical components may produce an idiomatic record
-or named tuple. For example, a LIBSVM representation can contain a sparse
-feature matrix and a named response vector. This is faithful decoding of the
-complete dataset, not task-specific `X, y` extraction.
-
-Datamonger should not force all datasets into a common custom dataframe
+Datamonger does not force all datasets into a common custom dataframe
 abstraction. However, a decoder's return type in a given client must be stable
 and must not change silently according to which optional packages happen to be
-installed. If a decoder requires an optional dependency, the client should
-raise a clear error with installation guidance; `fetch_artifact()` must remain
+installed. If a decoder requires an optional dependency, the client raises a
+clear error with installation guidance, and `fetch_artifact()` remains
 available without that decoding dependency.
 
-Cross-language conformance applies to a canonical logical view of the decoded
-result: values, missingness, names, shapes, ordering, and logical types. It does
-not require identical host-language container types or bit widths.
+Cross-language conformance applies to the canonical logical form, not to host
+container types or bit widths.
 
-Additional core operations should be small in number:
+### Core operations
 
 ```text
 fetch_data()
 fetch_artifact()
 data_info()
 list_data()
+cache_info()
+cache_clean()
 ```
 
 `fetch_artifact()` retrieves a verified underlying artifact and returns its
@@ -606,34 +901,53 @@ artifact name. The name may be omitted only when the dataset version contains
 exactly one artifact; otherwise the client must report the available names.
 
 `data_info()` exposes the resolved canonical identifier, registry release,
-provenance, version, artifact names and hashes, licensing, modality,
-representation, and task metadata. With an omitted dataset version, it reports
-the version selected by the same resolution procedure as `fetch_data()`.
+provenance, artifact names and hashes, licensing, modality, representation,
+expected shapes, related datasets, and task metadata. With an omitted dataset
+version, it reports the version selected by the same resolution procedure as
+`fetch_data()`.
 
-The clients should share a small semantic error taxonomy while mapping it to
-idiomatic exception or condition types. It should distinguish at least:
+`list_data()` enumerates the datasets in the active registry release, with
+enough shape and modality metadata to filter usefully.
+
+A simple `search_data()` may be added if useful. Sophisticated registry search
+is not an MVP requirement.
+
+### Naming
+
+`fetch_data` is a generic name, and in R in particular it is a plausible
+collision with user code and other packages. Before the first release, decide
+whether to keep it, prefix it, or export both a prefixed canonical name and an
+unprefixed alias. This is cheap now and expensive once it is in anyone's
+scripts.
+
+### Error taxonomy
+
+The clients share a small semantic error taxonomy, mapped to idiomatic
+exception or condition types. It must distinguish at least:
 
 * an unknown dataset or version;
-* an unsupported registry schema or decoder;
+* an unsupported registry schema or decoder version;
 * an unavailable metadata-only artifact;
 * an unavailable artifact while offline;
 * exhaustion of all retrieval locations;
 * an artifact size or hash mismatch;
-* a cache or decoding failure.
+* a decoded-value mismatch against `expect`;
+* a cache failure;
+* a decoding failure.
 
-A simple `search_data()` may be added if useful, but sophisticated registry search is not an MVP requirement.
+An artifact hash mismatch, a decoded-value mismatch, and a decoding failure are
+three different things, and conflating them makes upstream drift impossible to
+diagnose.
 
 ---
 
 ## Tasks and supervised learning
 
-`fetch_data()` should not fundamentally mean “return `X` and `y`”.
+`fetch_data()` does not fundamentally mean "return `X` and `y`".
 
-For a tabular supervised dataset, returning the full table is often the most natural behavior.
-
-Task metadata can then describe which column is conventionally used as the response.
-
-For example:
+For a tabular supervised dataset, returning the full table is usually the most
+natural behavior. Task metadata then describes which column is conventionally
+used as the response:
 
 ```yaml
 tasks:
@@ -642,7 +956,7 @@ tasks:
     target: species
 ```
 
-Datasets may eventually expose multiple tasks:
+Datasets may expose multiple tasks:
 
 ```yaml
 tasks:
@@ -655,23 +969,21 @@ tasks:
     target: occupation
 ```
 
-The initial implementation does not need sophisticated task APIs. It only needs a schema that does not make multiple or absent tasks impossible later.
+The initial implementation does not need sophisticated task APIs. It needs a
+schema that does not make multiple or absent tasks impossible later, plus the
+append-only immutability rule described under [Task](#task).
 
-A future helper could provide task-oriented extraction, for example:
-
-```text
-as_supervised(...)
-```
-
-but retrieval and statistical interpretation should remain conceptually separate.
+A future helper could provide task-oriented extraction, for example
+`as_supervised(...)`, but retrieval and statistical interpretation should
+remain conceptually separate.
 
 ---
 
 ## Formats and decoding
 
-Datamonger should preserve original artifacts whenever practical.
+Datamonger preserves original artifacts whenever practical.
 
-The initial supported formats should be deliberately limited:
+The initial supported formats are deliberately limited:
 
 ```text
 CSV
@@ -679,146 +991,248 @@ TSV
 LIBSVM / SVMLight
 ```
 
-Compressed versions of these can be supported where straightforward.
+Compressed versions of these are supported where straightforward, with
+compression declared explicitly in the manifest.
 
-Each supported format must have a versioned, language-neutral decoder
-specification. For delimited text, the manifest must provide every dialect and
-schema option needed for deterministic decoding. For LIBSVM/SVMLight, it must
-provide the feature-index base, feature count or its derivation rule, duplicate
-feature policy, label handling, and output ordering. Clients must not delegate
+Each supported format has a versioned, language-neutral decoder specification.
+For delimited text, the manifest must provide every dialect and schema option
+needed for deterministic decoding. For LIBSVM and SVMLight, it must provide the
+feature-index base, feature count or its derivation rule, duplicate-feature
+policy, label handling, and output ordering. Clients must not delegate
 unspecified behavior to library defaults.
 
+The delimited-text option vocabulary should follow Frictionless Data's CSV
+Dialect and Table Schema naming wherever the concepts align. Datamonger
+specifies them considerably more strictly than Frictionless does, since
+Frictionless is not written for byte-exact determinism, but borrowing the names
+buys ecosystem familiarity and interoperability, and avoids inventing a dialect
+vocabulary from nothing.
+
 Archive files such as ZIP and tarballs may be artifacts themselves. Extraction
-should happen only after hash verification and must reject absolute paths,
+happens only after hash verification and must reject absolute paths,
 parent-directory traversal, unsafe links, duplicate output paths, and entries
-that exceed defined file-count or expanded-size limits. These rules belong in
-the shared decoder specification and conformance suite.
+exceeding defined file-count or expanded-size limits. These rules belong in the
+shared decoder specification and conformance suite.
 
-Datamonger should not silently perform statistical preprocessing such as:
+Datamonger does not silently perform statistical preprocessing such as
+normalization, centering, imputation, one-hot encoding, or feature selection.
+Such operations belong downstream unless they are explicitly part of the
+registered definition of a particular dataset representation.
 
-* normalization;
-* centering;
-* imputation;
-* one-hot encoding;
-* feature selection.
+The registry therefore selects entries whose exact upstream artifacts can be
+decoded by the initial format specifications. Repacking, cleaning, or
+converting unsupported source files is not an implicit way around the format
+and transformation limits. A future derived representation would need explicit
+provenance, its own artifacts and recipe, and an identity distinct from the
+original.
 
-Such operations belong downstream unless they are explicitly part of the registered definition of a particular dataset representation.
+### Decoder version lifecycle
 
-The MVP registry should therefore select UCI and OpenML entries whose exact
-upstream or legally mirrorable artifacts can be decoded by the initial format
-specifications. Repacking, cleaning, or converting unsupported source files is
-not an implicit way around the MVP's format and transformation limits; a future
-derived representation would need explicit provenance, its own artifacts and
-recipe, and an identity distinct from the original representation.
+Because `decoder_version` is identity-bearing and datasets pin it, every
+decoder version ever published would otherwise have to be implemented forever,
+in three languages. That cost accumulates silently and must be bounded
+deliberately.
+
+The policy:
+
+* Published decoder specification versions are immutable. A correction that can
+  change logical output requires a new decoder version.
+* A dataset adopts a new decoder version only by publishing a new dataset
+  version.
+* A registry release may **migrate** datasets, issuing new dataset versions that
+  adopt the newer decoder and marking the old versions superseded.
+* Once no dataset in any supported registry release references a decoder
+  version, clients may drop support for it, and the specification records it as
+  retired.
+
+Superseded dataset versions remain resolvable from the registry releases that
+contain them, so old code keeps working. What is bounded is the set of decoder
+versions a current client must implement.
 
 ---
 
 ## Registry distribution
 
-The source registry consists of human-editable manifests.
+### Manifests are authored in YAML; clients never parse YAML
 
-CI should validate them against a machine-readable schema, preferably JSON Schema.
+The editable manifests are canonical for humans and CI. Generated indexes are
+canonical for clients.
 
-CI should reject at least:
+Clients consume **only** the generated JSON index. They must never parse
+manifest YAML.
+
+This is normative because YAML across the three ecosystems is a genuine hazard.
+R's `yaml` package and PyYAML implement YAML 1.1, in which `y`, `n`, `on`, and
+`off` are booleans and unquoted version strings become numbers. The `version:
+"1"` quoting in every example here is a symptom. If two clients ever parse a
+manifest directly, they will eventually disagree about a value, and the
+disagreement will be extremely hard to find. One sentence in the specification
+removes the entire class of bug.
+
+### Validation
+
+CI validates manifests against JSON Schema and rejects at least:
 
 * malformed identifiers;
 * duplicate dataset versions;
 * malformed hashes;
 * missing required metadata;
 * invalid artifact definitions;
-* inconsistent registry entries.
+* inconsistent registry entries;
+* `modality` or `expect` shapes disagreeing with the representation;
+* distribution policy disagreeing with retrieval locations;
+* mutation of identity-bearing fields relative to any published release;
+* mutation or removal of a published task definition;
+* mutation of a published `expect` block without an erratum record.
 
-CI must also compare the proposed registry with every relevant published
-release and reject mutation of identity-bearing fields. Adding or changing a
-default, mirror, citation, or license clarification is allowed only in a new
-registry release. A dataset version is therefore append-only even though its
-non-identity catalog metadata may evolve between registry releases.
+### Releases
 
-A compact, deterministic registry index should be produced for clients so they
-do not need to retrieve or scan thousands of individual YAML files. The index
-must identify its schema version and registry release. Equivalent source trees
-must generate byte-identical indexes.
+A registry release is immutable and versioned independently of the R, Python,
+and Julia package releases. It fixes the complete index, including
+default-version selections, task definitions, and catalog metadata.
 
-The editable manifests remain canonical. Generated indexes must not be edited manually.
+A registry release is identified by **both** a release id and the SHA-256 of
+its canonical index:
 
-Registry releases should be immutable and versioned independently of R,
-Python, and Julia package releases. A registry release fixes the complete
-index, including default-version selections and catalog metadata.
+```text
+release: 2026.08
+index_sha256: "..."
+```
 
-Initially, clients may ship with a registry snapshot. The three clients should
-ship the same registry release when making a coordinated release. More
-sophisticated registry updating can be introduced later, but updates must be
-explicit and must select an immutable registry release rather than silently
-tracking a branch.
+Equivalent source trees must generate byte-identical indexes, which is what
+makes the digest meaningful. Clients report both, which gives a strong pin
+without signing, makes lockfiles a small later feature, and lets a bundled
+snapshot anchor trust for a fetched index.
 
-A mutable branch such as `main` should not become an implicit source of reproducibility-sensitive state.
+Generated indexes are never edited manually.
+
+### Distribution must not be coupled to package releases
+
+Shipping the registry only inside client packages would mean that adding one
+dataset requires a coordinated CRAN, PyPI, and Julia General release. CRAN in
+particular has a strong social limit on release frequency. That would gate the
+project's entire growth loop, the thing that determines whether anyone uses it,
+behind the slowest of three release channels.
+
+Fetching a pinned, immutable registry release over HTTPS is therefore part of
+the MVP, not a later refinement:
+
+* clients bundle a registry snapshot, which serves as the offline fallback and
+  the trust root;
+* clients can fetch a newer release, selected explicitly by release id, and
+  verify it against its index digest;
+* the active release is settable per call, per session, and per project;
+* a fetched release is cached like any other artifact;
+* updates are always explicit. A client never silently changes the release it
+  is using.
+
+This preserves reproducibility exactly, because releases are immutable and
+identified by digest. A mutable branch such as `main` must never become an
+implicit source of reproducibility-sensitive state.
+
+The three clients ship the same registry release when making a coordinated
+release, but they are no longer required to release in order to publish data.
+
+### Trust
 
 Until registry signing is implemented, the trust root is the registry snapshot
 delivered through the client package or another explicitly configured trusted
-channel. SHA-256 detects corruption or substitution relative to that snapshot;
-it does not authenticate a maliciously replaced snapshot. Documentation and
-security claims must preserve this distinction.
+channel. CRAN, PyPI, and the Julia General registry provide their own integrity
+for that channel.
+
+A fetched release inherits trust when the user pins its index digest, and
+otherwise rests on TLS. SHA-256 detects corruption or substitution relative to
+the registry. It does not authenticate a maliciously replaced registry.
+Documentation and security claims must preserve this distinction. Signed
+releases are the natural next step and the index digest is the hook they will
+attach to.
 
 ---
 
 ## Cross-language behavior
 
-R, Python, and Julia should implement the same registry semantics but remain idiomatic within their ecosystems.
+R, Python, and Julia implement the same registry semantics while remaining
+idiomatic within their ecosystems.
 
-Cross-language consistency is defined relative to the same registry release
-and supported specification versions. Explicit dataset identifiers must resolve
+Cross-language consistency is defined relative to the same registry release and
+supported specification versions. Explicit dataset identifiers must resolve
 identically in every registry release that contains them. Defaults may differ
 between registry releases, which is why unversioned calls must report both the
 resolved identifier and registry release.
 
-The clients should share conformance fixtures that verify, at minimum, that they:
+The clients share conformance fixtures verifying, at minimum, that they:
 
-* resolve the same dataset/version;
-* report the same registry release and canonical identifier;
+* resolve the same dataset and version;
+* report the same registry release, index digest, and canonical identifier;
 * resolve the same artifact hashes;
-* hash the same stored bytes despite HTTP transfer behavior;
+* hash the same stored bytes despite HTTP transfer and content-coding behavior;
 * follow the same retrieval-location fallback rules;
 * detect corrupt downloads;
 * publish safely when concurrent processes request the same artifact;
 * use cached artifacts offline;
 * interpret registry metadata consistently;
 * reject unsupported schema and decoder versions;
-* decode the same logical values, missingness, names, shapes, ordering, and
-  logical types;
+* produce byte-identical canonical logical forms;
 * classify failures according to the shared error taxonomy.
 
-Tiny local fixtures and a local HTTP test server should be used for basic CI
-rather than depending on large external datasets. Golden decoded results
-should use a language-neutral serialization so each client is tested against
-the specification, not against another client's output.
+Tiny local fixtures and a local HTTP test server are used for hermetic CI
+rather than large external datasets. The local server must be able to simulate
+transfer encodings, content encodings, truncation, corruption, and location
+failure. Golden results are stored as canonical logical forms, so each client
+is tested against the specification rather than against another client's
+output.
 
-The packages should remain relatively lightweight. Heavy dataframe or machine-learning dependencies should be optional wherever possible.
+The packages remain relatively lightweight. Heavy dataframe or machine-learning
+dependencies are optional wherever possible.
+
+---
+
+## Operations
+
+Two operational pieces are part of the MVP, not the long term, because they are
+what makes the promise real and what makes the registry grow.
+
+### `dm-add`
+
+A manifest authoring tool. Given a URL, it downloads, hashes, sizes, detects
+declared and actual compression, checks for the mislabeled-`Content-Encoding`
+hazard, decodes with a proposed representation, computes the canonical digest
+and expected shapes, and drafts a manifest for review.
+
+Without it, the first thirty manifests are written by hand, every external
+contributor gets the hashes wrong, and the barrier to adding a dataset is high
+enough that nobody does. It is roughly a day of work and it is the actual
+growth loop.
+
+### `dm-canary`
+
+A scheduled job that re-fetches every registered upstream location, checks that
+it still serves the registered bytes, re-decodes, verifies the canonical
+digest, and opens an issue when anything drifts.
+
+This is the operational core of the entire promise. It is also how the project
+learns which datasets have actually rotted and therefore which ones justify the
+eventual cost of mirroring. It runs separately from hermetic CI, on a schedule,
+and its failures are expected and informative rather than alarming.
 
 ---
 
 ## MVP
 
-The first useful version should focus on proving that the registry model works.
+The first useful version proves that the registry model works.
 
-Support three sources:
+Sources:
 
 ```text
 LIBSVM
 UCI
-OpenML
 ```
 
-Register roughly 20–30 datasets covering:
+Roughly ten datasets, covering regression, binary classification, multiclass
+classification, unsupervised data, dense data, sparse data, and at least one
+multi-artifact train and test split.
 
-* regression;
-* binary classification;
-* multiclass classification;
-* unsupervised data;
-* dense data;
-* sparse data;
-* multiple artifacts where useful.
-
-Support only a few formats initially:
+Formats:
 
 ```text
 CSV
@@ -826,85 +1240,97 @@ TSV
 LIBSVM / SVMLight
 ```
 
-Implement in all three clients:
+Operations, in the reference client first and then ported:
 
 ```text
 fetch_data()
 fetch_artifact()
 data_info()
 list_data()
+cache_info()
+cache_clean()
 ```
 
 Implement:
 
-* a normative registry, identity, retrieval, and decoder specification;
-* immutable, independently versioned registry releases;
+* a normative specification covering identity, retrieval, the canonical logical
+  form, the index, and decoder contracts;
+* immutable, digest-identified, independently versioned registry releases,
+  fetchable and pinnable from day one;
+* a bundled registry snapshot as offline fallback and trust root;
 * registry resolution;
-* local caching;
-* SHA-256 verification;
-* atomic downloads;
-* concurrency-safe cache publication;
+* local caching with explicit user consent and manual management;
+* SHA-256 verification of artifacts;
+* canonical-digest verification of decoded results;
+* atomic downloads and concurrency-safe cache publication;
 * deterministic retrieval-location fallback;
 * offline reuse;
-* basic decoding with explicit representation recipes;
+* decoding with explicit representation recipes;
 * stable per-client return types;
-* the shared error taxonomy and conformance suite.
+* the shared error taxonomy and conformance suite;
+* `dm-add`, `dm-index`, and `dm-canary`.
 
 Do not initially implement:
 
-* user uploads;
-* accounts;
-* a web application;
+* Datamonger-controlled mirroring;
+* OpenML as a source;
+* user uploads, accounts, or a web application;
 * arbitrary private datasets;
 * data transformations;
-* model storage;
-* benchmarking;
+* model storage or benchmarking;
 * sophisticated search;
 * registry signing;
 * lockfiles;
 * huge-data streaming;
-* Kaggle mirroring.
+* Kaggle;
+* categorical, temporal, or decimal logical types.
 
-The first goal is not breadth. It is demonstrating that the same dataset can be retrieved reproducibly from R, Python, and Julia using a stable shared registry.
+### Milestones
 
-The MVP is intentionally substantial, but it should be delivered as vertical,
-test-driven milestones:
+1. **Specification.** Registry schema, identity rules, canonical logical form,
+   decoder contracts, deterministic index generator, an immutable test registry
+   release, and golden fixtures.
+2. **Reference client, retrieval.** Registry resolution, release fetching and
+   pinning, `fetch_artifact()`, hashing, fallback, concurrent caching,
+   corruption, and offline behavior, with the hermetic test server.
+3. **Reference client, decoding.** One decoder end to end, canonical form
+   emission, `expect` verification, then the remaining initial decoders and
+   multi-artifact assembly.
+4. **Tooling and data.** `dm-add` and `dm-canary`; author and review ten real
+   manifests across LIBSVM and UCI; run end-to-end retrieval separately from
+   hermetic CI.
+5. **Freeze.** Cut specification revision 1. Fix whatever the previous four
+   milestones proved wrong.
+6. **Port.** Python and Julia clients, driven by the conformance suite, until
+   all three produce byte-identical canonical forms for every registered
+   dataset.
 
-1. Define the registry schema, identity rules, decoder contracts, deterministic
-   index generator, immutable test registry release, and golden fixtures.
-2. Implement registry resolution and `fetch_artifact()` in all three clients,
-   including hashing, fallback, concurrent caching, corruption, and offline
-   conformance tests.
-3. Implement one representation decoder in all three clients and prove logical
-   output conformance end to end.
-4. Implement the remaining initial decoders and multi-artifact assembly.
-5. Populate and review the 20–30 real dataset manifests across the three
-   sources, then run end-to-end retrieval tests separately from hermetic CI.
-
-Every milestone should leave all three clients conforming to the same registry
-and specification revision. This sequencing manages implementation risk
-without reducing the MVP's promised scope.
+Milestones 1 through 5 are single-language and can move fast. Only milestone 6
+pays the cost of three implementations, and by then it is paying it against a
+specification that has stopped moving.
 
 ---
 
 ## Longer-term direction
 
-Potential later additions include:
+Potential later additions, driven by actual use rather than designed up front:
 
+* Datamonger-controlled mirroring on Zenodo, prioritized by canary evidence;
+* OpenML and other provider adapters;
+* signed registry releases, anchored on the index digest;
 * project lockfiles;
-* signed registry releases;
-* richer task definitions;
+* richer logical types and task definitions;
 * additional modalities;
 * authenticated upstream providers;
-* archival mirrors;
-* registry tooling for adding datasets;
 * command-line tools;
-* additional language clients.
-
-These should be driven by actual use rather than designed up front.
+* additional language clients;
+* a shared native decoding core, if conformance drift justifies it.
 
 Datamonger's value ultimately rests on a simple promise:
 
-> A researcher should be able to identify a dataset today and retrieve the same registered data years later, without caring where the original provider happens to host it.
+> A researcher should be able to identify a dataset today and get back the same
+> data, decoded the same way, years later and in another language, without
+> caring where the original provider happens to host it.
 
-Dataset acquisition should become boring, stable infrastructure.
+Dataset acquisition should become boring, stable infrastructure. The fastest
+route there is being boring in fewer places at once.
