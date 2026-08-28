@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import csv
 import math
 import re
 from collections.abc import Mapping, Sequence
@@ -122,6 +121,61 @@ def _parse_value(raw: str, logical_type: LogicalType, row: int, column: str) -> 
     return floating
 
 
+def _record_body(raw_line: str, line_number: int) -> str:
+    if raw_line.endswith("\r\n"):
+        return raw_line[:-2]
+    if raw_line.endswith("\n"):
+        return raw_line[:-1]
+    if raw_line.endswith("\r"):
+        raise DecodeError(f"unsupported bare carriage return at line {line_number}")
+    return raw_line
+
+
+def _parse_record(body: str, line_number: int) -> list[str]:
+    """Split one record into fields under the explicit slice 0A grammar."""
+
+    fields: list[str] = []
+    position = 0
+    length = len(body)
+    while True:
+        if position < length and body[position] == '"':
+            position += 1
+            characters: list[str] = []
+            while True:
+                if position >= length:
+                    raise DecodeError(
+                        f"unterminated quoted field at line {line_number}"
+                    )
+                character = body[position]
+                if character == '"':
+                    if position + 1 < length and body[position + 1] == '"':
+                        characters.append('"')
+                        position += 2
+                    else:
+                        position += 1
+                        break
+                else:
+                    characters.append(character)
+                    position += 1
+            fields.append("".join(characters))
+            if position == length:
+                return fields
+            if body[position] != ",":
+                raise DecodeError(
+                    f"invalid character after closing quote at line {line_number}"
+                )
+        else:
+            start = position
+            while position < length and body[position] not in ',"':
+                position += 1
+            if position < length and body[position] == '"':
+                raise DecodeError(f"quote inside unquoted field at line {line_number}")
+            fields.append(body[start:position])
+            if position == length:
+                return fields
+        position += 1
+
+
 def _missing_placeholder(logical_type: LogicalType) -> object:
     if logical_type == "float64":
         return 0.0
@@ -162,24 +216,22 @@ def decode_delimited_text(path: Pathish, options: Mapping[str, object]) -> Decod
         with Path(path).open(
             "r", encoding="utf-8", errors="strict", newline=""
         ) as source:
-            reader = csv.reader(
-                source,
-                delimiter=",",
-                quotechar='"',
-                doublequote=True,
-                strict=True,
-            )
-            try:
-                header = next(reader)
-            except StopIteration as error:
-                raise DecodeError("delimited-text artifact has no header") from error
-            expected_header = [name for name, _ in columns]
-            if header != expected_header:
-                raise DecodeError(
-                    f"header {header!r} does not match {expected_header!r}"
-                )
-
-            for row_number, row in enumerate(reader, start=2):
+            header: list[str] | None = None
+            for row_number, raw_line in enumerate(source, start=1):
+                if row_number == 1:
+                    if raw_line.startswith("\ufeff"):
+                        raise DecodeError(
+                            "delimited-text artifact contains a byte-order mark"
+                        )
+                    header = _parse_record(_record_body(raw_line, 1), 1)
+                    expected_header = [name for name, _ in columns]
+                    if header != expected_header:
+                        raise DecodeError(
+                            f"header {header!r} does not match {expected_header!r}"
+                        )
+                    continue
+                body = _record_body(raw_line, row_number)
+                row = _parse_record(body, row_number)
                 if len(row) != len(columns):
                     message = (
                         f"row {row_number} has {len(row)} fields; "
@@ -197,10 +249,10 @@ def decode_delimited_text(path: Pathish, options: Mapping[str, object]) -> Decod
                     )
                     values[index].append(value)
                     validity[index].append(valid)
+            if header is None:
+                raise DecodeError("delimited-text artifact has no header")
     except UnicodeDecodeError as error:
         raise DecodeError("delimited-text artifact is not valid UTF-8") from error
-    except csv.Error as error:
-        raise DecodeError(f"malformed delimited text: {error}") from error
     except OSError as error:
         raise DecodeError(f"cannot read delimited-text artifact: {error}") from error
 

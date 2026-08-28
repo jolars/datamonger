@@ -110,6 +110,53 @@ def test_integer_and_boolean_grammars_are_strict(
         decode_delimited_text(source, options)
 
 
+@pytest.mark.parametrize(
+    ("body", "message"),
+    [
+        ("x\r1\r", "carriage return"),
+        ('x\n"a\nb"\n', "unterminated"),
+        ('x\n"ab\n', "unterminated"),
+        ('x\nhe"llo\n', "quote inside unquoted"),
+        ('x\n"a"b\n', "closing quote"),
+    ],
+)
+def test_record_grammar_is_explicit(tmp_path: Path, body: str, message: str) -> None:
+    source = tmp_path / "bad.csv"
+    source.write_text(body, encoding="utf-8", newline="")
+    options = OPTIONS | {"columns": [{"name": "x", "type": "string"}]}
+
+    with pytest.raises(DecodeError, match=message):
+        decode_delimited_text(source, options)
+
+
+def test_crlf_and_missing_final_terminator_are_supported(tmp_path: Path) -> None:
+    source = tmp_path / "crlf.csv"
+    source.write_bytes(b"x\r\n1\r\n2")
+    options = OPTIONS | {"columns": [{"name": "x", "type": "int64"}]}
+
+    decoded = decode_delimited_text(source, options)
+
+    assert decoded.data["x"].tolist() == [1, 2]
+
+
+def test_bom_is_rejected_explicitly(tmp_path: Path) -> None:
+    source = tmp_path / "bom.csv"
+    source.write_bytes(b"\xef\xbb\xbfx\n1\n")
+    options = OPTIONS | {"columns": [{"name": "x", "type": "int64"}]}
+
+    with pytest.raises(DecodeError, match="byte-order mark"):
+        decode_delimited_text(source, options)
+
+
+def test_bom_is_rejected_even_for_a_bom_prefixed_column_name(tmp_path: Path) -> None:
+    source = tmp_path / "bom.csv"
+    source.write_bytes(b"\xef\xbb\xbfx\n1\n")
+    options = OPTIONS | {"columns": [{"name": "\ufeffx", "type": "int64"}]}
+
+    with pytest.raises(DecodeError, match="byte-order mark"):
+        decode_delimited_text(source, options)
+
+
 def test_invalid_utf8_is_a_decoding_error(tmp_path: Path) -> None:
     source = tmp_path / "bad.csv"
     source.write_bytes(b"x\n\xff\n")

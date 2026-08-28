@@ -16,6 +16,24 @@ produce an unsupported-decoder error rather than fall back to library defaults.
 Rows must have exactly the declared number of fields, and the decoded header
 must equal the declared names. Fields are never trimmed.
 
+## Record grammar
+
+The record grammar is defined here in full; no part of it may be delegated to
+a parsing library's defaults.
+
+- Records are terminated by LF or CRLF. A carriage return not followed by a
+  line feed is an error. The final record's terminator may be omitted.
+- Every line is a record, including a blank one, which is a record with a
+  single empty field.
+- A field is either quoted or unquoted.
+- An unquoted field extends to the next delimiter or record terminator and
+  must not contain a quote character.
+- A quoted field is enclosed in double quotes. A double quote inside it is
+  escaped by doubling. The closing quote must be followed immediately by a
+  delimiter or the record terminator, and the field must not contain a
+  carriage return or line feed.
+- An unterminated quoted field is an error.
+
 ## Lexical conversion
 
 - `int64` accepts `-?(0|[1-9][0-9]*)` within the signed 64-bit range.
