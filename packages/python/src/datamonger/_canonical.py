@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import io
-import math
 import struct
 from collections.abc import Callable, Iterable
 from typing import cast
@@ -23,23 +22,10 @@ _VERSION = 1
 _KIND_VECTOR = 1
 _KIND_SPARSE_MATRIX = 2
 _TYPE_TAGS = {"float64": 1, "int64": 2, "string": 3, "bool": 4}
-_CANONICAL_NAN = 0x7FF8000000000000
 
 
-def _pack_bitmap(bits: Iterable[bool], length: int) -> bytes:
-    packed = bytearray((length + 7) // 8)
-    for index, value in enumerate(bits):
-        if value:
-            packed[index // 8] |= 1 << (index % 8)
-    return bytes(packed)
-
-
-def _float_bits(value: float, valid: bool) -> int:
-    if not valid or value == 0.0:
-        return 0
-    if math.isnan(value):
-        return _CANONICAL_NAN
-    return cast(int, struct.unpack("<Q", struct.pack("<d", value))[0])
+def _pack_bitmap(bits: npt.NDArray[np.bool_]) -> bytes:
+    return np.packbits(bits, bitorder="little").tobytes()
 
 
 def _write_name(name_value: str, write: Callable[[bytes], object]) -> None:
@@ -63,44 +49,27 @@ def _write_vector(
     _write_name(component.name, write)
     write(bytes((_KIND_VECTOR, _TYPE_TAGS[component.logical_type], 1)))
     write(struct.pack("<Q", length))
-    write(_pack_bitmap(component.valid, length))
+    write(_pack_bitmap(component.valid))
 
     if component.logical_type == "float64":
+        _write_float64_array(
+            cast(npt.NDArray[np.float64], component.values), write, component.valid
+        )
+    elif component.logical_type == "int64":
+        _write_int64_array(
+            cast(npt.NDArray[np.int64], component.values), write, component.valid
+        )
+    elif component.logical_type == "string":
         for raw, valid in zip(component.values, component.valid, strict=True):
-            if not isinstance(raw, float):
-                raise TypeError("float64 logical values must be Python floats")
-            write(struct.pack("<Q", _float_bits(raw, valid)))
-        return
-
-    if component.logical_type == "int64":
-        for raw, valid in zip(component.values, component.valid, strict=True):
-            if isinstance(raw, bool) or not isinstance(raw, int):
-                raise TypeError("int64 logical values must be Python integers")
-            integer = raw if valid else 0
             try:
-                write(struct.pack("<q", integer))
-            except struct.error as error:
-                raise ValueError("int64 logical value is out of range") from error
-        return
-
-    if component.logical_type == "string":
-        for raw, valid in zip(component.values, component.valid, strict=True):
-            if not isinstance(raw, str):
-                raise TypeError("string logical values must be Python strings")
-            try:
-                encoded = raw.encode("utf-8") if valid else b""
+                encoded = cast(str, raw).encode("utf-8") if valid else b""
             except UnicodeEncodeError as error:
                 raise ValueError("logical string is not valid UTF-8") from error
             write(struct.pack("<Q", len(encoded)))
             write(encoded)
-        return
-
-    bool_values = []
-    for raw, valid in zip(component.values, component.valid, strict=True):
-        if not isinstance(raw, bool):
-            raise TypeError("bool logical values must be Python booleans")
-        bool_values.append(valid and raw)
-    write(_pack_bitmap(bool_values, length))
+    else:
+        stored = cast("npt.NDArray[np.bool_]", component.values) & component.valid
+        write(_pack_bitmap(stored))
 
 
 def _uint64(value: int, field: str) -> bytes:
@@ -165,14 +134,31 @@ def _write_uint64_array(
 
 
 def _write_float64_array(
-    array: npt.NDArray[np.float64], write: Callable[[bytes], object]
+    array: npt.NDArray[np.float64],
+    write: Callable[[bytes], object],
+    valid: npt.NDArray[np.bool_] | None = None,
 ) -> None:
     for start in range(0, len(array), _EMIT_ELEMENTS):
         chunk = array[start : start + _EMIT_ELEMENTS].astype("<f8")
+        if valid is not None:
+            chunk[~valid[start : start + _EMIT_ELEMENTS]] = 0.0
         nans = np.isnan(chunk)
         if bool(nans.any()):
             # Normalize every NaN payload to the canonical quiet NaN.
             chunk[nans] = np.float64("nan")
+        # Rewriting the zeros normalizes negative zero to positive zero.
+        chunk[chunk == 0.0] = 0.0
+        write(chunk.tobytes())
+
+
+def _write_int64_array(
+    array: npt.NDArray[np.int64],
+    write: Callable[[bytes], object],
+    valid: npt.NDArray[np.bool_],
+) -> None:
+    for start in range(0, len(array), _EMIT_ELEMENTS):
+        chunk = array[start : start + _EMIT_ELEMENTS].astype("<i8")
+        chunk[~valid[start : start + _EMIT_ELEMENTS]] = 0
         write(chunk.tobytes())
 
 

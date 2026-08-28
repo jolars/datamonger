@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from os import PathLike
-from typing import Literal, TypeAlias, TypeVar, cast
+from typing import Any, Literal, TypeAlias, TypeVar, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -59,22 +59,7 @@ class FetchResult:
     info: FetchInfo
 
 
-@dataclass(frozen=True)
-class LogicalComponent:
-    """One ordered logical vector with missingness kept separate from values."""
-
-    name: str
-    logical_type: LogicalType
-    values: tuple[object, ...]
-    valid: tuple[bool, ...]
-
-    def __post_init__(self) -> None:
-        if len(self.values) != len(self.valid):
-            msg = "logical component values and validity must have equal lengths"
-            raise ValueError(msg)
-
-
-_Scalar = TypeVar("_Scalar", np.int64, np.float64)
+_Scalar = TypeVar("_Scalar", np.int64, np.float64, np.bool_)
 
 
 def _typed_array(
@@ -82,7 +67,7 @@ def _typed_array(
 ) -> npt.NDArray[_Scalar]:
     array = np.asarray(value)
     if array.ndim != 1:
-        raise ValueError(f"sparse {field} must be one-dimensional")
+        raise ValueError(f"{field} must be one-dimensional")
     if array.dtype == dtype:
         return cast(npt.NDArray[_Scalar], array)
     if array.size == 0:
@@ -90,7 +75,46 @@ def _typed_array(
     try:
         return array.astype(dtype, casting="safe")
     except TypeError as error:
-        raise TypeError(f"sparse {field} must have {dtype.__name__} values") from error
+        raise TypeError(f"{field} must have {dtype.__name__} values") from error
+
+
+_VECTOR_DTYPES: Mapping[str, type[np.float64] | type[np.int64] | type[np.bool_]] = {
+    "float64": np.float64,
+    "int64": np.int64,
+    "bool": np.bool_,
+}
+
+
+@dataclass(frozen=True)
+class LogicalComponent:
+    """One ordered logical vector with missingness kept separate from values.
+
+    Numeric and boolean values are stored unboxed so the canonical hash can
+    be fed from them directly; strings stay a tuple of Python strings.
+    """
+
+    name: str
+    logical_type: LogicalType
+    values: npt.NDArray[Any] | tuple[str, ...]
+    valid: npt.NDArray[np.bool_]
+
+    def __post_init__(self) -> None:
+        field = f"{self.logical_type} logical values"
+        if self.logical_type == "string":
+            values: npt.NDArray[Any] | tuple[str, ...] = tuple(
+                cast(Sequence[str], self.values)
+            )
+            if not all(isinstance(value, str) for value in values):
+                raise TypeError(f"{field} must be Python strings")
+        else:
+            values = _typed_array(self.values, _VECTOR_DTYPES[self.logical_type], field)
+        object.__setattr__(self, "values", values)
+        object.__setattr__(
+            self, "valid", _typed_array(self.valid, np.bool_, "validity mask")
+        )
+        if len(values) != len(self.valid):
+            msg = "logical component values and validity must have equal lengths"
+            raise ValueError(msg)
 
 
 @dataclass(frozen=True)

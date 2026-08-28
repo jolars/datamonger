@@ -156,6 +156,13 @@ def decode_libsvm(path: Pathish, options: Mapping[str, object]) -> DecodedSparse
                             f"{raw_index!r}"
                         )
                     source_index = int(raw_index)
+                    # Range comes first so index 0 is reported as out of range
+                    # rather than as a duplicate of the sentinel start value.
+                    if not 1 <= source_index <= feature_count:
+                        raise DecodeError(
+                            f"feature index out of range at line {line_number}: "
+                            f"{source_index}"
+                        )
                     if source_index == previous_index:
                         raise DecodeError(
                             f"duplicate feature index at line {line_number}: "
@@ -164,11 +171,6 @@ def decode_libsvm(path: Pathish, options: Mapping[str, object]) -> DecodedSparse
                     if source_index < previous_index:
                         raise DecodeError(
                             f"feature indices must be increasing at line {line_number}"
-                        )
-                    if not 1 <= source_index <= feature_count:
-                        raise DecodeError(
-                            f"feature index out of range at line {line_number}: "
-                            f"{source_index}"
                         )
                     value = _parse_float(raw_value, line_number, "feature value")
                     if value == 0.0:
@@ -210,8 +212,8 @@ def decode_libsvm(path: Pathish, options: Mapping[str, object]) -> DecodedSparse
     response_component = LogicalComponent(
         name=target_name,
         logical_type=cast(LogicalType, label_type),
-        values=tuple(labels),
-        valid=(True,) * len(labels),
+        values=response,
+        valid=np.ones(len(labels), dtype=np.bool_),
     )
     return DecodedSparseDataset(
         data=SparseDataset(features=features, response=response),

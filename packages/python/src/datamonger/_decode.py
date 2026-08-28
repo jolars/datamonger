@@ -4,19 +4,26 @@ from __future__ import annotations
 
 import math
 import re
+from array import array
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, cast
 
+import numpy as np
+import numpy.typing as npt
 import pandas as pd
 
 from datamonger._errors import DecodeError, UnsupportedDecoderError
 from datamonger._models import DecodedTable, LogicalComponent, LogicalType, Pathish
+from datamonger._validate import require_array
 
 _INTEGER = re.compile(r"-?(?:0|[1-9][0-9]*)\Z")
 _FLOAT = re.compile(r"-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\Z")
 _INT64_MIN = -(2**63)
 _INT64_MAX = 2**63 - 1
+# The record parser and the option check must agree on the pinned dialect.
+_DELIMITER = ","
+_QUOTE = '"'
 _SUPPORTED_OPTIONS = {
     "encoding",
     "delimiter",
@@ -30,9 +37,7 @@ _SUPPORTED_OPTIONS = {
 
 
 def _require_sequence(value: object, field: str) -> Sequence[object]:
-    if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
-        raise UnsupportedDecoderError(f"{field} must be an array")
-    return value
+    return require_array(value, field, UnsupportedDecoderError)
 
 
 def _parse_columns(
@@ -75,9 +80,9 @@ def _validate_options(
         raise UnsupportedDecoderError(f"missing decoder options: {sorted(missing)}")
     expected = {
         "encoding": "utf-8",
-        "delimiter": ",",
+        "delimiter": _DELIMITER,
         "header": True,
-        "quote": '"',
+        "quote": _QUOTE,
         "escape": "double",
         "row_order": "source",
     }
@@ -138,7 +143,7 @@ def _parse_record(body: str, line_number: int) -> list[str]:
     position = 0
     length = len(body)
     while True:
-        if position < length and body[position] == '"':
+        if position < length and body[position] == _QUOTE:
             position += 1
             characters: list[str] = []
             while True:
@@ -147,9 +152,9 @@ def _parse_record(body: str, line_number: int) -> list[str]:
                         f"unterminated quoted field at line {line_number}"
                     )
                 character = body[position]
-                if character == '"':
-                    if position + 1 < length and body[position + 1] == '"':
-                        characters.append('"')
+                if character == _QUOTE:
+                    if position + 1 < length and body[position + 1] == _QUOTE:
+                        characters.append(_QUOTE)
                         position += 2
                     else:
                         position += 1
@@ -160,15 +165,15 @@ def _parse_record(body: str, line_number: int) -> list[str]:
             fields.append("".join(characters))
             if position == length:
                 return fields
-            if body[position] != ",":
+            if body[position] != _DELIMITER:
                 raise DecodeError(
                     f"invalid character after closing quote at line {line_number}"
                 )
         else:
             start = position
-            while position < length and body[position] not in ',"':
+            while position < length and body[position] not in (_DELIMITER, _QUOTE):
                 position += 1
-            if position < length and body[position] == '"':
+            if position < length and body[position] == _QUOTE:
                 raise DecodeError(f"quote inside unquoted field at line {line_number}")
             fields.append(body[start:position])
             if position == length:
@@ -186,22 +191,52 @@ def _missing_placeholder(logical_type: LogicalType) -> object:
     return False
 
 
+def _accumulator(logical_type: LogicalType) -> array[Any] | list[object]:
+    # Numeric columns store values unboxed as they parse; boolean columns are
+    # packed into bytes, and only strings stay Python objects.
+    if logical_type == "float64":
+        return array("d")
+    if logical_type == "int64":
+        return array("q")
+    if logical_type == "bool":
+        return array("b")
+    return []
+
+
+def _component_values(
+    logical_type: LogicalType, accumulated: array[Any] | list[object]
+) -> npt.NDArray[Any] | tuple[str, ...]:
+    if logical_type == "string":
+        return tuple(cast("list[str]", accumulated))
+    values_array = cast("array[Any]", accumulated)
+    typed = np.frombuffer(values_array, dtype=values_array.typecode)
+    if logical_type == "bool":
+        return typed.astype(np.bool_)
+    return typed
+
+
 def _make_dataframe(components: tuple[LogicalComponent, ...]) -> pd.DataFrame:
-    dtypes = {
-        "float64": "Float64",
-        "int64": "Int64",
-        "string": "string",
-        "bool": "boolean",
-    }
     series: dict[str, pd.Series[Any]] = {}
     for component in components:
-        native: list[Any] = [
-            value if valid else pd.NA
-            for value, valid in zip(component.values, component.valid, strict=True)
-        ]
-        dtype = cast(Any, dtypes[component.logical_type])
-        array = pd.array(native, dtype=dtype)
-        series[component.name] = pd.Series(array)
+        mask = ~component.valid
+        data: Any
+        if component.logical_type == "string":
+            native: list[Any] = [
+                value if valid else pd.NA
+                for value, valid in zip(component.values, component.valid, strict=True)
+            ]
+            data = pd.array(native, dtype=cast(Any, "string"))
+        else:
+            # The masked-array constructors take the unboxed values directly;
+            # copies keep the frame independent of the logical components.
+            typed = cast("npt.NDArray[Any]", component.values)
+            if component.logical_type == "float64":
+                data = pd.arrays.FloatingArray(typed.copy(), mask.copy())
+            elif component.logical_type == "int64":
+                data = pd.arrays.IntegerArray(typed.copy(), mask.copy())
+            else:
+                data = pd.arrays.BooleanArray(typed.copy(), mask.copy())
+        series[component.name] = pd.Series(data)
     return pd.DataFrame(series)
 
 
@@ -209,8 +244,8 @@ def decode_delimited_text(path: Pathish, options: Mapping[str, object]) -> Decod
     """Decode the strict slice 0A delimited-text representation."""
 
     columns, missing_values = _validate_options(options)
-    values: list[list[object]] = [[] for _ in columns]
-    validity: list[list[bool]] = [[] for _ in columns]
+    values = [_accumulator(logical_type) for _, logical_type in columns]
+    validity = [bytearray() for _ in columns]
 
     try:
         with Path(path).open(
@@ -260,8 +295,8 @@ def decode_delimited_text(path: Pathish, options: Mapping[str, object]) -> Decod
         LogicalComponent(
             name=name,
             logical_type=logical_type,
-            values=tuple(component_values),
-            valid=tuple(component_validity),
+            values=_component_values(logical_type, component_values),
+            valid=np.frombuffer(component_validity, dtype=np.bool_),
         )
         for (name, logical_type), component_values, component_validity in zip(
             columns, values, validity, strict=True
