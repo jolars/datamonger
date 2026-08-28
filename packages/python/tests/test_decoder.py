@@ -5,31 +5,19 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+from conftest import (
+    EXPECTED_DIGEST,
+    FIXTURE,
+    LIBSVM_FIXTURE,
+    LIBSVM_OPTIONS,
+    OPTIONS,
+)
 from scipy import sparse
 
 from datamonger._canonical import canonical_sha256
 from datamonger._decode import decode_delimited_text
 from datamonger._decode_libsvm import decode_libsvm
 from datamonger.errors import DecodeError
-
-FIXTURE = Path(__file__).parent / "fixtures" / "mixed.csv"
-LIBSVM_FIXTURE = Path(__file__).parent / "fixtures" / "small.libsvm"
-EXPECTED_DIGEST = "e25d27e8b0008332d778cd48429a7c4f7af59411884092e52f120da63f26e726"
-OPTIONS = {
-    "encoding": "utf-8",
-    "delimiter": ",",
-    "header": True,
-    "quote": '"',
-    "escape": "double",
-    "missing_values": [""],
-    "row_order": "source",
-    "columns": [
-        {"name": "measurement", "type": "float64"},
-        {"name": "count", "type": "int64"},
-        {"name": "label", "type": "string"},
-        {"name": "enabled", "type": "bool"},
-    ],
-}
 
 
 def test_mixed_csv_decodes_to_stable_dataframe_and_golden_digest() -> None:
@@ -166,16 +154,6 @@ def test_invalid_utf8_is_a_decoding_error(tmp_path: Path) -> None:
         decode_delimited_text(source, options)
 
 
-LIBSVM_OPTIONS = {
-    "index_base": 1,
-    "feature_count": 4,
-    "duplicate_features": "error",
-    "label_type": "int64",
-    "row_order": "source",
-    "target_name": "response",
-}
-
-
 def test_libsvm_decodes_to_named_csr_and_response() -> None:
     decoded = decode_libsvm(LIBSVM_FIXTURE, LIBSVM_OPTIONS)
 
@@ -201,6 +179,7 @@ def test_libsvm_decodes_to_named_csr_and_response() -> None:
         ("+1 1:1 1:2\n", "duplicate"),
         ("+1 2:1 1:2\n", "increasing"),
         ("+1 5:1\n", "range"),
+        ("+1 0:1\n", "range"),
         ("+1 01:1\n", "feature index"),
         ("+1 1:NaN\n", "feature value"),
         ("label 1:1\n", "label"),

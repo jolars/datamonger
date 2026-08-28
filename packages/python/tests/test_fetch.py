@@ -13,6 +13,14 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import pytest
+from conftest import (
+    EXPECTED_DIGEST,
+    FIXTURE,
+    LIBSVM_DIGEST,
+    LIBSVM_FIXTURE,
+    LIBSVM_OPTIONS,
+    OPTIONS,
+)
 from scipy import sparse
 
 from datamonger import FetchResult, Registry, SparseDataset, fetch_data
@@ -25,11 +33,6 @@ from datamonger.errors import (
     UnknownDatasetError,
     UnsupportedRegistryError,
 )
-
-EXPECTED_DIGEST = "e25d27e8b0008332d778cd48429a7c4f7af59411884092e52f120da63f26e726"
-FIXTURE = Path(__file__).parent / "fixtures" / "mixed.csv"
-LIBSVM_FIXTURE = Path(__file__).parent / "fixtures" / "small.libsvm"
-LIBSVM_DIGEST = "50b077922f6ffc77054622fd807fbc8de48d1c3fcb3be644027422b244b0190b"
 
 
 @dataclass
@@ -128,21 +131,7 @@ def make_registry(
                     "decoder": "delimited-text",
                     "decoder_version": 1,
                     "inputs": {"data": "data"},
-                    "options": {
-                        "encoding": "utf-8",
-                        "delimiter": ",",
-                        "header": True,
-                        "quote": '"',
-                        "escape": "double",
-                        "missing_values": [""],
-                        "row_order": "source",
-                        "columns": [
-                            {"name": "measurement", "type": "float64"},
-                            {"name": "count", "type": "int64"},
-                            {"name": "label", "type": "string"},
-                            {"name": "enabled", "type": "bool"},
-                        ],
-                    },
+                    "options": OPTIONS,
                     "expect": {
                         "components": [
                             {
@@ -223,14 +212,7 @@ def add_libsvm_dataset(
                 "decoder": "libsvm",
                 "decoder_version": 1,
                 "inputs": {"data": "data"},
-                "options": {
-                    "index_base": 1,
-                    "feature_count": 4,
-                    "duplicate_features": "error",
-                    "label_type": "int64",
-                    "row_order": "source",
-                    "target_name": "response",
-                },
+                "options": LIBSVM_OPTIONS,
                 "expect": {
                     "components": [
                         # DESIGN.md's normative sparse examples omit "type",
