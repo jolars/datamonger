@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import hashlib
+import http.client
 import os
 import re
 import tempfile
 import urllib.error
 import urllib.request
+import zlib
 from collections.abc import Callable
 from contextlib import suppress
 from pathlib import Path
@@ -39,6 +41,27 @@ def _matches(path: Path, digest: str, size: int | None) -> bool:
     except OSError as error:
         raise CacheError(f"cannot read cached object {path}: {error}") from error
     return actual.hexdigest() == digest and (size is None or count == size)
+
+
+def _content_decoder(
+    header: str | None,
+    url: str,
+    retrieval_error: Callable[[str], DatamongerError],
+) -> zlib._Decompress | None:
+    """Return a decompressor for the declared content codings, if any."""
+
+    if header is None:
+        return None
+    codings = [coding.strip().lower() for coding in header.split(",")]
+    codings = [coding for coding in codings if coding not in {"", "identity"}]
+    if not codings:
+        return None
+    # The artifact is defined as the content after the declared codings are
+    # removed. We undo gzip because CDNs apply it despite Accept-Encoding:
+    # identity; anything else stays unsupported rather than guessed at.
+    if codings in (["gzip"], ["x-gzip"]):
+        return zlib.decompressobj(16 + zlib.MAX_WBITS)
+    raise retrieval_error(f"unsupported HTTP content coding {header!r} from {url}")
 
 
 def _unlink(path: Path) -> None:
@@ -88,31 +111,35 @@ def verified_download(
     try:
         request = urllib.request.Request(url, headers={"Accept-Encoding": "identity"})
         with urllib.request.urlopen(request, timeout=30) as response:
-            content_encoding = response.headers.get("Content-Encoding")
-            normalized_encoding = (
-                content_encoding.strip().lower()
-                if content_encoding is not None
-                else None
+            decoder = _content_decoder(
+                response.headers.get("Content-Encoding"), url, retrieval_error
             )
-            if normalized_encoding not in {None, "identity"}:
-                raise retrieval_error(
-                    f"unsupported HTTP content coding {content_encoding!r} from {url}"
-                )
             with tempfile.NamedTemporaryFile(
                 mode="wb", dir=target.parent, prefix=".download-", delete=False
             ) as temporary:
                 temporary_path = Path(temporary.name)
                 actual = hashlib.sha256()
                 count = 0
-                while chunk := response.read(_CHUNK_SIZE):
-                    temporary.write(chunk)
-                    actual.update(chunk)
-                    count += len(chunk)
+
+                # Hash and size-check the decoded stream: the artifact is the
+                # content after HTTP content codings are removed.
+                def emit(data: bytes) -> None:
+                    nonlocal count
+                    temporary.write(data)
+                    actual.update(data)
+                    count += len(data)
                     if size is not None and count > size:
                         raise integrity_error(
                             f"size mismatch for {url}: expected {size}, "
                             f"received more than {size}"
                         )
+
+                while chunk := response.read(_CHUNK_SIZE):
+                    emit(decoder.decompress(chunk) if decoder else chunk)
+                if decoder is not None:
+                    emit(decoder.flush())
+                    if not decoder.eof:
+                        raise retrieval_error(f"truncated gzip content from {url}")
                 temporary.flush()
                 os.fsync(temporary.fileno())
 
@@ -132,7 +159,12 @@ def verified_download(
         return target
     except DatamongerError:
         raise
-    except (OSError, urllib.error.URLError) as error:
+    except (
+        OSError,
+        urllib.error.URLError,
+        http.client.HTTPException,
+        zlib.error,
+    ) as error:
         raise retrieval_error(f"cannot retrieve {url}: {error}") from error
     finally:
         if temporary_path is not None:

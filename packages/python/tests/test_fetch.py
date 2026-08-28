@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gzip
 import hashlib
 import json
 import threading
@@ -37,6 +38,7 @@ class ServerState:
     headers: dict[str, dict[str, str]] = field(default_factory=dict)
     online: bool = True
     requests: list[tuple[str, str | None]] = field(default_factory=list)
+    truncate_chunked: set[str] = field(default_factory=set)
 
 
 @pytest.fixture
@@ -46,6 +48,16 @@ def local_server() -> Iterator[tuple[str, ServerState]]:
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:
             state.requests.append((self.path, self.headers.get("Accept-Encoding")))
+            if self.path in state.truncate_chunked:
+                # Promise a chunk and close mid-stream so the client sees an
+                # http.client.IncompleteRead.
+                self.protocol_version = "HTTP/1.1"
+                self.send_response(200)
+                self.send_header("Transfer-Encoding", "chunked")
+                self.end_headers()
+                self.wfile.write(b"ff\r\n0123")
+                self.close_connection = True
+                return
             if not state.online or self.path not in state.bodies:
                 self.send_error(503)
                 return
@@ -91,6 +103,7 @@ def make_registry(
         "defaults": [{"source": "fixture", "name": "mixed", "version": "1"}],
         "datasets": [
             {
+                "schema_version": 1,
                 "source": "fixture",
                 "name": "mixed",
                 "version": "1",
@@ -187,6 +200,7 @@ def add_libsvm_dataset(
     index["defaults"].append({"source": "fixture", "name": "sparse", "version": "1"})
     index["datasets"].append(
         {
+            "schema_version": 1,
             "source": "fixture",
             "name": "sparse",
             "version": "1",
@@ -219,10 +233,11 @@ def add_libsvm_dataset(
                 },
                 "expect": {
                     "components": [
+                        # DESIGN.md's normative sparse examples omit "type",
+                        # so the fixture must be accepted without it.
                         {
                             "name": "features",
                             "kind": "sparse_matrix",
-                            "type": "float64",
                             "rows": 2,
                             "columns": 4,
                         },
@@ -508,14 +523,124 @@ def test_corrupt_cached_registry_is_replaced_from_upstream(
     assert cached_registry.read_bytes() == expected_index
 
 
-def test_nonidentity_content_coding_is_rejected(
+def test_declared_gzip_content_coding_is_removed_before_hashing(
     local_server: tuple[str, ServerState], tmp_path: Path
 ) -> None:
     base_url, state = local_server
     registry = make_registry(base_url, state)
+    artifact = FIXTURE.read_bytes()
+    state.bodies["/mixed.csv"] = gzip.compress(artifact)
     state.headers["/mixed.csv"] = {"Content-Encoding": "gzip"}
 
+    result = fetch_data(
+        "mixed",
+        source="fixture",
+        registry=registry,
+        cache_dir=tmp_path,
+        return_info=True,
+    )
+
+    assert isinstance(result, FetchResult)
+    digest = hashlib.sha256(artifact).hexdigest()
+    assert (tmp_path / "objects" / "sha256" / digest).read_bytes() == artifact
+
+
+def test_unknown_content_coding_is_rejected(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+    state.headers["/mixed.csv"] = {"Content-Encoding": "br"}
+
     with pytest.raises(RetrievalError, match="content coding"):
+        fetch_data(
+            "mixed",
+            source="fixture",
+            registry=registry,
+            cache_dir=tmp_path,
+        )
+
+
+def test_truncated_chunked_response_is_a_retrieval_error(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+    state.truncate_chunked.add("/mixed.csv")
+
+    with pytest.raises(RetrievalError, match="cannot retrieve"):
+        fetch_data(
+            "mixed",
+            source="fixture",
+            registry=registry,
+            cache_dir=tmp_path,
+        )
+
+
+def _reseal_index(base_url: str, state: ServerState, index: dict[str, Any]) -> Registry:
+    index_bytes = json.dumps(index, separators=(",", ":")).encode()
+    state.bodies["/index.json"] = index_bytes
+    return Registry(
+        release="proof-0001",
+        index_sha256=hashlib.sha256(index_bytes).hexdigest(),
+        index_url=f"{base_url}/index.json",
+    )
+
+
+def test_retrieval_falls_back_across_download_locations(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    make_registry(base_url, state)
+    index = json.loads(state.bodies["/index.json"])
+    downloads = index["datasets"][0]["artifacts"][0]["downloads"]
+    downloads.insert(0, {"kind": "upstream", "url": f"{base_url}/absent.csv"})
+    registry = _reseal_index(base_url, state, index)
+
+    result = fetch_data(
+        "mixed",
+        source="fixture",
+        registry=registry,
+        cache_dir=tmp_path,
+        return_info=True,
+    )
+
+    assert isinstance(result, FetchResult)
+    assert result.info.verification == "decoded"
+
+
+def test_final_error_distinguishes_integrity_failure_from_unavailability(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    make_registry(base_url, state)
+    state.bodies["/corrupt.csv"] = b"corrupt"
+    index = json.loads(state.bodies["/index.json"])
+    index["datasets"][0]["artifacts"][0]["downloads"] = [
+        {"kind": "upstream", "url": f"{base_url}/corrupt.csv"},
+        {"kind": "upstream", "url": f"{base_url}/absent.csv"},
+    ]
+    registry = _reseal_index(base_url, state, index)
+
+    with pytest.raises(ArtifactIntegrityError, match="all retrieval locations"):
+        fetch_data(
+            "mixed",
+            source="fixture",
+            registry=registry,
+            cache_dir=tmp_path,
+        )
+
+
+def test_unsupported_dataset_record_schema_is_rejected(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    make_registry(base_url, state)
+    index = json.loads(state.bodies["/index.json"])
+    index["datasets"][0]["schema_version"] = 2
+    registry = _reseal_index(base_url, state, index)
+
+    with pytest.raises(UnsupportedRegistryError, match="dataset schema"):
         fetch_data(
             "mixed",
             source="fixture",

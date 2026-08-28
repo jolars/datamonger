@@ -102,6 +102,13 @@ def resolve_dataset(
             and raw_dataset.get("name") == name
             and raw_dataset.get("version") == resolved_version
         ):
+            # Records carry their own schema version; a future record schema
+            # inside a supported index envelope must fail loudly rather than
+            # be reinterpreted under version 1 assumptions.
+            if raw_dataset.get("schema_version") != 1:
+                raise UnsupportedRegistryError(
+                    f"unsupported dataset schema {raw_dataset.get('schema_version')!r}"
+                )
             return cast(Mapping[str, Any], raw_dataset)
 
     raise UnknownDatasetError(f"unknown dataset {source}:{name}@{resolved_version}")

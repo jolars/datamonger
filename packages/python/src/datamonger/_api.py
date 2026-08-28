@@ -13,6 +13,7 @@ from datamonger._decode_libsvm import decode_libsvm
 from datamonger._errors import (
     ArtifactIntegrityError,
     DecodedIntegrityError,
+    RetrievalError,
     UnsupportedDecoderError,
     UnsupportedRegistryError,
 )
@@ -84,19 +85,34 @@ def _fetch_artifact(
             f"decoder requires artifact format {expected_format!r}"
         )
     downloads = _array(artifact.get("downloads"), "artifact.downloads")
-    if len(downloads) != 1:
-        raise UnsupportedRegistryError("slice 0A requires exactly one download")
-    download = _object(downloads[0], "artifact download")
-    if download.get("kind") != "upstream":
-        raise UnsupportedRegistryError("slice 0A requires an upstream download")
-    return verified_download(
-        cache_root=cache_root,
-        namespace="objects",
-        url=_string(download.get("url"), "artifact download URL"),
-        digest=_string(artifact.get("sha256"), "artifact SHA-256"),
-        size=_integer(artifact.get("size"), "artifact size"),
-        integrity_error=ArtifactIntegrityError,
-    )
+    if not downloads:
+        raise UnsupportedRegistryError("artifact declares no download locations")
+    # Locations are tried in manifest order; a transport error or an integrity
+    # mismatch moves on to the next location, and the final error must still
+    # distinguish unavailability from an integrity failure.
+    failures: list[str] = []
+    integrity_failure = False
+    for raw_download in downloads:
+        download = _object(raw_download, "artifact download")
+        if download.get("kind") != "upstream":
+            raise UnsupportedRegistryError("slice 0A requires upstream downloads")
+        url = _string(download.get("url"), "artifact download URL")
+        try:
+            return verified_download(
+                cache_root=cache_root,
+                namespace="objects",
+                url=url,
+                digest=_string(artifact.get("sha256"), "artifact SHA-256"),
+                size=_integer(artifact.get("size"), "artifact size"),
+                integrity_error=ArtifactIntegrityError,
+            )
+        except RetrievalError as error:
+            if len(downloads) == 1:
+                raise
+            integrity_failure |= isinstance(error, ArtifactIntegrityError)
+            failures.append(f"{url}: {error}")
+    failed = ArtifactIntegrityError if integrity_failure else RetrievalError
+    raise failed(f"all retrieval locations failed: {'; '.join(failures)}")
 
 
 def _validate_components(
@@ -123,9 +139,12 @@ def _validate_components(
                 raise DecodedIntegrityError(
                     f"decoded component {component.name!r} has the wrong kind"
                 )
+            # Canonical form 1 has a single sparse element type, so the
+            # normative manifests may omit "type" for sparse matrices.
             matches = (
                 expectation.get("name") == component.name
-                and expectation.get("type") == component.logical_type
+                and expectation.get("type", component.logical_type)
+                == component.logical_type
                 and expectation.get("rows") == component.rows
                 and expectation.get("columns") == component.columns
             )
