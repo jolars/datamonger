@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "datamonger"
+version = "0.1.0.dev0"
+description = "Reproducible retrieval and decoding of public research datasets"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{ name = "Johan Larsson" }]
+dependencies = [
+  "pandas>=2.2",
+  "platformdirs>=4.3",
+]
+
+[dependency-groups]
+dev = [
+  "mypy>=1.14",
+  "pandas-stubs>=2.2",
+  "pytest>=8.3",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/datamonger"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-markers"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["B", "E", "F", "I", "RUF", "SIM", "UP"]
+
+[tool.mypy]
+strict = true
+packages = ["datamonger"]
+
+[tool.uv]
+default-groups = ["dev"]
