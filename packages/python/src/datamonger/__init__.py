@@ -1,6 +1,19 @@
 """Datamonger Python reference client."""
 
 from datamonger._api import fetch_data
-from datamonger._models import FetchInfo, FetchResult, Registry
+from datamonger._models import (
+    DatasetData,
+    FetchInfo,
+    FetchResult,
+    Registry,
+    SparseDataset,
+)
 
-__all__ = ["FetchInfo", "FetchResult", "Registry", "fetch_data"]
+__all__ = [
+    "DatasetData",
+    "FetchInfo",
+    "FetchResult",
+    "Registry",
+    "SparseDataset",
+    "fetch_data",
+]

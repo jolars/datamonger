@@ -1,0 +1,74 @@
+schema_version: 1
+
+source: uci
+name: iris
+version: "1"
+
+title: Iris
+description: >-
+  Fisher's Iris measurements as distributed by the UCI Machine Learning
+  Repository.
+modality: tabular
+
+provenance:
+  provider: UCI Machine Learning Repository
+  upstream_name: Iris
+  landing_page: https://archive.ics.uci.edu/dataset/53/iris
+  retrieved_at: "2026-08-28"
+
+license:
+  status: known
+  identifier: CC-BY-4.0
+  url: https://creativecommons.org/licenses/by/4.0/
+
+artifacts:
+  - name: data
+    format: csv
+    compression: none
+    size: 4615
+    sha256: daaeb5e3e889d07fbdd44544f5a39fe2372a07172e25899d577be0ad74df9e65
+    distribution: upstream-only
+    downloads:
+      - kind: upstream
+        url: https://archive.ics.uci.edu/static/public/53/data.csv
+
+representation:
+  decoder: delimited-text
+  decoder_version: 1
+  inputs:
+    data: data
+  options:
+    encoding: utf-8
+    delimiter: ","
+    header: true
+    quote: '"'
+    escape: double
+    missing_values: []
+    row_order: source
+    columns:
+      - {name: sepal length, type: float64}
+      - {name: sepal width, type: float64}
+      - {name: petal length, type: float64}
+      - {name: petal width, type: float64}
+      - {name: class, type: string}
+  expect:
+    components:
+      - {name: sepal length, kind: vector, type: float64, length: 150}
+      - {name: sepal width, kind: vector, type: float64, length: 150}
+      - {name: petal length, kind: vector, type: float64, length: 150}
+      - {name: petal width, kind: vector, type: float64, length: 150}
+      - {name: class, kind: vector, type: string, length: 150}
+    verification:
+      - canonical_form: 1
+        algorithm: sha256
+        digest: cfa2a70911157e2d7072fe97ce29edf0a7c998e5d6b3312b758998621427e212
+
+tasks:
+  - name: default
+    type: classification
+    target: class
+    features:
+      - sepal length
+      - sepal width
+      - petal length
+      - petal width

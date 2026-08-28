@@ -9,10 +9,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd
 import pytest
+from scipy import sparse
 
-from datamonger import FetchResult, Registry, fetch_data
+from datamonger import FetchResult, Registry, SparseDataset, fetch_data
 from datamonger.errors import (
     ArtifactIntegrityError,
     DecodedIntegrityError,
@@ -25,6 +27,8 @@ from datamonger.errors import (
 
 EXPECTED_DIGEST = "e25d27e8b0008332d778cd48429a7c4f7af59411884092e52f120da63f26e726"
 FIXTURE = Path(__file__).parent / "fixtures" / "mixed.csv"
+LIBSVM_FIXTURE = Path(__file__).parent / "fixtures" / "small.libsvm"
+LIBSVM_DIGEST = "50b077922f6ffc77054622fd807fbc8de48d1c3fcb3be644027422b244b0190b"
 
 
 @dataclass
@@ -174,6 +178,81 @@ def make_registry(
     )
 
 
+def add_libsvm_dataset(
+    base_url: str, state: ServerState, registry: Registry
+) -> Registry:
+    artifact = LIBSVM_FIXTURE.read_bytes()
+    state.bodies["/small.libsvm"] = artifact
+    index = json.loads(state.bodies["/index.json"])
+    index["defaults"].append({"source": "fixture", "name": "sparse", "version": "1"})
+    index["datasets"].append(
+        {
+            "source": "fixture",
+            "name": "sparse",
+            "version": "1",
+            "title": "Small sparse fixture",
+            "modality": "tabular",
+            "artifacts": [
+                {
+                    "name": "data",
+                    "format": "libsvm",
+                    "compression": "none",
+                    "size": len(artifact),
+                    "sha256": hashlib.sha256(artifact).hexdigest(),
+                    "distribution": "upstream-only",
+                    "downloads": [
+                        {"kind": "upstream", "url": f"{base_url}/small.libsvm"}
+                    ],
+                }
+            ],
+            "representation": {
+                "decoder": "libsvm",
+                "decoder_version": 1,
+                "inputs": {"data": "data"},
+                "options": {
+                    "index_base": 1,
+                    "feature_count": 4,
+                    "duplicate_features": "error",
+                    "label_type": "int64",
+                    "row_order": "source",
+                    "target_name": "response",
+                },
+                "expect": {
+                    "components": [
+                        {
+                            "name": "features",
+                            "kind": "sparse_matrix",
+                            "type": "float64",
+                            "rows": 2,
+                            "columns": 4,
+                        },
+                        {
+                            "name": "response",
+                            "kind": "vector",
+                            "type": "int64",
+                            "length": 2,
+                        },
+                    ],
+                    "verification": [
+                        {
+                            "canonical_form": 1,
+                            "algorithm": "sha256",
+                            "digest": LIBSVM_DIGEST,
+                        }
+                    ],
+                },
+            },
+        }
+    )
+    index_bytes = json.dumps(index, separators=(",", ":")).encode()
+    state.bodies["/index.json"] = index_bytes
+    return Registry(
+        release=registry.release,
+        index_sha256=hashlib.sha256(index_bytes).hexdigest(),
+        index_url=registry.index_url,
+    )
+
+
 def test_fetch_data_verifies_decodes_reports_and_reuses_cache_offline(
     local_server: tuple[str, ServerState], tmp_path: Path
 ) -> None:
@@ -204,6 +283,43 @@ def test_fetch_data_verifies_decodes_reports_and_reuses_cache_offline(
         cache_dir=tmp_path,
     )
     pd.testing.assert_frame_equal(first.data, second)
+
+
+def test_fetch_data_decodes_libsvm_to_sparse_dataset_and_reuses_it_offline(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    registry = add_libsvm_dataset(base_url, state, make_registry(base_url, state))
+
+    first = fetch_data(
+        "sparse",
+        source="fixture",
+        registry=registry,
+        cache_dir=tmp_path,
+        return_info=True,
+    )
+
+    assert isinstance(first, FetchResult)
+    assert isinstance(first.data, SparseDataset)
+    assert sparse.isspmatrix_csr(first.data.features)
+    np.testing.assert_array_equal(
+        first.data.features.toarray(),
+        np.array([[1.5, 0.0, 0.0, -2.0], [0.0, 3.0, 0.0, 0.0]]),
+    )
+    np.testing.assert_array_equal(first.data.response, np.array([1, -1]))
+    assert first.info.dataset_id == "fixture:sparse@1"
+    assert first.info.verification == "decoded"
+    assert first.info.canonical_digest == LIBSVM_DIGEST
+
+    state.online = False
+    second = fetch_data(
+        "sparse", source="fixture", registry=registry, cache_dir=tmp_path
+    )
+    assert isinstance(second, SparseDataset)
+    np.testing.assert_array_equal(
+        second.features.toarray(), first.data.features.toarray()
+    )
+    np.testing.assert_array_equal(second.response, first.data.response)
 
 
 def test_default_version_and_artifact_only_verification(

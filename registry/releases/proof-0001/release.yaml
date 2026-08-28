@@ -1,0 +1,11 @@
+release: proof-0001
+repository: jolars/datamonger
+tag: registry-proof-0001
+
+manifests:
+  - registry/datasets/libsvm/heart_scale-1.yaml
+  - registry/datasets/uci/iris-1.yaml
+
+defaults:
+  - {source: libsvm, name: heart_scale, version: "1"}
+  - {source: uci, name: iris, version: "1"}

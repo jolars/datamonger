@@ -6,18 +6,26 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, Literal, overload
 
-import pandas as pd
-
 from datamonger._cache import default_cache_root, verified_download
 from datamonger._canonical import canonical_sha256
 from datamonger._decode import decode_delimited_text
+from datamonger._decode_libsvm import decode_libsvm
 from datamonger._errors import (
     ArtifactIntegrityError,
     DecodedIntegrityError,
     UnsupportedDecoderError,
     UnsupportedRegistryError,
 )
-from datamonger._models import FetchInfo, FetchResult, Pathish, Registry
+from datamonger._models import (
+    DatasetData,
+    FetchInfo,
+    FetchResult,
+    LogicalComponent,
+    LogicalSparseMatrix,
+    LogicalValueComponent,
+    Pathish,
+    Registry,
+)
 from datamonger._registry import load_registry, resolve_dataset
 
 
@@ -60,11 +68,21 @@ def _artifact_for_representation(
     )
 
 
-def _fetch_artifact(artifact: Mapping[str, Any], cache_root: Path) -> Path:
+def _fetch_artifact(
+    artifact: Mapping[str, Any], cache_root: Path, expected_format: str
+) -> Path:
     if artifact.get("distribution") != "upstream-only":
-        raise UnsupportedRegistryError("slice 0A supports upstream-only artifacts")
-    if artifact.get("compression") != "none" or artifact.get("format") != "csv":
-        raise UnsupportedDecoderError("slice 0A supports uncompressed CSV artifacts")
+        raise UnsupportedRegistryError(
+            "the vertical proof supports upstream-only artifacts"
+        )
+    if artifact.get("compression") != "none":
+        raise UnsupportedDecoderError(
+            "the vertical proof supports uncompressed artifacts"
+        )
+    if artifact.get("format") != expected_format:
+        raise UnsupportedDecoderError(
+            f"decoder requires artifact format {expected_format!r}"
+        )
     downloads = _array(artifact.get("downloads"), "artifact.downloads")
     if len(downloads) != 1:
         raise UnsupportedRegistryError("slice 0A requires exactly one download")
@@ -82,7 +100,7 @@ def _fetch_artifact(artifact: Mapping[str, Any], cache_root: Path) -> Path:
 
 
 def _validate_components(
-    components: Sequence[object], expected: Sequence[object]
+    components: Sequence[LogicalValueComponent], expected: Sequence[object]
 ) -> None:
     if len(components) != len(expected):
         raise DecodedIntegrityError(
@@ -90,18 +108,32 @@ def _validate_components(
         )
     for component, raw_expectation in zip(components, expected, strict=True):
         expectation = _object(raw_expectation, "component expectation")
-        name = getattr(component, "name", None)
-        logical_type = getattr(component, "logical_type", None)
-        values = getattr(component, "values", ())
-        if expectation.get("kind") != "vector":
-            raise UnsupportedDecoderError("slice 0A supports vector components")
-        if (
-            expectation.get("name") != name
-            or expectation.get("type") != logical_type
-            or expectation.get("length") != len(values)
-        ):
+        if isinstance(component, LogicalComponent):
+            if expectation.get("kind") != "vector":
+                raise DecodedIntegrityError(
+                    f"decoded component {component.name!r} has the wrong kind"
+                )
+            matches = (
+                expectation.get("name") == component.name
+                and expectation.get("type") == component.logical_type
+                and expectation.get("length") == len(component.values)
+            )
+        elif isinstance(component, LogicalSparseMatrix):
+            if expectation.get("kind") != "sparse_matrix":
+                raise DecodedIntegrityError(
+                    f"decoded component {component.name!r} has the wrong kind"
+                )
+            matches = (
+                expectation.get("name") == component.name
+                and expectation.get("type") == component.logical_type
+                and expectation.get("rows") == component.rows
+                and expectation.get("columns") == component.columns
+            )
+        else:
+            raise UnsupportedDecoderError("unsupported logical component")
+        if not matches:
             raise DecodedIntegrityError(
-                f"decoded component {name!r} does not match its expectation"
+                f"decoded component {component.name!r} does not match its expectation"
             )
 
 
@@ -124,7 +156,7 @@ def fetch_data(
     cache_dir: Pathish | None = None,
     verify_decoded: bool = True,
     return_info: Literal[False] = False,
-) -> pd.DataFrame: ...
+) -> DatasetData: ...
 
 
 @overload
@@ -149,7 +181,7 @@ def fetch_data(
     cache_dir: Pathish | None = None,
     verify_decoded: bool = True,
     return_info: bool = False,
-) -> pd.DataFrame | FetchResult:
+) -> DatasetData | FetchResult:
     """Resolve, retrieve, verify, and decode one registered dataset."""
 
     cache_root = Path(cache_dir) if cache_dir is not None else default_cache_root()
@@ -157,16 +189,22 @@ def fetch_data(
     dataset = resolve_dataset(index, source=source, name=name, version=version)
     resolved_version = _string(dataset.get("version"), "dataset.version")
     representation = _object(dataset.get("representation"), "dataset.representation")
-    if (
-        representation.get("decoder") != "delimited-text"
-        or representation.get("decoder_version") != 1
-    ):
-        raise UnsupportedDecoderError("slice 0A supports delimited-text version 1")
+    decoder = representation.get("decoder")
+    decoder_version = representation.get("decoder_version")
+    if decoder_version != 1 or decoder not in {"delimited-text", "libsvm"}:
+        raise UnsupportedDecoderError(
+            "the vertical proof supports delimited-text and LIBSVM version 1"
+        )
 
     artifact = _artifact_for_representation(dataset, representation)
-    artifact_path = _fetch_artifact(artifact, cache_root)
+    expected_format = "csv" if decoder == "delimited-text" else "libsvm"
+    artifact_path = _fetch_artifact(artifact, cache_root, expected_format)
     options = _object(representation.get("options"), "representation.options")
-    decoded = decode_delimited_text(artifact_path, options)
+    decoded = (
+        decode_delimited_text(artifact_path, options)
+        if decoder == "delimited-text"
+        else decode_libsvm(artifact_path, options)
+    )
     expect = _object(representation.get("expect"), "representation.expect")
     _validate_components(
         decoded.components,

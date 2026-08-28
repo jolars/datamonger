@@ -1,0 +1,62 @@
+schema_version: 1
+
+source: libsvm
+name: heart_scale
+version: "1"
+
+title: Heart Scale
+description: >-
+  Scaled Statlog Heart classification data distributed through the LIBSVM
+  dataset collection.
+modality: tabular
+
+provenance:
+  provider: LIBSVM
+  upstream_name: heart_scale
+  landing_page: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/
+  retrieved_at: "2026-08-28"
+
+license:
+  status: unknown
+
+artifacts:
+  - name: data
+    format: libsvm
+    compression: none
+    size: 27670
+    sha256: 5defa0a4c4c5bdaf3f55ae3828310252e8565c13ee37ce279e0b86d82e7f4ce9
+    distribution: upstream-only
+    downloads:
+      - kind: upstream
+        url: https://raw.githubusercontent.com/cjlin1/libsvm/6b907139084abf2da4d6d3cb10dc3b7eaffa2fbb/heart_scale
+
+representation:
+  decoder: libsvm
+  decoder_version: 1
+  inputs:
+    data: data
+  options:
+    index_base: 1
+    feature_count: 13
+    duplicate_features: error
+    label_type: int64
+    row_order: source
+    target_name: response
+  expect:
+    components:
+      - name: features
+        kind: sparse_matrix
+        type: float64
+        rows: 270
+        columns: 13
+      - {name: response, kind: vector, type: int64, length: 270}
+    verification:
+      - canonical_form: 1
+        algorithm: sha256
+        digest: 93d97aa1b3775ab6a48fc4f8897cef8efdc7483511df1fb89c397397da107d03
+
+tasks:
+  - name: default
+    type: classification
+    features: features
+    target: response

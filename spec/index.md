@@ -1,6 +1,6 @@
 # Provisional Index Format
 
-This document specifies only the index subset used by vertical-proof slice 0A.
+This document specifies only the index subset used by the vertical proof.
 It is not a stable Datamonger specification.
 
 ## Strong selection
@@ -22,9 +22,12 @@ The UTF-8 JSON document contains:
 - `datasets`, an array of dataset records using the manifest vocabulary in
   `DESIGN.md`.
 
-Slice 0A supports one artifact, `distribution: upstream-only`, one
-`delimited-text` representation, and one SHA-256 canonical verification record.
-Unknown schema or decoder versions are errors rather than extension points.
+The vertical proof supports one uncompressed, upstream-only artifact per
+dataset; `delimited-text` and `libsvm` version 1 representations; vector and
+sparse-matrix component expectations; and one SHA-256 canonical verification
+record. Unknown schema or decoder versions are errors rather than extension
+points.
 
-The index fixture is not required to use canonical JSON. Deterministic index
-generation is part of Milestone 1.
+The published proof index uses sorted, compact JSON with a final LF so its
+generation can be checked mechanically. The complete deterministic `dm-index`
+contract remains part of Milestone 1.

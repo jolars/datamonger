@@ -19,10 +19,11 @@
 
   enterTest = ''
     cd packages/python
-    uv run ruff format --check .
-    uv run ruff check .
+    uv run ruff format --check . ../../tools
+    uv run ruff check . ../../tools
     uv run mypy
     uv run pytest
+    uv run python ../../tools/build_proof_index.py --check
     uv build
   '';
 }

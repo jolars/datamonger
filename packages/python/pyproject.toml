@@ -11,15 +11,20 @@ requires-python = ">=3.11"
 license = "MIT"
 authors = [{ name = "Johan Larsson" }]
 dependencies = [
+  "numpy>=2.0",
   "pandas>=2.2",
   "platformdirs>=4.3",
+  "scipy>=1.14",
 ]
 
 [dependency-groups]
 dev = [
   "mypy>=1.14",
   "pandas-stubs>=2.2",
+  "pyyaml>=6.0",
   "pytest>=8.3",
+  "scipy-stubs>=1.14",
+  "types-pyyaml>=6.0",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -38,7 +43,7 @@ select = ["B", "E", "F", "I", "RUF", "SIM", "UP"]
 
 [tool.mypy]
 strict = true
-packages = ["datamonger"]
+files = ["src/datamonger", "../../tools/build_proof_index.py"]
 
 [tool.uv]
 default-groups = ["dev"]

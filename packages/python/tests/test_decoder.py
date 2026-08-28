@@ -2,14 +2,18 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
+from scipy import sparse
 
 from datamonger._canonical import canonical_sha256
 from datamonger._decode import decode_delimited_text
+from datamonger._decode_libsvm import decode_libsvm
 from datamonger.errors import DecodeError
 
 FIXTURE = Path(__file__).parent / "fixtures" / "mixed.csv"
+LIBSVM_FIXTURE = Path(__file__).parent / "fixtures" / "small.libsvm"
 EXPECTED_DIGEST = "e25d27e8b0008332d778cd48429a7c4f7af59411884092e52f120da63f26e726"
 OPTIONS = {
     "encoding": "utf-8",
@@ -113,3 +117,74 @@ def test_invalid_utf8_is_a_decoding_error(tmp_path: Path) -> None:
 
     with pytest.raises(DecodeError, match="UTF-8"):
         decode_delimited_text(source, options)
+
+
+LIBSVM_OPTIONS = {
+    "index_base": 1,
+    "feature_count": 4,
+    "duplicate_features": "error",
+    "label_type": "int64",
+    "row_order": "source",
+    "target_name": "response",
+}
+
+
+def test_libsvm_decodes_to_named_csr_and_response() -> None:
+    decoded = decode_libsvm(LIBSVM_FIXTURE, LIBSVM_OPTIONS)
+
+    assert sparse.isspmatrix_csr(decoded.data.features)
+    np.testing.assert_array_equal(
+        decoded.data.features.toarray(),
+        np.array([[1.5, 0.0, 0.0, -2.0], [0.0, 3.0, 0.0, 0.0]]),
+    )
+    np.testing.assert_array_equal(decoded.data.response, np.array([1, -1]))
+    assert decoded.data.response.dtype == np.dtype("int64")
+    assert [component.name for component in decoded.components] == [
+        "features",
+        "response",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("body", "message"),
+    [
+        ("\ufeff+1 1:1\n", "byte-order mark"),
+        ("\n", "blank"),
+        ("+1 1:0\n", "zero"),
+        ("+1 1:1 1:2\n", "duplicate"),
+        ("+1 2:1 1:2\n", "increasing"),
+        ("+1 5:1\n", "range"),
+        ("+1 01:1\n", "feature index"),
+        ("+1 1:NaN\n", "feature value"),
+        ("label 1:1\n", "label"),
+        (" +1 1:1\n", "whitespace"),
+    ],
+)
+def test_libsvm_rejects_malformed_records(
+    tmp_path: Path, body: str, message: str
+) -> None:
+    source = tmp_path / "bad.libsvm"
+    source.write_text(body, encoding="utf-8")
+
+    with pytest.raises(DecodeError, match=message):
+        decode_libsvm(source, LIBSVM_OPTIONS)
+
+
+def test_libsvm_float_labels_and_crlf_are_explicitly_supported(tmp_path: Path) -> None:
+    source = tmp_path / "float.libsvm"
+    source.write_bytes(b"+1.5 1:2\r\n-0.5 4:3")
+    options = LIBSVM_OPTIONS | {"label_type": "float64"}
+
+    decoded = decode_libsvm(source, options)
+
+    np.testing.assert_array_equal(decoded.data.response, np.array([1.5, -0.5]))
+    assert decoded.data.response.dtype == np.dtype("float64")
+
+
+def test_libsvm_accepts_trailing_ascii_field_separators(tmp_path: Path) -> None:
+    source = tmp_path / "trailing.libsvm"
+    source.write_bytes(b"+1 1:2 \t\n")
+
+    decoded = decode_libsvm(source, LIBSVM_OPTIONS)
+
+    np.testing.assert_array_equal(decoded.data.response, np.array([1]))
