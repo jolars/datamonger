@@ -28,30 +28,28 @@ from datamonger._models import (
     Registry,
 )
 from datamonger._registry import load_registry, resolve_dataset
+from datamonger._validate import (
+    require_array,
+    require_integer,
+    require_mapping,
+    require_string,
+)
 
 
 def _object(value: object, field: str) -> Mapping[str, Any]:
-    if not isinstance(value, Mapping):
-        raise UnsupportedRegistryError(f"{field} must be an object")
-    return value
+    return require_mapping(value, field, UnsupportedRegistryError)
 
 
 def _array(value: object, field: str) -> Sequence[object]:
-    if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
-        raise UnsupportedRegistryError(f"{field} must be an array")
-    return value
+    return require_array(value, field, UnsupportedRegistryError)
 
 
 def _string(value: object, field: str) -> str:
-    if not isinstance(value, str):
-        raise UnsupportedRegistryError(f"{field} must be a string")
-    return value
+    return require_string(value, field, UnsupportedRegistryError)
 
 
 def _integer(value: object, field: str) -> int:
-    if isinstance(value, bool) or not isinstance(value, int):
-        raise UnsupportedRegistryError(f"{field} must be an integer")
-    return value
+    return require_integer(value, field, UnsupportedRegistryError)
 
 
 def _artifact_for_representation(

@@ -31,13 +31,10 @@ def default_cache_root() -> Path:
 
 
 def _matches(path: Path, digest: str, size: int | None) -> bool:
-    actual = hashlib.sha256()
-    count = 0
     try:
         with path.open("rb") as source:
-            while chunk := source.read(_CHUNK_SIZE):
-                actual.update(chunk)
-                count += len(chunk)
+            actual = hashlib.file_digest(source, "sha256")
+            count = source.tell()
     except OSError as error:
         raise CacheError(f"cannot read cached object {path}: {error}") from error
     return actual.hexdigest() == digest and (size is None or count == size)

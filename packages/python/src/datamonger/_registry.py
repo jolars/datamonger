@@ -18,15 +18,14 @@ from datamonger._errors import (
     UnsupportedRegistryError,
 )
 from datamonger._models import Registry
+from datamonger._validate import require_array
 
 _IDENTIFIER = re.compile(r"[a-z0-9][a-z0-9._-]*\Z")
 _VERSION = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]*\Z")
 
 
 def _require_array(value: object, field: str) -> Sequence[object]:
-    if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
-        raise UnsupportedRegistryError(f"registry {field} must be an array")
-    return value
+    return require_array(value, f"registry {field}", UnsupportedRegistryError)
 
 
 def load_registry(registry: Registry, cache_root: Path) -> Mapping[str, Any]:
