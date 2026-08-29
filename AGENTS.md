@@ -23,8 +23,8 @@ From `packages/python`, focused commands are:
 
 - `uv run pytest`—run the hermetic unit suite.
 - `uv run pytest tests/test_decoder.py`—run one test module.
-- `uv run ruff format . ../../tools`—format Python sources and tooling.
-- `uv run ruff check . ../../tools`—run lint checks.
+- `ruff format . ../../tools`—format Python sources and tooling.
+- `ruff check . ../../tools`—run lint checks.
 - `uv run mypy`—type-check the package and registry builder in strict mode.
 - `uv run python ../../tools/build_proof_index.py --check`—verify checked-in
   release indexes.
