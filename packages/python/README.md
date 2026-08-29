@@ -1,10 +1,10 @@
 # Datamonger Python client
 
-This package is the provisional Python reference client for Datamonger. Its
-interfaces and wire formats may change until specification revision 1 is
+This package is the Python reference client for Datamonger's normative draft
+contracts. Its public interfaces may change until specification revision 1 is
 independently certified.
 
-The vertical-proof API requires an explicit strong registry selector:
+The current retrieval API requires an explicit strong registry selector:
 
 ```python
 from datamonger import Registry, fetch_data

@@ -1,0 +1,53 @@
+schema_version: 1
+source: conformance
+name: mixed_tsv
+version: "1"
+title: Mixed TSV conformance fixture
+description: Tiny mixed-type TSV used by the language-neutral conformance suite.
+modality: tabular
+provenance:
+  provider: Datamonger
+  upstream_name: mixed.tsv
+  landing_page: https://example.invalid/datamonger/conformance
+  retrieved_at: "2026-08-29"
+license:
+  status: known
+  identifier: CC0-1.0
+artifacts:
+  - name: data
+    format: tsv
+    compression: none
+    size: 126
+    sha256: 6fd6c20b84a335c8de0d7163722b20e2f3a95f1d61a6bea4395670e05f81e044
+    distribution: upstream-only
+    downloads:
+      - kind: upstream
+        url: https://example.invalid/datamonger/conformance/mixed.tsv
+representation:
+  decoder: delimited-text
+  decoder_version: 1
+  inputs:
+    data: data
+  options:
+    encoding: utf-8
+    delimiter: "\t"
+    header: true
+    quote: '"'
+    escape: double
+    missing_values: [""]
+    row_order: source
+    columns:
+      - {name: measurement, type: float64}
+      - {name: count, type: int64}
+      - {name: label, type: string}
+      - {name: enabled, type: bool}
+  expect:
+    components:
+      - {name: measurement, kind: vector, type: float64, length: 5}
+      - {name: count, kind: vector, type: int64, length: 5}
+      - {name: label, kind: vector, type: string, length: 5}
+      - {name: enabled, kind: vector, type: bool, length: 5}
+    verification:
+      - canonical_form: 1
+        algorithm: sha256
+        digest: e25d27e8b0008332d778cd48429a7c4f7af59411884092e52f120da63f26e726

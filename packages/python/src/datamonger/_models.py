@@ -152,7 +152,46 @@ class LogicalSparseMatrix:
         return "float64"
 
 
-LogicalValueComponent: TypeAlias = LogicalComponent | LogicalSparseMatrix
+@dataclass(frozen=True)
+class LogicalDenseMatrix:
+    """One row-major logical dense matrix with explicit missingness."""
+
+    name: str
+    logical_type: LogicalType
+    rows: int
+    columns: int
+    values: npt.NDArray[Any] | tuple[str, ...]
+    valid: npt.NDArray[np.bool_]
+
+    def __post_init__(self) -> None:
+        if (
+            isinstance(self.rows, bool)
+            or not isinstance(self.rows, int)
+            or isinstance(self.columns, bool)
+            or not isinstance(self.columns, int)
+            or self.rows < 0
+            or self.columns < 0
+        ):
+            raise ValueError("dense dimensions must be nonnegative integers")
+        field = f"{self.logical_type} dense values"
+        if self.logical_type == "string":
+            values: npt.NDArray[Any] | tuple[str, ...] = tuple(
+                cast(Sequence[str], self.values)
+            )
+            if not all(isinstance(value, str) for value in values):
+                raise TypeError(f"{field} must be Python strings")
+        else:
+            values = _typed_array(self.values, _VECTOR_DTYPES[self.logical_type], field)
+        valid = _typed_array(self.valid, np.bool_, "dense validity mask")
+        if len(values) != self.rows * self.columns or len(valid) != len(values):
+            raise ValueError("dense values, validity, and dimensions must agree")
+        object.__setattr__(self, "values", values)
+        object.__setattr__(self, "valid", valid)
+
+
+LogicalValueComponent: TypeAlias = (
+    LogicalComponent | LogicalDenseMatrix | LogicalSparseMatrix
+)
 
 
 @dataclass(frozen=True)

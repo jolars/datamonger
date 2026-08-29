@@ -23,7 +23,9 @@
     ${pkgs.ruff}/bin/ruff check . ../../tools
     uv run mypy
     uv run pytest
-    uv run python ../../tools/build_proof_index.py --check
+    uv run python ../../tools/dm_index.py check
+    uv run python ../../tools/dm_index.py check \
+      tests/registry/releases/test-0001/release.yaml
     uv build
   '';
 }

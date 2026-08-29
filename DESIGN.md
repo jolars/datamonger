@@ -1,5 +1,9 @@
 # Datamonger Design
 
+This document records architecture and rationale. Normative draft contracts and
+wire requirements live in `spec/`; where wording differs, the versioned
+specification controls.
+
 ## Overview
 
 Datamonger is a cross-language system for retrieving, caching, verifying, and

@@ -6,14 +6,16 @@ import hashlib
 import io
 import struct
 from collections.abc import Callable, Iterable
-from typing import cast
+from typing import Any, cast
 
 import numpy as np
 import numpy.typing as npt
 
 from datamonger._models import (
     LogicalComponent,
+    LogicalDenseMatrix,
     LogicalSparseMatrix,
+    LogicalType,
     LogicalValueComponent,
 )
 
@@ -21,6 +23,7 @@ _MAGIC = b"DMCF"
 _VERSION = 1
 _KIND_VECTOR = 1
 _KIND_SPARSE_MATRIX = 2
+_KIND_DENSE_MATRIX = 3
 _TYPE_TAGS = {"float64": 1, "int64": 2, "string": 3, "bool": 4}
 
 
@@ -51,34 +54,39 @@ def _write_vector(
     write(struct.pack("<Q", length))
     write(_pack_bitmap(component.valid))
 
-    if component.logical_type == "float64":
-        _write_float64_array(
-            cast(npt.NDArray[np.float64], component.values), write, component.valid
-        )
-    elif component.logical_type == "int64":
-        _write_int64_array(
-            cast(npt.NDArray[np.int64], component.values), write, component.valid
-        )
-    elif component.logical_type == "string":
-        for raw, valid in zip(component.values, component.valid, strict=True):
+    _write_values(component.logical_type, component.values, component.valid, write)
+
+
+def _write_values(
+    logical_type: LogicalType,
+    values: npt.NDArray[Any] | tuple[str, ...],
+    valid: npt.NDArray[np.bool_],
+    write: Callable[[bytes], object],
+) -> None:
+    if logical_type == "float64":
+        _write_float64_array(cast(npt.NDArray[np.float64], values), write, valid)
+    elif logical_type == "int64":
+        _write_int64_array(cast(npt.NDArray[np.int64], values), write, valid)
+    elif logical_type == "string":
+        for raw, is_valid in zip(values, valid, strict=True):
             try:
-                encoded = cast(str, raw).encode("utf-8") if valid else b""
+                encoded = cast(str, raw).encode("utf-8") if is_valid else b""
             except UnicodeEncodeError as error:
                 raise ValueError("logical string is not valid UTF-8") from error
             write(struct.pack("<Q", len(encoded)))
             write(encoded)
     else:
-        stored = cast("npt.NDArray[np.bool_]", component.values) & component.valid
+        stored = cast("npt.NDArray[np.bool_]", values) & valid
         write(_pack_bitmap(stored))
 
 
 def _uint64(value: int, field: str) -> bytes:
     if isinstance(value, bool) or not isinstance(value, int):
-        raise ValueError(f"sparse {field} must be an integer")
+        raise ValueError(f"{field} must be an integer")
     try:
         return struct.pack("<Q", value)
     except struct.error as error:
-        raise ValueError(f"sparse {field} exceeds uint64 framing") from error
+        raise ValueError(f"{field} exceeds uint64 framing") from error
 
 
 def _validate_sparse(component: LogicalSparseMatrix) -> None:
@@ -176,6 +184,19 @@ def _write_sparse_matrix(
     _write_float64_array(component.values, write)
 
 
+def _write_dense_matrix(
+    component: LogicalDenseMatrix, write: Callable[[bytes], object]
+) -> None:
+    _write_name(component.name, write)
+    write(bytes((_KIND_DENSE_MATRIX, _TYPE_TAGS[component.logical_type], 2)))
+    write(_uint64(component.rows, "dense row count"))
+    write(_uint64(component.columns, "dense column count"))
+    elements = component.rows * component.columns
+    _uint64(elements, "dense element count")
+    write(_pack_bitmap(component.valid))
+    _write_values(component.logical_type, component.values, component.valid, write)
+
+
 def _write_canonical(
     components: Iterable[LogicalValueComponent], write: Callable[[bytes], object]
 ) -> None:
@@ -192,6 +213,8 @@ def _write_canonical(
     for component in materialized:
         if isinstance(component, LogicalSparseMatrix):
             _write_sparse_matrix(component, write)
+        elif isinstance(component, LogicalDenseMatrix):
+            _write_dense_matrix(component, write)
         else:
             _write_vector(component, write)
 

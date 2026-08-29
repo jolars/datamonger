@@ -1,0 +1,45 @@
+schema_version: 1
+source: conformance
+name: small_libsvm
+version: "1"
+title: Small LIBSVM conformance fixture
+description: Tiny sparse classification data used by the conformance suite.
+modality: tabular
+provenance:
+  provider: Datamonger
+  upstream_name: small.libsvm
+  landing_page: https://example.invalid/datamonger/conformance
+  retrieved_at: "2026-08-29"
+license:
+  status: known
+  identifier: CC0-1.0
+artifacts:
+  - name: data
+    format: libsvm
+    compression: none
+    size: 21
+    sha256: 621fd6e613189956bfea3db00e1413608c793b42001b5d75d55c87382acd4ba6
+    distribution: upstream-only
+    downloads:
+      - kind: upstream
+        url: https://example.invalid/datamonger/conformance/small.libsvm
+representation:
+  decoder: libsvm
+  decoder_version: 1
+  inputs:
+    data: data
+  options:
+    index_base: 1
+    feature_count: 4
+    duplicate_features: error
+    label_type: int64
+    row_order: source
+    target_name: response
+  expect:
+    components:
+      - {name: features, kind: sparse_matrix, type: float64, rows: 2, columns: 4}
+      - {name: response, kind: vector, type: int64, length: 2}
+    verification:
+      - canonical_form: 1
+        algorithm: sha256
+        digest: 50b077922f6ffc77054622fd807fbc8de48d1c3fcb3be644027422b244b0190b

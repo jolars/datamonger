@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://datamonger.dev/spec/schema/selector-v1.schema.json",
+  "title": "Datamonger strong registry selector version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["release", "index_sha256", "index_url"],
+  "properties": {
+    "release": {"type": "string", "minLength": 1},
+    "index_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "index_url": {"type": "string", "format": "uri"}
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://datamonger.dev/spec/schema/erratum-v1.schema.json",
+  "title": "Datamonger erratum version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "release",
+    "dataset",
+    "target",
+    "original",
+    "replacement",
+    "reason",
+    "approval"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+    "release": {"type": "string", "minLength": 1},
+    "dataset": {"$ref": "#/$defs/identity"},
+    "target": {"$ref": "#/$defs/target"},
+    "original": {
+      "oneOf": [
+        {"$ref": "manifest-v1.schema.json#/$defs/component"},
+        {"$ref": "manifest-v1.schema.json#/$defs/verification"}
+      ]
+    },
+    "replacement": {
+      "oneOf": [
+        {"$ref": "manifest-v1.schema.json#/$defs/component"},
+        {"$ref": "manifest-v1.schema.json#/$defs/verification"}
+      ]
+    },
+    "reason": {"type": "string", "minLength": 1},
+    "approval": {"$ref": "#/$defs/approval"}
+  },
+  "$defs": {
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "name", "version"],
+      "properties": {
+        "source": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+        "name": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+        "version": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._+-]*$"}
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": {"enum": ["component", "verification"]},
+        "name": {"type": "string", "minLength": 1},
+        "canonical_form": {"type": "integer", "minimum": 1, "maximum": 65535},
+        "algorithm": {"const": "sha256"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"kind": {"const": "component"}}, "required": ["kind"]},
+          "then": {"required": ["name"], "not": {"anyOf": [{"required": ["canonical_form"]}, {"required": ["algorithm"]}]}}
+        },
+        {
+          "if": {"properties": {"kind": {"const": "verification"}}, "required": ["kind"]},
+          "then": {"required": ["canonical_form", "algorithm"], "not": {"required": ["name"]}}
+        }
+      ]
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maintainer", "approved_at"],
+      "properties": {
+        "maintainer": {"type": "string", "minLength": 1},
+        "approved_at": {"type": "string", "format": "date"}
+      }
+    }
+  }
+}

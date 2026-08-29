@@ -1,0 +1,399 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://datamonger.dev/spec/schema/manifest-v1.schema.json",
+  "title": "Datamonger dataset manifest version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source",
+    "name",
+    "version",
+    "title",
+    "description",
+    "modality",
+    "provenance",
+    "license",
+    "artifacts",
+    "representation"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "source": {"$ref": "#/$defs/identifier"},
+    "name": {"$ref": "#/$defs/identifier"},
+    "version": {"$ref": "#/$defs/version"},
+    "title": {"$ref": "#/$defs/nonemptyString"},
+    "description": {"$ref": "#/$defs/nonemptyString"},
+    "modality": {"enum": ["tabular"]},
+    "provenance": {"$ref": "#/$defs/provenance"},
+    "license": {"$ref": "#/$defs/license"},
+    "related": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/relation"}
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/artifact"}
+    },
+    "representation": {"$ref": "#/$defs/representation"},
+    "tasks": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/task"}
+    }
+  },
+  "$defs": {
+    "nonemptyString": {"type": "string", "minLength": 1},
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._+-]*$"
+    },
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "datasetId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*:[a-z0-9][a-z0-9._-]*@[A-Za-z0-9][A-Za-z0-9._+-]*$"
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "upstream_name", "landing_page", "retrieved_at"],
+      "properties": {
+        "provider": {"$ref": "#/$defs/nonemptyString"},
+        "upstream_name": {"$ref": "#/$defs/nonemptyString"},
+        "upstream_id": {"$ref": "#/$defs/nonemptyString"},
+        "landing_page": {"type": "string", "format": "uri"},
+        "retrieved_at": {"type": "string", "format": "date"},
+        "upstream_version": {"$ref": "#/$defs/nonemptyString"},
+        "authors": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/nonemptyString"}
+        },
+        "citation": {"$ref": "#/$defs/nonemptyString"}
+      }
+    },
+    "license": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {"enum": ["known", "unknown"]},
+        "identifier": {"$ref": "#/$defs/nonemptyString"},
+        "url": {"type": "string", "format": "uri"},
+        "evidence": {"$ref": "#/$defs/nonemptyString"},
+        "reviewed_by": {"$ref": "#/$defs/nonemptyString"},
+        "reviewed_at": {"type": "string", "format": "date"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"const": "known"}}, "required": ["status"]},
+          "then": {"anyOf": [{"required": ["identifier"]}, {"required": ["url"]}]}
+        }
+      ]
+    },
+    "relation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "relation"],
+      "properties": {
+        "id": {"$ref": "#/$defs/datasetId"},
+        "relation": {"enum": ["same_upstream", "derived_from", "supersedes"]}
+      }
+    },
+    "download": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "url"],
+      "properties": {
+        "kind": {"enum": ["upstream", "mirror"]},
+        "url": {"type": "string", "format": "uri"}
+      }
+    },
+    "preservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {"enum": ["none", "durable"]},
+        "deposit": {"type": "string", "format": "uri"},
+        "evidence": {"$ref": "#/$defs/nonemptyString"},
+        "reviewed_by": {"$ref": "#/$defs/nonemptyString"},
+        "reviewed_at": {"type": "string", "format": "date"}
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "format",
+        "compression",
+        "size",
+        "sha256",
+        "distribution",
+        "downloads"
+      ],
+      "properties": {
+        "name": {"$ref": "#/$defs/identifier"},
+        "format": {"enum": ["csv", "tsv", "libsvm", "svmlight"]},
+        "compression": {"enum": ["none", "gzip", "bzip2"]},
+        "size": {"$ref": "#/$defs/uint64"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "distribution": {"enum": ["mirror", "upstream-only", "metadata-only"]},
+        "downloads": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/download"}
+        },
+        "license": {"$ref": "#/$defs/license"},
+        "preservation": {"$ref": "#/$defs/preservation"}
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"distribution": {"const": "metadata-only"}},
+            "required": ["distribution"]
+          },
+          "then": {"properties": {"downloads": {"maxItems": 0}}},
+          "else": {"properties": {"downloads": {"minItems": 1}}}
+        }
+      ]
+    },
+    "column": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "type"],
+      "properties": {
+        "name": {"$ref": "#/$defs/nonemptyString"},
+        "type": {"enum": ["float64", "int64", "string", "bool"]}
+      }
+    },
+    "delimitedOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "encoding",
+        "delimiter",
+        "header",
+        "quote",
+        "escape",
+        "row_order",
+        "columns"
+      ],
+      "properties": {
+        "encoding": {"const": "utf-8"},
+        "delimiter": {"enum": [",", "\t"]},
+        "header": {"const": true},
+        "quote": {"const": "\""},
+        "escape": {"const": "double"},
+        "missing_values": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string"}
+        },
+        "row_order": {"const": "source"},
+        "columns": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/column"}
+        }
+      }
+    },
+    "libsvmOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "index_base",
+        "feature_count",
+        "duplicate_features",
+        "label_type",
+        "row_order",
+        "target_name"
+      ],
+      "properties": {
+        "index_base": {"const": 1},
+        "feature_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 18446744073709551615
+        },
+        "duplicate_features": {"const": "error"},
+        "label_type": {"enum": ["float64", "int64"]},
+        "row_order": {"const": "source"},
+        "target_name": {"$ref": "#/$defs/nonemptyString"}
+      }
+    },
+    "inputsData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["data"],
+      "properties": {"data": {"$ref": "#/$defs/identifier"}}
+    },
+    "inputsSplit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["train", "test"],
+      "properties": {
+        "train": {"$ref": "#/$defs/identifier"},
+        "test": {"$ref": "#/$defs/identifier"}
+      }
+    },
+    "vectorComponent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "kind", "type", "length"],
+      "properties": {
+        "name": {"$ref": "#/$defs/nonemptyString"},
+        "kind": {"const": "vector"},
+        "type": {"enum": ["float64", "int64", "string", "bool"]},
+        "length": {"$ref": "#/$defs/uint64"}
+      }
+    },
+    "matrixComponent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "kind", "type", "rows", "columns"],
+      "properties": {
+        "name": {"$ref": "#/$defs/nonemptyString"},
+        "kind": {"enum": ["dense_matrix", "sparse_matrix"]},
+        "type": {"enum": ["float64", "int64", "string", "bool"]},
+        "rows": {"$ref": "#/$defs/uint64"},
+        "columns": {"$ref": "#/$defs/uint64"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"kind": {"const": "sparse_matrix"}}, "required": ["kind"]},
+          "then": {"properties": {"type": {"const": "float64"}}}
+        }
+      ]
+    },
+    "component": {
+      "oneOf": [
+        {"$ref": "#/$defs/vectorComponent"},
+        {"$ref": "#/$defs/matrixComponent"}
+      ]
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canonical_form", "algorithm", "digest"],
+      "properties": {
+        "canonical_form": {"type": "integer", "minimum": 1, "maximum": 65535},
+        "algorithm": {"const": "sha256"},
+        "digest": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "expect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["components", "verification"],
+      "properties": {
+        "components": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/component"}
+        },
+        "verification": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/verification"}
+        }
+      }
+    },
+    "representation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decoder", "decoder_version", "inputs", "options", "expect"],
+      "properties": {
+        "decoder": {"enum": ["delimited-text", "libsvm", "libsvm-split"]},
+        "decoder_version": {"const": 1},
+        "inputs": {"type": "object"},
+        "options": {"type": "object"},
+        "expect": {"$ref": "#/$defs/expect"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"decoder": {"const": "delimited-text"}}, "required": ["decoder"]},
+          "then": {
+            "properties": {
+              "inputs": {"$ref": "#/$defs/inputsData"},
+              "options": {"$ref": "#/$defs/delimitedOptions"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"decoder": {"const": "libsvm"}}, "required": ["decoder"]},
+          "then": {
+            "properties": {
+              "inputs": {"$ref": "#/$defs/inputsData"},
+              "options": {"$ref": "#/$defs/libsvmOptions"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"decoder": {"const": "libsvm-split"}}, "required": ["decoder"]},
+          "then": {
+            "properties": {
+              "inputs": {"$ref": "#/$defs/inputsSplit"},
+              "options": {"$ref": "#/$defs/libsvmOptions"}
+            }
+          }
+        }
+      ]
+    },
+    "uint64": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 18446744073709551615
+    },
+    "taskRoles": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "features": {
+          "oneOf": [
+            {"$ref": "#/$defs/nonemptyString"},
+            {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {"$ref": "#/$defs/nonemptyString"}
+            }
+          ]
+        },
+        "target": {"$ref": "#/$defs/nonemptyString"}
+      },
+      "anyOf": [{"required": ["features"]}, {"required": ["target"]}]
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "type"],
+      "properties": {
+        "name": {"$ref": "#/$defs/identifier"},
+        "type": {"enum": ["classification", "regression", "unsupervised"]},
+        "features": {
+          "oneOf": [
+            {"$ref": "#/$defs/nonemptyString"},
+            {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {"$ref": "#/$defs/nonemptyString"}
+            }
+          ]
+        },
+        "target": {"$ref": "#/$defs/nonemptyString"},
+        "splits": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": {"$ref": "#/$defs/identifier"},
+          "additionalProperties": {"$ref": "#/$defs/taskRoles"}
+        }
+      }
+    }
+  }
+}

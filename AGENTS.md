@@ -6,9 +6,8 @@ The Python reference client lives in `packages/python`. Library code is under
 `packages/python/src/datamonger`, hermetic tests are in `packages/python/tests`,
 and network-dependent smoke tests are isolated in `packages/python/tests_live`.
 Dataset manifests and release indexes belong in `registry/`; format contracts
-belong in `spec/`. Use `tools/build_proof_index.py` to validate generated
-registry data. Consult `DESIGN.md` for architecture and `TODO.md` for the active
-roadmap.
+belong in `spec/`. Use `tools/dm_index.py` to validate generated registry data.
+Consult `DESIGN.md` for architecture and `TODO.md` for the active roadmap.
 
 ## Build, Test, and Development Commands
 
@@ -26,7 +25,7 @@ From `packages/python`, focused commands are:
 - `ruff format . ../../tools`—format Python sources and tooling.
 - `ruff check . ../../tools`—run lint checks.
 - `uv run mypy`—type-check the package and registry builder in strict mode.
-- `uv run python ../../tools/build_proof_index.py --check`—verify checked-in
+- `uv run python ../../tools/dm_index.py check`—verify checked-in production
   release indexes.
 - `uv build`—build the Python distribution.
 

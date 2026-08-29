@@ -1,0 +1,13 @@
+schema_version: 1
+release: test-0001
+sequence: 0
+repository: jolars/datamonger
+tag: registry-test-0001
+manifests:
+  - tests/registry/datasets/conformance/small-libsvm-1.yaml
+  - tests/registry/datasets/conformance/mixed-tsv-1.yaml
+  - tests/registry/datasets/conformance/mixed-csv-1.yaml
+defaults:
+  - {source: conformance, name: mixed_csv, version: "1"}
+  - {source: conformance, name: mixed_tsv, version: "1"}
+  - {source: conformance, name: small_libsvm, version: "1"}

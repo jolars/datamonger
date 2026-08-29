@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "delimited-mixed-csv",
+      "area": "delimited-text",
+      "status": "active-python",
+      "input": "artifacts/mixed.csv",
+      "recipe": {
+        "encoding": "utf-8",
+        "delimiter": ",",
+        "header": true,
+        "quote": "\"",
+        "escape": "double",
+        "missing_values": [""],
+        "row_order": "source",
+        "columns": [
+          {"name": "measurement", "type": "float64"},
+          {"name": "count", "type": "int64"},
+          {"name": "label", "type": "string"},
+          {"name": "enabled", "type": "bool"}
+        ]
+      },
+      "expected_sha256": "e25d27e8b0008332d778cd48429a7c4f7af59411884092e52f120da63f26e726"
+    },
+    {
+      "id": "delimited-mixed-tsv",
+      "area": "delimited-text",
+      "status": "milestone-3",
+      "input": "artifacts/mixed.tsv",
+      "recipe": {
+        "encoding": "utf-8",
+        "delimiter": "\t",
+        "header": true,
+        "quote": "\"",
+        "escape": "double",
+        "missing_values": [""],
+        "row_order": "source",
+        "columns": [
+          {"name": "measurement", "type": "float64"},
+          {"name": "count", "type": "int64"},
+          {"name": "label", "type": "string"},
+          {"name": "enabled", "type": "bool"}
+        ]
+      },
+      "expected_sha256": "e25d27e8b0008332d778cd48429a7c4f7af59411884092e52f120da63f26e726"
+    },
+    {
+      "id": "libsvm-small",
+      "area": "libsvm",
+      "status": "active-python",
+      "input": "artifacts/small.libsvm",
+      "recipe": {
+        "index_base": 1,
+        "feature_count": 4,
+        "duplicate_features": "error",
+        "label_type": "int64",
+        "row_order": "source",
+        "target_name": "response"
+      },
+      "expected_sha256": "50b077922f6ffc77054622fd807fbc8de48d1c3fcb3be644027422b244b0190b"
+    }
+  ]
+}

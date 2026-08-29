@@ -1,35 +1,21 @@
-"""Shared fixture files, golden digests, and decoder options."""
+"""Load shared language-neutral conformance cases for Python tests."""
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
+from typing import Any, cast
 
-FIXTURE = Path(__file__).parent / "fixtures" / "mixed.csv"
-LIBSVM_FIXTURE = Path(__file__).parent / "fixtures" / "small.libsvm"
-EXPECTED_DIGEST = "e25d27e8b0008332d778cd48429a7c4f7af59411884092e52f120da63f26e726"
-LIBSVM_DIGEST = "50b077922f6ffc77054622fd807fbc8de48d1c3fcb3be644027422b244b0190b"
+CORPUS = Path(__file__).resolve().parents[3] / "tests" / "conformance"
+CASES = json.loads((CORPUS / "cases.json").read_bytes())["cases"]
+CASE_BY_ID = {case["id"]: case for case in CASES}
 
-OPTIONS = {
-    "encoding": "utf-8",
-    "delimiter": ",",
-    "header": True,
-    "quote": '"',
-    "escape": "double",
-    "missing_values": [""],
-    "row_order": "source",
-    "columns": [
-        {"name": "measurement", "type": "float64"},
-        {"name": "count", "type": "int64"},
-        {"name": "label", "type": "string"},
-        {"name": "enabled", "type": "bool"},
-    ],
-}
+_CSV = cast(dict[str, Any], CASE_BY_ID["delimited-mixed-csv"])
+_LIBSVM = cast(dict[str, Any], CASE_BY_ID["libsvm-small"])
 
-LIBSVM_OPTIONS = {
-    "index_base": 1,
-    "feature_count": 4,
-    "duplicate_features": "error",
-    "label_type": "int64",
-    "row_order": "source",
-    "target_name": "response",
-}
+FIXTURE = CORPUS / cast(str, _CSV["input"])
+LIBSVM_FIXTURE = CORPUS / cast(str, _LIBSVM["input"])
+EXPECTED_DIGEST = cast(str, _CSV["expected_sha256"])
+LIBSVM_DIGEST = cast(str, _LIBSVM["expected_sha256"])
+OPTIONS = cast(dict[str, object], _CSV["recipe"])
+LIBSVM_OPTIONS = cast(dict[str, object], _LIBSVM["recipe"])

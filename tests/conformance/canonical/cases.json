@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "int64-vector-invalid-storage",
+      "component": {
+        "name": "count",
+        "kind": "vector",
+        "type": "int64",
+        "values": [1, 999, -2],
+        "valid": [true, false, true]
+      },
+      "expected_hex": "444d434601000100000005000000636f756e7401020103000000000000000501000000000000000000000000000000feffffffffffffff"
+    },
+    {
+      "id": "float64-dense-normalization",
+      "component": {
+        "name": "x",
+        "kind": "dense_matrix",
+        "type": "float64",
+        "rows": 2,
+        "columns": 2,
+        "values": ["-zero", "nan", "invalid", 4.5],
+        "valid": [true, true, false, true]
+      },
+      "expected_hex": "444d43460100010000000100000078030102020000000000000002000000000000000b0000000000000000000000000000f87f00000000000000000000000000001240"
+    },
+    {
+      "id": "bool-dense-padding",
+      "component": {
+        "name": "x",
+        "kind": "dense_matrix",
+        "type": "bool",
+        "rows": 2,
+        "columns": 2,
+        "values": [true, true, false, true],
+        "valid": [true, false, true, true]
+      },
+      "expected_hex": "444d43460100010000000100000078030402020000000000000002000000000000000d09"
+    },
+    {
+      "id": "string-vector-invalid-storage",
+      "component": {
+        "name": "x",
+        "kind": "vector",
+        "type": "string",
+        "values": ["a", "ignored", "", "é"],
+        "valid": [true, false, true, true]
+      },
+      "expected_hex": "444d4346010001000000010000007801030104000000000000000d010000000000000061000000000000000000000000000000000200000000000000c3a9"
+    },
+    {
+      "id": "float64-sparse-csr",
+      "component": {
+        "name": "features",
+        "kind": "sparse_matrix",
+        "type": "float64",
+        "rows": 2,
+        "columns": 4,
+        "row_offsets": [0, 2, 3],
+        "column_indices": [0, 3, 1],
+        "values": [1.5, -2.0, 3.0]
+      },
+      "expected_hex": "444d4346010001000000080000006665617475726573020102020000000000000004000000000000000300000000000000000000000000000002000000000000000300000000000000000000000000000003000000000000000100000000000000000000000000f83f00000000000000c00000000000000840"
+    }
+  ]
+}

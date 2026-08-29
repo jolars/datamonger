@@ -33,6 +33,9 @@ jobs:
       - name: Run hermetic tests
         run: uv run pytest
       - name: Check generated registry
-        run: uv run python ../../tools/build_proof_index.py --check
+        run: |
+          uv run python ../../tools/dm_index.py check
+          uv run python ../../tools/dm_index.py check \
+            ../../tests/registry/releases/test-0001/release.yaml
       - name: Build package
         run: uv build

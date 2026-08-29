@@ -53,16 +53,17 @@ fetched through one strongly selected remote prerelease index.
 
 ## Milestone 1: Specification and registry
 
-- [ ] Complete the normative identity, retrieval, index, and canonical-form
+- [x] Complete the normative identity, retrieval, index, and canonical-form
   specifications.
-- [ ] Complete versioned CSV, TSV, and LIBSVM decoder contracts.
-- [ ] Add JSON Schemas for manifests, generated indexes, releases, and errata.
-- [ ] Implement deterministic `dm-index` output and immutable release checks.
-- [ ] Add an immutable local test registry release and exhaustive golden,
+- [x] Complete versioned CSV, TSV, and LIBSVM decoder contracts.
+- [x] Add JSON Schemas for manifests, generated indexes, releases, and errata.
+- [x] Implement deterministic `dm-index` output and immutable release checks.
+- [x] Add an immutable local test registry release and exhaustive golden,
   malformed-input, property, and fuzz-derived cases.
 
-Exit criterion: equivalent source trees generate byte-identical indexes, and
-the reference client passes the complete specification suite.
+Exit criterion: equivalent source trees generate byte-identical indexes; the
+reference client passes registry and canonical-form conformance; and the shared
+decoder corpus is complete for activation in Milestone 3.
 
 ## Milestone 2: Python retrieval
 
@@ -80,8 +81,9 @@ against the local HTTP server without live network access.
 
 ## Milestone 3: Python decoding
 
-- [ ] Complete CSV and TSV dialect support and compression handling.
-- [ ] Complete LIBSVM/SVMLight and multi-artifact split assembly.
+- [ ] Activate complete CSV and TSV conformance and compression handling.
+- [ ] Activate complete LIBSVM/SVMLight conformance and multi-artifact split
+  assembly.
 - [ ] Implement stable return types for all initial representations.
 - [ ] Implement `data_info()` and `list_data()`.
 - [ ] Verify decoded results by default for every initial decoder.

@@ -1,70 +1,77 @@
-# Provisional Canonical Form
+# Canonical Logical Form Version 1
 
-This document specifies the vector and sparse-matrix encoding used by the
-vertical proof.
-It is provisional until specification revision 1 is certified independently.
+This document is normative. It defines a verification stream, not a general
+storage format. Clients may hash the stream incrementally without retaining it.
 
-All integers are unsigned little-endian unless stated otherwise. Lengths and
-dimensions must fit their declared widths. UTF-8 text is not normalized.
+All framing integers are unsigned little-endian unless explicitly signed.
+Lengths and dimensions must fit their widths. Names are nonempty, unique UTF-8
+byte strings with no Unicode normalization.
 
 ## Stream header
 
-1. The four ASCII bytes `DMCF`.
-2. Canonical-form version as `uint16`; slice 0A uses version `1`.
+1. ASCII `DMCF`.
+2. Canonical-form version as `uint16`, equal to `1`.
 3. Component count as `uint32`.
 
-## Vector component
+Components occur in decoder-defined order. Zero components are valid.
 
-Components occur in decoder-defined order. A vector is encoded as:
+## Common tags
 
-1. Name byte length as `uint32`, followed by the UTF-8 name.
-2. Kind tag `1`.
-3. Element-type tag: `1` for `float64`, `2` for `int64`, `3` for `string`, or
-   `4` for `bool`.
-4. Rank `1`.
-5. Vector length as `uint64`.
-6. A validity bitmap of `ceil(length / 8)` bytes. Bit `i mod 8` of byte
-   `i div 8` is one exactly when element `i` is valid. Unused high bits are zero.
-7. Values as described below.
+- Kind `1`: vector.
+- Kind `2`: compressed sparse row matrix.
+- Kind `3`: dense matrix.
+- Element type `1`: `float64`.
+- Element type `2`: `int64`.
+- Element type `3`: `string`.
+- Element type `4`: `bool`.
 
-The vector encoding above is unchanged from slice 0A.
+Every component begins with its UTF-8 name length as `uint32`, the name bytes,
+its one-byte kind tag, one-byte element-type tag, and one-byte rank.
 
-## Sparse matrix component
+## Vector
 
-Canonical-form version 1 supports float64 sparse matrices in compressed sparse
-row order. A sparse matrix is encoded as:
+A vector has rank `1`, followed by its length as `uint64`, a validity bitmap,
+and its values. Bitmap bit `i mod 8` of byte `i div 8` describes element `i`;
+one means valid. Unused high bits must be zero.
 
-1. Name byte length as `uint32`, followed by the UTF-8 name.
-2. Kind tag `2`.
-3. Element-type tag `1` for `float64`.
-4. Rank `2`.
-5. Row count and column count, each as `uint64`.
-6. Stored nonzero count as `uint64`.
-7. Exactly `rows + 1` zero-based row offsets as `uint64`. The first offset is
-   zero, offsets are nondecreasing, and the final offset equals the stored
-   nonzero count.
-8. One zero-based column index per stored value as `uint64`. Indices are less
-   than the column count and strictly increase within each row.
-9. One canonical float64 word per stored value.
+## Dense matrix
 
-Sparse matrices have no validity bitmap in version 1. Missing sparse values,
-duplicate entries, and stored positive or negative zero are invalid. Empty rows
-and empty matrices have their ordinary CSR representation. NaNs and nonzero
-finite or infinite values use the float64 normalization below, although a
-decoder may define a stricter accepted lexical domain.
+A dense matrix has rank `2`, followed by row and column counts as `uint64`.
+The element count is their mathematical product and must fit `uint64`. A
+validity bitmap covers elements in row-major order, followed by values in the
+same order. Empty dimensions use an empty bitmap and value sequence.
+
+## Sparse matrix
+
+Version 1 supports only `float64` compressed sparse row matrices. Rank `2` is
+followed by row count, column count, and stored nonzero count as `uint64`; then
+exactly `rows + 1` zero-based row offsets as `uint64`; one zero-based column
+index per stored value as `uint64`; and one canonical float word per value.
+
+The first offset is zero, offsets are nondecreasing and at most the nonzero
+count, and the final offset equals that count. Column indices are in range and
+strictly increase within each row. Sparse matrices have no validity bitmap.
+Duplicates, missing values, and stored positive or negative zero are invalid.
 
 ## Values
 
-- Vector `float64`: one IEEE 754 binary64 word per element. Negative zero becomes
-  positive zero, every NaN becomes `0x7ff8000000000000`, and invalid storage is
-  positive zero.
-- Vector `int64`: one two's-complement signed 64-bit word per element. Invalid storage
-  is zero.
-- Vector `string`: each element is a `uint64` UTF-8 byte length followed by those
-  bytes. An invalid element has length zero and no bytes; validity distinguishes
-  it from a valid empty string.
-- Vector `bool`: one LSB-first bitmap with the same length as the validity bitmap. A
-  bit is one exactly when the corresponding valid value is true. Invalid and
-  unused bits are zero.
+- `float64` is an IEEE 754 binary64 word in little-endian order. Negative zero
+  becomes positive zero, and every NaN becomes quiet NaN
+  `0x7ff8000000000000`. Invalid dense or vector storage is positive zero.
+- `int64` is a signed two's-complement little-endian word. Invalid storage is
+  zero.
+- `string` is a `uint64` UTF-8 byte length followed by the bytes. An invalid
+  string has length zero and no bytes; validity distinguishes it from a valid
+  empty string.
+- `bool` values are an LSB-first bitmap. Invalid and unused bits are zero.
 
-Clients hash this stream incrementally. They need not retain the encoded bytes.
+The validity bitmap always precedes the value area. For dense matrices, all
+value encodings use row-major logical order regardless of host layout.
+
+## Verification lifecycle
+
+A verification record identifies this version, digest algorithm `sha256`, and
+the lowercase digest of the complete stream. Records are append-only. A client
+uses a supported non-revoked record and reports the version and digest used.
+An approved erratum may revoke an incorrect record and append a replacement;
+it never changes earlier release bytes or dataset identity.

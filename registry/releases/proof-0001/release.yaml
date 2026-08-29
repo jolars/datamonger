@@ -1,4 +1,5 @@
 release: proof-0001
+sequence: 0
 repository: jolars/datamonger
 tag: registry-proof-0001
 

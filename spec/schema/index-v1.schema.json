@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://datamonger.dev/spec/schema/index-v1.schema.json",
+  "title": "Datamonger generated registry index version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "release", "defaults", "datasets"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "release": {"type": "string", "minLength": 1},
+    "defaults": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/identity"}
+    },
+    "datasets": {
+      "type": "array",
+      "items": {"$ref": "manifest-v1.schema.json"}
+    },
+    "errata": {
+      "type": "array",
+      "items": {"$ref": "erratum-v1.schema.json"}
+    }
+  },
+  "$defs": {
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "name", "version"],
+      "properties": {
+        "source": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+        "name": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+        "version": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._+-]*$"}
+      }
+    }
+  }
+}
