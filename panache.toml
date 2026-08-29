@@ -1,0 +1,3 @@
+flavor = "gfm"
+
+extend-exclude = ["AGENTS.md", "TODO.md"]
