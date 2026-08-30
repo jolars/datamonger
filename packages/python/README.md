@@ -16,14 +16,52 @@ heart = fetch_data("heart_scale", source="libsvm")
 ```
 
 Only the registry index is bundled; retrieving an uncached dataset artifact
-still requires network access. The same trusted selector is available as
-`BUNDLED_REGISTRY` when an application needs to record or pass it explicitly:
+still requires network access. The active registry is selected, in descending
+precedence, by a `registry=` argument, a session setting, the nearest project
+selector, and finally `BUNDLED_REGISTRY`. Updates are always explicit—none of
+these scopes resolves a floating release name.
+
+Pass a `Registry` for one call when the selection belongs to one operation:
 
 ```python
-from datamonger import BUNDLED_REGISTRY, fetch_data
+from datamonger import Registry, fetch_data
 
-iris = fetch_data("iris", source="uci", registry=BUNDLED_REGISTRY)
+registry = Registry(
+    release="2026.08",
+    index_sha256="0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    index_url="https://registry.example/2026.08/index.json",
+)
+iris = fetch_data("iris", source="uci", registry=registry)
 ```
+
+Use `set_registry(registry)` to keep that selector active for the Python
+session, and use `set_registry(None)` to clear it. `active_registry()` reports
+the selector that an unqualified call would use:
+
+```python
+from datamonger import active_registry, set_registry
+
+set_registry(registry)
+assert active_registry() == registry
+set_registry(None)
+```
+
+To pin a project, check the selector into `.datamonger/selector.json` at the
+project root:
+
+```json
+{
+  "release": "2026.08",
+  "index_sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  "index_url": "https://registry.example/2026.08/index.json"
+}
+```
+
+Datamonger searches from the current working directory toward the filesystem
+root and uses the nearest such file. A malformed project selector is an error;
+it never causes a fallback to another registry. The release and digest form the
+strong selector. The URL is only its retrieval location, and possession of a
+digest authenticates nothing beyond the channel from which the selector came.
 
 Delimited text returns a pandas data frame. LIBSVM returns a frozen
 `SparseDataset` containing a SciPy CSR feature matrix and a NumPy response

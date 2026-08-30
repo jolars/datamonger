@@ -187,7 +187,7 @@ def make_registry(
 
 
 def test_fetch_data_uses_bundled_registry_by_default(
-    monkeypatch: pytest.MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     selected: list[Registry] = []
 
@@ -197,6 +197,7 @@ def test_fetch_data_uses_bundled_registry_by_default(
 
     monkeypatch.setattr("datamonger._api.load_registry", record_registry)
 
+    monkeypatch.chdir(tmp_path)
     with pytest.raises(UnknownDatasetError, match="stop after registry selection"):
         fetch_data("iris", source="uci")
 
@@ -393,7 +394,7 @@ def test_malformed_registry_digest_cannot_be_used_as_a_cache_path(
         index_url=f"{base_url}/index.json",
     )
 
-    with pytest.raises(RegistryIntegrityError, match="invalid expected"):
+    with pytest.raises(RegistryIntegrityError, match="selector SHA-256"):
         fetch_data(
             "mixed",
             source="fixture",

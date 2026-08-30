@@ -68,7 +68,7 @@ decoder corpus is complete for activation in Milestone 3.
 ## Milestone 2: Python retrieval
 
 - [x] Bundle a registry snapshot and its trusted digest.
-- [ ] Support strong selectors per call, session, and project.
+- [x] Support strong selectors per call, session, and project.
 - [ ] Add explicit bare-release catalog lookup and expose the resolved digest.
 - [ ] Implement `fetch_artifact()` and deterministic location fallback.
 - [ ] Implement HTTP content-coding and transfer semantics from the specification.

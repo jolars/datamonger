@@ -9,6 +9,7 @@ from collections.abc import Mapping, Sequence
 from importlib.resources import files
 from pathlib import Path
 from typing import Any, cast
+from urllib.parse import urlsplit
 
 from datamonger._cache import verified_download
 from datamonger._errors import (
@@ -24,6 +25,7 @@ from datamonger._validate import require_array
 
 _IDENTIFIER = re.compile(r"[a-z0-9][a-z0-9._-]*\Z")
 _VERSION = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]*\Z")
+_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
 BUNDLED_REGISTRY = Registry(
     release="proof-0001",
@@ -37,6 +39,30 @@ BUNDLED_REGISTRY = Registry(
 
 def _require_array(value: object, field: str) -> Sequence[object]:
     return require_array(value, f"registry {field}", UnsupportedRegistryError)
+
+
+def validate_registry_selector(registry: Registry) -> None:
+    """Require the complete grammar of a strong registry selector."""
+
+    if not isinstance(registry.release, str) or not registry.release:
+        raise RegistryError("registry selector release must be a nonempty string")
+    if (
+        not isinstance(registry.index_sha256, str)
+        or _SHA256.fullmatch(registry.index_sha256) is None
+    ):
+        raise RegistryIntegrityError(
+            "registry selector SHA-256 must contain 64 lowercase hexadecimal digits"
+        )
+    if not isinstance(registry.index_url, str):
+        raise RegistryError("registry selector index URL must be an absolute URI")
+    try:
+        parsed_url = urlsplit(registry.index_url)
+    except ValueError as error:
+        raise RegistryError(
+            "registry selector index URL must be an absolute URI"
+        ) from error
+    if not parsed_url.scheme:
+        raise RegistryError("registry selector index URL must be an absolute URI")
 
 
 def bundled_registry_bytes() -> bytes:
@@ -86,6 +112,7 @@ def _registry_bytes(registry: Registry, cache_root: Path) -> bytes:
 def load_registry(registry: Registry, cache_root: Path) -> Mapping[str, Any]:
     """Fetch, verify, parse, and minimally validate a selected registry."""
 
+    validate_registry_selector(registry)
     try:
         parsed = json.loads(_registry_bytes(registry, cache_root))
     except (UnicodeDecodeError, json.JSONDecodeError) as error:

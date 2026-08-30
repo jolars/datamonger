@@ -27,7 +27,8 @@ from datamonger._models import (
     Pathish,
     Registry,
 )
-from datamonger._registry import BUNDLED_REGISTRY, load_registry, resolve_dataset
+from datamonger._registry import load_registry, resolve_dataset
+from datamonger._selection import active_registry
 from datamonger._validate import (
     require_array,
     require_integer,
@@ -169,7 +170,7 @@ def fetch_data(
     *,
     source: str,
     version: str | None = None,
-    registry: Registry = BUNDLED_REGISTRY,
+    registry: Registry | None = None,
     cache_dir: Pathish | None = None,
     verify_decoded: bool = True,
     return_info: Literal[False] = False,
@@ -182,7 +183,7 @@ def fetch_data(
     *,
     source: str,
     version: str | None = None,
-    registry: Registry = BUNDLED_REGISTRY,
+    registry: Registry | None = None,
     cache_dir: Pathish | None = None,
     verify_decoded: bool = True,
     return_info: Literal[True],
@@ -194,15 +195,19 @@ def fetch_data(
     *,
     source: str,
     version: str | None = None,
-    registry: Registry = BUNDLED_REGISTRY,
+    registry: Registry | None = None,
     cache_dir: Pathish | None = None,
     verify_decoded: bool = True,
     return_info: bool = False,
 ) -> DatasetData | FetchResult:
-    """Resolve, retrieve, verify, and decode one registered dataset."""
+    """Resolve, retrieve, verify, and decode one registered dataset.
+
+    An explicit registry overrides session and project selection.
+    """
 
     cache_root = Path(cache_dir) if cache_dir is not None else default_cache_root()
-    index = load_registry(registry, cache_root)
+    selected_registry = registry if registry is not None else active_registry()
+    index = load_registry(selected_registry, cache_root)
     dataset = resolve_dataset(index, source=source, name=name, version=version)
     resolved_version = _string(dataset.get("version"), "dataset.version")
     representation = _object(dataset.get("representation"), "dataset.representation")
@@ -248,8 +253,8 @@ def fetch_data(
     artifact_digest = _string(artifact.get("sha256"), "artifact SHA-256")
     info = FetchInfo(
         dataset_id=dataset_id,
-        registry_release=registry.release,
-        registry_index_sha256=registry.index_sha256,
+        registry_release=selected_registry.release,
+        registry_index_sha256=selected_registry.index_sha256,
         artifact_digests={artifact_name: artifact_digest},
         verification=verification,
         canonical_form=canonical_form,
