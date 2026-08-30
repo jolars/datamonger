@@ -4,22 +4,25 @@ This package is the Python reference client for Datamonger's normative draft
 contracts. Its public interfaces may change until specification revision 1 is
 independently certified.
 
-The current retrieval API requires an explicit strong registry selector:
+The client bundles the immutable `proof-0001` registry snapshot and verifies it
+against a trusted digest shipped in the package. It is the default registry, so
+the index remains available without network access:
 
 ```python
-from datamonger import Registry, fetch_data
+from datamonger import fetch_data
 
-registry = Registry(
-    release="proof-0001",
-    index_sha256="98cdbc7c8c795dcd021775de4c955c2442e6e1f2d7911e4c53b72327d90f6578",
-    index_url=(
-        "https://github.com/jolars/datamonger/releases/download/"
-        "registry-proof-0001/index.json"
-    ),
-)
+iris = fetch_data("iris", source="uci")
+heart = fetch_data("heart_scale", source="libsvm")
+```
 
-iris = fetch_data("iris", source="uci", registry=registry)
-heart = fetch_data("heart_scale", source="libsvm", registry=registry)
+Only the registry index is bundled; retrieving an uncached dataset artifact
+still requires network access. The same trusted selector is available as
+`BUNDLED_REGISTRY` when an application needs to record or pass it explicitly:
+
+```python
+from datamonger import BUNDLED_REGISTRY, fetch_data
+
+iris = fetch_data("iris", source="uci", registry=BUNDLED_REGISTRY)
 ```
 
 Delimited text returns a pandas data frame. LIBSVM returns a frozen

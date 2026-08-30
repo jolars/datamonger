@@ -27,7 +27,7 @@ from datamonger._models import (
     Pathish,
     Registry,
 )
-from datamonger._registry import load_registry, resolve_dataset
+from datamonger._registry import BUNDLED_REGISTRY, load_registry, resolve_dataset
 from datamonger._validate import (
     require_array,
     require_integer,
@@ -169,7 +169,7 @@ def fetch_data(
     *,
     source: str,
     version: str | None = None,
-    registry: Registry,
+    registry: Registry = BUNDLED_REGISTRY,
     cache_dir: Pathish | None = None,
     verify_decoded: bool = True,
     return_info: Literal[False] = False,
@@ -182,7 +182,7 @@ def fetch_data(
     *,
     source: str,
     version: str | None = None,
-    registry: Registry,
+    registry: Registry = BUNDLED_REGISTRY,
     cache_dir: Pathish | None = None,
     verify_decoded: bool = True,
     return_info: Literal[True],
@@ -194,7 +194,7 @@ def fetch_data(
     *,
     source: str,
     version: str | None = None,
-    registry: Registry,
+    registry: Registry = BUNDLED_REGISTRY,
     cache_dir: Pathish | None = None,
     verify_decoded: bool = True,
     return_info: bool = False,

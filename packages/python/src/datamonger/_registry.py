@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from collections.abc import Mapping, Sequence
+from importlib.resources import files
 from pathlib import Path
 from typing import Any, cast
 
@@ -23,13 +25,48 @@ from datamonger._validate import require_array
 _IDENTIFIER = re.compile(r"[a-z0-9][a-z0-9._-]*\Z")
 _VERSION = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]*\Z")
 
+BUNDLED_REGISTRY = Registry(
+    release="proof-0001",
+    index_sha256="98cdbc7c8c795dcd021775de4c955c2442e6e1f2d7911e4c53b72327d90f6578",
+    index_url=(
+        "https://github.com/jolars/datamonger/releases/download/"
+        "registry-proof-0001/index.json"
+    ),
+)
+
 
 def _require_array(value: object, field: str) -> Sequence[object]:
     return require_array(value, f"registry {field}", UnsupportedRegistryError)
 
 
-def load_registry(registry: Registry, cache_root: Path) -> Mapping[str, Any]:
-    """Fetch, verify, parse, and minimally validate a selected registry."""
+def bundled_registry_bytes() -> bytes:
+    """Read the registry snapshot installed with the Python package."""
+
+    try:
+        return files("datamonger._data").joinpath("index.json").read_bytes()
+    except OSError as error:
+        raise RegistryRetrievalError(
+            f"cannot read the bundled registry index: {error}"
+        ) from error
+
+
+def _is_bundled_selector(registry: Registry) -> bool:
+    return (
+        registry.release == BUNDLED_REGISTRY.release
+        and registry.index_sha256 == BUNDLED_REGISTRY.index_sha256
+    )
+
+
+def _registry_bytes(registry: Registry, cache_root: Path) -> bytes:
+    if _is_bundled_selector(registry):
+        contents = bundled_registry_bytes()
+        actual = hashlib.sha256(contents).hexdigest()
+        if actual != registry.index_sha256:
+            raise RegistryIntegrityError(
+                "bundled registry SHA-256 mismatch: "
+                f"expected {registry.index_sha256}, received {actual}"
+            )
+        return contents
 
     index_path = verified_download(
         cache_root=cache_root,
@@ -41,8 +78,17 @@ def load_registry(registry: Registry, cache_root: Path) -> Mapping[str, Any]:
         retrieval_error=RegistryRetrievalError,
     )
     try:
-        parsed = json.loads(index_path.read_bytes())
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        return index_path.read_bytes()
+    except OSError as error:
+        raise RegistryError(f"cannot read verified registry index: {error}") from error
+
+
+def load_registry(registry: Registry, cache_root: Path) -> Mapping[str, Any]:
+    """Fetch, verify, parse, and minimally validate a selected registry."""
+
+    try:
+        parsed = json.loads(_registry_bytes(registry, cache_root))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
         raise RegistryError(
             f"verified registry index is invalid JSON: {error}"
         ) from error

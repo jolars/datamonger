@@ -23,7 +23,13 @@ from conftest import (
 )
 from scipy import sparse
 
-from datamonger import FetchResult, Registry, SparseDataset, fetch_data
+from datamonger import (
+    BUNDLED_REGISTRY,
+    FetchResult,
+    Registry,
+    SparseDataset,
+    fetch_data,
+)
 from datamonger.errors import (
     ArtifactIntegrityError,
     DecodedIntegrityError,
@@ -178,6 +184,23 @@ def make_registry(
         index_sha256=hashlib.sha256(index_bytes).hexdigest(),
         index_url=f"{base_url}/index.json",
     )
+
+
+def test_fetch_data_uses_bundled_registry_by_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    selected: list[Registry] = []
+
+    def record_registry(registry: Registry, cache_root: Path) -> dict[str, object]:
+        selected.append(registry)
+        raise UnknownDatasetError("stop after registry selection")
+
+    monkeypatch.setattr("datamonger._api.load_registry", record_registry)
+
+    with pytest.raises(UnknownDatasetError, match="stop after registry selection"):
+        fetch_data("iris", source="uci")
+
+    assert selected == [BUNDLED_REGISTRY]
 
 
 def add_libsvm_dataset(

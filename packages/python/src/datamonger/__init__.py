@@ -8,8 +8,10 @@ from datamonger._models import (
     Registry,
     SparseDataset,
 )
+from datamonger._registry import BUNDLED_REGISTRY
 
 __all__ = [
+    "BUNDLED_REGISTRY",
     "DatasetData",
     "FetchInfo",
     "FetchResult",
