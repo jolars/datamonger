@@ -110,6 +110,69 @@ def test_valid_release_builds_and_validates_generated_documents(tmp_path: Path) 
     assert index["datasets"][0]["source"] == "uci"
 
 
+def write_release_outputs(release_path: Path, root: Path) -> None:
+    index_bytes, selector_bytes = dm_index.build(release_path, root=root)
+    (release_path.parent / "index.json").write_bytes(index_bytes)
+    (release_path.parent / "selector.json").write_bytes(selector_bytes)
+
+
+def test_catalog_is_generated_deterministically_from_release_selectors(
+    tmp_path: Path,
+) -> None:
+    prepare_root(tmp_path)
+    releases = tmp_path / "registry/releases"
+    first_root = releases / "z-release"
+    second_root = releases / "a-release"
+    first_root.mkdir(parents=True)
+    second_root.mkdir()
+    first_path = make_release(
+        tmp_path,
+        [make_manifest()],
+        [default()],
+        release="z-release",
+        sequence=0,
+    )
+    first_path.replace(first_root / "release.yaml")
+    write_release_outputs(first_root / "release.yaml", tmp_path)
+    second_path = make_release(
+        tmp_path,
+        [make_manifest()],
+        [default()],
+        release="a-release",
+        sequence=1,
+    )
+    second_path.replace(second_root / "release.yaml")
+    write_release_outputs(second_root / "release.yaml", tmp_path)
+
+    contents = dm_index.build_catalog(root=tmp_path)
+    catalog = json.loads(contents)
+
+    assert contents.endswith(b"\n")
+    assert [release["release"] for release in catalog["releases"]] == [
+        "a-release",
+        "z-release",
+    ]
+    dm_index._validate_schema(
+        catalog,
+        "catalog-v1.schema.json",
+        tmp_path / "spec/schema",
+        "catalog",
+    )
+
+
+def test_catalog_generation_rejects_stale_release_outputs(tmp_path: Path) -> None:
+    prepare_root(tmp_path)
+    release_root = tmp_path / "registry/releases/release"
+    release_root.mkdir(parents=True)
+    release_path = make_release(tmp_path, [make_manifest()], [default()])
+    release_path.replace(release_root / "release.yaml")
+    write_release_outputs(release_root / "release.yaml", tmp_path)
+    (release_root / "selector.json").write_bytes(b"stale")
+
+    with pytest.raises(ValueError, match="release selector is stale"):
+        dm_index.build_catalog(root=tmp_path)
+
+
 def test_equivalent_source_trees_generate_identical_bytes(tmp_path: Path) -> None:
     first = tmp_path / "first"
     second = tmp_path / "second"
@@ -459,6 +522,9 @@ def test_cli_resolves_release_against_alternate_root(
     )
     (release_root / "index.json").write_bytes(index_bytes)
     (release_root / "selector.json").write_bytes(selector_bytes)
+    (tmp_path / "registry/catalog.json").write_bytes(
+        dm_index.build_catalog(root=tmp_path)
+    )
     arguments = ["dm-index", "check"]
     if explicit_release:
         arguments.append("registry/releases/proof-0001/release.yaml")
@@ -466,6 +532,65 @@ def test_cli_resolves_release_against_alternate_root(
     monkeypatch.setattr("sys.argv", arguments)
 
     assert dm_index.main() == 0
+
+
+def test_cli_build_refreshes_production_catalog(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    prepare_root(tmp_path)
+    release_root = tmp_path / "registry/releases/proof-0001"
+    release_root.mkdir(parents=True)
+    release_path = make_release(
+        tmp_path,
+        [make_manifest()],
+        [default()],
+        release="proof-0001",
+    )
+    release_path.replace(release_root / "release.yaml")
+    arguments = [
+        "dm-index",
+        "build",
+        "registry/releases/proof-0001/release.yaml",
+        "--root",
+        str(tmp_path),
+    ]
+    monkeypatch.setattr("sys.argv", arguments)
+
+    assert dm_index.main() == 0
+    assert (
+        json.loads((tmp_path / "registry/catalog.json").read_bytes())["releases"][0][
+            "release"
+        ]
+        == "proof-0001"
+    )
+
+
+def test_cli_check_reports_stale_production_catalog(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    prepare_root(tmp_path)
+    release_root = tmp_path / "registry/releases/proof-0001"
+    release_root.mkdir(parents=True)
+    release_path = make_release(
+        tmp_path,
+        [make_manifest()],
+        [default()],
+        release="proof-0001",
+    )
+    release_path.replace(release_root / "release.yaml")
+    write_release_outputs(release_root / "release.yaml", tmp_path)
+    (tmp_path / "registry/catalog.json").write_bytes(b"stale")
+    arguments = [
+        "dm-index",
+        "check",
+        "registry/releases/proof-0001/release.yaml",
+        "--root",
+        str(tmp_path),
+    ]
+    monkeypatch.setattr("sys.argv", arguments)
+
+    assert dm_index.main() == 1
+    assert "generated file is stale" in capsys.readouterr().err
 
 
 def test_changed_existing_output_is_never_overwritten(tmp_path: Path) -> None:

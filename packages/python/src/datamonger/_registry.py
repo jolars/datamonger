@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import hashlib
+import http.client
 import json
 import re
+import urllib.error
+import urllib.request
 from collections.abc import Mapping, Sequence
 from importlib.resources import files
 from pathlib import Path
@@ -26,6 +29,11 @@ from datamonger._validate import require_array
 _IDENTIFIER = re.compile(r"[a-z0-9][a-z0-9._-]*\Z")
 _VERSION = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]*\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
+_CATALOG_FIELDS = {"schema_version", "releases"}
+_SELECTOR_FIELDS = {"release", "index_sha256", "index_url"}
+_DEFAULT_CATALOG_URL = (
+    "https://raw.githubusercontent.com/jolars/datamonger/main/registry/catalog.json"
+)
 
 BUNDLED_REGISTRY = Registry(
     release="proof-0001",
@@ -63,6 +71,90 @@ def validate_registry_selector(registry: Registry) -> None:
         ) from error
     if not parsed_url.scheme:
         raise RegistryError("registry selector index URL must be an absolute URI")
+
+
+def _is_https_url(value: object) -> bool:
+    if not isinstance(value, str):
+        return False
+    try:
+        parsed_url = urlsplit(value)
+    except ValueError:
+        return False
+    return parsed_url.scheme == "https" and bool(parsed_url.netloc)
+
+
+def _catalog_bytes(catalog_url: str) -> bytes:
+    if not _is_https_url(catalog_url):
+        raise RegistryError("registry catalog URL must be an absolute HTTPS URL")
+
+    request = urllib.request.Request(
+        catalog_url, headers={"Accept-Encoding": "identity"}
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            final_url = response.geturl()
+            if not _is_https_url(final_url):
+                raise RegistryRetrievalError(
+                    f"catalog request redirected to a non-HTTPS URL: {final_url}"
+                )
+            return cast(bytes, response.read())
+    except (OSError, urllib.error.URLError, http.client.HTTPException) as error:
+        raise RegistryRetrievalError(
+            f"cannot retrieve catalog {catalog_url}: {error}"
+        ) from error
+
+
+def resolve_registry(
+    release: str, *, catalog_url: str = _DEFAULT_CATALOG_URL
+) -> Registry:
+    """Resolve a bare release through a TLS-trusted HTTPS catalog lookup."""
+
+    if not isinstance(release, str) or not release:
+        raise RegistryError("registry release must be a nonempty string")
+    try:
+        parsed = json.loads(_catalog_bytes(catalog_url).decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise RegistryError(
+            f"registry catalog contains invalid JSON: {error}"
+        ) from error
+    if not isinstance(parsed, Mapping):
+        raise RegistryError("registry catalog must be a JSON object")
+    if parsed.get("schema_version") != 1:
+        raise UnsupportedRegistryError(
+            f"unsupported registry catalog schema {parsed.get('schema_version')!r}"
+        )
+    if set(parsed) != _CATALOG_FIELDS:
+        raise RegistryError(
+            "registry catalog must contain exactly schema_version and releases"
+        )
+
+    selectors: dict[str, Registry] = {}
+    for raw_selector in _require_array(parsed.get("releases"), "catalog releases"):
+        if not isinstance(raw_selector, Mapping):
+            raise RegistryError("registry catalog selector must be a JSON object")
+        if set(raw_selector) != _SELECTOR_FIELDS:
+            raise RegistryError(
+                "registry catalog selector must contain exactly release, "
+                "index_sha256, and index_url"
+            )
+        if not all(isinstance(raw_selector[field], str) for field in _SELECTOR_FIELDS):
+            raise RegistryError("registry catalog selector fields must be strings")
+        selector = Registry(
+            release=cast(str, raw_selector["release"]),
+            index_sha256=cast(str, raw_selector["index_sha256"]),
+            index_url=cast(str, raw_selector["index_url"]),
+        )
+        validate_registry_selector(selector)
+        if selector.release in selectors:
+            raise RegistryError(
+                f"registry catalog contains duplicate release {selector.release!r}"
+            )
+        selectors[selector.release] = selector
+
+    try:
+        return selectors[release]
+    except KeyError as error:
+        raise RegistryError(f"unknown registry release {release!r}") from error
 
 
 def bundled_registry_bytes() -> bytes:

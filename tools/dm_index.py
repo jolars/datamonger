@@ -698,6 +698,52 @@ def build(release_path: Path, *, root: Path | None = None) -> tuple[bytes, bytes
     return index_bytes, _json_bytes(selector)
 
 
+def build_catalog(*, root: Path | None = None) -> bytes:
+    """Return the deterministic catalog for validated production releases."""
+
+    source_root = (root or ROOT).resolve()
+    schema_directory = source_root / "spec" / "schema"
+    release_paths = sorted(
+        (source_root / "registry" / "releases").glob("*/release.yaml")
+    )
+    if not release_paths:
+        raise ValueError("registry catalog requires at least one release")
+
+    selectors: list[Mapping[str, Any]] = []
+    release_names: set[str] = set()
+    for release_path in release_paths:
+        index_bytes, selector_bytes = build(release_path, root=source_root)
+        index_path = release_path.parent / "index.json"
+        selector_path = release_path.parent / "selector.json"
+        if not index_path.is_file() or index_path.read_bytes() != index_bytes:
+            raise ValueError(f"release index is stale: {index_path}")
+        if not selector_path.is_file() or selector_path.read_bytes() != selector_bytes:
+            raise ValueError(f"release selector is stale: {selector_path}")
+        selector = _load_json(selector_path)
+        _validate_schema(
+            selector,
+            "selector-v1.schema.json",
+            schema_directory,
+            str(selector_path),
+        )
+        release = _string(selector.get("release"), "selector.release")
+        if release in release_names:
+            raise ValueError(f"duplicate catalog release {release!r}")
+        release_names.add(release)
+        selectors.append(selector)
+
+    catalog = {
+        "schema_version": 1,
+        "releases": sorted(
+            selectors, key=lambda selector: cast(str, selector["release"])
+        ),
+    }
+    _validate_schema(
+        catalog, "catalog-v1.schema.json", schema_directory, "generated catalog"
+    )
+    return _json_bytes(catalog)
+
+
 def _write_or_check(path: Path, expected: bytes, check: bool) -> bool:
     if path.exists():
         if path.read_bytes() != expected:
@@ -708,6 +754,17 @@ def _write_or_check(path: Path, expected: bytes, check: bool) -> bool:
         return True
     if check:
         print(f"generated file is missing: {path}", file=sys.stderr)
+        return False
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(expected)
+    return True
+
+
+def _write_generated(path: Path, expected: bytes, check: bool) -> bool:
+    if path.exists() and path.read_bytes() == expected:
+        return True
+    if check:
+        print(f"generated file is stale: {path}", file=sys.stderr)
         return False
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(expected)
@@ -739,6 +796,14 @@ def main() -> int:
         current &= _write_or_check(
             release_path.parent / "selector.json", selector_bytes, check
         )
+        if (
+            current
+            and release_path.parent.parent == source_root / "registry" / "releases"
+        ):
+            catalog_bytes = build_catalog(root=source_root)
+            current &= _write_generated(
+                source_root / "registry" / "catalog.json", catalog_bytes, check
+            )
     except (OSError, ValueError) as error:
         print(f"dm-index: {error}", file=sys.stderr)
         return 2

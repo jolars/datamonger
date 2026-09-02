@@ -21,6 +21,25 @@ precedence, by a `registry=` argument, a session setting, the nearest project
 selector, and finally `BUNDLED_REGISTRY`. Updates are always explicit—none of
 these scopes resolves a floating release name.
 
+To discover a published selector by its bare release name, make an explicit
+catalog lookup:
+
+```python
+from datamonger import fetch_data, resolve_registry
+
+registry = resolve_registry("2026.09")
+print(registry.index_sha256)
+iris = fetch_data("iris", source="uci", registry=registry)
+```
+
+`resolve_registry()` reads the mutable catalog over HTTPS and returns a frozen
+`Registry` containing the resolved release, index digest, and index URL. The
+lookup is trusted only as strongly as that TLS session. Record and reuse the
+returned selector when reproducibility matters; looking up the same bare name
+again is not a cryptographic pin. The API accepts a custom HTTPS `catalog_url`
+for alternate registries. It does not support floating aliases such as
+`latest`.
+
 Pass a `Registry` for one call when the selection belongs to one operation:
 
 ```python

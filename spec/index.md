@@ -56,6 +56,20 @@ output is permitted; replacing an existing output with different bytes is an
 immutable-release failure. Check mode performs all validation and byte
 comparisons without writing.
 
+## Release catalog
+
+The HTTPS release catalog is a mutable convenience index validated by
+`schema/catalog-v1.schema.json`. It contains `schema_version`, equal to `1`, and
+`releases`, an array of strong selector records. Release identifiers are unique,
+and records are sorted by `release` under the deterministic serialization rules
+above. A catalog contains no floating aliases such as `latest`.
+
+The catalog is regenerated from validated immutable release outputs. Unlike an
+index or selector, it changes when a release is added. Resolving a bare release
+through it is therefore TLS-trusted discovery; the resulting selector becomes
+reproducible only when its release, digest, and index URL are recorded and
+reused without another catalog lookup.
+
 ## Release comparison
 
 Before generating a candidate, `dm-index` compares every repeated dataset

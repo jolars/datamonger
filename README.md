@@ -25,6 +25,10 @@ cd packages/python
 uv run python ../../tools/dm_index.py check
 ```
 
+For production releases, the command also checks the generated HTTPS release
+catalog at `registry/catalog.json`. Building a production release refreshes the
+catalog after writing its immutable index and selector.
+
 ## Vertical-proof registry
 
 The legacy prerelease `proof-0001` registry contains UCI Iris and LIBSVM

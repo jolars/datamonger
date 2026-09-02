@@ -8,7 +8,7 @@ from datamonger._models import (
     Registry,
     SparseDataset,
 )
-from datamonger._registry import BUNDLED_REGISTRY
+from datamonger._registry import BUNDLED_REGISTRY, resolve_registry
 from datamonger._selection import active_registry, set_registry
 
 __all__ = [
@@ -20,5 +20,6 @@ __all__ = [
     "SparseDataset",
     "active_registry",
     "fetch_data",
+    "resolve_registry",
     "set_registry",
 ]
