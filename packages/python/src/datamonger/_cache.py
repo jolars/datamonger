@@ -10,7 +10,7 @@ import tempfile
 import urllib.error
 import urllib.request
 import zlib
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from contextlib import suppress
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -21,6 +21,7 @@ from datamonger._errors import CacheError, DatamongerError, RetrievalError
 
 _CHUNK_SIZE = 1024 * 1024
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
+_HTTP_TOKEN = re.compile(r"[!#$%&'*+.^_`|~0-9A-Za-z-]+\Z")
 _NAMESPACES = {"objects", "registries"}
 
 
@@ -41,24 +42,67 @@ def _matches(path: Path, digest: str, size: int | None) -> bool:
 
 
 def _content_decoder(
-    header: str | None,
+    headers: Sequence[str],
     url: str,
     retrieval_error: Callable[[str], DatamongerError],
 ) -> zlib._Decompress | None:
     """Return a decompressor for the declared content codings, if any."""
 
-    if header is None:
+    if not headers:
         return None
-    codings = [coding.strip().lower() for coding in header.split(",")]
-    codings = [coding for coding in codings if coding not in {"", "identity"}]
-    if not codings:
+    header = ", ".join(headers)
+    codings = [coding.strip() for value in headers for coding in value.split(",")]
+    if any(_HTTP_TOKEN.fullmatch(coding) is None for coding in codings):
+        raise retrieval_error(f"malformed HTTP content coding {header!r} from {url}")
+    non_identity = [
+        coding.lower() for coding in codings if coding.lower() != "identity"
+    ]
+    if len(non_identity) > 1:
+        raise retrieval_error(f"multiple HTTP content codings {header!r} from {url}")
+    if not non_identity:
         return None
     # The artifact is defined as the content after the declared codings are
     # removed. We undo gzip because CDNs apply it despite Accept-Encoding:
     # identity; anything else stays unsupported rather than guessed at.
-    if codings in (["gzip"], ["x-gzip"]):
+    if non_identity[0] in {"gzip", "x-gzip"}:
         return zlib.decompressobj(16 + zlib.MAX_WBITS)
     raise retrieval_error(f"unsupported HTTP content coding {header!r} from {url}")
+
+
+def _content_length(
+    headers: Sequence[str],
+    url: str,
+    retrieval_error: Callable[[str], DatamongerError],
+) -> int | None:
+    """Validate and return the response's encoded content length."""
+
+    if not headers:
+        return None
+    values = [value.strip() for header in headers for value in header.split(",")]
+    if any(not value.isascii() or not value.isdecimal() for value in values):
+        raise retrieval_error(f"malformed HTTP Content-Length from {url}")
+    lengths = {int(value) for value in values}
+    if len(lengths) != 1:
+        raise retrieval_error(f"conflicting HTTP Content-Length values from {url}")
+    return lengths.pop()
+
+
+def _has_transfer_coding(
+    headers: Sequence[str],
+    url: str,
+    retrieval_error: Callable[[str], DatamongerError],
+) -> bool:
+    """Validate transfer coding handled by the HTTP stack."""
+
+    if not headers:
+        return False
+    codings = [
+        coding.strip().lower() for value in headers for coding in value.split(",")
+    ]
+    if codings != ["chunked"]:
+        header = ", ".join(headers)
+        raise retrieval_error(f"unsupported HTTP transfer coding {header!r} from {url}")
+    return True
 
 
 def _unlink(path: Path) -> None:
@@ -109,14 +153,27 @@ def verified_download(
         request = urllib.request.Request(url, headers={"Accept-Encoding": "identity"})
         with urllib.request.urlopen(request, timeout=30) as response:
             decoder = _content_decoder(
-                response.headers.get("Content-Encoding"), url, retrieval_error
+                response.headers.get_all("Content-Encoding", []), url, retrieval_error
             )
+            has_transfer_coding = _has_transfer_coding(
+                response.headers.get_all("Transfer-Encoding", []),
+                url,
+                retrieval_error,
+            )
+            encoded_size = None
+            if not has_transfer_coding:
+                encoded_size = _content_length(
+                    response.headers.get_all("Content-Length", []),
+                    url,
+                    retrieval_error,
+                )
             with tempfile.NamedTemporaryFile(
                 mode="wb", dir=target.parent, prefix=".download-", delete=False
             ) as temporary:
                 temporary_path = Path(temporary.name)
                 actual = hashlib.sha256()
                 count = 0
+                encoded_count = 0
 
                 # Hash and size-check the decoded stream: the artifact is the
                 # content after HTTP content codings are removed.
@@ -132,11 +189,27 @@ def verified_download(
                         )
 
                 while chunk := response.read(_CHUNK_SIZE):
-                    emit(decoder.decompress(chunk) if decoder else chunk)
+                    encoded_count += len(chunk)
+                    if decoder is None:
+                        emit(chunk)
+                        continue
+                    compressed = chunk
+                    while compressed:
+                        emit(decoder.decompress(compressed, _CHUNK_SIZE))
+                        if decoder.unused_data:
+                            raise retrieval_error(f"data after gzip stream from {url}")
+                        compressed = decoder.unconsumed_tail
                 if decoder is not None:
                     emit(decoder.flush())
                     if not decoder.eof:
                         raise retrieval_error(f"truncated gzip content from {url}")
+                    if decoder.unused_data:
+                        raise retrieval_error(f"data after gzip stream from {url}")
+                if encoded_size is not None and encoded_count != encoded_size:
+                    raise retrieval_error(
+                        f"truncated HTTP content from {url}: expected "
+                        f"{encoded_size} bytes, received {encoded_count}"
+                    )
                 temporary.flush()
                 os.fsync(temporary.fileno())
 

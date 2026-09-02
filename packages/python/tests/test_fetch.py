@@ -45,9 +45,12 @@ from datamonger.errors import (
 @dataclass
 class ServerState:
     bodies: dict[str, bytes] = field(default_factory=dict)
-    headers: dict[str, dict[str, str]] = field(default_factory=dict)
+    headers: dict[str, dict[str, str | list[str]]] = field(default_factory=dict)
     online: bool = True
     requests: list[tuple[str, str | None]] = field(default_factory=list)
+    chunked: set[str] = field(default_factory=set)
+    redirects: dict[str, str] = field(default_factory=dict)
+    truncate_content_length: set[str] = field(default_factory=set)
     truncate_chunked: set[str] = field(default_factory=set)
 
 
@@ -58,6 +61,12 @@ def local_server() -> Iterator[tuple[str, ServerState]]:
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:
             state.requests.append((self.path, self.headers.get("Accept-Encoding")))
+            if self.path in state.redirects:
+                self.send_response(302)
+                self.send_header("Location", state.redirects[self.path])
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
             if self.path in state.truncate_chunked:
                 # Promise a chunk and close mid-stream so the client sees an
                 # http.client.IncompleteRead.
@@ -72,10 +81,30 @@ def local_server() -> Iterator[tuple[str, ServerState]]:
                 self.send_error(503)
                 return
             body = state.bodies[self.path]
+            if self.path in state.chunked:
+                self.protocol_version = "HTTP/1.1"
+                self.send_response(200)
+                self.send_header("Transfer-Encoding", "chunked")
+                for name, value in state.headers.get(self.path, {}).items():
+                    for item in value if isinstance(value, list) else [value]:
+                        self.send_header(name, item)
+                self.end_headers()
+                midpoint = len(body) // 2
+                for chunk in (body[:midpoint], body[midpoint:]):
+                    self.wfile.write(f"{len(chunk):x}\r\n".encode())
+                    self.wfile.write(chunk + b"\r\n")
+                self.wfile.write(b"0\r\n\r\n")
+                return
             self.send_response(200)
-            self.send_header("Content-Length", str(len(body)))
+            content_length = (
+                len(body) + 1
+                if self.path in state.truncate_content_length
+                else len(body)
+            )
+            self.send_header("Content-Length", str(content_length))
             for name, value in state.headers.get(self.path, {}).items():
-                self.send_header(name, value)
+                for item in value if isinstance(value, list) else [value]:
+                    self.send_header(name, item)
             self.end_headers()
             self.wfile.write(body)
 
@@ -552,6 +581,136 @@ def test_declared_gzip_content_coding_is_removed_before_hashing(
     assert (tmp_path / "objects" / "sha256" / digest).read_bytes() == artifact
 
 
+def test_gzip_content_is_decoded_and_hashed_incrementally(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    make_registry(base_url, state)
+    artifact = b"a" * (2 * 1024 * 1024 + 17)
+    state.bodies["/mixed.csv"] = gzip.compress(artifact)
+    state.headers["/mixed.csv"] = {"Content-Encoding": "gzip"}
+    index = json.loads(state.bodies["/index.json"])
+    record = index["datasets"][0]["artifacts"][0]
+    record["size"] = len(artifact)
+    record["sha256"] = hashlib.sha256(artifact).hexdigest()
+    registry = _reseal_index(base_url, state, index)
+
+    path = fetch_artifact(
+        "mixed", source="fixture", registry=registry, cache_dir=tmp_path
+    )
+
+    assert path.read_bytes() == artifact
+
+
+@pytest.mark.parametrize("coding", ["identity", "IDENTITY"])
+def test_identity_content_coding_preserves_artifact_bytes(
+    coding: str,
+    local_server: tuple[str, ServerState],
+    tmp_path: Path,
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+    state.headers["/mixed.csv"] = {"Content-Encoding": coding}
+
+    path = fetch_artifact(
+        "mixed", source="fixture", registry=registry, cache_dir=tmp_path
+    )
+
+    assert path.read_bytes() == FIXTURE.read_bytes()
+
+
+@pytest.mark.parametrize("coding", ["x-gzip", "identity, gzip", "gzip, identity"])
+def test_single_non_identity_gzip_coding_is_removed_before_hashing(
+    coding: str,
+    local_server: tuple[str, ServerState],
+    tmp_path: Path,
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+    artifact = FIXTURE.read_bytes()
+    state.bodies["/mixed.csv"] = gzip.compress(artifact)
+    state.headers["/mixed.csv"] = {"Content-Encoding": coding}
+
+    path = fetch_artifact(
+        "mixed", source="fixture", registry=registry, cache_dir=tmp_path
+    )
+
+    assert path.read_bytes() == artifact
+
+
+@pytest.mark.parametrize(
+    "coding",
+    ["", ",gzip", "gzip,", "gzip,,identity", "gzip; level=1"],
+)
+def test_malformed_content_coding_is_rejected(
+    coding: str,
+    local_server: tuple[str, ServerState],
+    tmp_path: Path,
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+    state.headers["/mixed.csv"] = {"Content-Encoding": coding}
+
+    with pytest.raises(RetrievalError, match="malformed HTTP content coding"):
+        fetch_artifact("mixed", source="fixture", registry=registry, cache_dir=tmp_path)
+
+
+@pytest.mark.parametrize(
+    "coding",
+    ["gzip, gzip", "gzip, x-gzip", ["gzip", "gzip"]],
+    ids=["one-field", "aliases", "multiple-fields"],
+)
+def test_multiply_declared_content_coding_is_rejected(
+    coding: str | list[str],
+    local_server: tuple[str, ServerState],
+    tmp_path: Path,
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+    state.headers["/mixed.csv"] = {"Content-Encoding": coding}
+
+    with pytest.raises(RetrievalError, match="multiple HTTP content codings"):
+        fetch_artifact("mixed", source="fixture", registry=registry, cache_dir=tmp_path)
+
+
+@pytest.mark.parametrize("mode", ["malformed", "truncated"])
+def test_invalid_gzip_content_coding_stream_is_rejected(
+    mode: str,
+    local_server: tuple[str, ServerState],
+    tmp_path: Path,
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+    coded = gzip.compress(FIXTURE.read_bytes())
+    state.bodies["/mixed.csv"] = b"not gzip" if mode == "malformed" else coded[:-1]
+    state.headers["/mixed.csv"] = {"Content-Encoding": "gzip"}
+
+    with pytest.raises(RetrievalError, match=r"cannot retrieve|truncated gzip"):
+        fetch_artifact("mixed", source="fixture", registry=registry, cache_dir=tmp_path)
+
+
+@pytest.mark.parametrize(
+    "coded",
+    [
+        gzip.compress(FIXTURE.read_bytes()) + gzip.compress(b"extra"),
+        gzip.compress(FIXTURE.read_bytes()) + b"trailing garbage",
+    ],
+    ids=["concatenated", "trailing-data"],
+)
+def test_gzip_content_coding_rejects_data_after_the_first_stream(
+    coded: bytes,
+    local_server: tuple[str, ServerState],
+    tmp_path: Path,
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+    state.bodies["/mixed.csv"] = coded
+    state.headers["/mixed.csv"] = {"Content-Encoding": "gzip"}
+
+    with pytest.raises(RetrievalError, match="data after gzip stream"):
+        fetch_artifact("mixed", source="fixture", registry=registry, cache_dir=tmp_path)
+
+
 def test_unknown_content_coding_is_rejected(
     local_server: tuple[str, ServerState], tmp_path: Path
 ) -> None:
@@ -582,6 +741,83 @@ def test_truncated_chunked_response_is_a_retrieval_error(
             registry=registry,
             cache_dir=tmp_path,
         )
+
+
+def test_chunked_transfer_framing_is_removed_before_hashing(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+    state.chunked.add("/mixed.csv")
+
+    path = fetch_artifact(
+        "mixed", source="fixture", registry=registry, cache_dir=tmp_path
+    )
+
+    assert path.read_bytes() == FIXTURE.read_bytes()
+
+
+def test_chunked_transfer_framing_precedes_content_decoding(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+    artifact = FIXTURE.read_bytes()
+    state.bodies["/mixed.csv"] = gzip.compress(artifact)
+    state.headers["/mixed.csv"] = {"Content-Encoding": "gzip"}
+    state.chunked.add("/mixed.csv")
+
+    path = fetch_artifact(
+        "mixed", source="fixture", registry=registry, cache_dir=tmp_path
+    )
+
+    assert path.read_bytes() == artifact
+
+
+def test_redirected_response_uses_final_coding_and_identity_request(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+    artifact = FIXTURE.read_bytes()
+    state.redirects["/mixed.csv"] = "/redirected.csv"
+    state.bodies["/redirected.csv"] = gzip.compress(artifact)
+    state.headers["/redirected.csv"] = {"Content-Encoding": "gzip"}
+
+    path = fetch_artifact(
+        "mixed", source="fixture", registry=registry, cache_dir=tmp_path
+    )
+
+    assert path.read_bytes() == artifact
+    assert state.requests[-2:] == [
+        ("/mixed.csv", "identity"),
+        ("/redirected.csv", "identity"),
+    ]
+
+
+def test_truncated_content_length_response_is_a_retrieval_error(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+    state.truncate_content_length.add("/mixed.csv")
+
+    with pytest.raises(RetrievalError, match="truncated HTTP content"):
+        fetch_artifact("mixed", source="fixture", registry=registry, cache_dir=tmp_path)
+
+
+@pytest.mark.parametrize("coding", ["br", "gzip, chunked", "chunked, chunked"])
+def test_unsupported_transfer_coding_is_rejected(
+    coding: str,
+    local_server: tuple[str, ServerState],
+    tmp_path: Path,
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+    state.headers["/mixed.csv"] = {"Transfer-Encoding": coding}
+
+    with pytest.raises(RetrievalError, match="unsupported HTTP transfer coding"):
+        fetch_artifact("mixed", source="fixture", registry=registry, cache_dir=tmp_path)
 
 
 def _reseal_index(base_url: str, state: ServerState, index: dict[str, Any]) -> Registry:
@@ -723,6 +959,29 @@ def test_retrieval_falls_back_across_download_locations(
 
     assert isinstance(result, FetchResult)
     assert result.info.verification == "decoded"
+
+
+def test_retrieval_falls_back_after_invalid_content_coding(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    make_registry(base_url, state)
+    state.bodies["/bad-coding.csv"] = FIXTURE.read_bytes()
+    state.headers["/bad-coding.csv"] = {"Content-Encoding": "br"}
+    index = json.loads(state.bodies["/index.json"])
+    downloads = index["datasets"][0]["artifacts"][0]["downloads"]
+    downloads.insert(0, {"kind": "upstream", "url": f"{base_url}/bad-coding.csv"})
+    registry = _reseal_index(base_url, state, index)
+
+    path = fetch_artifact(
+        "mixed", source="fixture", registry=registry, cache_dir=tmp_path
+    )
+
+    assert path.read_bytes() == FIXTURE.read_bytes()
+    assert [request for request, _ in state.requests[-2:]] == [
+        "/bad-coding.csv",
+        "/mixed.csv",
+    ]
 
 
 def test_final_error_distinguishes_integrity_failure_from_unavailability(

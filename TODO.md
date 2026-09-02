@@ -71,7 +71,7 @@ decoder corpus is complete for activation in Milestone 3.
 - [x] Support strong selectors per call, session, and project.
 - [x] Add explicit bare-release catalog lookup and expose the resolved digest.
 - [x] Implement `fetch_artifact()` and deterministic location fallback.
-- [ ] Implement HTTP content-coding and transfer semantics from the specification.
+- [x] Implement HTTP content-coding and transfer semantics from the specification.
 - [ ] Add concurrent publisher, reader, and cleaner leases with crash recovery.
 - [ ] Implement offline behavior, `cache_info()`, and `cache_clean()`.
 - [ ] Complete the shared semantic error taxonomy and hermetic HTTP simulations.
