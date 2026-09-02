@@ -48,7 +48,7 @@ select = ["B", "E", "F", "I", "RUF", "SIM", "UP"]
 
 [tool.mypy]
 strict = true
-files = ["src/datamonger", "../../tools/dm_index.py"]
+files = ["src/datamonger", "tests/typing", "../../tools/dm_index.py"]
 
 [tool.uv]
 default-groups = ["dev"]

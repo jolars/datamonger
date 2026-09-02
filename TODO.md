@@ -84,7 +84,7 @@ against the local HTTP server without live network access.
 - [x] Activate complete CSV and TSV conformance and compression handling.
 - [x] Activate complete LIBSVM/SVMLight conformance and multi-artifact split
   assembly.
-- [ ] Implement stable return types for all initial representations.
+- [x] Implement stable return types for all initial representations.
 - [ ] Implement `data_info()` and `list_data()`.
 - [ ] Verify decoded results by default for every initial decoder.
 - [ ] Complete Python conformance fixtures and malformed-input coverage.

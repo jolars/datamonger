@@ -325,6 +325,20 @@ def fetch_data(
 ) -> FetchResult: ...
 
 
+@overload
+def fetch_data(
+    name: str,
+    *,
+    source: str,
+    version: str | None = None,
+    registry: Registry | None = None,
+    cache_dir: Pathish | None = None,
+    offline: bool = False,
+    verify_decoded: bool = True,
+    return_info: bool,
+) -> DatasetData | FetchResult: ...
+
+
 def fetch_data(
     name: str,
     *,

@@ -82,13 +82,26 @@ it never causes a fallback to another registry. The release and digest form the
 strong selector. The URL is only its retrieval location, and possession of a
 digest authenticates nothing beyond the channel from which the selector came.
 
-Delimited text returns a pandas data frame. A single LIBSVM or SVMLight input
-returns a frozen `SparseDataset` containing a SciPy CSR feature matrix and a
-NumPy response vector. A `libsvm-split` representation returns a frozen
-`SparseDatasetSplit`; its separate `train` and `test` fields each contain a
-`SparseDataset`, so neither input is concatenated or discarded. Pandas, NumPy,
-and SciPy are required dependencies, so these return types never depend on
-which optional packages happen to be installed.
+The decoded return type is fixed by the representation:
+
+| Representation | Artifact formats | Python return type |
+| --- | --- | --- |
+| `delimited-text` | CSV or TSV | `pandas.DataFrame` |
+| `libsvm` | LIBSVM or SVMLight | `SparseDataset` |
+| `libsvm-split` | LIBSVM or SVMLight | `SparseDatasetSplit` |
+
+Delimited frames use pandas' nullable `Float64`, `Int64`, `string`, and
+`boolean` dtypes, according to the declared logical column types. A frozen
+`SparseDataset` record contains a float64 SciPy CSR `features` matrix and an
+int64 or float64 NumPy `response` vector, according to `label_type`. A frozen
+`SparseDatasetSplit` has separate `train` and `test` fields containing those
+same records, so neither input is concatenated or discarded. The public
+`DatasetData` type alias is the union of these three return types.
+
+`return_info=True` wraps the same decoded object in `FetchResult.data`; it does
+not change its representation. Pandas, NumPy, and SciPy are required
+dependencies, so return types never depend on which optional packages happen
+to be installed.
 
 CSV, TSV, LIBSVM, and SVMLight artifacts support manifest-declared `none`,
 `gzip`, and `bzip2` compression. The client verifies and caches the exact
