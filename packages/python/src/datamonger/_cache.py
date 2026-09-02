@@ -225,14 +225,32 @@ def _validate_download(
     integrity_error: Callable[[str], DatamongerError],
     retrieval_error: Callable[[str], DatamongerError] = RetrievalError,
 ) -> Path:
+    target = _validate_cache_target(
+        cache_root=cache_root,
+        namespace=namespace,
+        digest=digest,
+        size=size,
+        integrity_error=integrity_error,
+    )
+    if urlsplit(url).scheme not in {"http", "https"}:
+        raise retrieval_error(f"unsupported retrieval URL scheme for {url!r}")
+    return target
+
+
+def _validate_cache_target(
+    *,
+    cache_root: Path,
+    namespace: str,
+    digest: str,
+    size: int | None,
+    integrity_error: Callable[[str], DatamongerError],
+) -> Path:
     if namespace not in _NAMESPACES:
         raise CacheError(f"unsupported cache namespace {namespace!r}")
     if _SHA256.fullmatch(digest) is None:
         raise integrity_error(f"invalid expected SHA-256 digest {digest!r}")
     if size is not None and size < 0:
         raise integrity_error(f"invalid expected size {size}")
-    if urlsplit(url).scheme not in {"http", "https"}:
-        raise retrieval_error(f"unsupported retrieval URL scheme for {url!r}")
     return cache_root / namespace / "sha256" / digest
 
 
@@ -400,6 +418,34 @@ def verified_download_lease(
         )
         with _reader_lease(cache_root, namespace, digest):
             yield path
+
+
+@contextmanager
+def verified_cache_lease(
+    *,
+    cache_root: Path,
+    namespace: str,
+    digest: str,
+    size: int | None,
+    integrity_error: Callable[[str], DatamongerError],
+    unavailable_error: Callable[[str], DatamongerError],
+    description: str,
+) -> Iterator[Path]:
+    """Yield a verified cached object without attempting network access."""
+
+    target = _validate_cache_target(
+        cache_root=cache_root,
+        namespace=namespace,
+        digest=digest,
+        size=size,
+        integrity_error=integrity_error,
+    )
+    with _reader_lease(cache_root, namespace, digest):
+        if not target.is_file() or not _matches(target, digest, size):
+            raise unavailable_error(
+                f"verified {description} {digest} is unavailable while offline"
+            )
+        yield target
 
 
 def verified_download(

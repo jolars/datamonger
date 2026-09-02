@@ -107,6 +107,34 @@ locations are tried in manifest order, and size and SHA-256 verification cannot
 be disabled. The cached bytes retain any artifact compression declared by the
 manifest—HTTP content coding is a separate transport detail.
 
+Pass `offline=True` to `fetch_data()` or `fetch_artifact()` when network access
+must not be attempted. The selected registry does not change in offline mode.
+Remote registry indexes and artifacts must already be present and valid in the
+cache; the package's bundled registry index remains available, but its dataset
+artifacts are not bundled. Missing or corrupt cached content raises
+`RegistryOfflineError` for an index and `OfflineError` for an artifact.
+
+Inspect the cache with `cache_info()`:
+
+```python
+from datamonger import cache_info
+
+info = cache_info()
+print(info.location, info.total_size)
+for entry in info.entries:
+    print(entry.kind, entry.sha256, entry.size, entry.datasets, entry.valid)
+```
+
+The inventory covers cached registry indexes and artifacts, hashes every entry,
+and associates artifact digests with canonical dataset versions found in the
+bundled and cached indexes. Use `cache_clean(dataset="uci:iris@1")` to remove
+the artifacts referenced by one version, or use `older_than=timedelta(days=30)`
+to remove old entries. The two filters intersect when combined. Calling
+`cache_clean()` without filters selects the entire cache. Its result lists both
+removed entries and entries skipped because another process is publishing or
+reading them. Cache eviction is always explicit; the client never evicts data
+automatically.
+
 ## Cache coordination
 
 The Python client coordinates each cached registry and artifact through an

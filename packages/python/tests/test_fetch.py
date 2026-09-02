@@ -37,7 +37,9 @@ from datamonger._models import DecodedTable
 from datamonger.errors import (
     ArtifactIntegrityError,
     DecodedIntegrityError,
+    OfflineError,
     RegistryIntegrityError,
+    RegistryOfflineError,
     RegistryReleaseError,
     RetrievalError,
     UnknownDatasetError,
@@ -224,7 +226,9 @@ def test_fetch_data_uses_bundled_registry_by_default(
 ) -> None:
     selected: list[Registry] = []
 
-    def record_registry(registry: Registry, cache_root: Path) -> dict[str, object]:
+    def record_registry(
+        registry: Registry, cache_root: Path, *, offline: bool = False
+    ) -> dict[str, object]:
         selected.append(registry)
         raise UnknownDatasetError("stop after registry selection")
 
@@ -329,14 +333,104 @@ def test_fetch_data_verifies_decodes_reports_and_reuses_cache_offline(
     assert first.info.canonical_digest == EXPECTED_DIGEST
     assert all(encoding == "identity" for _, encoding in state.requests)
 
-    state.online = False
+    state.requests.clear()
     second = fetch_data(
         "mixed",
         source="fixture",
         registry=registry,
         cache_dir=tmp_path,
+        offline=True,
     )
     pd.testing.assert_frame_equal(first.data, second)
+    assert state.requests == []
+
+
+def test_offline_fetch_does_not_request_an_uncached_registry(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+
+    with pytest.raises(RegistryOfflineError, match=r"registry.*offline"):
+        fetch_artifact(
+            "mixed",
+            source="fixture",
+            registry=registry,
+            cache_dir=tmp_path,
+            offline=True,
+        )
+
+    assert state.requests == []
+
+
+def test_offline_fetch_rejects_a_corrupt_cached_registry_without_network(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+    fetch_artifact("mixed", source="fixture", registry=registry, cache_dir=tmp_path)
+    cached_registry = tmp_path / "registries" / "sha256" / registry.index_sha256
+    cached_registry.write_bytes(b"corrupt")
+    state.requests.clear()
+
+    with pytest.raises(RegistryOfflineError, match=r"registry.*offline"):
+        fetch_artifact(
+            "mixed",
+            source="fixture",
+            registry=registry,
+            cache_dir=tmp_path,
+            offline=True,
+        )
+
+    assert cached_registry.read_bytes() == b"corrupt"
+    assert state.requests == []
+
+
+def test_offline_fetch_does_not_request_an_uncached_artifact(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+    artifact = fetch_artifact(
+        "mixed", source="fixture", registry=registry, cache_dir=tmp_path
+    )
+    artifact.unlink()
+    state.requests.clear()
+
+    with pytest.raises(OfflineError, match=r"artifact.*offline"):
+        fetch_artifact(
+            "mixed",
+            source="fixture",
+            registry=registry,
+            cache_dir=tmp_path,
+            offline=True,
+        )
+
+    assert state.requests == []
+
+
+def test_offline_fetch_rejects_a_corrupt_cached_artifact_without_network(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+    artifact = fetch_artifact(
+        "mixed", source="fixture", registry=registry, cache_dir=tmp_path
+    )
+    artifact.write_bytes(b"corrupt")
+    state.requests.clear()
+
+    with pytest.raises(OfflineError, match=r"verified artifact.*offline"):
+        fetch_artifact(
+            "mixed",
+            source="fixture",
+            registry=registry,
+            cache_dir=tmp_path,
+            offline=True,
+        )
+
+    assert artifact.read_bytes() == b"corrupt"
+    assert state.requests == []
 
 
 def test_fetch_data_holds_a_reader_lease_while_decoding(

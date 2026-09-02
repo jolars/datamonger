@@ -7,13 +7,18 @@ from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from typing import Any, Literal, overload
 
-from datamonger._cache import default_cache_root, verified_download_lease
+from datamonger._cache import (
+    default_cache_root,
+    verified_cache_lease,
+    verified_download_lease,
+)
 from datamonger._canonical import canonical_sha256
 from datamonger._decode import decode_delimited_text
 from datamonger._decode_libsvm import decode_libsvm
 from datamonger._errors import (
     ArtifactIntegrityError,
     DecodedIntegrityError,
+    OfflineError,
     RetrievalError,
     UnsupportedDecoderError,
     UnsupportedRegistryError,
@@ -52,6 +57,14 @@ def _string(value: object, field: str) -> str:
 
 def _integer(value: object, field: str) -> int:
     return require_integer(value, field, UnsupportedRegistryError)
+
+
+def _load_registry(
+    registry: Registry, cache_root: Path, *, offline: bool
+) -> Mapping[str, Any]:
+    if offline:
+        return load_registry(registry, cache_root, offline=True)
+    return load_registry(registry, cache_root)
 
 
 def _artifacts(dataset: Mapping[str, Any]) -> list[Mapping[str, Any]]:
@@ -102,7 +115,7 @@ def _artifact_for_representation(
 
 @contextmanager
 def _retrieve_artifact_lease(
-    artifact: Mapping[str, Any], cache_root: Path
+    artifact: Mapping[str, Any], cache_root: Path, *, offline: bool
 ) -> Iterator[Path]:
     artifact_name = _string(artifact.get("name"), "artifact name")
     distribution = artifact.get("distribution")
@@ -117,6 +130,20 @@ def _retrieve_artifact_lease(
     downloads = _array(artifact.get("downloads"), "artifact.downloads")
     if not downloads:
         raise UnsupportedRegistryError("artifact declares no download locations")
+    digest = _string(artifact.get("sha256"), "artifact SHA-256")
+    size = _integer(artifact.get("size"), "artifact size")
+    if offline:
+        with verified_cache_lease(
+            cache_root=cache_root,
+            namespace="objects",
+            digest=digest,
+            size=size,
+            integrity_error=ArtifactIntegrityError,
+            unavailable_error=OfflineError,
+            description=f"artifact {artifact_name!r}",
+        ) as path:
+            yield path
+        return
     # Locations are tried in manifest order; a transport error or an integrity
     # mismatch moves on to the next location, and the final error must still
     # distinguish unavailability from an integrity failure.
@@ -134,8 +161,8 @@ def _retrieve_artifact_lease(
                     cache_root=cache_root,
                     namespace="objects",
                     url=url,
-                    digest=_string(artifact.get("sha256"), "artifact SHA-256"),
-                    size=_integer(artifact.get("size"), "artifact size"),
+                    digest=digest,
+                    size=size,
                     integrity_error=ArtifactIntegrityError,
                 )
             )
@@ -151,8 +178,10 @@ def _retrieve_artifact_lease(
     raise failed(f"all retrieval locations failed: {'; '.join(failures)}")
 
 
-def _retrieve_artifact(artifact: Mapping[str, Any], cache_root: Path) -> Path:
-    with _retrieve_artifact_lease(artifact, cache_root) as path:
+def _retrieve_artifact(
+    artifact: Mapping[str, Any], cache_root: Path, *, offline: bool
+) -> Path:
+    with _retrieve_artifact_lease(artifact, cache_root, offline=offline) as path:
         return path
 
 
@@ -164,20 +193,22 @@ def fetch_artifact(
     artifact: str | None = None,
     registry: Registry | None = None,
     cache_dir: Pathish | None = None,
+    offline: bool = False,
 ) -> Path:
     """Resolve and retrieve one verified artifact without decoding it.
 
     ``artifact`` may be omitted only when the resolved dataset version declares
     exactly one artifact. An explicit registry overrides session and project
-    selection.
+    selection. ``offline=True`` permits verified cache hits but performs no
+    network requests.
     """
 
     cache_root = Path(cache_dir) if cache_dir is not None else default_cache_root()
     selected_registry = registry if registry is not None else active_registry()
-    index = load_registry(selected_registry, cache_root)
+    index = _load_registry(selected_registry, cache_root, offline=offline)
     dataset = resolve_dataset(index, source=source, name=name, version=version)
     selected_artifact = _select_artifact(dataset, artifact)
-    return _retrieve_artifact(selected_artifact, cache_root)
+    return _retrieve_artifact(selected_artifact, cache_root, offline=offline)
 
 
 def _validate_components(
@@ -238,6 +269,7 @@ def fetch_data(
     version: str | None = None,
     registry: Registry | None = None,
     cache_dir: Pathish | None = None,
+    offline: bool = False,
     verify_decoded: bool = True,
     return_info: Literal[False] = False,
 ) -> DatasetData: ...
@@ -251,6 +283,7 @@ def fetch_data(
     version: str | None = None,
     registry: Registry | None = None,
     cache_dir: Pathish | None = None,
+    offline: bool = False,
     verify_decoded: bool = True,
     return_info: Literal[True],
 ) -> FetchResult: ...
@@ -263,17 +296,19 @@ def fetch_data(
     version: str | None = None,
     registry: Registry | None = None,
     cache_dir: Pathish | None = None,
+    offline: bool = False,
     verify_decoded: bool = True,
     return_info: bool = False,
 ) -> DatasetData | FetchResult:
     """Resolve, retrieve, verify, and decode one registered dataset.
 
-    An explicit registry overrides session and project selection.
+    An explicit registry overrides session and project selection. ``offline=True``
+    requires both the selected registry and its artifact to be bundled or cached.
     """
 
     cache_root = Path(cache_dir) if cache_dir is not None else default_cache_root()
     selected_registry = registry if registry is not None else active_registry()
-    index = load_registry(selected_registry, cache_root)
+    index = _load_registry(selected_registry, cache_root, offline=offline)
     dataset = resolve_dataset(index, source=source, name=name, version=version)
     resolved_version = _string(dataset.get("version"), "dataset.version")
     representation = _object(dataset.get("representation"), "dataset.representation")
@@ -295,7 +330,9 @@ def fetch_data(
             f"decoder requires artifact format {expected_format!r}"
         )
     options = _object(representation.get("options"), "representation.options")
-    with _retrieve_artifact_lease(artifact, cache_root) as artifact_path:
+    with _retrieve_artifact_lease(
+        artifact, cache_root, offline=offline
+    ) as artifact_path:
         decoded = (
             decode_delimited_text(artifact_path, options)
             if decoder == "delimited-text"

@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from os import PathLike
+from pathlib import Path
 from typing import Any, Literal, TypeAlias, TypeVar, cast
 
 import numpy as np
@@ -14,6 +16,7 @@ from scipy import sparse
 
 LogicalType: TypeAlias = Literal["float64", "int64", "string", "bool"]
 VerificationLevel: TypeAlias = Literal["artifact", "decoded"]
+CacheEntryKind: TypeAlias = Literal["artifact", "registry"]
 Pathish: TypeAlias = str | PathLike[str]
 ResponseArray: TypeAlias = npt.NDArray[np.int64] | npt.NDArray[np.float64]
 
@@ -57,6 +60,44 @@ class FetchResult:
 
     data: DatasetData
     info: FetchInfo
+
+
+@dataclass(frozen=True)
+class CacheEntry:
+    """One content-addressed object found in the Python client cache."""
+
+    kind: CacheEntryKind
+    sha256: str
+    size: int
+    modified_at: datetime
+    path: Path
+    valid: bool
+    datasets: tuple[str, ...]
+    registry_release: str | None
+
+
+@dataclass(frozen=True)
+class CacheInfo:
+    """A point-in-time inventory of the Python client cache."""
+
+    location: Path
+    total_size: int
+    entries: tuple[CacheEntry, ...]
+
+
+@dataclass(frozen=True)
+class CacheCleanResult:
+    """The entries removed or skipped by one manual cache eviction."""
+
+    location: Path
+    removed: tuple[CacheEntry, ...]
+    skipped: tuple[CacheEntry, ...]
+
+    @property
+    def bytes_removed(self) -> int:
+        """Return the number of cached bytes removed."""
+
+        return sum(entry.size for entry in self.removed)
 
 
 _Scalar = TypeVar("_Scalar", np.int64, np.float64, np.bool_)

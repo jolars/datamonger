@@ -14,10 +14,11 @@ from pathlib import Path
 from typing import Any, cast
 from urllib.parse import urlsplit
 
-from datamonger._cache import verified_download_lease
+from datamonger._cache import verified_cache_lease, verified_download_lease
 from datamonger._errors import (
     RegistryError,
     RegistryIntegrityError,
+    RegistryOfflineError,
     RegistryReleaseError,
     RegistryRetrievalError,
     UnknownDatasetError,
@@ -175,7 +176,7 @@ def _is_bundled_selector(registry: Registry) -> bool:
     )
 
 
-def _registry_bytes(registry: Registry, cache_root: Path) -> bytes:
+def _registry_bytes(registry: Registry, cache_root: Path, *, offline: bool) -> bytes:
     if _is_bundled_selector(registry):
         contents = bundled_registry_bytes()
         actual = hashlib.sha256(contents).hexdigest()
@@ -186,15 +187,28 @@ def _registry_bytes(registry: Registry, cache_root: Path) -> bytes:
             )
         return contents
 
-    with verified_download_lease(
-        cache_root=cache_root,
-        namespace="registries",
-        url=registry.index_url,
-        digest=registry.index_sha256,
-        size=None,
-        integrity_error=RegistryIntegrityError,
-        retrieval_error=RegistryRetrievalError,
-    ) as index_path:
+    lease = (
+        verified_cache_lease(
+            cache_root=cache_root,
+            namespace="registries",
+            digest=registry.index_sha256,
+            size=None,
+            integrity_error=RegistryIntegrityError,
+            unavailable_error=RegistryOfflineError,
+            description="registry index",
+        )
+        if offline
+        else verified_download_lease(
+            cache_root=cache_root,
+            namespace="registries",
+            url=registry.index_url,
+            digest=registry.index_sha256,
+            size=None,
+            integrity_error=RegistryIntegrityError,
+            retrieval_error=RegistryRetrievalError,
+        )
+    )
+    with lease as index_path:
         try:
             return index_path.read_bytes()
         except OSError as error:
@@ -203,12 +217,14 @@ def _registry_bytes(registry: Registry, cache_root: Path) -> bytes:
             ) from error
 
 
-def load_registry(registry: Registry, cache_root: Path) -> Mapping[str, Any]:
+def load_registry(
+    registry: Registry, cache_root: Path, *, offline: bool = False
+) -> Mapping[str, Any]:
     """Fetch, verify, parse, and minimally validate a selected registry."""
 
     validate_registry_selector(registry)
     try:
-        parsed = json.loads(_registry_bytes(registry, cache_root))
+        parsed = json.loads(_registry_bytes(registry, cache_root, offline=offline))
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
         raise RegistryError(
             f"verified registry index is invalid JSON: {error}"

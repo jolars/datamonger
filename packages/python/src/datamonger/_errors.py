@@ -25,12 +25,20 @@ class RegistryRetrievalError(RegistryError):
     """The registry index could not be retrieved."""
 
 
+class RegistryOfflineError(RegistryRetrievalError):
+    """A verified registry index is unavailable while offline."""
+
+
 class UnknownDatasetError(DatamongerError):
     """The selected registry does not contain the requested dataset."""
 
 
 class RetrievalError(DatamongerError):
     """An artifact could not be retrieved."""
+
+
+class OfflineError(RetrievalError):
+    """A verified artifact is unavailable while offline."""
 
 
 class ArtifactIntegrityError(RetrievalError):
