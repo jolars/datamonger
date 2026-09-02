@@ -87,6 +87,11 @@ Delimited text returns a pandas data frame. LIBSVM returns a frozen
 vector. Pandas, NumPy, and SciPy are required dependencies, so these return
 types never depend on which optional packages happen to be installed.
 
+CSV and TSV artifacts support manifest-declared `none`, `gzip`, and `bzip2`
+compression. The client verifies and caches the exact compressed artifact,
+then decompresses it for decoding; file names and URLs do not determine the
+compression method.
+
 Use `return_info=True` to receive a `FetchResult` containing the resolved
 dataset identity, registry selector, artifact digests, and decoded-verification
 record.

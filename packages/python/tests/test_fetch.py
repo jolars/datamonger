@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import bz2
 import gzip
 import hashlib
 import json
@@ -14,6 +15,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from conftest import (
+    CORPUS,
     EXPECTED_DIGEST,
     FIXTURE,
     LIBSVM_DIGEST,
@@ -450,11 +452,11 @@ def test_fetch_data_holds_a_reader_lease_while_decoding(
     decode = _api.decode_delimited_text
 
     def decode_while_cleaner_checks(
-        path: Path, options: Mapping[str, Any]
+        path: Path, options: Mapping[str, Any], *, compression: str
     ) -> DecodedTable:
         with _cleaner_lease(tmp_path, "objects", digest) as acquired:
             assert not acquired
-        return decode(path, options)
+        return decode(path, options, compression=compression)
 
     monkeypatch.setattr(_api, "decode_delimited_text", decode_while_cleaner_checks)
 
@@ -968,6 +970,139 @@ def test_fetch_artifact_returns_verified_path_without_decoding(
     digest = hashlib.sha256(FIXTURE.read_bytes()).hexdigest()
     assert artifact_path == tmp_path / "objects" / "sha256" / digest
     assert artifact_path.read_bytes() == FIXTURE.read_bytes()
+
+
+def test_fetch_data_decodes_tsv_artifact(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    make_registry(base_url, state)
+    tsv = (CORPUS / "artifacts" / "mixed.tsv").read_bytes()
+    state.bodies["/opaque-data"] = tsv
+    index = json.loads(state.bodies["/index.json"])
+    artifact = index["datasets"][0]["artifacts"][0]
+    artifact.update(
+        {
+            "format": "tsv",
+            "size": len(tsv),
+            "sha256": hashlib.sha256(tsv).hexdigest(),
+            "downloads": [{"kind": "upstream", "url": f"{base_url}/opaque-data"}],
+        }
+    )
+    index["datasets"][0]["representation"]["options"]["delimiter"] = "\t"
+    registry = _reseal_index(base_url, state, index)
+
+    result = fetch_data(
+        "mixed",
+        source="fixture",
+        registry=registry,
+        cache_dir=tmp_path,
+        return_info=True,
+    )
+
+    assert result.info.canonical_digest == EXPECTED_DIGEST
+    assert result.data.loc[1, "label"] == "quoted, value"
+
+
+@pytest.mark.parametrize(
+    ("compression", "compressed"),
+    [
+        ("gzip", gzip.compress(FIXTURE.read_bytes())),
+        ("bzip2", bz2.compress(FIXTURE.read_bytes())),
+    ],
+    ids=["gzip", "bzip2"],
+)
+def test_fetch_data_decodes_compressed_delimited_artifact_after_caching(
+    local_server: tuple[str, ServerState],
+    tmp_path: Path,
+    compression: str,
+    compressed: bytes,
+) -> None:
+    base_url, state = local_server
+    make_registry(base_url, state)
+    state.bodies["/opaque-data"] = compressed
+    index = json.loads(state.bodies["/index.json"])
+    artifact = index["datasets"][0]["artifacts"][0]
+    digest = hashlib.sha256(compressed).hexdigest()
+    artifact.update(
+        {
+            "compression": compression,
+            "size": len(compressed),
+            "sha256": digest,
+            "downloads": [{"kind": "upstream", "url": f"{base_url}/opaque-data"}],
+        }
+    )
+    registry = _reseal_index(base_url, state, index)
+
+    result = fetch_data(
+        "mixed",
+        source="fixture",
+        registry=registry,
+        cache_dir=tmp_path,
+        return_info=True,
+    )
+
+    assert result.info.canonical_digest == EXPECTED_DIGEST
+    assert (tmp_path / "objects" / "sha256" / digest).read_bytes() == compressed
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("format", "libsvm", "CSV or TSV"),
+        ("format", "tsv", "format and delimiter disagree"),
+        ("compression", "zip", "compression"),
+    ],
+)
+def test_fetch_data_rejects_unsupported_delimited_artifact_recipe_before_fetch(
+    local_server: tuple[str, ServerState],
+    tmp_path: Path,
+    field: str,
+    value: str,
+    message: str,
+) -> None:
+    base_url, state = local_server
+    make_registry(base_url, state)
+    index = json.loads(state.bodies["/index.json"])
+    index["datasets"][0]["artifacts"][0][field] = value
+    registry = _reseal_index(base_url, state, index)
+
+    with pytest.raises(UnsupportedDecoderError, match=message):
+        fetch_data(
+            "mixed",
+            source="fixture",
+            registry=registry,
+            cache_dir=tmp_path,
+        )
+
+    assert [path for path, _ in state.requests] == ["/index.json"]
+
+
+def test_fetch_data_does_not_infer_compression_from_location(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    make_registry(base_url, state)
+    compressed = gzip.compress(FIXTURE.read_bytes())
+    state.bodies["/mixed.csv.gz"] = compressed
+    index = json.loads(state.bodies["/index.json"])
+    artifact = index["datasets"][0]["artifacts"][0]
+    artifact.update(
+        {
+            "size": len(compressed),
+            "sha256": hashlib.sha256(compressed).hexdigest(),
+            "downloads": [{"kind": "upstream", "url": f"{base_url}/mixed.csv.gz"}],
+        }
+    )
+    registry = _reseal_index(base_url, state, index)
+
+    with pytest.raises(DecodeError):
+        fetch_data(
+            "mixed",
+            source="fixture",
+            registry=registry,
+            cache_dir=tmp_path,
+        )
 
 
 def test_fetch_artifact_requires_a_name_for_multi_artifact_dataset(

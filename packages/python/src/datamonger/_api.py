@@ -323,21 +323,37 @@ def fetch_data(
         )
 
     artifact = _artifact_for_representation(dataset, representation)
-    expected_format = "csv" if decoder == "delimited-text" else "libsvm"
-    if artifact.get("compression") != "none":
-        raise UnsupportedDecoderError(
-            "the vertical proof supports uncompressed artifacts"
-        )
-    if artifact.get("format") != expected_format:
-        raise UnsupportedDecoderError(
-            f"decoder requires artifact format {expected_format!r}"
-        )
     options = _object(representation.get("options"), "representation.options")
+    artifact_format = artifact.get("format")
+    compression = artifact.get("compression")
+    if decoder == "delimited-text":
+        if artifact_format not in {"csv", "tsv"}:
+            raise UnsupportedDecoderError(
+                "delimited-text requires a CSV or TSV artifact"
+            )
+        expected_delimiter = "," if artifact_format == "csv" else "\t"
+        if options.get("delimiter") != expected_delimiter:
+            raise UnsupportedDecoderError("artifact format and delimiter disagree")
+        if not isinstance(compression, str) or compression not in {
+            "none",
+            "gzip",
+            "bzip2",
+        }:
+            raise UnsupportedDecoderError(
+                f"unsupported delimited-text compression: {compression!r}"
+            )
+    else:
+        if compression != "none":
+            raise UnsupportedDecoderError(
+                "the LIBSVM decoder supports uncompressed artifacts"
+            )
+        if artifact_format != "libsvm":
+            raise UnsupportedDecoderError("decoder requires artifact format 'libsvm'")
     with _retrieve_artifact_lease(
         artifact, cache_root, offline=offline
     ) as artifact_path:
         decoded = (
-            decode_delimited_text(artifact_path, options)
+            decode_delimited_text(artifact_path, options, compression=compression)
             if decoder == "delimited-text"
             else decode_libsvm(artifact_path, options)
         )

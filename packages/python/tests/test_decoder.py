@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import bz2
+import gzip
+from collections.abc import Callable
 from pathlib import Path
 
 import numpy as np
@@ -17,7 +20,7 @@ from scipy import sparse
 from datamonger._canonical import canonical_sha256
 from datamonger._decode import decode_delimited_text
 from datamonger._decode_libsvm import decode_libsvm
-from datamonger.errors import DecodeError
+from datamonger.errors import DecodeError, UnsupportedDecoderError
 
 
 def test_mixed_csv_decodes_to_stable_dataframe_and_golden_digest() -> None:
@@ -37,6 +40,48 @@ def test_mixed_csv_decodes_to_stable_dataframe_and_golden_digest() -> None:
     assert pd.isna(decoded.data.loc[1, "count"])
     assert pd.isna(decoded.data.loc[3, "label"])
     assert pd.isna(decoded.data.loc[2, "enabled"])
+
+
+@pytest.mark.parametrize(
+    ("compression", "compress"),
+    [("gzip", gzip.compress), ("bzip2", bz2.compress)],
+)
+def test_delimited_text_decodes_declared_compression(
+    tmp_path: Path, compression: str, compress: Callable[[bytes], bytes]
+) -> None:
+    source = tmp_path / "opaque-artifact"
+    source.write_bytes(compress(FIXTURE.read_bytes()))
+
+    decoded = decode_delimited_text(source, OPTIONS, compression=compression)
+
+    assert canonical_sha256(decoded.components) == EXPECTED_DIGEST
+
+
+@pytest.mark.parametrize(
+    ("compression", "compress"),
+    [("gzip", gzip.compress), ("bzip2", bz2.compress)],
+)
+def test_truncated_delimited_compression_is_a_decode_error(
+    tmp_path: Path, compression: str, compress: Callable[[bytes], bytes]
+) -> None:
+    source = tmp_path / "truncated"
+    source.write_bytes(compress(FIXTURE.read_bytes())[:-1])
+
+    with pytest.raises(DecodeError, match=compression):
+        decode_delimited_text(source, OPTIONS, compression=compression)
+
+
+def test_delimited_text_rejects_unknown_compression(tmp_path: Path) -> None:
+    source = tmp_path / "artifact"
+    source.write_bytes(FIXTURE.read_bytes())
+
+    with pytest.raises(UnsupportedDecoderError, match="compression"):
+        decode_delimited_text(source, OPTIONS, compression="zip")
+
+
+def test_missing_tokens_must_be_unique() -> None:
+    with pytest.raises(UnsupportedDecoderError, match="unique"):
+        decode_delimited_text(FIXTURE, OPTIONS | {"missing_values": ["", ""]})
 
 
 @pytest.mark.parametrize(

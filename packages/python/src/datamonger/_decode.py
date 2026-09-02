@@ -1,13 +1,15 @@
-"""Explicit provisional delimited-text decoding."""
+"""Delimited-text version 1 decoding."""
 
 from __future__ import annotations
 
+import bz2
+import gzip
 import math
 import re
 from array import array
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, TextIO, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -21,9 +23,9 @@ _INTEGER = re.compile(r"-?(?:0|[1-9][0-9]*)\Z")
 _FLOAT = re.compile(r"-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\Z")
 _INT64_MIN = -(2**63)
 _INT64_MAX = 2**63 - 1
-# The record parser and the option check must agree on the pinned dialect.
-_DELIMITER = ","
 _QUOTE = '"'
+_SUPPORTED_COMPRESSIONS = {"none", "gzip", "bzip2"}
+_SUPPORTED_DELIMITERS = {",", "\t"}
 _SUPPORTED_OPTIONS = {
     "encoding",
     "delimiter",
@@ -70,7 +72,7 @@ def _parse_columns(
 
 def _validate_options(
     options: Mapping[str, object],
-) -> tuple[tuple[tuple[str, LogicalType], ...], frozenset[str]]:
+) -> tuple[tuple[tuple[str, LogicalType], ...], frozenset[str], str]:
     unknown = set(options) - _SUPPORTED_OPTIONS
     if unknown:
         raise UnsupportedDecoderError(f"unsupported decoder options: {sorted(unknown)}")
@@ -80,8 +82,6 @@ def _validate_options(
         raise UnsupportedDecoderError(f"missing decoder options: {sorted(missing)}")
     expected = {
         "encoding": "utf-8",
-        "delimiter": _DELIMITER,
-        "header": True,
         "quote": _QUOTE,
         "escape": "double",
         "row_order": "source",
@@ -89,13 +89,25 @@ def _validate_options(
     for key, value in expected.items():
         if options[key] != value:
             raise UnsupportedDecoderError(f"unsupported {key}: {options[key]!r}")
+    if options["header"] is not True:
+        raise UnsupportedDecoderError(f"unsupported header: {options['header']!r}")
+    delimiter = options["delimiter"]
+    if not isinstance(delimiter, str) or delimiter not in _SUPPORTED_DELIMITERS:
+        raise UnsupportedDecoderError(f"unsupported delimiter: {delimiter!r}")
 
     missing_values = _require_sequence(
         options.get("missing_values", []), "missing_values"
     )
     if not all(isinstance(value, str) for value in missing_values):
         raise UnsupportedDecoderError("missing values must be strings")
-    return _parse_columns(options), frozenset(cast(Sequence[str], missing_values))
+    typed_missing_values = cast(Sequence[str], missing_values)
+    if len(set(typed_missing_values)) != len(typed_missing_values):
+        raise UnsupportedDecoderError("missing values must be unique")
+    return (
+        _parse_columns(options),
+        frozenset(typed_missing_values),
+        delimiter,
+    )
 
 
 def _parse_value(raw: str, logical_type: LogicalType, row: int, column: str) -> object:
@@ -136,8 +148,8 @@ def _record_body(raw_line: str, line_number: int) -> str:
     return raw_line
 
 
-def _parse_record(body: str, line_number: int) -> list[str]:
-    """Split one record into fields under the explicit slice 0A grammar."""
+def _parse_record(body: str, line_number: int, delimiter: str) -> list[str]:
+    """Split one record into fields under the version 1 grammar."""
 
     fields: list[str] = []
     position = 0
@@ -165,13 +177,13 @@ def _parse_record(body: str, line_number: int) -> list[str]:
             fields.append("".join(characters))
             if position == length:
                 return fields
-            if body[position] != _DELIMITER:
+            if body[position] != delimiter:
                 raise DecodeError(
                     f"invalid character after closing quote at line {line_number}"
                 )
         else:
             start = position
-            while position < length and body[position] not in (_DELIMITER, _QUOTE):
+            while position < length and body[position] not in (delimiter, _QUOTE):
                 position += 1
             if position < length and body[position] == _QUOTE:
                 raise DecodeError(f"quote inside unquoted field at line {line_number}")
@@ -240,17 +252,30 @@ def _make_dataframe(components: tuple[LogicalComponent, ...]) -> pd.DataFrame:
     return pd.DataFrame(series)
 
 
-def decode_delimited_text(path: Pathish, options: Mapping[str, object]) -> DecodedTable:
-    """Decode the strict slice 0A delimited-text representation."""
+def _open_text(path: Pathish, compression: str) -> TextIO:
+    if compression not in _SUPPORTED_COMPRESSIONS:
+        raise UnsupportedDecoderError(f"unsupported compression: {compression!r}")
+    if compression == "gzip":
+        return gzip.open(path, mode="rt", encoding="utf-8", errors="strict", newline="")
+    if compression == "bzip2":
+        return bz2.open(path, mode="rt", encoding="utf-8", errors="strict", newline="")
+    return Path(path).open("r", encoding="utf-8", errors="strict", newline="")
 
-    columns, missing_values = _validate_options(options)
+
+def decode_delimited_text(
+    path: Pathish,
+    options: Mapping[str, object],
+    *,
+    compression: str = "none",
+) -> DecodedTable:
+    """Decode a delimited-text version 1 representation."""
+
+    columns, missing_values, delimiter = _validate_options(options)
     values = [_accumulator(logical_type) for _, logical_type in columns]
     validity = [bytearray() for _ in columns]
 
     try:
-        with Path(path).open(
-            "r", encoding="utf-8", errors="strict", newline=""
-        ) as source:
+        with _open_text(path, compression) as source:
             header: list[str] | None = None
             for row_number, raw_line in enumerate(source, start=1):
                 if row_number == 1:
@@ -258,7 +283,7 @@ def decode_delimited_text(path: Pathish, options: Mapping[str, object]) -> Decod
                         raise DecodeError(
                             "delimited-text artifact contains a byte-order mark"
                         )
-                    header = _parse_record(_record_body(raw_line, 1), 1)
+                    header = _parse_record(_record_body(raw_line, 1), 1, delimiter)
                     expected_header = [name for name, _ in columns]
                     if header != expected_header:
                         raise DecodeError(
@@ -266,7 +291,7 @@ def decode_delimited_text(path: Pathish, options: Mapping[str, object]) -> Decod
                         )
                     continue
                 body = _record_body(raw_line, row_number)
-                row = _parse_record(body, row_number)
+                row = _parse_record(body, row_number, delimiter)
                 if len(row) != len(columns):
                     message = (
                         f"row {row_number} has {len(row)} fields; "
@@ -288,8 +313,15 @@ def decode_delimited_text(path: Pathish, options: Mapping[str, object]) -> Decod
                 raise DecodeError("delimited-text artifact has no header")
     except UnicodeDecodeError as error:
         raise DecodeError("delimited-text artifact is not valid UTF-8") from error
+    except EOFError as error:
+        raise DecodeError(
+            f"cannot decompress {compression} delimited-text artifact: {error}"
+        ) from error
     except OSError as error:
-        raise DecodeError(f"cannot read delimited-text artifact: {error}") from error
+        operation = "read" if compression == "none" else f"decompress {compression}"
+        raise DecodeError(
+            f"cannot {operation} delimited-text artifact: {error}"
+        ) from error
 
     components = tuple(
         LogicalComponent(

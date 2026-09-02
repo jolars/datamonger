@@ -26,7 +26,7 @@
     {
       "id": "delimited-mixed-tsv",
       "area": "delimited-text",
-      "status": "milestone-3",
+      "status": "active-python",
       "input": "artifacts/mixed.tsv",
       "recipe": {
         "encoding": "utf-8",

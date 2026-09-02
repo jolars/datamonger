@@ -81,7 +81,7 @@ against the local HTTP server without live network access.
 
 ## Milestone 3: Python decoding
 
-- [ ] Activate complete CSV and TSV conformance and compression handling.
+- [x] Activate complete CSV and TSV conformance and compression handling.
 - [ ] Activate complete LIBSVM/SVMLight conformance and multi-artifact split
   assembly.
 - [ ] Implement stable return types for all initial representations.
