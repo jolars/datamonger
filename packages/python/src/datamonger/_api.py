@@ -53,14 +53,45 @@ def _integer(value: object, field: str) -> int:
     return require_integer(value, field, UnsupportedRegistryError)
 
 
+def _artifacts(dataset: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    return [
+        _object(raw_artifact, "artifact")
+        for raw_artifact in _array(dataset.get("artifacts"), "dataset.artifacts")
+    ]
+
+
+def _available_artifacts(artifacts: Sequence[Mapping[str, Any]]) -> str:
+    return ", ".join(
+        _string(artifact.get("name"), "artifact name") for artifact in artifacts
+    )
+
+
+def _select_artifact(
+    dataset: Mapping[str, Any], artifact_name: str | None
+) -> Mapping[str, Any]:
+    artifacts = _artifacts(dataset)
+    available = _available_artifacts(artifacts)
+    if artifact_name is None:
+        if len(artifacts) == 1:
+            return artifacts[0]
+        raise RetrievalError(
+            f"artifact name is required; available artifacts: {available or '(none)'}"
+        )
+    for artifact in artifacts:
+        if artifact.get("name") == artifact_name:
+            return artifact
+    raise RetrievalError(
+        f"unknown artifact {artifact_name!r}; "
+        f"available artifacts: {available or '(none)'}"
+    )
+
+
 def _artifact_for_representation(
     dataset: Mapping[str, Any], representation: Mapping[str, Any]
 ) -> Mapping[str, Any]:
     inputs = _object(representation.get("inputs"), "representation.inputs")
     artifact_name = _string(inputs.get("data"), "representation.inputs.data")
-    artifacts = _array(dataset.get("artifacts"), "dataset.artifacts")
-    for raw_artifact in artifacts:
-        artifact = _object(raw_artifact, "artifact")
+    for artifact in _artifacts(dataset):
         if artifact.get("name") == artifact_name:
             return artifact
     raise UnsupportedRegistryError(
@@ -68,20 +99,16 @@ def _artifact_for_representation(
     )
 
 
-def _fetch_artifact(
-    artifact: Mapping[str, Any], cache_root: Path, expected_format: str
-) -> Path:
-    if artifact.get("distribution") != "upstream-only":
+def _retrieve_artifact(artifact: Mapping[str, Any], cache_root: Path) -> Path:
+    artifact_name = _string(artifact.get("name"), "artifact name")
+    distribution = artifact.get("distribution")
+    if distribution == "metadata-only":
+        raise RetrievalError(
+            f"artifact {artifact_name!r} is metadata-only and cannot be retrieved"
+        )
+    if distribution not in {"mirror", "upstream-only"}:
         raise UnsupportedRegistryError(
-            "the vertical proof supports upstream-only artifacts"
-        )
-    if artifact.get("compression") != "none":
-        raise UnsupportedDecoderError(
-            "the vertical proof supports uncompressed artifacts"
-        )
-    if artifact.get("format") != expected_format:
-        raise UnsupportedDecoderError(
-            f"decoder requires artifact format {expected_format!r}"
+            f"artifact {artifact_name!r} has unsupported distribution {distribution!r}"
         )
     downloads = _array(artifact.get("downloads"), "artifact.downloads")
     if not downloads:
@@ -93,8 +120,8 @@ def _fetch_artifact(
     integrity_failure = False
     for raw_download in downloads:
         download = _object(raw_download, "artifact download")
-        if download.get("kind") != "upstream":
-            raise UnsupportedRegistryError("slice 0A requires upstream downloads")
+        if download.get("kind") not in {"mirror", "upstream"}:
+            raise UnsupportedRegistryError("unsupported artifact download kind")
         url = _string(download.get("url"), "artifact download URL")
         try:
             return verified_download(
@@ -106,12 +133,34 @@ def _fetch_artifact(
                 integrity_error=ArtifactIntegrityError,
             )
         except RetrievalError as error:
-            if len(downloads) == 1:
-                raise
             integrity_failure |= isinstance(error, ArtifactIntegrityError)
             failures.append(f"{url}: {error}")
     failed = ArtifactIntegrityError if integrity_failure else RetrievalError
     raise failed(f"all retrieval locations failed: {'; '.join(failures)}")
+
+
+def fetch_artifact(
+    name: str,
+    *,
+    source: str,
+    version: str | None = None,
+    artifact: str | None = None,
+    registry: Registry | None = None,
+    cache_dir: Pathish | None = None,
+) -> Path:
+    """Resolve and retrieve one verified artifact without decoding it.
+
+    ``artifact`` may be omitted only when the resolved dataset version declares
+    exactly one artifact. An explicit registry overrides session and project
+    selection.
+    """
+
+    cache_root = Path(cache_dir) if cache_dir is not None else default_cache_root()
+    selected_registry = registry if registry is not None else active_registry()
+    index = load_registry(selected_registry, cache_root)
+    dataset = resolve_dataset(index, source=source, name=name, version=version)
+    selected_artifact = _select_artifact(dataset, artifact)
+    return _retrieve_artifact(selected_artifact, cache_root)
 
 
 def _validate_components(
@@ -220,7 +269,15 @@ def fetch_data(
 
     artifact = _artifact_for_representation(dataset, representation)
     expected_format = "csv" if decoder == "delimited-text" else "libsvm"
-    artifact_path = _fetch_artifact(artifact, cache_root, expected_format)
+    if artifact.get("compression") != "none":
+        raise UnsupportedDecoderError(
+            "the vertical proof supports uncompressed artifacts"
+        )
+    if artifact.get("format") != expected_format:
+        raise UnsupportedDecoderError(
+            f"decoder requires artifact format {expected_format!r}"
+        )
+    artifact_path = _retrieve_artifact(artifact, cache_root)
     options = _object(representation.get("options"), "representation.options")
     decoded = (
         decode_delimited_text(artifact_path, options)

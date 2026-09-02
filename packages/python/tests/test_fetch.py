@@ -28,6 +28,7 @@ from datamonger import (
     FetchResult,
     Registry,
     SparseDataset,
+    fetch_artifact,
     fetch_data,
 )
 from datamonger.errors import (
@@ -591,6 +592,115 @@ def _reseal_index(base_url: str, state: ServerState, index: dict[str, Any]) -> R
         index_sha256=hashlib.sha256(index_bytes).hexdigest(),
         index_url=f"{base_url}/index.json",
     )
+
+
+def test_fetch_artifact_returns_verified_path_without_decoding(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state, canonical_digest="0" * 64)
+
+    artifact_path = fetch_artifact(
+        "mixed", source="fixture", registry=registry, cache_dir=tmp_path
+    )
+
+    digest = hashlib.sha256(FIXTURE.read_bytes()).hexdigest()
+    assert artifact_path == tmp_path / "objects" / "sha256" / digest
+    assert artifact_path.read_bytes() == FIXTURE.read_bytes()
+
+
+def test_fetch_artifact_requires_a_name_for_multi_artifact_dataset(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    make_registry(base_url, state)
+    extra = b"second artifact"
+    state.bodies["/extra.bin"] = extra
+    index = json.loads(state.bodies["/index.json"])
+    index["datasets"][0]["artifacts"].append(
+        {
+            "name": "extra",
+            "format": "svmlight",
+            "compression": "gzip",
+            "size": len(extra),
+            "sha256": hashlib.sha256(extra).hexdigest(),
+            "distribution": "mirror",
+            "downloads": [{"kind": "mirror", "url": f"{base_url}/extra.bin"}],
+        }
+    )
+    registry = _reseal_index(base_url, state, index)
+
+    with pytest.raises(RetrievalError, match="available artifacts: data, extra"):
+        fetch_artifact("mixed", source="fixture", registry=registry, cache_dir=tmp_path)
+
+    artifact_path = fetch_artifact(
+        "mixed",
+        source="fixture",
+        artifact="extra",
+        registry=registry,
+        cache_dir=tmp_path,
+    )
+    assert artifact_path.read_bytes() == extra
+
+
+def test_fetch_artifact_reports_unknown_name_and_available_artifacts(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+
+    with pytest.raises(RetrievalError, match="available artifacts: data"):
+        fetch_artifact(
+            "mixed",
+            source="fixture",
+            artifact="absent",
+            registry=registry,
+            cache_dir=tmp_path,
+        )
+
+
+def test_fetch_artifact_rejects_metadata_only_before_artifact_request(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    make_registry(base_url, state)
+    index = json.loads(state.bodies["/index.json"])
+    artifact = index["datasets"][0]["artifacts"][0]
+    artifact["distribution"] = "metadata-only"
+    artifact["downloads"] = []
+    registry = _reseal_index(base_url, state, index)
+
+    with pytest.raises(RetrievalError, match="metadata-only"):
+        fetch_artifact("mixed", source="fixture", registry=registry, cache_dir=tmp_path)
+
+    assert [path for path, _ in state.requests] == ["/index.json"]
+
+
+def test_fetch_artifact_tries_locations_in_manifest_order(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    make_registry(base_url, state)
+    state.bodies["/corrupt.csv"] = b"corrupt"
+    index = json.loads(state.bodies["/index.json"])
+    index["datasets"][0]["artifacts"][0]["downloads"] = [
+        {"kind": "mirror", "url": f"{base_url}/absent.csv"},
+        {"kind": "upstream", "url": f"{base_url}/corrupt.csv"},
+        {"kind": "upstream", "url": f"{base_url}/mixed.csv"},
+    ]
+    registry = _reseal_index(base_url, state, index)
+
+    artifact_path = fetch_artifact(
+        "mixed", source="fixture", registry=registry, cache_dir=tmp_path
+    )
+
+    assert artifact_path.read_bytes() == FIXTURE.read_bytes()
+    assert [path for path, _ in state.requests] == [
+        "/index.json",
+        "/absent.csv",
+        "/corrupt.csv",
+        "/mixed.csv",
+    ]
 
 
 def test_retrieval_falls_back_across_download_locations(

@@ -90,3 +90,19 @@ types never depend on which optional packages happen to be installed.
 Use `return_info=True` to receive a `FetchResult` containing the resolved
 dataset identity, registry selector, artifact digests, and decoded-verification
 record.
+
+To retrieve verified artifact bytes without decoding them, use
+`fetch_artifact()`:
+
+```python
+from datamonger import fetch_artifact
+
+iris_csv = fetch_artifact("iris", source="uci")
+```
+
+The function returns a `pathlib.Path` in the content-addressed cache. An
+artifact name may be omitted only when the resolved dataset version has one
+artifact; otherwise, pass it explicitly with `artifact="train"`. Retrieval
+locations are tried in manifest order, and size and SHA-256 verification cannot
+be disabled. The cached bytes retain any artifact compression declared by the
+manifest—HTTP content coding is a separate transport detail.
