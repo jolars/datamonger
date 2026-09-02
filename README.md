@@ -3,10 +3,10 @@
 Datamonger is a cross-language registry and artifact system for retrieving,
 verifying, and identically decoding public research datasets.
 
-The vertical proof and the first specification-and-registry milestone are
-complete. Normative draft contracts live in [`spec/`](spec/); see
-[DESIGN.md](DESIGN.md) for the architecture and [TODO.md](TODO.md) for the
-implementation roadmap.
+The vertical proof, the specification-and-registry milestone, and the Python
+retrieval milestone are complete. Normative draft contracts live in
+[`spec/`](spec/); see [DESIGN.md](DESIGN.md) for the architecture and
+[TODO.md](TODO.md) for the implementation roadmap.
 
 ## Development
 

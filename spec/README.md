@@ -5,6 +5,7 @@ These versioned contracts are normative for the current implementation draft:
 - `identity.md` defines dataset identity, resolution, and release evolution.
 - `retrieval.md` defines selectors, HTTP byte boundaries, fallback, and cache
   guarantees.
+- `errors.md` defines the shared semantic failure categories and precedence.
 - `index.md` defines generated client indexes and deterministic serialization.
 - `canonical-form.md` defines byte-exact logical verification streams.
 - `decoders/` defines the accepted CSV, TSV, LIBSVM, and SVMLight recipes.

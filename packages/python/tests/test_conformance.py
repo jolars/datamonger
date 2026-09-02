@@ -11,7 +11,18 @@ from hypothesis import strategies as st
 
 from datamonger._decode import decode_delimited_text
 from datamonger._decode_libsvm import decode_libsvm
-from datamonger.errors import DecodeError
+from datamonger.errors import (
+    ArtifactIntegrityError,
+    ArtifactUnavailableError,
+    CacheError,
+    DecodedIntegrityError,
+    DecodeError,
+    OfflineError,
+    RetrievalLocationsError,
+    UnknownDatasetError,
+    UnsupportedDecoderError,
+    UnsupportedRegistryError,
+)
 
 
 def load_cases(name: str) -> list[dict[str, object]]:
@@ -53,6 +64,29 @@ def test_canonical_case_descriptors_have_exact_hex_golden_values() -> None:
         assert isinstance(expected, str)
         assert expected == expected.lower()
         assert bytes.fromhex(expected).startswith(b"DMCF\x01\x00")
+
+
+def test_shared_error_cases_map_to_distinct_python_types() -> None:
+    cases = load_cases("errors.json")
+    python_types = {
+        "unknown-dataset": UnknownDatasetError,
+        "unsupported-registry": UnsupportedRegistryError,
+        "unsupported-decoder": UnsupportedDecoderError,
+        "artifact-unavailable": ArtifactUnavailableError,
+        "artifact-offline": OfflineError,
+        "retrieval-exhausted": RetrievalLocationsError,
+        "artifact-integrity": ArtifactIntegrityError,
+        "decoded-integrity": DecodedIntegrityError,
+        "cache": CacheError,
+        "decode": DecodeError,
+    }
+
+    assert {case["expected"] for case in cases} == set(python_types)
+    assert len(set(python_types.values())) == len(python_types)
+    for case in cases:
+        assert set(case) == {"id", "expected"}
+        assert isinstance(case["id"], str)
+        assert python_types[case["expected"]].__module__ == "datamonger._errors"
 
 
 @pytest.mark.parametrize(

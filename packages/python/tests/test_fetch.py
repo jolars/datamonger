@@ -36,13 +36,19 @@ from datamonger._cache import _cleaner_lease
 from datamonger._models import DecodedTable
 from datamonger.errors import (
     ArtifactIntegrityError,
+    ArtifactSelectionError,
+    ArtifactUnavailableError,
+    CacheError,
     DecodedIntegrityError,
+    DecodeError,
     OfflineError,
     RegistryIntegrityError,
     RegistryOfflineError,
     RegistryReleaseError,
     RetrievalError,
+    RetrievalLocationsError,
     UnknownDatasetError,
+    UnsupportedDecoderError,
     UnsupportedRegistryError,
 )
 
@@ -985,7 +991,9 @@ def test_fetch_artifact_requires_a_name_for_multi_artifact_dataset(
     )
     registry = _reseal_index(base_url, state, index)
 
-    with pytest.raises(RetrievalError, match="available artifacts: data, extra"):
+    with pytest.raises(
+        ArtifactSelectionError, match="available artifacts: data, extra"
+    ):
         fetch_artifact("mixed", source="fixture", registry=registry, cache_dir=tmp_path)
 
     artifact_path = fetch_artifact(
@@ -1004,7 +1012,7 @@ def test_fetch_artifact_reports_unknown_name_and_available_artifacts(
     base_url, state = local_server
     registry = make_registry(base_url, state)
 
-    with pytest.raises(RetrievalError, match="available artifacts: data"):
+    with pytest.raises(ArtifactSelectionError, match="available artifacts: data"):
         fetch_artifact(
             "mixed",
             source="fixture",
@@ -1025,7 +1033,7 @@ def test_fetch_artifact_rejects_metadata_only_before_artifact_request(
     artifact["downloads"] = []
     registry = _reseal_index(base_url, state, index)
 
-    with pytest.raises(RetrievalError, match="metadata-only"):
+    with pytest.raises(ArtifactUnavailableError, match="metadata-only"):
         fetch_artifact("mixed", source="fixture", registry=registry, cache_dir=tmp_path)
 
     assert [path for path, _ in state.requests] == ["/index.json"]
@@ -1103,6 +1111,26 @@ def test_retrieval_falls_back_after_invalid_content_coding(
     ]
 
 
+def test_location_exhaustion_is_distinct_and_retains_every_location(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    make_registry(base_url, state)
+    index = json.loads(state.bodies["/index.json"])
+    index["datasets"][0]["artifacts"][0]["downloads"] = [
+        {"kind": "mirror", "url": f"{base_url}/absent-mirror.csv"},
+        {"kind": "upstream", "url": f"{base_url}/absent-upstream.csv"},
+    ]
+    registry = _reseal_index(base_url, state, index)
+
+    with pytest.raises(RetrievalLocationsError) as caught:
+        fetch_artifact("mixed", source="fixture", registry=registry, cache_dir=tmp_path)
+
+    assert not isinstance(caught.value, ArtifactIntegrityError)
+    assert f"{base_url}/absent-mirror.csv" in str(caught.value)
+    assert f"{base_url}/absent-upstream.csv" in str(caught.value)
+
+
 def test_final_error_distinguishes_integrity_failure_from_unavailability(
     local_server: tuple[str, ServerState], tmp_path: Path
 ) -> None:
@@ -1141,6 +1169,68 @@ def test_unsupported_dataset_record_schema_is_rejected(
             registry=registry,
             cache_dir=tmp_path,
         )
+
+
+def test_unsupported_decoder_version_is_classified_before_artifact_retrieval(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    make_registry(base_url, state)
+    index = json.loads(state.bodies["/index.json"])
+    index["datasets"][0]["representation"]["decoder_version"] = 2
+    registry = _reseal_index(base_url, state, index)
+
+    with pytest.raises(UnsupportedDecoderError, match="version 1"):
+        fetch_data(
+            "mixed",
+            source="fixture",
+            registry=registry,
+            cache_dir=tmp_path,
+        )
+
+    assert [path for path, _ in state.requests] == ["/index.json"]
+
+
+def test_malformed_verified_artifact_is_a_decoding_failure(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    make_registry(base_url, state)
+    malformed = b"measurement,count,label,enabled\nnot-a-float,1,x,true\n"
+    state.bodies["/malformed.csv"] = malformed
+    index = json.loads(state.bodies["/index.json"])
+    artifact = index["datasets"][0]["artifacts"][0]
+    artifact["downloads"] = [{"kind": "upstream", "url": f"{base_url}/malformed.csv"}]
+    artifact["size"] = len(malformed)
+    artifact["sha256"] = hashlib.sha256(malformed).hexdigest()
+    registry = _reseal_index(base_url, state, index)
+
+    with pytest.raises(DecodeError, match="invalid float64"):
+        fetch_data(
+            "mixed",
+            source="fixture",
+            registry=registry,
+            cache_dir=tmp_path,
+        )
+
+
+def test_unusable_cache_root_is_a_cache_failure(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+    cache_root = tmp_path / "not-a-directory"
+    cache_root.write_text("occupied", encoding="utf-8")
+
+    with pytest.raises(CacheError, match="cache lease"):
+        fetch_artifact(
+            "mixed",
+            source="fixture",
+            registry=registry,
+            cache_dir=cache_root,
+        )
+
+    assert state.requests == []
 
 
 def test_decoded_digest_mismatch_is_distinct(

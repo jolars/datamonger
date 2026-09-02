@@ -17,9 +17,12 @@ from datamonger._decode import decode_delimited_text
 from datamonger._decode_libsvm import decode_libsvm
 from datamonger._errors import (
     ArtifactIntegrityError,
+    ArtifactSelectionError,
+    ArtifactUnavailableError,
     DecodedIntegrityError,
     OfflineError,
     RetrievalError,
+    RetrievalLocationsError,
     UnsupportedDecoderError,
     UnsupportedRegistryError,
 )
@@ -88,13 +91,13 @@ def _select_artifact(
     if artifact_name is None:
         if len(artifacts) == 1:
             return artifacts[0]
-        raise RetrievalError(
+        raise ArtifactSelectionError(
             f"artifact name is required; available artifacts: {available or '(none)'}"
         )
     for artifact in artifacts:
         if artifact.get("name") == artifact_name:
             return artifact
-    raise RetrievalError(
+    raise ArtifactSelectionError(
         f"unknown artifact {artifact_name!r}; "
         f"available artifacts: {available or '(none)'}"
     )
@@ -120,7 +123,7 @@ def _retrieve_artifact_lease(
     artifact_name = _string(artifact.get("name"), "artifact name")
     distribution = artifact.get("distribution")
     if distribution == "metadata-only":
-        raise RetrievalError(
+        raise ArtifactUnavailableError(
             f"artifact {artifact_name!r} is metadata-only and cannot be retrieved"
         )
     if distribution not in {"mirror", "upstream-only"}:
@@ -174,7 +177,7 @@ def _retrieve_artifact_lease(
             with stack:
                 yield path
             return
-    failed = ArtifactIntegrityError if integrity_failure else RetrievalError
+    failed = ArtifactIntegrityError if integrity_failure else RetrievalLocationsError
     raise failed(f"all retrieval locations failed: {'; '.join(failures)}")
 
 

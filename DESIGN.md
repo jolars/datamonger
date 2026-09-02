@@ -1061,7 +1061,9 @@ scripts.
 ### Error taxonomy
 
 The clients share a small semantic error taxonomy, mapped to idiomatic
-exception or condition types. It must distinguish at least:
+exception or condition types. The normative categories and precedence are
+defined in [the error specification](spec/errors.md). They distinguish at
+least:
 
 * an unknown dataset or version;
 * an unsupported registry schema or decoder version;

@@ -34,11 +34,23 @@ class UnknownDatasetError(DatamongerError):
 
 
 class RetrievalError(DatamongerError):
-    """An artifact could not be retrieved."""
+    """Base class for artifact selection and retrieval failures."""
+
+
+class ArtifactSelectionError(RetrievalError):
+    """An artifact name is missing, ambiguous, or unknown."""
+
+
+class ArtifactUnavailableError(RetrievalError):
+    """Distribution policy prevents automatic artifact retrieval."""
 
 
 class OfflineError(RetrievalError):
     """A verified artifact is unavailable while offline."""
+
+
+class RetrievalLocationsError(RetrievalError):
+    """Every artifact retrieval location failed without an integrity mismatch."""
 
 
 class ArtifactIntegrityError(RetrievalError):

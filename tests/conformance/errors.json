@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "unknown-dataset",
+      "expected": "unknown-dataset"
+    },
+    {
+      "id": "unsupported-registry",
+      "expected": "unsupported-registry"
+    },
+    {
+      "id": "unsupported-decoder",
+      "expected": "unsupported-decoder"
+    },
+    {
+      "id": "metadata-only-artifact",
+      "expected": "artifact-unavailable"
+    },
+    {
+      "id": "offline-artifact",
+      "expected": "artifact-offline"
+    },
+    {
+      "id": "exhausted-locations",
+      "expected": "retrieval-exhausted"
+    },
+    {
+      "id": "artifact-mismatch",
+      "expected": "artifact-integrity"
+    },
+    {
+      "id": "decoded-mismatch",
+      "expected": "decoded-integrity"
+    },
+    {
+      "id": "cache-failure",
+      "expected": "cache"
+    },
+    {
+      "id": "malformed-data",
+      "expected": "decode"
+    }
+  ]
+}

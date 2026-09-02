@@ -2,6 +2,8 @@
 
 from datamonger._errors import (
     ArtifactIntegrityError,
+    ArtifactSelectionError,
+    ArtifactUnavailableError,
     CacheError,
     DatamongerError,
     DecodedIntegrityError,
@@ -13,6 +15,7 @@ from datamonger._errors import (
     RegistryReleaseError,
     RegistryRetrievalError,
     RetrievalError,
+    RetrievalLocationsError,
     UnknownDatasetError,
     UnsupportedDecoderError,
     UnsupportedRegistryError,
@@ -20,6 +23,8 @@ from datamonger._errors import (
 
 __all__ = [
     "ArtifactIntegrityError",
+    "ArtifactSelectionError",
+    "ArtifactUnavailableError",
     "CacheError",
     "DatamongerError",
     "DecodeError",
@@ -31,6 +36,7 @@ __all__ = [
     "RegistryReleaseError",
     "RegistryRetrievalError",
     "RetrievalError",
+    "RetrievalLocationsError",
     "UnknownDatasetError",
     "UnsupportedDecoderError",
     "UnsupportedRegistryError",

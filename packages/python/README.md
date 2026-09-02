@@ -114,6 +114,29 @@ cache; the package's bundled registry index remains available, but its dataset
 artifacts are not bundled. Missing or corrupt cached content raises
 `RegistryOfflineError` for an index and `OfflineError` for an artifact.
 
+## Error taxonomy
+
+Expected failures derive from `DatamongerError` and are exported by
+`datamonger.errors`. The shared semantic categories map to Python as follows:
+
+| Category | Python type |
+| --- | --- |
+| `unknown-dataset` | `UnknownDatasetError` |
+| `unsupported-registry` | `UnsupportedRegistryError` |
+| `unsupported-decoder` | `UnsupportedDecoderError` |
+| `artifact-unavailable` | `ArtifactUnavailableError` |
+| `artifact-offline` | `OfflineError` |
+| `retrieval-exhausted` | `RetrievalLocationsError` |
+| `artifact-integrity` | `ArtifactIntegrityError` |
+| `decoded-integrity` | `DecodedIntegrityError` |
+| `cache` | `CacheError` |
+| `decode` | `DecodeError` |
+
+All artifact selection and retrieval failures derive from `RetrievalError`.
+`ArtifactSelectionError` additionally distinguishes an omitted, ambiguous, or
+unknown artifact name. Registry-specific subclasses distinguish index retrieval,
+offline availability, selector integrity, and embedded release mismatches.
+
 Inspect the cache with `cache_info()`:
 
 ```python

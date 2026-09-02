@@ -9,6 +9,7 @@ Each active decoder case supplies the complete version-1 recipe and expected
 canonical SHA-256. `canonical/cases.json` supplies logical values and exact
 canonical bytes as lowercase hexadecimal, avoiding a language-specific fixture
 serializer. `fuzz-regressions.json` stores minimized byte inputs and their
-required failure stage. Implementations may use different native containers and
-messages, but must agree on logical values, canonical bytes, and success or
-failure.
+required failure stage. `errors.json` enumerates the shared semantic failure
+cases and expected categories. Implementations may use different native
+containers, exception types, and messages, but must agree on logical values,
+canonical bytes, success or failure, and semantic failure categories.
