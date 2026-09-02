@@ -1,4 +1,4 @@
-"""Verified, single-process content-addressed cache publication."""
+"""Verified content-addressed cache publication and object leases."""
 
 from __future__ import annotations
 
@@ -10,11 +10,13 @@ import tempfile
 import urllib.error
 import urllib.request
 import zlib
-from collections.abc import Callable, Sequence
-from contextlib import suppress
+from collections.abc import Callable, Iterator, Sequence
+from contextlib import contextmanager, suppress
 from pathlib import Path
+from typing import BinaryIO
 from urllib.parse import urlsplit
 
+import portalocker
 from platformdirs import user_cache_path
 
 from datamonger._errors import CacheError, DatamongerError, RetrievalError
@@ -29,6 +31,105 @@ def default_cache_root() -> Path:
     """Return the Python client's private application cache root."""
 
     return user_cache_path("datamonger") / "python"
+
+
+def _lease_path(
+    cache_root: Path, namespace: str, digest: str, *, publication: bool = False
+) -> Path:
+    if namespace not in _NAMESPACES:
+        raise CacheError(f"unsupported cache namespace {namespace!r}")
+    if _SHA256.fullmatch(digest) is None:
+        raise CacheError(f"invalid cache lease SHA-256 digest {digest!r}")
+    suffix = ".publish.lock" if publication else ".lock"
+    return cache_root / ".leases" / namespace / "sha256" / f"{digest}{suffix}"
+
+
+@contextmanager
+def _lease(path: Path, *, exclusive: bool, blocking: bool) -> Iterator[bool]:
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        lease_file: BinaryIO = path.open("a+b")
+    except OSError as error:
+        raise CacheError(f"cannot open cache lease {path}: {error}") from error
+
+    flags = (
+        portalocker.LockFlags.EXCLUSIVE if exclusive else portalocker.LockFlags.SHARED
+    )
+    if not blocking:
+        flags |= portalocker.LockFlags.NON_BLOCKING
+    acquired = False
+    try:
+        try:
+            portalocker.lock(lease_file, flags)
+            acquired = True
+        except portalocker.AlreadyLocked:
+            if blocking:
+                raise CacheError(f"cannot acquire cache lease {path}") from None
+        except (OSError, portalocker.LockException) as error:
+            raise CacheError(f"cannot acquire cache lease {path}: {error}") from error
+        yield acquired
+    finally:
+        try:
+            if acquired:
+                portalocker.unlock(lease_file)
+        except (OSError, portalocker.LockException) as error:
+            raise CacheError(f"cannot release cache lease {path}: {error}") from error
+        finally:
+            lease_file.close()
+
+
+@contextmanager
+def _publisher_lease(cache_root: Path, namespace: str, digest: str) -> Iterator[None]:
+    """Hold the shared side of an object's lease while publishing it."""
+
+    with _lease(
+        _lease_path(cache_root, namespace, digest),
+        exclusive=False,
+        blocking=True,
+    ) as acquired:
+        if not acquired:  # pragma: no cover - blocking acquisition cannot skip.
+            raise CacheError("cache publisher lease was unexpectedly skipped")
+        yield
+
+
+@contextmanager
+def _reader_lease(cache_root: Path, namespace: str, digest: str) -> Iterator[None]:
+    """Hold the shared side of an object's lease while reading it."""
+
+    with _lease(
+        _lease_path(cache_root, namespace, digest),
+        exclusive=False,
+        blocking=True,
+    ) as acquired:
+        if not acquired:  # pragma: no cover - blocking acquisition cannot skip.
+            raise CacheError("cache reader lease was unexpectedly skipped")
+        yield
+
+
+@contextmanager
+def _cleaner_lease(cache_root: Path, namespace: str, digest: str) -> Iterator[bool]:
+    """Try to hold the exclusive side of an object's lease without waiting."""
+
+    with _lease(
+        _lease_path(cache_root, namespace, digest),
+        exclusive=True,
+        blocking=False,
+    ) as acquired:
+        yield acquired
+
+
+@contextmanager
+def _publication_lock(cache_root: Path, namespace: str, digest: str) -> Iterator[None]:
+    """Serialize the short validation and atomic-commit phases."""
+
+    with _lease(
+        _lease_path(cache_root, namespace, digest, publication=True),
+        exclusive=True,
+        blocking=True,
+    ) as acquired:
+        if not acquired:  # pragma: no cover - blocking acquisition cannot skip.
+            raise CacheError("cache publication lock was unexpectedly skipped")
+        yield
 
 
 def _matches(path: Path, digest: str, size: int | None) -> bool:
@@ -114,7 +215,7 @@ def _unlink(path: Path) -> None:
         ) from error
 
 
-def verified_download(
+def _validate_download(
     *,
     cache_root: Path,
     namespace: str,
@@ -124,8 +225,6 @@ def verified_download(
     integrity_error: Callable[[str], DatamongerError],
     retrieval_error: Callable[[str], DatamongerError] = RetrievalError,
 ) -> Path:
-    """Return a verified cached URL response, downloading it when absent."""
-
     if namespace not in _NAMESPACES:
         raise CacheError(f"unsupported cache namespace {namespace!r}")
     if _SHA256.fullmatch(digest) is None:
@@ -134,19 +233,35 @@ def verified_download(
         raise integrity_error(f"invalid expected size {size}")
     if urlsplit(url).scheme not in {"http", "https"}:
         raise retrieval_error(f"unsupported retrieval URL scheme for {url!r}")
+    return cache_root / namespace / "sha256" / digest
 
-    target = cache_root / namespace / "sha256" / digest
-    if target.exists():
-        if _matches(target, digest, size):
-            return target
-        _unlink(target)
 
+def _ensure_cached(
+    *,
+    cache_root: Path,
+    namespace: str,
+    target: Path,
+    url: str,
+    digest: str,
+    size: int | None,
+    integrity_error: Callable[[str], DatamongerError],
+    retrieval_error: Callable[[str], DatamongerError],
+) -> Path:
     try:
         target.parent.mkdir(parents=True, exist_ok=True)
     except OSError as error:
         raise CacheError(
             f"cannot create cache directory {target.parent}: {error}"
         ) from error
+
+    # Publishers may download concurrently, but serializing the short check and
+    # commit phases avoids replacing a complete object that another publisher
+    # has just made available.
+    with _publication_lock(cache_root, namespace, digest):
+        if target.exists():
+            if _matches(target, digest, size):
+                return target
+            _unlink(target)
 
     temporary_path: Path | None = None
     try:
@@ -224,8 +339,16 @@ def verified_download(
                 f"received {actual_digest}"
             )
             raise integrity_error(message)
-        os.replace(temporary_path, target)
-        temporary_path = None
+
+        with _publication_lock(cache_root, namespace, digest):
+            if target.exists() and _matches(target, digest, size):
+                _unlink(temporary_path)
+                temporary_path = None
+            else:
+                if target.exists():
+                    _unlink(target)
+                os.replace(temporary_path, target)
+                temporary_path = None
         return target
     except DatamongerError:
         raise
@@ -240,3 +363,64 @@ def verified_download(
         if temporary_path is not None:
             with suppress(OSError):
                 temporary_path.unlink(missing_ok=True)
+
+
+@contextmanager
+def verified_download_lease(
+    *,
+    cache_root: Path,
+    namespace: str,
+    url: str,
+    digest: str,
+    size: int | None,
+    integrity_error: Callable[[str], DatamongerError],
+    retrieval_error: Callable[[str], DatamongerError] = RetrievalError,
+) -> Iterator[Path]:
+    """Yield a verified path while retaining its reader lease."""
+
+    target = _validate_download(
+        cache_root=cache_root,
+        namespace=namespace,
+        url=url,
+        digest=digest,
+        size=size,
+        integrity_error=integrity_error,
+        retrieval_error=retrieval_error,
+    )
+    with _publisher_lease(cache_root, namespace, digest):
+        path = _ensure_cached(
+            cache_root=cache_root,
+            namespace=namespace,
+            target=target,
+            url=url,
+            digest=digest,
+            size=size,
+            integrity_error=integrity_error,
+            retrieval_error=retrieval_error,
+        )
+        with _reader_lease(cache_root, namespace, digest):
+            yield path
+
+
+def verified_download(
+    *,
+    cache_root: Path,
+    namespace: str,
+    url: str,
+    digest: str,
+    size: int | None,
+    integrity_error: Callable[[str], DatamongerError],
+    retrieval_error: Callable[[str], DatamongerError] = RetrievalError,
+) -> Path:
+    """Return a verified cached URL response, downloading it when absent."""
+
+    with verified_download_lease(
+        cache_root=cache_root,
+        namespace=namespace,
+        url=url,
+        digest=digest,
+        size=size,
+        integrity_error=integrity_error,
+        retrieval_error=retrieval_error,
+    ) as path:
+        return path

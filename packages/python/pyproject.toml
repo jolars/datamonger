@@ -14,6 +14,7 @@ dependencies = [
   "numpy>=2.0",
   "pandas>=2.2",
   "platformdirs>=4.3",
+  "portalocker[win32]>=4.3",
   "scipy>=1.14",
 ]
 

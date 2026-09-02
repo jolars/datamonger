@@ -4,7 +4,7 @@ import gzip
 import hashlib
 import json
 import threading
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -28,9 +28,12 @@ from datamonger import (
     FetchResult,
     Registry,
     SparseDataset,
+    _api,
     fetch_artifact,
     fetch_data,
 )
+from datamonger._cache import _cleaner_lease
+from datamonger._models import DecodedTable
 from datamonger.errors import (
     ArtifactIntegrityError,
     DecodedIntegrityError,
@@ -334,6 +337,28 @@ def test_fetch_data_verifies_decodes_reports_and_reuses_cache_offline(
         cache_dir=tmp_path,
     )
     pd.testing.assert_frame_equal(first.data, second)
+
+
+def test_fetch_data_holds_a_reader_lease_while_decoding(
+    monkeypatch: pytest.MonkeyPatch,
+    local_server: tuple[str, ServerState],
+    tmp_path: Path,
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+    digest = hashlib.sha256(FIXTURE.read_bytes()).hexdigest()
+    decode = _api.decode_delimited_text
+
+    def decode_while_cleaner_checks(
+        path: Path, options: Mapping[str, Any]
+    ) -> DecodedTable:
+        with _cleaner_lease(tmp_path, "objects", digest) as acquired:
+            assert not acquired
+        return decode(path, options)
+
+    monkeypatch.setattr(_api, "decode_delimited_text", decode_while_cleaner_checks)
+
+    fetch_data("mixed", source="fixture", registry=registry, cache_dir=tmp_path)
 
 
 def test_fetch_data_decodes_libsvm_to_sparse_dataset_and_reuses_it_offline(

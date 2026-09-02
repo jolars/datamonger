@@ -106,3 +106,27 @@ artifact; otherwise, pass it explicitly with `artifact="train"`. Retrieval
 locations are tried in manifest order, and size and SHA-256 verification cannot
 be disabled. The cached bytes retain any artifact compression declared by the
 manifest—HTTP content coding is a separate transport detail.
+
+## Cache coordination
+
+The Python client coordinates each cached registry and artifact through an
+operating-system file lease at
+`.leases/<namespace>/sha256/<digest>.lock`. Publishers and readers take shared
+leases. A cleaner tries the exclusive side without waiting and skips the object
+when that attempt fails. A separate `<digest>.publish.lock` serializes the brief
+validation and commit phases while allowing downloads for the same digest to
+overlap.
+
+Downloads remain in destination-directory `.download-*` files until they have
+been flushed, size-checked, and hash-checked. Publication uses an atomic rename,
+and a publisher rechecks the target under the publication lock so that it does
+not replace a complete object committed by another publisher. Readers retain
+their shared lease through registry parsing or dataset decoding.
+
+Lease files deliberately remain on disk as rendezvous records. Their presence
+does not indicate ownership; the operating system's lock state does. Process
+termination releases that state, and a restarted host has no surviving lock
+owners, so a stale record is immediately reclaimable without a timeout that
+could misclassify a slow but live reader. The cache root is client-private and
+must reside on a filesystem that implements local advisory file locking and
+atomic replacement.

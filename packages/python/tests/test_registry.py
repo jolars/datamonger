@@ -68,7 +68,7 @@ def test_bundled_registry_loads_without_network(
     def fail_download(**_: object) -> Path:
         raise AssertionError("the bundled registry must not use the network")
 
-    monkeypatch.setattr(_registry, "verified_download", fail_download)
+    monkeypatch.setattr(_registry, "verified_download_lease", fail_download)
 
     index = _registry.load_registry(BUNDLED_REGISTRY, tmp_path)
 

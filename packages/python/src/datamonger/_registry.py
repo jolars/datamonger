@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, cast
 from urllib.parse import urlsplit
 
-from datamonger._cache import verified_download
+from datamonger._cache import verified_download_lease
 from datamonger._errors import (
     RegistryError,
     RegistryIntegrityError,
@@ -186,7 +186,7 @@ def _registry_bytes(registry: Registry, cache_root: Path) -> bytes:
             )
         return contents
 
-    index_path = verified_download(
+    with verified_download_lease(
         cache_root=cache_root,
         namespace="registries",
         url=registry.index_url,
@@ -194,11 +194,13 @@ def _registry_bytes(registry: Registry, cache_root: Path) -> bytes:
         size=None,
         integrity_error=RegistryIntegrityError,
         retrieval_error=RegistryRetrievalError,
-    )
-    try:
-        return index_path.read_bytes()
-    except OSError as error:
-        raise RegistryError(f"cannot read verified registry index: {error}") from error
+    ) as index_path:
+        try:
+            return index_path.read_bytes()
+        except OSError as error:
+            raise RegistryError(
+                f"cannot read verified registry index: {error}"
+            ) from error
 
 
 def load_registry(registry: Registry, cache_root: Path) -> Mapping[str, Any]:

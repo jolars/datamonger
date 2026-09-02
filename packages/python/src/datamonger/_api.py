@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
+from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from typing import Any, Literal, overload
 
-from datamonger._cache import default_cache_root, verified_download
+from datamonger._cache import default_cache_root, verified_download_lease
 from datamonger._canonical import canonical_sha256
 from datamonger._decode import decode_delimited_text
 from datamonger._decode_libsvm import decode_libsvm
@@ -99,7 +100,10 @@ def _artifact_for_representation(
     )
 
 
-def _retrieve_artifact(artifact: Mapping[str, Any], cache_root: Path) -> Path:
+@contextmanager
+def _retrieve_artifact_lease(
+    artifact: Mapping[str, Any], cache_root: Path
+) -> Iterator[Path]:
     artifact_name = _string(artifact.get("name"), "artifact name")
     distribution = artifact.get("distribution")
     if distribution == "metadata-only":
@@ -123,20 +127,33 @@ def _retrieve_artifact(artifact: Mapping[str, Any], cache_root: Path) -> Path:
         if download.get("kind") not in {"mirror", "upstream"}:
             raise UnsupportedRegistryError("unsupported artifact download kind")
         url = _string(download.get("url"), "artifact download URL")
+        stack = ExitStack()
         try:
-            return verified_download(
-                cache_root=cache_root,
-                namespace="objects",
-                url=url,
-                digest=_string(artifact.get("sha256"), "artifact SHA-256"),
-                size=_integer(artifact.get("size"), "artifact size"),
-                integrity_error=ArtifactIntegrityError,
+            path = stack.enter_context(
+                verified_download_lease(
+                    cache_root=cache_root,
+                    namespace="objects",
+                    url=url,
+                    digest=_string(artifact.get("sha256"), "artifact SHA-256"),
+                    size=_integer(artifact.get("size"), "artifact size"),
+                    integrity_error=ArtifactIntegrityError,
+                )
             )
         except RetrievalError as error:
+            stack.close()
             integrity_failure |= isinstance(error, ArtifactIntegrityError)
             failures.append(f"{url}: {error}")
+        else:
+            with stack:
+                yield path
+            return
     failed = ArtifactIntegrityError if integrity_failure else RetrievalError
     raise failed(f"all retrieval locations failed: {'; '.join(failures)}")
+
+
+def _retrieve_artifact(artifact: Mapping[str, Any], cache_root: Path) -> Path:
+    with _retrieve_artifact_lease(artifact, cache_root) as path:
+        return path
 
 
 def fetch_artifact(
@@ -277,13 +294,13 @@ def fetch_data(
         raise UnsupportedDecoderError(
             f"decoder requires artifact format {expected_format!r}"
         )
-    artifact_path = _retrieve_artifact(artifact, cache_root)
     options = _object(representation.get("options"), "representation.options")
-    decoded = (
-        decode_delimited_text(artifact_path, options)
-        if decoder == "delimited-text"
-        else decode_libsvm(artifact_path, options)
-    )
+    with _retrieve_artifact_lease(artifact, cache_root) as artifact_path:
+        decoded = (
+            decode_delimited_text(artifact_path, options)
+            if decoder == "delimited-text"
+            else decode_libsvm(artifact_path, options)
+        )
     expect = _object(representation.get("expect"), "representation.expect")
     _validate_components(
         decoded.components,
