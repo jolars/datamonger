@@ -9,8 +9,10 @@ import numpy as np
 import pandas as pd
 import pytest
 from conftest import (
+    CORPUS,
     EXPECTED_DIGEST,
     FIXTURE,
+    LIBSVM_DIGEST,
     LIBSVM_FIXTURE,
     LIBSVM_OPTIONS,
     OPTIONS,
@@ -19,7 +21,7 @@ from scipy import sparse
 
 from datamonger._canonical import canonical_sha256
 from datamonger._decode import decode_delimited_text
-from datamonger._decode_libsvm import decode_libsvm
+from datamonger._decode_libsvm import decode_libsvm, decode_libsvm_split
 from datamonger.errors import DecodeError, UnsupportedDecoderError
 
 
@@ -216,6 +218,127 @@ def test_libsvm_decodes_to_named_csr_and_response() -> None:
 
 
 @pytest.mark.parametrize(
+    ("compression", "compress"),
+    [("gzip", gzip.compress), ("bzip2", bz2.compress)],
+)
+def test_libsvm_decodes_declared_compression(
+    tmp_path: Path, compression: str, compress: Callable[[bytes], bytes]
+) -> None:
+    source = tmp_path / "opaque-artifact"
+    source.write_bytes(compress(LIBSVM_FIXTURE.read_bytes()))
+
+    decoded = decode_libsvm(source, LIBSVM_OPTIONS, compression=compression)
+
+    assert canonical_sha256(decoded.components) == LIBSVM_DIGEST
+
+
+@pytest.mark.parametrize(
+    ("compression", "compress"),
+    [("gzip", gzip.compress), ("bzip2", bz2.compress)],
+)
+def test_truncated_libsvm_compression_is_a_decode_error(
+    tmp_path: Path, compression: str, compress: Callable[[bytes], bytes]
+) -> None:
+    source = tmp_path / "truncated"
+    source.write_bytes(compress(LIBSVM_FIXTURE.read_bytes())[:-1])
+
+    with pytest.raises(DecodeError, match=compression):
+        decode_libsvm(source, LIBSVM_OPTIONS, compression=compression)
+
+
+def test_libsvm_rejects_unknown_compression(tmp_path: Path) -> None:
+    source = tmp_path / "artifact"
+    source.write_bytes(LIBSVM_FIXTURE.read_bytes())
+
+    with pytest.raises(UnsupportedDecoderError, match="compression"):
+        decode_libsvm(source, LIBSVM_OPTIONS, compression="zip")
+
+
+def test_libsvm_split_preserves_named_outputs_in_normative_order() -> None:
+    decoded = decode_libsvm_split(
+        LIBSVM_FIXTURE,
+        CORPUS / "artifacts" / "small-test.svmlight",
+        LIBSVM_OPTIONS,
+    )
+
+    assert [component.name for component in decoded.components] == [
+        "train_features",
+        "train_response",
+        "test_features",
+        "test_response",
+    ]
+    np.testing.assert_array_equal(
+        decoded.data.train.features.toarray(),
+        np.array([[1.5, 0.0, 0.0, -2.0], [0.0, 3.0, 0.0, 0.0]]),
+    )
+    np.testing.assert_array_equal(
+        decoded.data.test.features.toarray(),
+        np.array([[2.5, 0.0, -4.0, 0.0], [0.0, 0.001, 0.0, 5.0]]),
+    )
+    np.testing.assert_array_equal(decoded.data.train.response, np.array([1, -1]))
+    np.testing.assert_array_equal(decoded.data.test.response, np.array([0, 2]))
+    assert canonical_sha256(decoded.components) == (
+        "7169b3668489db5ab1f914ee7f2b102a01d31a55f21ce9b89fc88ce526670ead"
+    )
+
+
+def test_libsvm_split_prefixes_the_declared_target_name() -> None:
+    decoded = decode_libsvm_split(
+        LIBSVM_FIXTURE,
+        CORPUS / "artifacts" / "small-test.svmlight",
+        LIBSVM_OPTIONS | {"target_name": "outcome"},
+    )
+
+    assert [component.name for component in decoded.components] == [
+        "train_features",
+        "train_outcome",
+        "test_features",
+        "test_outcome",
+    ]
+
+
+def test_libsvm_split_parses_each_input_independently(tmp_path: Path) -> None:
+    malformed_test = tmp_path / "malformed-test"
+    malformed_test.write_text("+1 2:1 1:2\n", encoding="utf-8")
+
+    with pytest.raises(DecodeError, match="increasing"):
+        decode_libsvm_split(LIBSVM_FIXTURE, malformed_test, LIBSVM_OPTIONS)
+
+
+def test_empty_libsvm_artifact_produces_zero_rows(tmp_path: Path) -> None:
+    source = tmp_path / "empty"
+    source.write_bytes(b"")
+
+    decoded = decode_libsvm(source, LIBSVM_OPTIONS)
+
+    assert decoded.data.features.shape == (0, 4)
+    assert decoded.data.features.nnz == 0
+    np.testing.assert_array_equal(decoded.data.response, np.array([], dtype=np.int64))
+
+
+@pytest.mark.parametrize(
+    ("options", "message"),
+    [
+        ({}, "missing decoder options"),
+        (LIBSVM_OPTIONS | {"unknown": True}, "unsupported decoder options"),
+        (LIBSVM_OPTIONS | {"index_base": 0}, "index_base"),
+        (LIBSVM_OPTIONS | {"feature_count": 0}, "positive integer"),
+        (LIBSVM_OPTIONS | {"feature_count": True}, "positive integer"),
+        (LIBSVM_OPTIONS | {"duplicate_features": "sum"}, "duplicate_features"),
+        (LIBSVM_OPTIONS | {"label_type": "string"}, "label_type"),
+        (LIBSVM_OPTIONS | {"row_order": "sorted"}, "row_order"),
+        (LIBSVM_OPTIONS | {"target_name": ""}, "target_name"),
+        (LIBSVM_OPTIONS | {"target_name": "features"}, "target_name"),
+    ],
+)
+def test_libsvm_rejects_incomplete_or_unsupported_recipes(
+    options: dict[str, object], message: str
+) -> None:
+    with pytest.raises(UnsupportedDecoderError, match=message):
+        decode_libsvm(LIBSVM_FIXTURE, options)
+
+
+@pytest.mark.parametrize(
     ("body", "message"),
     [
         ("\ufeff+1 1:1\n", "byte-order mark"),
@@ -227,6 +350,14 @@ def test_libsvm_decodes_to_named_csr_and_response() -> None:
         ("+1 0:1\n", "range"),
         ("+1 01:1\n", "feature index"),
         ("+1 1:NaN\n", "feature value"),
+        ("+1 1:1e9999\n", "finite"),
+        ("+1 1:-1e-9999\n", "zero"),
+        ("+1 1:1 # comment\n", "feature token"),
+        ("+1 qid:1 1:1\n", "feature index"),
+        ("+1\u00a01:1\n", "label"),
+        ("+1 1:1\r", "carriage return"),
+        ("9223372036854775808 1:1\n", "out of range"),
+        ("+01 1:1\n", "label"),
         ("label 1:1\n", "label"),
         (" +1 1:1\n", "whitespace"),
     ],
@@ -259,3 +390,11 @@ def test_libsvm_accepts_trailing_ascii_field_separators(tmp_path: Path) -> None:
     decoded = decode_libsvm(source, LIBSVM_OPTIONS)
 
     np.testing.assert_array_equal(decoded.data.response, np.array([1]))
+
+
+def test_invalid_utf8_is_a_libsvm_decoding_error(tmp_path: Path) -> None:
+    source = tmp_path / "bad.libsvm"
+    source.write_bytes(b"+1 1:\xff\n")
+
+    with pytest.raises(DecodeError, match="UTF-8"):
+        decode_libsvm(source, LIBSVM_OPTIONS)

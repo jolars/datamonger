@@ -14,7 +14,7 @@ from datamonger._cache import (
 )
 from datamonger._canonical import canonical_sha256
 from datamonger._decode import decode_delimited_text
-from datamonger._decode_libsvm import decode_libsvm
+from datamonger._decode_libsvm import decode_libsvm, decode_libsvm_split
 from datamonger._errors import (
     ArtifactIntegrityError,
     ArtifactSelectionError,
@@ -28,6 +28,9 @@ from datamonger._errors import (
 )
 from datamonger._models import (
     DatasetData,
+    DecodedSparseDataset,
+    DecodedSparseDatasetSplit,
+    DecodedTable,
     FetchInfo,
     FetchResult,
     LogicalComponent,
@@ -103,17 +106,47 @@ def _select_artifact(
     )
 
 
-def _artifact_for_representation(
-    dataset: Mapping[str, Any], representation: Mapping[str, Any]
-) -> Mapping[str, Any]:
+def _artifacts_for_representation(
+    dataset: Mapping[str, Any],
+    representation: Mapping[str, Any],
+    roles: Sequence[str],
+) -> tuple[Mapping[str, Any], ...]:
     inputs = _object(representation.get("inputs"), "representation.inputs")
-    artifact_name = _string(inputs.get("data"), "representation.inputs.data")
-    for artifact in _artifacts(dataset):
-        if artifact.get("name") == artifact_name:
-            return artifact
-    raise UnsupportedRegistryError(
-        f"representation input refers to unknown artifact {artifact_name!r}"
-    )
+    if set(inputs) != set(roles):
+        raise UnsupportedRegistryError(
+            f"representation inputs must be exactly {list(roles)!r}"
+        )
+    artifacts = _artifacts(dataset)
+    selected: list[Mapping[str, Any]] = []
+    for role in roles:
+        artifact_name = _string(inputs.get(role), f"representation.inputs.{role}")
+        for artifact in artifacts:
+            if artifact.get("name") == artifact_name:
+                selected.append(artifact)
+                break
+        else:
+            raise UnsupportedRegistryError(
+                f"representation input refers to unknown artifact {artifact_name!r}"
+            )
+    return tuple(selected)
+
+
+def _libsvm_compression(artifact: Mapping[str, Any]) -> str:
+    artifact_format = artifact.get("format")
+    if artifact_format not in {"libsvm", "svmlight"}:
+        raise UnsupportedDecoderError(
+            "LIBSVM decoding requires a LIBSVM or SVMLight artifact"
+        )
+    compression = artifact.get("compression")
+    if not isinstance(compression, str) or compression not in {
+        "none",
+        "gzip",
+        "bzip2",
+    }:
+        raise UnsupportedDecoderError(
+            f"unsupported LIBSVM compression: {compression!r}"
+        )
+    return compression
 
 
 @contextmanager
@@ -317,16 +350,24 @@ def fetch_data(
     representation = _object(dataset.get("representation"), "dataset.representation")
     decoder = representation.get("decoder")
     decoder_version = representation.get("decoder_version")
-    if decoder_version != 1 or decoder not in {"delimited-text", "libsvm"}:
+    if decoder_version != 1 or decoder not in {
+        "delimited-text",
+        "libsvm",
+        "libsvm-split",
+    }:
         raise UnsupportedDecoderError(
-            "the vertical proof supports delimited-text and LIBSVM version 1"
+            "the Python client supports delimited-text, LIBSVM, and "
+            "LIBSVM split version 1"
         )
 
-    artifact = _artifact_for_representation(dataset, representation)
+    roles = ("train", "test") if decoder == "libsvm-split" else ("data",)
+    artifacts = _artifacts_for_representation(dataset, representation, roles)
     options = _object(representation.get("options"), "representation.options")
-    artifact_format = artifact.get("format")
-    compression = artifact.get("compression")
+    compressions: tuple[str, ...]
     if decoder == "delimited-text":
+        artifact = artifacts[0]
+        artifact_format = artifact.get("format")
+        compression = artifact.get("compression")
         if artifact_format not in {"csv", "tsv"}:
             raise UnsupportedDecoderError(
                 "delimited-text requires a CSV or TSV artifact"
@@ -342,21 +383,33 @@ def fetch_data(
             raise UnsupportedDecoderError(
                 f"unsupported delimited-text compression: {compression!r}"
             )
+        compressions = (compression,)
     else:
-        if compression != "none":
-            raise UnsupportedDecoderError(
-                "the LIBSVM decoder supports uncompressed artifacts"
+        compressions = tuple(_libsvm_compression(artifact) for artifact in artifacts)
+    with ExitStack() as stack:
+        artifact_paths = tuple(
+            stack.enter_context(
+                _retrieve_artifact_lease(artifact, cache_root, offline=offline)
             )
-        if artifact_format != "libsvm":
-            raise UnsupportedDecoderError("decoder requires artifact format 'libsvm'")
-    with _retrieve_artifact_lease(
-        artifact, cache_root, offline=offline
-    ) as artifact_path:
-        decoded = (
-            decode_delimited_text(artifact_path, options, compression=compression)
-            if decoder == "delimited-text"
-            else decode_libsvm(artifact_path, options)
+            for artifact in artifacts
         )
+        decoded: DecodedTable | DecodedSparseDataset | DecodedSparseDatasetSplit
+        if decoder == "delimited-text":
+            decoded = decode_delimited_text(
+                artifact_paths[0], options, compression=compressions[0]
+            )
+        elif decoder == "libsvm":
+            decoded = decode_libsvm(
+                artifact_paths[0], options, compression=compressions[0]
+            )
+        else:
+            decoded = decode_libsvm_split(
+                artifact_paths[0],
+                artifact_paths[1],
+                options,
+                train_compression=compressions[0],
+                test_compression=compressions[1],
+            )
     expect = _object(representation.get("expect"), "representation.expect")
     _validate_components(
         decoded.components,
@@ -379,13 +432,16 @@ def fetch_data(
         verification = "decoded"
 
     dataset_id = f"{source}:{name}@{resolved_version}"
-    artifact_name = _string(artifact.get("name"), "artifact name")
-    artifact_digest = _string(artifact.get("sha256"), "artifact SHA-256")
     info = FetchInfo(
         dataset_id=dataset_id,
         registry_release=selected_registry.release,
         registry_index_sha256=selected_registry.index_sha256,
-        artifact_digests={artifact_name: artifact_digest},
+        artifact_digests={
+            _string(artifact.get("name"), "artifact name"): _string(
+                artifact.get("sha256"), "artifact SHA-256"
+            )
+            for artifact in artifacts
+        },
         verification=verification,
         canonical_form=canonical_form,
         canonical_digest=canonical_digest,

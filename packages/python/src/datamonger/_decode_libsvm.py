@@ -1,13 +1,16 @@
-"""Explicit provisional LIBSVM version 1 decoding."""
+"""LIBSVM and SVMLight version 1 decoding."""
 
 from __future__ import annotations
 
+import bz2
+import gzip
 import math
 import re
 from array import array
 from collections.abc import Mapping
+from dataclasses import replace
 from pathlib import Path
-from typing import Literal, cast
+from typing import Literal, TextIO, cast
 
 import numpy as np
 from scipy import sparse
@@ -15,12 +18,14 @@ from scipy import sparse
 from datamonger._errors import DecodeError, UnsupportedDecoderError
 from datamonger._models import (
     DecodedSparseDataset,
+    DecodedSparseDatasetSplit,
     LogicalComponent,
     LogicalSparseMatrix,
     LogicalType,
     Pathish,
     ResponseArray,
     SparseDataset,
+    SparseDatasetSplit,
 )
 
 LabelType = Literal["float64", "int64"]
@@ -31,6 +36,7 @@ _FLOAT = re.compile(r"[+-]?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\Z"
 _FIELDS = re.compile(r"[ \t]+")
 _INT64_MIN = -(2**63)
 _INT64_MAX = 2**63 - 1
+_SUPPORTED_COMPRESSIONS = {"none", "gzip", "bzip2"}
 _SUPPORTED_OPTIONS = {
     "index_base",
     "feature_count",
@@ -117,8 +123,23 @@ def _record_body(raw_line: str, line_number: int) -> str:
     return body.rstrip(" \t")
 
 
-def decode_libsvm(path: Pathish, options: Mapping[str, object]) -> DecodedSparseDataset:
-    """Decode the strict provisional LIBSVM version 1 representation."""
+def _open_text(path: Pathish, compression: str) -> TextIO:
+    if compression not in _SUPPORTED_COMPRESSIONS:
+        raise UnsupportedDecoderError(f"unsupported compression: {compression!r}")
+    if compression == "gzip":
+        return gzip.open(path, mode="rt", encoding="utf-8", errors="strict", newline="")
+    if compression == "bzip2":
+        return bz2.open(path, mode="rt", encoding="utf-8", errors="strict", newline="")
+    return Path(path).open("r", encoding="utf-8", errors="strict", newline="")
+
+
+def decode_libsvm(
+    path: Pathish,
+    options: Mapping[str, object],
+    *,
+    compression: str = "none",
+) -> DecodedSparseDataset:
+    """Decode a strict LIBSVM or SVMLight version 1 representation."""
 
     feature_count, label_type, target_name = _validate_options(options)
     labels: list[int | float] = []
@@ -129,9 +150,7 @@ def decode_libsvm(path: Pathish, options: Mapping[str, object]) -> DecodedSparse
     feature_values = array("d")
 
     try:
-        with Path(path).open(
-            "r", encoding="utf-8", errors="strict", newline=""
-        ) as source:
+        with _open_text(path, compression) as source:
             for line_number, raw_line in enumerate(source, start=1):
                 body = _record_body(raw_line, line_number)
                 fields = _FIELDS.split(body)
@@ -184,8 +203,13 @@ def decode_libsvm(path: Pathish, options: Mapping[str, object]) -> DecodedSparse
                 row_offsets.append(len(feature_values))
     except UnicodeDecodeError as error:
         raise DecodeError("LIBSVM artifact is not valid UTF-8") from error
+    except EOFError as error:
+        raise DecodeError(
+            f"cannot decompress {compression} LIBSVM artifact: {error}"
+        ) from error
     except OSError as error:
-        raise DecodeError(f"cannot read LIBSVM artifact: {error}") from error
+        operation = "read" if compression == "none" else f"decompress {compression}"
+        raise DecodeError(f"cannot {operation} LIBSVM artifact: {error}") from error
 
     response: ResponseArray
     if label_type == "int64":
@@ -218,4 +242,30 @@ def decode_libsvm(path: Pathish, options: Mapping[str, object]) -> DecodedSparse
     return DecodedSparseDataset(
         data=SparseDataset(features=features, response=response),
         components=(matrix, response_component),
+    )
+
+
+def decode_libsvm_split(
+    train_path: Pathish,
+    test_path: Pathish,
+    options: Mapping[str, object],
+    *,
+    train_compression: str = "none",
+    test_compression: str = "none",
+) -> DecodedSparseDatasetSplit:
+    """Decode train and test inputs without concatenating either split."""
+
+    train = decode_libsvm(train_path, options, compression=train_compression)
+    test = decode_libsvm(test_path, options, compression=test_compression)
+    train_features, train_response = train.components
+    test_features, test_response = test.components
+    components = (
+        replace(train_features, name="train_features"),
+        replace(train_response, name=f"train_{train_response.name}"),
+        replace(test_features, name="test_features"),
+        replace(test_response, name=f"test_{test_response.name}"),
+    )
+    return DecodedSparseDatasetSplit(
+        data=SparseDatasetSplit(train=train.data, test=test.data),
+        components=components,
     )

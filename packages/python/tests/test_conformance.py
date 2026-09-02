@@ -11,7 +11,7 @@ from hypothesis import strategies as st
 
 from datamonger._canonical import canonical_sha256
 from datamonger._decode import decode_delimited_text
-from datamonger._decode_libsvm import decode_libsvm
+from datamonger._decode_libsvm import decode_libsvm, decode_libsvm_split
 from datamonger.errors import (
     ArtifactIntegrityError,
     ArtifactUnavailableError,
@@ -50,7 +50,13 @@ def test_shared_decoder_case_descriptors_are_closed_and_resolvable() -> None:
             "expected_sha256",
         }
         assert case["status"] in {"active-python", "milestone-3"}
-        assert (CORPUS / str(case["input"])).is_file()
+        inputs = case["input"]
+        if isinstance(inputs, str):
+            assert (CORPUS / inputs).is_file()
+        else:
+            assert isinstance(inputs, dict)
+            assert set(inputs) == {"train", "test"}
+            assert all((CORPUS / str(path)).is_file() for path in inputs.values())
         assert case["expected_sha256"] is not None
 
 
@@ -70,6 +76,52 @@ def test_active_delimited_text_cases_match_golden_digest(
     assert isinstance(recipe, dict)
 
     decoded = decode_delimited_text(CORPUS / str(case["input"]), recipe)
+
+    assert canonical_sha256(decoded.components) == case["expected_sha256"]
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        case
+        for case in load_cases("cases.json")
+        if case["area"] == "libsvm" and case["status"] == "active-python"
+    ],
+    ids=lambda case: case["id"],
+)
+def test_active_libsvm_cases_match_golden_digest(
+    case: dict[str, object],
+) -> None:
+    recipe = case["recipe"]
+    assert isinstance(recipe, dict)
+
+    decoded = decode_libsvm(CORPUS / str(case["input"]), recipe)
+
+    assert canonical_sha256(decoded.components) == case["expected_sha256"]
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        case
+        for case in load_cases("cases.json")
+        if case["area"] == "libsvm-split" and case["status"] == "active-python"
+    ],
+    ids=lambda case: case["id"],
+)
+def test_active_libsvm_split_cases_match_golden_digest(
+    case: dict[str, object],
+) -> None:
+    inputs = case["input"]
+    recipe = case["recipe"]
+    assert isinstance(inputs, dict)
+    assert isinstance(recipe, dict)
+
+    decoded = decode_libsvm_split(
+        CORPUS / str(inputs["train"]),
+        CORPUS / str(inputs["test"]),
+        recipe,
+    )
 
     assert canonical_sha256(decoded.components) == case["expected_sha256"]
 

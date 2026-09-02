@@ -51,7 +51,15 @@ class SparseDataset:
     response: ResponseArray
 
 
-DatasetData: TypeAlias = pd.DataFrame | SparseDataset
+@dataclass(frozen=True)
+class SparseDatasetSplit:
+    """Separate training and test sparse datasets from one representation."""
+
+    train: SparseDataset
+    test: SparseDataset
+
+
+DatasetData: TypeAlias = pd.DataFrame | SparseDataset | SparseDatasetSplit
 
 
 @dataclass(frozen=True)
@@ -249,3 +257,16 @@ class DecodedSparseDataset:
 
     data: SparseDataset
     components: tuple[LogicalSparseMatrix, LogicalComponent]
+
+
+@dataclass(frozen=True)
+class DecodedSparseDatasetSplit:
+    """A native sparse split and its four ordered logical components."""
+
+    data: SparseDatasetSplit
+    components: tuple[
+        LogicalSparseMatrix,
+        LogicalComponent,
+        LogicalSparseMatrix,
+        LogicalComponent,
+    ]

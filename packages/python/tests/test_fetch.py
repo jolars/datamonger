@@ -21,6 +21,7 @@ from conftest import (
     LIBSVM_DIGEST,
     LIBSVM_FIXTURE,
     LIBSVM_OPTIONS,
+    LIBSVM_SPLIT_DIGEST,
     OPTIONS,
 )
 from scipy import sparse
@@ -30,6 +31,7 @@ from datamonger import (
     FetchResult,
     Registry,
     SparseDataset,
+    SparseDatasetSplit,
     _api,
     fetch_artifact,
     fetch_data,
@@ -319,6 +321,115 @@ def add_libsvm_dataset(
     )
 
 
+def add_libsvm_split_dataset(
+    base_url: str, state: ServerState, registry: Registry
+) -> Registry:
+    train = gzip.compress(LIBSVM_FIXTURE.read_bytes())
+    test = bz2.compress((CORPUS / "artifacts" / "small-test.svmlight").read_bytes())
+    state.bodies["/train"] = train
+    state.bodies["/test"] = test
+    index = json.loads(state.bodies["/index.json"])
+    index["defaults"].append(
+        {"source": "fixture", "name": "sparse-split", "version": "1"}
+    )
+    index["datasets"].append(
+        {
+            "schema_version": 1,
+            "source": "fixture",
+            "name": "sparse-split",
+            "version": "1",
+            "title": "Small sparse split fixture",
+            "modality": "tabular",
+            "artifacts": [
+                {
+                    "name": "training-data",
+                    "format": "libsvm",
+                    "compression": "gzip",
+                    "size": len(train),
+                    "sha256": hashlib.sha256(train).hexdigest(),
+                    "distribution": "upstream-only",
+                    "downloads": [{"kind": "upstream", "url": f"{base_url}/train"}],
+                },
+                {
+                    "name": "testing-data",
+                    "format": "svmlight",
+                    "compression": "bzip2",
+                    "size": len(test),
+                    "sha256": hashlib.sha256(test).hexdigest(),
+                    "distribution": "upstream-only",
+                    "downloads": [{"kind": "upstream", "url": f"{base_url}/test"}],
+                },
+            ],
+            "representation": {
+                "decoder": "libsvm-split",
+                "decoder_version": 1,
+                "inputs": {"train": "training-data", "test": "testing-data"},
+                "options": LIBSVM_OPTIONS,
+                "expect": {
+                    "components": [
+                        {
+                            "name": "train_features",
+                            "kind": "sparse_matrix",
+                            "type": "float64",
+                            "rows": 2,
+                            "columns": 4,
+                        },
+                        {
+                            "name": "train_response",
+                            "kind": "vector",
+                            "type": "int64",
+                            "length": 2,
+                        },
+                        {
+                            "name": "test_features",
+                            "kind": "sparse_matrix",
+                            "type": "float64",
+                            "rows": 2,
+                            "columns": 4,
+                        },
+                        {
+                            "name": "test_response",
+                            "kind": "vector",
+                            "type": "int64",
+                            "length": 2,
+                        },
+                    ],
+                    "verification": [
+                        {
+                            "canonical_form": 1,
+                            "algorithm": "sha256",
+                            "digest": LIBSVM_SPLIT_DIGEST,
+                        }
+                    ],
+                },
+            },
+            "tasks": [
+                {
+                    "name": "default",
+                    "type": "classification",
+                    "splits": {
+                        "train": {
+                            "features": "train_features",
+                            "target": "train_response",
+                        },
+                        "test": {
+                            "features": "test_features",
+                            "target": "test_response",
+                        },
+                    },
+                }
+            ],
+        }
+    )
+    index_bytes = json.dumps(index, separators=(",", ":")).encode()
+    state.bodies["/index.json"] = index_bytes
+    return Registry(
+        release=registry.release,
+        index_sha256=hashlib.sha256(index_bytes).hexdigest(),
+        index_url=registry.index_url,
+    )
+
+
 def test_fetch_data_verifies_decodes_reports_and_reuses_cache_offline(
     local_server: tuple[str, ServerState], tmp_path: Path
 ) -> None:
@@ -498,6 +609,89 @@ def test_fetch_data_decodes_libsvm_to_sparse_dataset_and_reuses_it_offline(
         second.features.toarray(), first.data.features.toarray()
     )
     np.testing.assert_array_equal(second.response, first.data.response)
+
+
+def test_fetch_data_assembles_compressed_libsvm_and_svmlight_splits(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    base_url, state = local_server
+    registry = add_libsvm_split_dataset(base_url, state, make_registry(base_url, state))
+
+    first = fetch_data(
+        "sparse-split",
+        source="fixture",
+        registry=registry,
+        cache_dir=tmp_path,
+        return_info=True,
+    )
+
+    assert isinstance(first, FetchResult)
+    assert isinstance(first.data, SparseDatasetSplit)
+    np.testing.assert_array_equal(
+        first.data.train.features.toarray(),
+        np.array([[1.5, 0.0, 0.0, -2.0], [0.0, 3.0, 0.0, 0.0]]),
+    )
+    np.testing.assert_array_equal(
+        first.data.test.features.toarray(),
+        np.array([[2.5, 0.0, -4.0, 0.0], [0.0, 0.001, 0.0, 5.0]]),
+    )
+    np.testing.assert_array_equal(first.data.train.response, np.array([1, -1]))
+    np.testing.assert_array_equal(first.data.test.response, np.array([0, 2]))
+    assert first.info.dataset_id == "fixture:sparse-split@1"
+    assert first.info.verification == "decoded"
+    assert first.info.canonical_digest == LIBSVM_SPLIT_DIGEST
+    assert first.info.artifact_digests == {
+        "training-data": hashlib.sha256(state.bodies["/train"]).hexdigest(),
+        "testing-data": hashlib.sha256(state.bodies["/test"]).hexdigest(),
+    }
+
+    state.online = False
+    second = fetch_data(
+        "sparse-split",
+        source="fixture",
+        registry=registry,
+        cache_dir=tmp_path,
+    )
+    assert isinstance(second, SparseDatasetSplit)
+    np.testing.assert_array_equal(
+        second.train.features.toarray(), first.data.train.features.toarray()
+    )
+    np.testing.assert_array_equal(
+        second.test.features.toarray(), first.data.test.features.toarray()
+    )
+
+
+@pytest.mark.parametrize(
+    ("artifact_index", "field", "value", "message"),
+    [
+        (0, "format", "csv", "LIBSVM or SVMLight"),
+        (1, "compression", "zip", "compression"),
+    ],
+)
+def test_fetch_data_validates_every_libsvm_split_input_before_fetch(
+    local_server: tuple[str, ServerState],
+    tmp_path: Path,
+    artifact_index: int,
+    field: str,
+    value: str,
+    message: str,
+) -> None:
+    base_url, state = local_server
+    registry = add_libsvm_split_dataset(base_url, state, make_registry(base_url, state))
+    index = json.loads(state.bodies["/index.json"])
+    dataset = next(item for item in index["datasets"] if item["name"] == "sparse-split")
+    dataset["artifacts"][artifact_index][field] = value
+    registry = _reseal_index(base_url, state, index)
+
+    with pytest.raises(UnsupportedDecoderError, match=message):
+        fetch_data(
+            "sparse-split",
+            source="fixture",
+            registry=registry,
+            cache_dir=tmp_path,
+        )
+
+    assert [path for path, _ in state.requests] == ["/index.json"]
 
 
 def test_default_version_and_artifact_only_verification(

@@ -11,6 +11,7 @@ from datamonger._models import (
     FetchResult,
     Registry,
     SparseDataset,
+    SparseDatasetSplit,
 )
 from datamonger._registry import BUNDLED_REGISTRY, resolve_registry
 from datamonger._selection import active_registry, set_registry
@@ -25,6 +26,7 @@ __all__ = [
     "FetchResult",
     "Registry",
     "SparseDataset",
+    "SparseDatasetSplit",
     "active_registry",
     "cache_clean",
     "cache_info",

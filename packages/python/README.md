@@ -82,15 +82,18 @@ it never causes a fallback to another registry. The release and digest form the
 strong selector. The URL is only its retrieval location, and possession of a
 digest authenticates nothing beyond the channel from which the selector came.
 
-Delimited text returns a pandas data frame. LIBSVM returns a frozen
-`SparseDataset` containing a SciPy CSR feature matrix and a NumPy response
-vector. Pandas, NumPy, and SciPy are required dependencies, so these return
-types never depend on which optional packages happen to be installed.
+Delimited text returns a pandas data frame. A single LIBSVM or SVMLight input
+returns a frozen `SparseDataset` containing a SciPy CSR feature matrix and a
+NumPy response vector. A `libsvm-split` representation returns a frozen
+`SparseDatasetSplit`; its separate `train` and `test` fields each contain a
+`SparseDataset`, so neither input is concatenated or discarded. Pandas, NumPy,
+and SciPy are required dependencies, so these return types never depend on
+which optional packages happen to be installed.
 
-CSV and TSV artifacts support manifest-declared `none`, `gzip`, and `bzip2`
-compression. The client verifies and caches the exact compressed artifact,
-then decompresses it for decoding; file names and URLs do not determine the
-compression method.
+CSV, TSV, LIBSVM, and SVMLight artifacts support manifest-declared `none`,
+`gzip`, and `bzip2` compression. The client verifies and caches the exact
+compressed artifact, then decompresses it for decoding; file names and URLs do
+not determine the compression method.
 
 Use `return_info=True` to receive a `FetchResult` containing the resolved
 dataset identity, registry selector, artifact digests, and decoded-verification

@@ -59,6 +59,39 @@
         "target_name": "response"
       },
       "expected_sha256": "50b077922f6ffc77054622fd807fbc8de48d1c3fcb3be644027422b244b0190b"
+    },
+    {
+      "id": "svmlight-small",
+      "area": "libsvm",
+      "status": "active-python",
+      "input": "artifacts/small-test.svmlight",
+      "recipe": {
+        "index_base": 1,
+        "feature_count": 4,
+        "duplicate_features": "error",
+        "label_type": "int64",
+        "row_order": "source",
+        "target_name": "response"
+      },
+      "expected_sha256": "708c9206dacf42a0f9df248c2175ea2940935ca0f1cb80e23910a458ecd93a0f"
+    },
+    {
+      "id": "libsvm-split-small",
+      "area": "libsvm-split",
+      "status": "active-python",
+      "input": {
+        "train": "artifacts/small.libsvm",
+        "test": "artifacts/small-test.svmlight"
+      },
+      "recipe": {
+        "index_base": 1,
+        "feature_count": 4,
+        "duplicate_features": "error",
+        "label_type": "int64",
+        "row_order": "source",
+        "target_name": "response"
+      },
+      "expected_sha256": "7169b3668489db5ab1f914ee7f2b102a01d31a55f21ce9b89fc88ce526670ead"
     }
   ]
 }
