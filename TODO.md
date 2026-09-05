@@ -94,7 +94,7 @@ round-trip registry tests.
 
 ## Milestone 4: Tooling and candidate data
 
-- [ ] Build `dm-add` around the reference decoder and authoring checks.
+- [x] Build `dm-add` around the reference decoder and authoring checks.
 - [ ] Build `dm-canary` and a scheduled upstream-verification workflow.
 - [ ] Curate roughly ten UCI and LIBSVM entries covering regression, binary and
   multiclass classification, unsupervised data, dense and sparse data, and a

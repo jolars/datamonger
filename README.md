@@ -29,6 +29,35 @@ For production releases, the command also checks the generated HTTPS release
 catalog at `registry/catalog.json`. Building a production release refreshes the
 catalog after writing its immutable index and selector.
 
+### Manifest authoring
+
+`dm-add` completes a partial manifest with facts derived from the artifacts and
+the reference decoder:
+
+```console
+cd packages/python
+uv run python ../../tools/dm_add.py path/to/draft.yaml
+uv run python ../../tools/dm_add.py path/to/draft.yaml \
+  --output ../../registry/datasets/uci/example-1.yaml
+```
+
+The draft supplies the dataset identity, descriptive and license metadata,
+artifact names, formats, explicit compression, download locations, decoder
+recipe, and any tasks. It may omit `provenance.retrieved_at`, artifact `size`
+and `sha256`, and `representation.expect`; `dm-add` derives those fields. If a
+derived field is already present, it must match exactly.
+
+Every declared location is downloaded and must produce identical bytes after
+HTTP content coding is removed. File-level compression must match the explicit
+declaration. The completed YAML is written to stdout by default, while artifact
+facts, decoded shapes, and bounded representative values are written to stderr.
+Use `--output` to write a new file and add `--force` only for an intentional
+replacement. Output YAML does not preserve comments or layout from the draft.
+
+The candidate canonical digest is an authoring aid, not an independent
+attestation. Stable publication still requires reproduction by another
+implementation and human review of shapes, names, and representative values.
+
 ## Vertical-proof registry
 
 The legacy prerelease `proof-0001` registry contains UCI Iris and LIBSVM

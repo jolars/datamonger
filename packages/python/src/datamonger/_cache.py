@@ -12,6 +12,7 @@ import urllib.request
 import zlib
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager, suppress
+from dataclasses import dataclass
 from pathlib import Path
 from typing import BinaryIO
 from urllib.parse import urlsplit
@@ -25,6 +26,16 @@ _CHUNK_SIZE = 1024 * 1024
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _HTTP_TOKEN = re.compile(r"[!#$%&'*+.^_`|~0-9A-Za-z-]+\Z")
 _NAMESPACES = {"objects", "registries"}
+
+
+@dataclass(frozen=True)
+class DownloadedFile:
+    """One URL response after HTTP content codings have been removed."""
+
+    path: Path
+    size: int
+    sha256: str
+    content_coding: str | None
 
 
 def default_cache_root() -> Path:
@@ -146,11 +157,11 @@ def _content_decoder(
     headers: Sequence[str],
     url: str,
     retrieval_error: Callable[[str], DatamongerError],
-) -> zlib._Decompress | None:
-    """Return a decompressor for the declared content codings, if any."""
+) -> tuple[zlib._Decompress | None, str | None]:
+    """Return the declared non-identity coding and its decompressor, if any."""
 
     if not headers:
-        return None
+        return None, None
     header = ", ".join(headers)
     codings = [coding.strip() for value in headers for coding in value.split(",")]
     if any(_HTTP_TOKEN.fullmatch(coding) is None for coding in codings):
@@ -161,12 +172,12 @@ def _content_decoder(
     if len(non_identity) > 1:
         raise retrieval_error(f"multiple HTTP content codings {header!r} from {url}")
     if not non_identity:
-        return None
+        return None, None
     # The artifact is defined as the content after the declared codings are
     # removed. We undo gzip because CDNs apply it despite Accept-Encoding:
     # identity; anything else stays unsupported rather than guessed at.
     if non_identity[0] in {"gzip", "x-gzip"}:
-        return zlib.decompressobj(16 + zlib.MAX_WBITS)
+        return zlib.decompressobj(16 + zlib.MAX_WBITS), non_identity[0]
     raise retrieval_error(f"unsupported HTTP content coding {header!r} from {url}")
 
 
@@ -281,11 +292,61 @@ def _ensure_cached(
                 return target
             _unlink(target)
 
+    downloaded: DownloadedFile | None = None
+    try:
+        downloaded = _download_to_temporary(
+            directory=target.parent,
+            url=url,
+            size=size,
+            integrity_error=integrity_error,
+            retrieval_error=retrieval_error,
+        )
+        if size is not None and downloaded.size != size:
+            raise integrity_error(
+                f"size mismatch for {url}: expected {size}, received {downloaded.size}"
+            )
+        if downloaded.sha256 != digest:
+            message = (
+                f"SHA-256 mismatch for {url}: expected {digest}, "
+                f"received {downloaded.sha256}"
+            )
+            raise integrity_error(message)
+
+        with _publication_lock(cache_root, namespace, digest):
+            if target.exists() and _matches(target, digest, size):
+                _unlink(downloaded.path)
+                downloaded = None
+            else:
+                if target.exists():
+                    _unlink(target)
+                os.replace(downloaded.path, target)
+                downloaded = None
+        return target
+    except DatamongerError:
+        raise
+    except OSError as error:
+        raise retrieval_error(f"cannot retrieve {url}: {error}") from error
+    finally:
+        if downloaded is not None:
+            with suppress(OSError):
+                downloaded.path.unlink(missing_ok=True)
+
+
+def _download_to_temporary(
+    *,
+    directory: Path,
+    url: str,
+    size: int | None,
+    integrity_error: Callable[[str], DatamongerError],
+    retrieval_error: Callable[[str], DatamongerError],
+) -> DownloadedFile:
+    """Download exact artifact bytes to a temporary file in ``directory``."""
+
     temporary_path: Path | None = None
     try:
         request = urllib.request.Request(url, headers={"Accept-Encoding": "identity"})
         with urllib.request.urlopen(request, timeout=30) as response:
-            decoder = _content_decoder(
+            decoder, content_coding = _content_decoder(
                 response.headers.get_all("Content-Encoding", []), url, retrieval_error
             )
             has_transfer_coding = _has_transfer_coding(
@@ -301,7 +362,7 @@ def _ensure_cached(
                     retrieval_error,
                 )
             with tempfile.NamedTemporaryFile(
-                mode="wb", dir=target.parent, prefix=".download-", delete=False
+                mode="wb", dir=directory, prefix=".download-", delete=False
             ) as temporary:
                 temporary_path = Path(temporary.name)
                 actual = hashlib.sha256()
@@ -345,29 +406,14 @@ def _ensure_cached(
                     )
                 temporary.flush()
                 os.fsync(temporary.fileno())
-
-        if size is not None and count != size:
-            raise integrity_error(
-                f"size mismatch for {url}: expected {size}, received {count}"
-            )
-        actual_digest = actual.hexdigest()
-        if actual_digest != digest:
-            message = (
-                f"SHA-256 mismatch for {url}: expected {digest}, "
-                f"received {actual_digest}"
-            )
-            raise integrity_error(message)
-
-        with _publication_lock(cache_root, namespace, digest):
-            if target.exists() and _matches(target, digest, size):
-                _unlink(temporary_path)
-                temporary_path = None
-            else:
-                if target.exists():
-                    _unlink(target)
-                os.replace(temporary_path, target)
-                temporary_path = None
-        return target
+        result = DownloadedFile(
+            path=temporary_path,
+            size=count,
+            sha256=actual.hexdigest(),
+            content_coding=content_coding,
+        )
+        temporary_path = None
+        return result
     except DatamongerError:
         raise
     except (
@@ -381,6 +427,31 @@ def _ensure_cached(
         if temporary_path is not None:
             with suppress(OSError):
                 temporary_path.unlink(missing_ok=True)
+
+
+def download_unverified(
+    *,
+    directory: Path,
+    url: str,
+    retrieval_error: Callable[[str], DatamongerError] = RetrievalError,
+) -> DownloadedFile:
+    """Download a URL without a predeclared digest for authoring inspection."""
+
+    if urlsplit(url).scheme not in {"http", "https"}:
+        raise retrieval_error(f"unsupported retrieval URL scheme for {url!r}")
+    try:
+        directory.mkdir(parents=True, exist_ok=True)
+    except OSError as error:
+        raise CacheError(
+            f"cannot create download directory {directory}: {error}"
+        ) from error
+    return _download_to_temporary(
+        directory=directory,
+        url=url,
+        size=None,
+        integrity_error=retrieval_error,
+        retrieval_error=retrieval_error,
+    )
 
 
 @contextmanager

@@ -96,6 +96,12 @@ def _load_yaml(path: Path) -> Mapping[str, Any]:
     return _mapping(value, str(path))
 
 
+def load_yaml(path: Path) -> Mapping[str, Any]:
+    """Load one JSON-compatible YAML authoring document."""
+
+    return _load_yaml(path)
+
+
 def _load_json(path: Path) -> Mapping[str, Any]:
     try:
         value = json.loads(path.read_bytes())
@@ -371,6 +377,19 @@ def _validate_dataset(dataset: Mapping[str, Any]) -> None:
                     raise ValueError(f"task refers to unknown component {name!r}")
 
 
+def validate_manifest(dataset: Mapping[str, Any], *, root: Path | None = None) -> None:
+    """Validate one complete manifest against its schema and semantic rules."""
+
+    source_root = (root or ROOT).resolve()
+    _validate_schema(
+        dataset,
+        "manifest-v1.schema.json",
+        source_root / "spec" / "schema",
+        "manifest",
+    )
+    _validate_dataset(dataset)
+
+
 def _identity_projection(dataset: Mapping[str, Any]) -> object:
     artifacts = []
     for raw in _sequence(dataset.get("artifacts"), "artifacts"):
@@ -607,10 +626,7 @@ def build(release_path: Path, *, root: Path | None = None) -> tuple[bytes, bytes
         for path in _sequence(release_record.get("manifests"), "manifests")
     ]
     for dataset in datasets:
-        _validate_schema(
-            dataset, "manifest-v1.schema.json", schema_directory, "manifest"
-        )
-        _validate_dataset(dataset)
+        validate_manifest(dataset, root=source_root)
     identities = [_identity(dataset, "dataset") for dataset in datasets]
     if len(identities) != len(set(identities)):
         raise ValueError("dataset identifiers must be unique")
