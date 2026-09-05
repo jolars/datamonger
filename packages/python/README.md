@@ -110,7 +110,33 @@ not determine the compression method.
 
 Use `return_info=True` to receive a `FetchResult` containing the resolved
 dataset identity, registry selector, artifact digests, and decoded-verification
-record.
+record. Decoded verification is enabled by default for every representation.
+It checks both the expected component shapes and the canonical SHA-256. For
+diagnostic or performance-sensitive work, `verify_decoded=False` explicitly
+skips those checks while retaining mandatory artifact size and SHA-256
+verification; `FetchInfo.verification` then reports `"artifact"` rather than
+`"decoded"`.
+
+Inspect registry metadata without retrieving an artifact with `data_info()`, or
+enumerate every version in the active immutable release with `list_data()`:
+
+```python
+from datamonger import data_info, list_data
+
+iris_info = data_info("iris", source="uci")
+assert iris_info.dataset_id == "uci:iris@1"
+for info in list_data():
+    print(info.dataset_id, info.modality, info.representation["expect"])
+```
+
+Both operations use the same registry selection and default-version resolution
+as `fetch_data()`. A `DataInfo` includes the registry selector, provenance,
+licensing, artifacts and their distribution and preservation records, the full
+representation, `expected_components`, `verification_records`, related
+datasets, and task metadata.
+`list_data()` returns these records in canonical `(source, name, version)`
+order. Pass `offline=True` to require a bundled or already cached registry
+index.
 
 To retrieve verified artifact bytes without decoding them, use
 `fetch_artifact()`:

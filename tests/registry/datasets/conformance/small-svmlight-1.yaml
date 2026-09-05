@@ -1,0 +1,45 @@
+schema_version: 1
+source: conformance
+name: small_svmlight
+version: "1"
+title: Small SVMLight conformance fixture
+description: Tiny sparse classification data using the SVMLight artifact format.
+modality: tabular
+provenance:
+  provider: Datamonger
+  upstream_name: small-test.svmlight
+  landing_page: https://example.invalid/datamonger/conformance
+  retrieved_at: "2026-08-29"
+license:
+  status: known
+  identifier: CC0-1.0
+artifacts:
+  - name: data
+    format: svmlight
+    compression: none
+    size: 29
+    sha256: db6007bff9efaa468f44c20b485a51f92d794141dae44a490ac83aa721e7cb36
+    distribution: upstream-only
+    downloads:
+      - kind: upstream
+        url: https://example.invalid/datamonger/conformance/small-test.svmlight
+representation:
+  decoder: libsvm
+  decoder_version: 1
+  inputs:
+    data: data
+  options:
+    index_base: 1
+    feature_count: 4
+    duplicate_features: error
+    label_type: int64
+    row_order: source
+    target_name: response
+  expect:
+    components:
+      - {name: features, kind: sparse_matrix, type: float64, rows: 2, columns: 4}
+      - {name: response, kind: vector, type: int64, length: 2}
+    verification:
+      - canonical_form: 1
+        algorithm: sha256
+        digest: 708c9206dacf42a0f9df248c2175ea2940935ca0f1cb80e23910a458ecd93a0f

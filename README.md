@@ -4,7 +4,7 @@ Datamonger is a cross-language registry and artifact system for retrieving,
 verifying, and identically decoding public research datasets.
 
 The vertical proof, the specification-and-registry milestone, and the Python
-retrieval milestone are complete. Normative draft contracts live in
+retrieval and decoding milestones are complete. Normative draft contracts live in
 [`spec/`](spec/); see [DESIGN.md](DESIGN.md) for the architecture and
 [TODO.md](TODO.md) for the implementation roadmap.
 
@@ -45,7 +45,8 @@ failures.
 
 ## Conformance registry
 
-The immutable `test-0001` release under `tests/registry` contains tiny CSV, TSV,
-and LIBSVM artifacts. Its generated index and language-neutral cases under
-`tests/conformance` are the shared source of golden bytes, malformed inputs,
-properties, and fuzz regressions for the future R and Julia clients.
+The immutable releases under `tests/registry` contain tiny CSV, TSV, LIBSVM,
+SVMLight, and split-assembly datasets. Their generated indexes and the
+language-neutral cases under `tests/conformance` are the shared source of
+golden bytes, malformed inputs, properties, and fuzz regressions for the future
+R and Julia clients.

@@ -1575,3 +1575,65 @@ def test_decoded_digest_mismatch_is_distinct(
             registry=registry,
             cache_dir=tmp_path,
         )
+
+
+@pytest.mark.parametrize("decoder", ["delimited-text", "libsvm", "libsvm-split"])
+def test_every_initial_decoder_verifies_decoded_results_by_default(
+    local_server: tuple[str, ServerState], tmp_path: Path, decoder: str
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+    name = "mixed"
+    if decoder == "libsvm":
+        registry = add_libsvm_dataset(base_url, state, registry)
+        name = "sparse"
+    elif decoder == "libsvm-split":
+        registry = add_libsvm_split_dataset(base_url, state, registry)
+        name = "sparse-split"
+    index = json.loads(state.bodies["/index.json"])
+    dataset = next(item for item in index["datasets"] if item["name"] == name)
+    dataset["representation"]["expect"]["verification"][0]["digest"] = "0" * 64
+    registry = _reseal_index(base_url, state, index)
+
+    with pytest.raises(DecodedIntegrityError, match="decoded SHA-256 mismatch"):
+        fetch_data(
+            name,
+            source="fixture",
+            registry=registry,
+            cache_dir=tmp_path,
+        )
+
+
+@pytest.mark.parametrize("decoder", ["delimited-text", "libsvm", "libsvm-split"])
+def test_artifact_only_opt_out_skips_all_decoded_expectations(
+    local_server: tuple[str, ServerState], tmp_path: Path, decoder: str
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+    name = "mixed"
+    if decoder == "libsvm":
+        registry = add_libsvm_dataset(base_url, state, registry)
+        name = "sparse"
+    elif decoder == "libsvm-split":
+        registry = add_libsvm_split_dataset(base_url, state, registry)
+        name = "sparse-split"
+    index = json.loads(state.bodies["/index.json"])
+    dataset = next(item for item in index["datasets"] if item["name"] == name)
+    expectations = dataset["representation"]["expect"]
+    expectations["components"] = []
+    expectations["verification"] = []
+    registry = _reseal_index(base_url, state, index)
+
+    result = fetch_data(
+        name,
+        source="fixture",
+        registry=registry,
+        cache_dir=tmp_path,
+        verify_decoded=False,
+        return_info=True,
+    )
+
+    assert isinstance(result, FetchResult)
+    assert result.info.verification == "artifact"
+    assert result.info.canonical_form is None
+    assert result.info.canonical_digest is None

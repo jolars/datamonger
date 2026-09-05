@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "delimited-nonfinite-float",
+      "area": "delimited-text",
+      "input": "artifacts/malformed-float.csv",
+      "recipe": {
+        "encoding": "utf-8",
+        "delimiter": ",",
+        "header": true,
+        "quote": "\"",
+        "escape": "double",
+        "missing_values": [],
+        "row_order": "source",
+        "columns": [{"name": "x", "type": "float64"}]
+      },
+      "expected": "decode"
+    },
+    {
+      "id": "libsvm-out-of-order-features",
+      "area": "libsvm",
+      "input": "artifacts/malformed-order.libsvm",
+      "recipe": {
+        "index_base": 1,
+        "feature_count": 4,
+        "duplicate_features": "error",
+        "label_type": "int64",
+        "row_order": "source",
+        "target_name": "response"
+      },
+      "expected": "decode"
+    },
+    {
+      "id": "libsvm-split-malformed-test",
+      "area": "libsvm-split",
+      "input": {
+        "train": "artifacts/small.libsvm",
+        "test": "artifacts/malformed-order.libsvm"
+      },
+      "recipe": {
+        "index_base": 1,
+        "feature_count": 4,
+        "duplicate_features": "error",
+        "label_type": "int64",
+        "row_order": "source",
+        "target_name": "response"
+      },
+      "expected": "decode"
+    }
+  ]
+}

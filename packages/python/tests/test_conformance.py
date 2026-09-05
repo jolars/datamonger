@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import json
-from contextlib import suppress
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager, suppress
 from pathlib import Path
+from typing import Any
 
 import pytest
-from conftest import CORPUS, LIBSVM_OPTIONS, OPTIONS
+from conftest import CONFORMANCE_ARTIFACTS_BY_SHA256, CORPUS, LIBSVM_OPTIONS, OPTIONS
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
+from datamonger import FetchResult, Registry, _api, fetch_data
 from datamonger._canonical import canonical_sha256
 from datamonger._decode import decode_delimited_text
 from datamonger._decode_libsvm import decode_libsvm, decode_libsvm_split
@@ -48,6 +51,7 @@ def test_shared_decoder_case_descriptors_are_closed_and_resolvable() -> None:
             "input",
             "recipe",
             "expected_sha256",
+            "dataset",
         }
         assert case["status"] in {"active-python", "milestone-3"}
         inputs = case["input"]
@@ -58,6 +62,7 @@ def test_shared_decoder_case_descriptors_are_closed_and_resolvable() -> None:
             assert set(inputs) == {"train", "test"}
             assert all((CORPUS / str(path)).is_file() for path in inputs.values())
         assert case["expected_sha256"] is not None
+        assert isinstance(case["dataset"], str)
 
 
 @pytest.mark.parametrize(
@@ -160,6 +165,77 @@ def test_shared_error_cases_map_to_distinct_python_types() -> None:
         assert set(case) == {"id", "expected"}
         assert isinstance(case["id"], str)
         assert python_types[case["expected"]].__module__ == "datamonger._errors"
+
+
+@pytest.mark.parametrize(
+    "case", load_cases("malformed.json"), ids=lambda case: case["id"]
+)
+def test_shared_malformed_decoder_cases_are_rejected(
+    case: dict[str, object],
+) -> None:
+    assert set(case) == {"id", "area", "input", "recipe", "expected"}
+    assert case["area"] in {"delimited-text", "libsvm", "libsvm-split"}
+    assert case["expected"] == "decode"
+    recipe = case["recipe"]
+    inputs = case["input"]
+    assert isinstance(recipe, dict)
+
+    with pytest.raises(DecodeError):
+        if case["area"] == "delimited-text":
+            assert isinstance(inputs, str)
+            decode_delimited_text(CORPUS / inputs, recipe)
+        elif case["area"] == "libsvm":
+            assert isinstance(inputs, str)
+            decode_libsvm(CORPUS / inputs, recipe)
+        else:
+            assert isinstance(inputs, dict)
+            decode_libsvm_split(
+                CORPUS / str(inputs["train"]),
+                CORPUS / str(inputs["test"]),
+                recipe,
+            )
+
+
+def test_every_initial_representation_round_trips_its_registry_golden(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    root = CORPUS.parent
+    release = root / "registry/releases/test-0002"
+    index = json.loads((release / "index.json").read_bytes())
+    cases = {case["dataset"]: case for case in load_cases("cases.json")}
+    selector = Registry(**json.loads((release / "selector.json").read_bytes()))
+    monkeypatch.setattr(_api, "_load_registry", lambda *_args, **_kwargs: index)
+
+    @contextmanager
+    def retrieve(
+        artifact: Mapping[str, Any], _cache_root: Path, *, offline: bool
+    ) -> Iterator[Path]:
+        assert offline
+        yield CONFORMANCE_ARTIFACTS_BY_SHA256[str(artifact["sha256"])]
+
+    monkeypatch.setattr(_api, "_retrieve_artifact_lease", retrieve)
+
+    registry_dataset_ids = {
+        f"{dataset['source']}:{dataset['name']}@{dataset['version']}"
+        for dataset in index["datasets"]
+    }
+    assert registry_dataset_ids == set(cases)
+    for dataset in index["datasets"]:
+        dataset_id = ":".join((dataset["source"], dataset["name"]))
+        dataset_id = f"{dataset_id}@{dataset['version']}"
+        result = fetch_data(
+            dataset["name"],
+            source=dataset["source"],
+            version=dataset["version"],
+            registry=selector,
+            cache_dir=tmp_path,
+            offline=True,
+            return_info=True,
+        )
+
+        assert isinstance(result, FetchResult)
+        assert result.info.verification == "decoded"
+        assert result.info.canonical_digest == cases[dataset_id]["expected_sha256"]
 
 
 @pytest.mark.parametrize(

@@ -3,12 +3,15 @@
 from typing import assert_type
 
 from datamonger import (
+    DataInfo,
     DatasetData,
     FetchResult,
     Registry,
     SparseDataset,
     SparseDatasetSplit,
+    data_info,
     fetch_data,
+    list_data,
 )
 
 
@@ -39,3 +42,8 @@ def check_sparse_result_structure(
     assert_type(split.train, SparseDataset)
     assert_type(split.test, SparseDataset)
     assert_type(dataset, SparseDataset)
+
+
+def check_metadata_return_types(registry: Registry) -> None:
+    assert_type(data_info("example", source="fixture", registry=registry), DataInfo)
+    assert_type(list_data(registry=registry), tuple[DataInfo, ...])
