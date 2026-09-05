@@ -31,9 +31,7 @@ def _case_input_paths(case: dict[str, Any]) -> tuple[Path, ...]:
     return (CORPUS / cast(str, inputs),)
 
 
-_CONFORMANCE_ARTIFACTS = {
-    path for case in CASES for path in _case_input_paths(case)
-}
+_CONFORMANCE_ARTIFACTS = {path for case in CASES for path in _case_input_paths(case)}
 CONFORMANCE_ARTIFACTS_BY_SHA256 = {
     hashlib.sha256(path.read_bytes()).hexdigest(): path
     for path in _CONFORMANCE_ARTIFACTS
