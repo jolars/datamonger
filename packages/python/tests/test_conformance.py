@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager, suppress
@@ -180,18 +181,28 @@ def test_shared_malformed_decoder_cases_are_rejected(
     inputs = case["input"]
     assert isinstance(recipe, dict)
 
+    input_paths: tuple[Path, ...]
+    if case["area"] in {"delimited-text", "libsvm"}:
+        assert isinstance(inputs, str)
+        input_paths = (CORPUS / inputs,)
+    else:
+        assert isinstance(inputs, dict)
+        assert set(inputs) == {"train", "test"}
+        input_paths = (
+            CORPUS / str(inputs["train"]),
+            CORPUS / str(inputs["test"]),
+        )
+    assert all(path.is_file() for path in input_paths)
+
     with pytest.raises(DecodeError):
         if case["area"] == "delimited-text":
-            assert isinstance(inputs, str)
-            decode_delimited_text(CORPUS / inputs, recipe)
+            decode_delimited_text(input_paths[0], recipe)
         elif case["area"] == "libsvm":
-            assert isinstance(inputs, str)
-            decode_libsvm(CORPUS / inputs, recipe)
+            decode_libsvm(input_paths[0], recipe)
         else:
-            assert isinstance(inputs, dict)
             decode_libsvm_split(
-                CORPUS / str(inputs["train"]),
-                CORPUS / str(inputs["test"]),
+                input_paths[0],
+                input_paths[1],
                 recipe,
             )
 
@@ -211,7 +222,12 @@ def test_every_initial_representation_round_trips_its_registry_golden(
         artifact: Mapping[str, Any], _cache_root: Path, *, offline: bool
     ) -> Iterator[Path]:
         assert offline
-        yield CONFORMANCE_ARTIFACTS_BY_SHA256[str(artifact["sha256"])]
+        digest = str(artifact["sha256"])
+        path = CONFORMANCE_ARTIFACTS_BY_SHA256[digest]
+        contents = path.read_bytes()
+        assert len(contents) == artifact["size"]
+        assert hashlib.sha256(contents).hexdigest() == digest
+        yield path
 
     monkeypatch.setattr(_api, "_retrieve_artifact_lease", retrieve)
 

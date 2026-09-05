@@ -256,25 +256,10 @@ def _optional_records(value: object, field: str) -> tuple[Mapping[str, Any], ...
     return () if value is None else _records(value, field)
 
 
-def _default_identities(index: Mapping[str, Any]) -> set[tuple[str, str, str]]:
-    identities: set[tuple[str, str, str]] = set()
-    for raw_default in _array(index.get("defaults"), "registry.defaults"):
-        default = _object(raw_default, "registry default")
-        identities.add(
-            (
-                _string(default.get("source"), "default.source"),
-                _string(default.get("name"), "default.name"),
-                _string(default.get("version"), "default.version"),
-            )
-        )
-    return identities
-
-
 def _data_info(
     dataset: Mapping[str, Any],
     *,
     registry: Registry,
-    defaults: set[tuple[str, str, str]],
 ) -> DataInfo:
     source = _string(dataset.get("source"), "dataset.source")
     name = _string(dataset.get("name"), "dataset.name")
@@ -288,7 +273,6 @@ def _data_info(
         source=source,
         name=name,
         version=version,
-        is_default=(source, name, version) in defaults,
         registry_release=registry.release,
         registry_index_sha256=registry.index_sha256,
         title=_string(dataset.get("title"), "dataset.title"),
@@ -329,11 +313,7 @@ def data_info(
     selected_registry = registry if registry is not None else active_registry()
     index = _load_registry(selected_registry, cache_root, offline=offline)
     dataset = resolve_dataset(index, source=source, name=name, version=version)
-    return _data_info(
-        dataset,
-        registry=selected_registry,
-        defaults=_default_identities(index),
-    )
+    return _data_info(dataset, registry=selected_registry)
 
 
 def list_data(
@@ -356,17 +336,8 @@ def list_data(
         datasets.append(
             resolve_dataset(index, source=source, name=name, version=version)
         )
-    defaults = _default_identities(index)
     return tuple(
-        _data_info(dataset, registry=selected_registry, defaults=defaults)
-        for dataset in sorted(
-            datasets,
-            key=lambda item: (
-                _string(item.get("source"), "dataset.source"),
-                _string(item.get("name"), "dataset.name"),
-                _string(item.get("version"), "dataset.version"),
-            ),
-        )
+        _data_info(dataset, registry=selected_registry) for dataset in datasets
     )
 
 
@@ -411,11 +382,33 @@ def _validate_components(
             )
 
 
-def _verification_record(expect: Mapping[str, Any]) -> Mapping[str, Any]:
+def _verification_record(
+    index: Mapping[str, Any],
+    dataset: Mapping[str, Any],
+    expect: Mapping[str, Any],
+) -> Mapping[str, Any]:
+    identity = {
+        "source": _string(dataset.get("source"), "dataset.source"),
+        "name": _string(dataset.get("name"), "dataset.name"),
+        "version": _string(dataset.get("version"), "dataset.version"),
+    }
+    revoked: list[Mapping[str, Any]] = []
+    for raw_erratum in _array(index.get("errata", ()), "registry.errata"):
+        erratum = _object(raw_erratum, "registry erratum")
+        if erratum.get("dataset") != identity:
+            continue
+        target = _object(erratum.get("target"), "erratum.target")
+        if target.get("kind") == "verification":
+            revoked.append(_object(erratum.get("original"), "erratum.original"))
+
     records = _array(expect.get("verification"), "representation.expect.verification")
     for raw_record in records:
         record = _object(raw_record, "verification record")
-        if record.get("canonical_form") == 1 and record.get("algorithm") == "sha256":
+        if (
+            record.get("canonical_form") == 1
+            and record.get("algorithm") == "sha256"
+            and record not in revoked
+        ):
             return record
     raise UnsupportedDecoderError("no supported decoded-verification record")
 
@@ -556,7 +549,7 @@ def fetch_data(
             decoded.components,
             _array(expect.get("components"), "representation.expect.components"),
         )
-        record = _verification_record(expect)
+        record = _verification_record(index, dataset, expect)
         canonical_form = _integer(record.get("canonical_form"), "canonical form")
         expected_digest = _string(record.get("digest"), "canonical digest")
         canonical_digest = canonical_sha256(decoded.components)

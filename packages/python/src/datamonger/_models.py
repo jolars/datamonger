@@ -51,7 +51,6 @@ class DataInfo:
     source: str
     name: str
     version: str
-    is_default: bool
     registry_release: str
     registry_index_sha256: str
     title: str
