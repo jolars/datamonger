@@ -26,6 +26,8 @@
     uv run python ../../tools/dm_index.py check
     uv run python ../../tools/dm_index.py check \
       tests/registry/releases/test-0001/release.yaml
+    uv run python ../../tools/dm_index.py check \
+      tests/registry/releases/test-0002/release.yaml
     uv build
   '';
 }

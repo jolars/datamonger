@@ -27,6 +27,7 @@ from datamonger._errors import (
     UnsupportedRegistryError,
 )
 from datamonger._models import (
+    DataInfo,
     DatasetData,
     DecodedSparseDataset,
     DecodedSparseDatasetSplit,
@@ -247,6 +248,128 @@ def fetch_artifact(
     return _retrieve_artifact(selected_artifact, cache_root, offline=offline)
 
 
+def _records(value: object, field: str) -> tuple[Mapping[str, Any], ...]:
+    return tuple(dict(_object(record, field)) for record in _array(value, field))
+
+
+def _optional_records(value: object, field: str) -> tuple[Mapping[str, Any], ...]:
+    return () if value is None else _records(value, field)
+
+
+def _default_identities(index: Mapping[str, Any]) -> set[tuple[str, str, str]]:
+    identities: set[tuple[str, str, str]] = set()
+    for raw_default in _array(index.get("defaults"), "registry.defaults"):
+        default = _object(raw_default, "registry default")
+        identities.add(
+            (
+                _string(default.get("source"), "default.source"),
+                _string(default.get("name"), "default.name"),
+                _string(default.get("version"), "default.version"),
+            )
+        )
+    return identities
+
+
+def _data_info(
+    dataset: Mapping[str, Any],
+    *,
+    registry: Registry,
+    defaults: set[tuple[str, str, str]],
+) -> DataInfo:
+    source = _string(dataset.get("source"), "dataset.source")
+    name = _string(dataset.get("name"), "dataset.name")
+    version = _string(dataset.get("version"), "dataset.version")
+    representation = dict(
+        _object(dataset.get("representation"), "dataset.representation")
+    )
+    expect = _object(representation.get("expect"), "representation.expect")
+    return DataInfo(
+        dataset_id=f"{source}:{name}@{version}",
+        source=source,
+        name=name,
+        version=version,
+        is_default=(source, name, version) in defaults,
+        registry_release=registry.release,
+        registry_index_sha256=registry.index_sha256,
+        title=_string(dataset.get("title"), "dataset.title"),
+        description=_string(dataset.get("description"), "dataset.description"),
+        modality=_string(dataset.get("modality"), "dataset.modality"),
+        provenance=dict(_object(dataset.get("provenance"), "dataset.provenance")),
+        license=dict(_object(dataset.get("license"), "dataset.license")),
+        artifacts=tuple(dict(artifact) for artifact in _artifacts(dataset)),
+        representation=representation,
+        expected_components=_records(
+            expect.get("components"), "representation.expect.components"
+        ),
+        verification_records=_records(
+            expect.get("verification"), "representation.expect.verification"
+        ),
+        related=_optional_records(dataset.get("related"), "dataset.related"),
+        tasks=_optional_records(dataset.get("tasks"), "dataset.tasks"),
+    )
+
+
+def data_info(
+    name: str,
+    *,
+    source: str,
+    version: str | None = None,
+    registry: Registry | None = None,
+    cache_dir: Pathish | None = None,
+    offline: bool = False,
+) -> DataInfo:
+    """Return registry metadata for the version selected by fetch resolution.
+
+    This operation retrieves only the selected registry index. An explicit
+    registry overrides session and project selection, and ``offline=True``
+    permits a bundled or verified cached index without network requests.
+    """
+
+    cache_root = Path(cache_dir) if cache_dir is not None else default_cache_root()
+    selected_registry = registry if registry is not None else active_registry()
+    index = _load_registry(selected_registry, cache_root, offline=offline)
+    dataset = resolve_dataset(index, source=source, name=name, version=version)
+    return _data_info(
+        dataset,
+        registry=selected_registry,
+        defaults=_default_identities(index),
+    )
+
+
+def list_data(
+    *,
+    registry: Registry | None = None,
+    cache_dir: Pathish | None = None,
+    offline: bool = False,
+) -> tuple[DataInfo, ...]:
+    """List every dataset version in the selected immutable registry release."""
+
+    cache_root = Path(cache_dir) if cache_dir is not None else default_cache_root()
+    selected_registry = registry if registry is not None else active_registry()
+    index = _load_registry(selected_registry, cache_root, offline=offline)
+    datasets = []
+    for raw_dataset in _array(index.get("datasets"), "registry.datasets"):
+        candidate = _object(raw_dataset, "registry dataset")
+        source = _string(candidate.get("source"), "dataset.source")
+        name = _string(candidate.get("name"), "dataset.name")
+        version = _string(candidate.get("version"), "dataset.version")
+        datasets.append(
+            resolve_dataset(index, source=source, name=name, version=version)
+        )
+    defaults = _default_identities(index)
+    return tuple(
+        _data_info(dataset, registry=selected_registry, defaults=defaults)
+        for dataset in sorted(
+            datasets,
+            key=lambda item: (
+                _string(item.get("source"), "dataset.source"),
+                _string(item.get("name"), "dataset.name"),
+                _string(item.get("version"), "dataset.version"),
+            ),
+        )
+    )
+
+
 def _validate_components(
     components: Sequence[LogicalValueComponent], expected: Sequence[object]
 ) -> None:
@@ -424,16 +547,15 @@ def fetch_data(
                 train_compression=compressions[0],
                 test_compression=compressions[1],
             )
-    expect = _object(representation.get("expect"), "representation.expect")
-    _validate_components(
-        decoded.components,
-        _array(expect.get("components"), "representation.expect.components"),
-    )
-
     canonical_form: int | None = None
     canonical_digest: str | None = None
     verification: Literal["artifact", "decoded"] = "artifact"
     if verify_decoded:
+        expect = _object(representation.get("expect"), "representation.expect")
+        _validate_components(
+            decoded.components,
+            _array(expect.get("components"), "representation.expect.components"),
+        )
         record = _verification_record(expect)
         canonical_form = _integer(record.get("canonical_form"), "canonical form")
         expected_digest = _string(record.get("digest"), "canonical digest")

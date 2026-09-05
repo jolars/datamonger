@@ -85,9 +85,9 @@ against the local HTTP server without live network access.
 - [x] Activate complete LIBSVM/SVMLight conformance and multi-artifact split
   assembly.
 - [x] Implement stable return types for all initial representations.
-- [ ] Implement `data_info()` and `list_data()`.
-- [ ] Verify decoded results by default for every initial decoder.
-- [ ] Complete Python conformance fixtures and malformed-input coverage.
+- [x] Implement `data_info()` and `list_data()`.
+- [x] Verify decoded results by default for every initial decoder.
+- [x] Complete Python conformance fixtures and malformed-input coverage.
 
 Exit criterion: every initial representation passes golden canonical-form and
 round-trip registry tests.

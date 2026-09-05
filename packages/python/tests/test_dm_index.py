@@ -613,6 +613,10 @@ def test_changed_existing_output_is_never_overwritten(tmp_path: Path) -> None:
             ROOT / "tests/registry/releases/test-0001/release.yaml",
             "446d89ae6cc785a34688a7c83c19a6f45e0a115994081d0065452a16ff349253",
         ),
+        (
+            ROOT / "tests/registry/releases/test-0002/release.yaml",
+            "f7a47e709a17eecf14ff3a7e8d76fa6b1cc4d7c1a9ba573c089de3c109da9033",
+        ),
     ],
 )
 def test_checked_in_release_bytes_are_immutable(

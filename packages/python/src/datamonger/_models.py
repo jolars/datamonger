@@ -44,6 +44,30 @@ class FetchInfo:
 
 
 @dataclass(frozen=True)
+class DataInfo:
+    """Registry metadata for one resolved dataset version."""
+
+    dataset_id: str
+    source: str
+    name: str
+    version: str
+    is_default: bool
+    registry_release: str
+    registry_index_sha256: str
+    title: str
+    description: str
+    modality: str
+    provenance: Mapping[str, Any]
+    license: Mapping[str, Any]
+    artifacts: tuple[Mapping[str, Any], ...]
+    representation: Mapping[str, Any]
+    expected_components: tuple[Mapping[str, Any], ...]
+    verification_records: tuple[Mapping[str, Any], ...]
+    related: tuple[Mapping[str, Any], ...]
+    tasks: tuple[Mapping[str, Any], ...]
+
+
+@dataclass(frozen=True)
 class SparseDataset:
     """A named sparse feature matrix and its response vector."""
 

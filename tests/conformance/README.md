@@ -10,8 +10,11 @@ canonical SHA-256. A single-artifact case names one input path; an assembly case
 maps each specified input role to its path. `canonical/cases.json` supplies
 logical values and exact canonical bytes as lowercase hexadecimal, avoiding a
 language-specific fixture serializer. `fuzz-regressions.json` stores minimized
-byte inputs and their required failure stage. `errors.json` enumerates the
-shared semantic failure cases and expected categories. Implementations may use
+byte inputs and their required failure stage. `malformed.json` supplies direct
+malformed inputs for every initial representation, while `errors.json`
+enumerates the shared semantic failure cases and expected categories. Each
+decoder case names its immutable test-registry dataset so clients can exercise
+the same golden through their public registry API. Implementations may use
 different native containers, exception types, and messages, but must agree on
 logical values, canonical bytes, success or failure, and semantic failure
 categories.
