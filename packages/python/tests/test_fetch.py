@@ -1605,6 +1605,63 @@ def test_every_initial_decoder_verifies_decoded_results_by_default(
 
 
 @pytest.mark.parametrize("decoder", ["delimited-text", "libsvm", "libsvm-split"])
+def test_every_initial_decoder_skips_revoked_verification_records(
+    local_server: tuple[str, ServerState], tmp_path: Path, decoder: str
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+    name = "mixed"
+    if decoder == "libsvm":
+        registry = add_libsvm_dataset(base_url, state, registry)
+        name = "sparse"
+    elif decoder == "libsvm-split":
+        registry = add_libsvm_split_dataset(base_url, state, registry)
+        name = "sparse-split"
+    index = json.loads(state.bodies["/index.json"])
+    dataset = next(item for item in index["datasets"] if item["name"] == name)
+    verification = dataset["representation"]["expect"]["verification"]
+    replacement = verification[0]
+    original = replacement | {"digest": "0" * 64}
+    verification.insert(0, original)
+    index["errata"] = [
+        {
+            "schema_version": 1,
+            "id": f"{name}-verification",
+            "release": "previous-release",
+            "dataset": {
+                "source": dataset["source"],
+                "name": dataset["name"],
+                "version": dataset["version"],
+            },
+            "target": {
+                "kind": "verification",
+                "canonical_form": 1,
+                "algorithm": "sha256",
+            },
+            "original": original,
+            "replacement": replacement,
+            "reason": "The published digest was incorrect.",
+            "approval": {
+                "maintainer": "fixture",
+                "approved_at": "2026-09-05",
+            },
+        }
+    ]
+    registry = _reseal_index(base_url, state, index)
+
+    result = fetch_data(
+        name,
+        source="fixture",
+        registry=registry,
+        cache_dir=tmp_path,
+        return_info=True,
+    )
+
+    assert isinstance(result, FetchResult)
+    assert result.info.canonical_digest == replacement["digest"]
+
+
+@pytest.mark.parametrize("decoder", ["delimited-text", "libsvm", "libsvm-split"])
 def test_artifact_only_opt_out_skips_all_decoded_expectations(
     local_server: tuple[str, ServerState], tmp_path: Path, decoder: str
 ) -> None:

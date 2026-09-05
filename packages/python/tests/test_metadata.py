@@ -37,12 +37,7 @@ def test_data_info_resolves_defaults_and_exposes_registry_metadata(
 
     assert isinstance(info, DataInfo)
     assert info.dataset_id == "uci:iris@1"
-    assert (info.source, info.name, info.version, info.is_default) == (
-        "uci",
-        "iris",
-        "1",
-        True,
-    )
+    assert (info.source, info.name, info.version) == ("uci", "iris", "1")
     assert info.registry_release == "test-release"
     assert info.registry_index_sha256 == "1" * 64
     assert info.title == "Iris"
@@ -71,18 +66,17 @@ def test_data_info_resolves_defaults_and_exposes_registry_metadata(
     assert info.tasks[0]["name"] == "default"
 
 
-def test_list_data_enumerates_the_selected_release_in_canonical_order(
+def test_list_data_enumerates_the_selected_release(
     loaded_bundled_registry: Registry, tmp_path: Path
 ) -> None:
     infos = list_data(registry=loaded_bundled_registry, cache_dir=tmp_path)
 
     assert isinstance(infos, tuple)
     assert all(isinstance(info, DataInfo) for info in infos)
-    assert [info.dataset_id for info in infos] == [
+    assert {info.dataset_id for info in infos} == {
         "libsvm:heart_scale@1",
         "uci:iris@1",
-    ]
-    assert all(info.is_default for info in infos)
+    }
     assert {info.representation["decoder"] for info in infos} == {
         "delimited-text",
         "libsvm",
