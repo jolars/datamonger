@@ -58,6 +58,33 @@ The candidate canonical digest is an authoring aid, not an independent
 attestation. Stable publication still requires reproduction by another
 implementation and human review of shapes, names, and representative values.
 
+### Upstream canary
+
+`dm-canary` re-fetches a published registry index and every download location
+without consulting the artifact cache, checks the registered sizes and SHA-256
+digests, and decodes one verified copy of every dataset with the Python
+reference client. Decoded components and a supported canonical digest must
+still match the immutable registry record.
+
+```console
+cd packages/python
+uv run python ../../tools/dm_canary.py \
+  ../../registry/releases/proof-0001/selector.json
+```
+
+The Markdown report exits with status 0 when every check passes, status 1 when
+the remote index, a location, or decoded data has drifted, and status 2 when the
+command or local selector is invalid. Location failures are aggregated, so a
+bad location does not hide the status of later locations or other datasets.
+
+The upstream-verification workflow runs every Monday at 06:00 UTC and can also
+be dispatched manually. Its implementation matrix currently contains the
+Python reference client; each released client must be added to that matrix so
+every selected dataset and client combination runs weekly. A failed run opens
+or updates an implementation-specific GitHub issue with the complete report;
+the next successful run closes it. Canary results describe current
+availability and integrity, not preservation.
+
 ## Vertical-proof registry
 
 The legacy prerelease `proof-0001` registry contains UCI Iris and LIBSVM
@@ -67,10 +94,10 @@ the sole asset of the `registry-proof-0001` GitHub prerelease. The Python client
 also ships the exact index and its trusted digest as its default registry.
 Dataset artifacts remain upstream-only.
 
-The scheduled live-source workflow fetches both datasets through that remote
-index. It is deliberately separate from the hermetic quality gate because
-upstream drift and availability are operational signals, not package-test
-failures.
+The scheduled upstream-verification workflow checks both datasets through that
+remote index. It is deliberately separate from the hermetic quality gate
+because upstream drift and availability are operational signals, not
+package-test failures.
 
 ## Conformance registry
 

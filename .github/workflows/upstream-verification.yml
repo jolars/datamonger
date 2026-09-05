@@ -1,0 +1,90 @@
+name: Upstream verification
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: upstream-verification-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  canary:
+    name: ${{ matrix.implementation }} canary
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        implementation: [python]
+    defaults:
+      run:
+        working-directory: packages/python
+    env:
+      UV_PYTHON: "3.11"
+      ISSUE_TITLE: >-
+        [canary] Upstream verification drift (${{ matrix.implementation }})
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          enable-cache: true
+      - name: Install Python implementation
+        if: matrix.implementation == 'python'
+        run: uv sync --locked --all-groups
+      - name: Re-fetch and verify upstream data
+        id: canary
+        continue-on-error: true
+        run: |
+          uv run python ../../tools/dm_canary.py \
+            ../../registry/releases/proof-0001/selector.json 2>&1 \
+            | tee "$RUNNER_TEMP/dm-canary.md"
+      - name: Publish run summary
+        if: always()
+        run: cat "$RUNNER_TEMP/dm-canary.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Open or update drift issue
+        if: steps.canary.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: >-
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          {
+            echo "Scheduled run: $RUN_URL"
+            echo
+            cat "$RUNNER_TEMP/dm-canary.md"
+          } > "$RUNNER_TEMP/dm-canary-issue.md"
+          issue_number="$(
+            gh issue list --state open --search "$ISSUE_TITLE in:title" \
+              --limit 1 --json number --jq '.[0].number'
+          )"
+          if [[ -n "$issue_number" ]]; then
+            gh issue comment "$issue_number" \
+              --body-file "$RUNNER_TEMP/dm-canary-issue.md"
+          else
+            gh issue create --title "$ISSUE_TITLE" \
+              --body-file "$RUNNER_TEMP/dm-canary-issue.md"
+          fi
+      - name: Close recovered drift issue
+        if: steps.canary.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: >-
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          issue_number="$(
+            gh issue list --state open --search "$ISSUE_TITLE in:title" \
+              --limit 1 --json number --jq '.[0].number'
+          )"
+          if [[ -n "$issue_number" ]]; then
+            gh issue close "$issue_number" \
+              --comment "Upstream verification recovered in $RUN_URL."
+          fi
+      - name: Fail on reported drift
+        if: steps.canary.outcome == 'failure'
+        run: exit 1

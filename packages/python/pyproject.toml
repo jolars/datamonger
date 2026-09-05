@@ -52,6 +52,7 @@ files = [
   "src/datamonger",
   "tests/typing",
   "../../tools/dm_add.py",
+  "../../tools/dm_canary.py",
   "../../tools/dm_index.py",
 ]
 
