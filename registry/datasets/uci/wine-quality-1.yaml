@@ -1,0 +1,150 @@
+schema_version: 1
+source: uci
+name: wine-quality
+version: '1'
+title: Wine Quality
+description: Physicochemical and sensory-quality measurements for red and white vinho verde
+  wines distributed by the UCI Machine Learning Repository.
+modality: tabular
+provenance:
+  provider: UCI Machine Learning Repository
+  upstream_name: Wine Quality
+  upstream_id: '186'
+  landing_page: https://archive.ics.uci.edu/dataset/186/wine+quality
+  authors:
+  - Paulo Cortez
+  - A. Cerdeira
+  - F. Almeida
+  - T. Matos
+  - J. Reis
+  citation: Cortez, P., Cerdeira, A., Almeida, F., Matos, T., and Reis, J. (2009). Wine Quality.
+    UCI Machine Learning Repository. https://doi.org/10.24432/C56S3T.
+  retrieved_at: '2026-09-06'
+license:
+  status: known
+  identifier: CC-BY-4.0
+  url: https://creativecommons.org/licenses/by/4.0/
+artifacts:
+- name: data
+  format: csv
+  compression: none
+  size: 390515
+  sha256: 428bd8df7313b159988405ae5e3be6d363993d73f7ffc2adedfdc1d496508191
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://archive.ics.uci.edu/static/public/186/data.csv
+representation:
+  decoder: delimited-text
+  decoder_version: 1
+  inputs:
+    data: data
+  options:
+    encoding: utf-8
+    delimiter: ','
+    header: true
+    quote: '"'
+    escape: double
+    missing_values: []
+    row_order: source
+    columns:
+    - name: fixed_acidity
+      type: float64
+    - name: volatile_acidity
+      type: float64
+    - name: citric_acid
+      type: float64
+    - name: residual_sugar
+      type: float64
+    - name: chlorides
+      type: float64
+    - name: free_sulfur_dioxide
+      type: float64
+    - name: total_sulfur_dioxide
+      type: float64
+    - name: density
+      type: float64
+    - name: pH
+      type: float64
+    - name: sulphates
+      type: float64
+    - name: alcohol
+      type: float64
+    - name: quality
+      type: int64
+    - name: color
+      type: string
+  expect:
+    components:
+    - name: fixed_acidity
+      kind: vector
+      type: float64
+      length: 6497
+    - name: volatile_acidity
+      kind: vector
+      type: float64
+      length: 6497
+    - name: citric_acid
+      kind: vector
+      type: float64
+      length: 6497
+    - name: residual_sugar
+      kind: vector
+      type: float64
+      length: 6497
+    - name: chlorides
+      kind: vector
+      type: float64
+      length: 6497
+    - name: free_sulfur_dioxide
+      kind: vector
+      type: float64
+      length: 6497
+    - name: total_sulfur_dioxide
+      kind: vector
+      type: float64
+      length: 6497
+    - name: density
+      kind: vector
+      type: float64
+      length: 6497
+    - name: pH
+      kind: vector
+      type: float64
+      length: 6497
+    - name: sulphates
+      kind: vector
+      type: float64
+      length: 6497
+    - name: alcohol
+      kind: vector
+      type: float64
+      length: 6497
+    - name: quality
+      kind: vector
+      type: int64
+      length: 6497
+    - name: color
+      kind: vector
+      type: string
+      length: 6497
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: 07c0d3702de1c6d101a44e856801a2b428e56edfb4a215a5753ac359363be62a
+tasks:
+- name: default
+  type: regression
+  target: quality
+  features:
+  - fixed_acidity
+  - volatile_acidity
+  - citric_acid
+  - residual_sugar
+  - chlorides
+  - free_sulfur_dioxide
+  - total_sulfur_dioxide
+  - density
+  - pH
+  - sulphates
+  - alcohol

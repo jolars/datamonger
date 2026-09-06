@@ -93,6 +93,43 @@ def default(version: str = "1") -> dict[str, str]:
     return {"source": "uci", "name": "iris", "version": version}
 
 
+def test_curated_dataset_manifests_are_valid_and_cover_mvp() -> None:
+    expected_identities = {
+        ("libsvm", "cadata", "1"),
+        ("libsvm", "colon-cancer", "1"),
+        ("libsvm", "dna_scale", "1"),
+        ("libsvm", "glass_scale", "1"),
+        ("libsvm", "heart_scale", "1"),
+        ("uci", "abalone", "1"),
+        ("uci", "breast-cancer-wisconsin-diagnostic", "1"),
+        ("uci", "iris", "1"),
+        ("uci", "wholesale-customers", "1"),
+        ("uci", "wine-quality", "1"),
+    }
+    manifests = [
+        dm_index.load_yaml(path)
+        for path in sorted((ROOT / "registry/datasets").glob("*/*.yaml"))
+    ]
+
+    for manifest in manifests:
+        dm_index.validate_manifest(manifest, root=ROOT)
+
+    identities = {
+        (manifest["source"], manifest["name"], manifest["version"])
+        for manifest in manifests
+    }
+    decoders = {manifest["representation"]["decoder"] for manifest in manifests}
+    task_types = {
+        task["type"] for manifest in manifests for task in manifest.get("tasks", [])
+    }
+
+    assert expected_identities <= identities
+    assert len(manifests) >= 10
+    assert decoders >= {"delimited-text", "libsvm", "libsvm-split"}
+    assert task_types >= {"classification", "regression"}
+    assert any(not manifest.get("tasks") for manifest in manifests)
+
+
 def test_valid_release_builds_and_validates_generated_documents(tmp_path: Path) -> None:
     prepare_root(tmp_path)
     release_path = make_release(tmp_path, [make_manifest()], [default()])

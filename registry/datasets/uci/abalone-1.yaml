@@ -1,0 +1,122 @@
+schema_version: 1
+source: uci
+name: abalone
+version: '1'
+title: Abalone
+description: Physical measurements of abalone distributed by the UCI Machine Learning Repository.
+modality: tabular
+provenance:
+  provider: UCI Machine Learning Repository
+  upstream_name: Abalone
+  upstream_id: '1'
+  landing_page: https://archive.ics.uci.edu/dataset/1/abalone
+  authors:
+  - Warwick Nash
+  - Tracy Sellers
+  - Simon Talbot
+  - Andrew Cawthorn
+  - Wes Ford
+  citation: Nash, W., Sellers, T., Talbot, S., Cawthorn, A., and Ford, W. (1994). Abalone.
+    UCI Machine Learning Repository. https://doi.org/10.24432/C55C7W.
+  retrieved_at: '2026-09-06'
+license:
+  status: known
+  identifier: CC-BY-4.0
+  url: https://creativecommons.org/licenses/by/4.0/
+artifacts:
+- name: data
+  format: csv
+  compression: none
+  size: 196140
+  sha256: 25f3dc964447fcb3d68cf1048c04ed69d1474771c4fb34318e10778800a4342f
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://archive.ics.uci.edu/static/public/1/data.csv
+representation:
+  decoder: delimited-text
+  decoder_version: 1
+  inputs:
+    data: data
+  options:
+    encoding: utf-8
+    delimiter: ','
+    header: true
+    quote: '"'
+    escape: double
+    missing_values: []
+    row_order: source
+    columns:
+    - name: Sex
+      type: string
+    - name: Length
+      type: float64
+    - name: Diameter
+      type: float64
+    - name: Height
+      type: float64
+    - name: Whole_weight
+      type: float64
+    - name: Shucked_weight
+      type: float64
+    - name: Viscera_weight
+      type: float64
+    - name: Shell_weight
+      type: float64
+    - name: Rings
+      type: int64
+  expect:
+    components:
+    - name: Sex
+      kind: vector
+      type: string
+      length: 4177
+    - name: Length
+      kind: vector
+      type: float64
+      length: 4177
+    - name: Diameter
+      kind: vector
+      type: float64
+      length: 4177
+    - name: Height
+      kind: vector
+      type: float64
+      length: 4177
+    - name: Whole_weight
+      kind: vector
+      type: float64
+      length: 4177
+    - name: Shucked_weight
+      kind: vector
+      type: float64
+      length: 4177
+    - name: Viscera_weight
+      kind: vector
+      type: float64
+      length: 4177
+    - name: Shell_weight
+      kind: vector
+      type: float64
+      length: 4177
+    - name: Rings
+      kind: vector
+      type: int64
+      length: 4177
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: 99d926b369b8e14604f120eb38ea909251cafdd44f3681277ab96e573166c875
+tasks:
+- name: default
+  type: regression
+  target: Rings
+  features:
+  - Sex
+  - Length
+  - Diameter
+  - Height
+  - Whole_weight
+  - Shucked_weight
+  - Viscera_weight
+  - Shell_weight

@@ -1,0 +1,81 @@
+schema_version: 1
+source: libsvm
+name: dna_scale
+version: '1'
+title: DNA Scale
+description: Scaled Statlog DNA multiclass classification data with predefined training and
+  test artifacts, distributed through the LIBSVM dataset collection.
+modality: tabular
+provenance:
+  provider: LIBSVM
+  upstream_name: dna.scale
+  landing_page: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass.html#dna
+  retrieved_at: '2026-09-06'
+license:
+  status: unknown
+artifacts:
+- name: train
+  format: libsvm
+  compression: none
+  size: 499248
+  sha256: 03d39477c5e48415e9cd18e006efc8f7a3b5c3deaee8289a72511c35070e3cfe
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/dna.scale
+- name: test
+  format: libsvm
+  compression: none
+  size: 293744
+  sha256: d2eeed170e4e38ae2aba6aa4cd27a8ca4ecceb01a7751e8e509bb4e1a6bcef39
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/dna.scale.t
+representation:
+  decoder: libsvm-split
+  decoder_version: 1
+  inputs:
+    train: train
+    test: test
+  options:
+    index_base: 1
+    feature_count: 180
+    duplicate_features: error
+    label_type: int64
+    row_order: source
+    target_name: response
+  expect:
+    components:
+    - name: train_features
+      kind: sparse_matrix
+      type: float64
+      rows: 2000
+      columns: 180
+    - name: train_response
+      kind: vector
+      type: int64
+      length: 2000
+    - name: test_features
+      kind: sparse_matrix
+      type: float64
+      rows: 1186
+      columns: 180
+    - name: test_response
+      kind: vector
+      type: int64
+      length: 1186
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: 75b61a9bb5c15ec6b94d80bb1888a0e75cb399d8313d0b2bf031983d6e156c5c
+tasks:
+- name: default
+  type: classification
+  splits:
+    train:
+      features: train_features
+      target: train_response
+    test:
+      features: test_features
+      target: test_response

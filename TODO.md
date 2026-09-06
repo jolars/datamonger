@@ -96,7 +96,7 @@ round-trip registry tests.
 
 - [x] Build `dm-add` around the reference decoder and authoring checks.
 - [x] Build `dm-canary` and a scheduled upstream-verification workflow.
-- [ ] Curate roughly ten UCI and LIBSVM entries covering regression, binary and
+- [x] Curate roughly ten UCI and LIBSVM entries covering regression, binary and
   multiclass classification, unsupervised data, dense and sparse data, and a
   multi-artifact train/test split.
 - [ ] Review provenance, licensing, shapes, names, and representative values.

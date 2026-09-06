@@ -1,0 +1,57 @@
+schema_version: 1
+source: libsvm
+name: glass_scale
+version: '1'
+title: Glass Scale
+description: Scaled glass-identification multiclass classification data distributed through
+  the LIBSVM dataset collection.
+modality: tabular
+provenance:
+  provider: LIBSVM
+  upstream_name: glass.scale
+  landing_page: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass.html#glass
+  retrieved_at: '2026-09-06'
+license:
+  status: unknown
+artifacts:
+- name: data
+  format: libsvm
+  compression: none
+  size: 20457
+  sha256: 7c847cf67bc3dceda40890c37044cc569b2603c2ca4508e01faeaa0d521e52e5
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/glass.scale
+representation:
+  decoder: libsvm
+  decoder_version: 1
+  inputs:
+    data: data
+  options:
+    index_base: 1
+    feature_count: 9
+    duplicate_features: error
+    label_type: int64
+    row_order: source
+    target_name: response
+  expect:
+    components:
+    - name: features
+      kind: sparse_matrix
+      type: float64
+      rows: 214
+      columns: 9
+    - name: response
+      kind: vector
+      type: int64
+      length: 214
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: efc28baf54fe4ddc317738ab41e4fdf99958c09e9b40fec202d244c5630a55e2
+tasks:
+- name: default
+  type: classification
+  features: features
+  target: response

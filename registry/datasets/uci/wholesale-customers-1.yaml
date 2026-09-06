@@ -1,0 +1,99 @@
+schema_version: 1
+source: uci
+name: wholesale-customers
+version: '1'
+title: Wholesale Customers
+description: Annual spending by wholesale-distributor clients across product categories, as
+  distributed by the UCI Machine Learning Repository.
+modality: tabular
+provenance:
+  provider: UCI Machine Learning Repository
+  upstream_name: Wholesale customers
+  upstream_id: '292'
+  landing_page: https://archive.ics.uci.edu/dataset/292/wholesale+customers
+  authors:
+  - Margarida Cardoso
+  citation: Cardoso, M. (2013). Wholesale customers. UCI Machine Learning Repository. https://doi.org/10.24432/C5030X.
+  retrieved_at: '2026-09-06'
+license:
+  status: known
+  identifier: CC-BY-4.0
+  url: https://creativecommons.org/licenses/by/4.0/
+artifacts:
+- name: data
+  format: csv
+  compression: none
+  size: 15021
+  sha256: c3d018c643565b85cee733c4a2ac76dd76e080e857cb23f0ccfcc2e15a6c17ef
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://archive.ics.uci.edu/static/public/292/data.csv
+representation:
+  decoder: delimited-text
+  decoder_version: 1
+  inputs:
+    data: data
+  options:
+    encoding: utf-8
+    delimiter: ','
+    header: true
+    quote: '"'
+    escape: double
+    missing_values: []
+    row_order: source
+    columns:
+    - name: Channel
+      type: int64
+    - name: Region
+      type: int64
+    - name: Fresh
+      type: int64
+    - name: Milk
+      type: int64
+    - name: Grocery
+      type: int64
+    - name: Frozen
+      type: int64
+    - name: Detergents_Paper
+      type: int64
+    - name: Delicassen
+      type: int64
+  expect:
+    components:
+    - name: Channel
+      kind: vector
+      type: int64
+      length: 440
+    - name: Region
+      kind: vector
+      type: int64
+      length: 440
+    - name: Fresh
+      kind: vector
+      type: int64
+      length: 440
+    - name: Milk
+      kind: vector
+      type: int64
+      length: 440
+    - name: Grocery
+      kind: vector
+      type: int64
+      length: 440
+    - name: Frozen
+      kind: vector
+      type: int64
+      length: 440
+    - name: Detergents_Paper
+      kind: vector
+      type: int64
+      length: 440
+    - name: Delicassen
+      kind: vector
+      type: int64
+      length: 440
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: ec35167809b9182b72c0f6ff4f66ce07def4da896b60ee59d52c7c0ca9816c3f

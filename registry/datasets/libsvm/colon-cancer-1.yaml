@@ -1,0 +1,57 @@
+schema_version: 1
+source: libsvm
+name: colon-cancer
+version: '1'
+title: Colon Cancer
+description: Normalized colon-cancer gene-expression classification data distributed through
+  the LIBSVM dataset collection.
+modality: tabular
+provenance:
+  provider: LIBSVM
+  upstream_name: colon-cancer
+  landing_page: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#colon-cancer
+  retrieved_at: '2026-09-06'
+license:
+  status: unknown
+artifacts:
+- name: data
+  format: libsvm
+  compression: bzip2
+  size: 609480
+  sha256: 724d7291efb9a833b8407442a27f70f64beeb86c107d7b3ce98e8c48fe878867
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/colon-cancer.bz2
+representation:
+  decoder: libsvm
+  decoder_version: 1
+  inputs:
+    data: data
+  options:
+    index_base: 1
+    feature_count: 2000
+    duplicate_features: error
+    label_type: float64
+    row_order: source
+    target_name: response
+  expect:
+    components:
+    - name: features
+      kind: sparse_matrix
+      type: float64
+      rows: 62
+      columns: 2000
+    - name: response
+      kind: vector
+      type: float64
+      length: 62
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: b1a66886cbdc0200faef4a3b70efa7956ef0eaddf0ec6eb516e390ff0640ec4f
+tasks:
+- name: default
+  type: classification
+  features: features
+  target: response

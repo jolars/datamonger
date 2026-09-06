@@ -1,0 +1,282 @@
+schema_version: 1
+source: uci
+name: breast-cancer-wisconsin-diagnostic
+version: '1'
+title: Breast Cancer Wisconsin (Diagnostic)
+description: Diagnostic breast-mass features computed from digitized fine-needle aspirate
+  images and distributed by the UCI Machine Learning Repository.
+modality: tabular
+provenance:
+  provider: UCI Machine Learning Repository
+  upstream_name: Breast Cancer Wisconsin (Diagnostic)
+  upstream_id: '17'
+  landing_page: https://archive.ics.uci.edu/dataset/17/breast+cancer+wisconsin+diagnostic
+  authors:
+  - William Wolberg
+  - Olvi Mangasarian
+  - Nick Street
+  - W. Street
+  citation: Wolberg, W., Mangasarian, O., Street, N., and Street, W. (1993). Breast Cancer
+    Wisconsin (Diagnostic). UCI Machine Learning Repository. https://doi.org/10.24432/C5DW2B.
+  retrieved_at: '2026-09-06'
+license:
+  status: known
+  identifier: CC-BY-4.0
+  url: https://creativecommons.org/licenses/by/4.0/
+artifacts:
+- name: data
+  format: csv
+  compression: none
+  size: 125031
+  sha256: 3487b754ff02c93cdc8a18afafe223961d9cfbfdb932e57483e52581042767d7
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://archive.ics.uci.edu/static/public/17/data.csv
+representation:
+  decoder: delimited-text
+  decoder_version: 1
+  inputs:
+    data: data
+  options:
+    encoding: utf-8
+    delimiter: ','
+    header: true
+    quote: '"'
+    escape: double
+    missing_values: []
+    row_order: source
+    columns:
+    - name: ID
+      type: int64
+    - name: radius1
+      type: float64
+    - name: texture1
+      type: float64
+    - name: perimeter1
+      type: float64
+    - name: area1
+      type: float64
+    - name: smoothness1
+      type: float64
+    - name: compactness1
+      type: float64
+    - name: concavity1
+      type: float64
+    - name: concave_points1
+      type: float64
+    - name: symmetry1
+      type: float64
+    - name: fractal_dimension1
+      type: float64
+    - name: radius2
+      type: float64
+    - name: texture2
+      type: float64
+    - name: perimeter2
+      type: float64
+    - name: area2
+      type: float64
+    - name: smoothness2
+      type: float64
+    - name: compactness2
+      type: float64
+    - name: concavity2
+      type: float64
+    - name: concave_points2
+      type: float64
+    - name: symmetry2
+      type: float64
+    - name: fractal_dimension2
+      type: float64
+    - name: radius3
+      type: float64
+    - name: texture3
+      type: float64
+    - name: perimeter3
+      type: float64
+    - name: area3
+      type: float64
+    - name: smoothness3
+      type: float64
+    - name: compactness3
+      type: float64
+    - name: concavity3
+      type: float64
+    - name: concave_points3
+      type: float64
+    - name: symmetry3
+      type: float64
+    - name: fractal_dimension3
+      type: float64
+    - name: Diagnosis
+      type: string
+  expect:
+    components:
+    - name: ID
+      kind: vector
+      type: int64
+      length: 569
+    - name: radius1
+      kind: vector
+      type: float64
+      length: 569
+    - name: texture1
+      kind: vector
+      type: float64
+      length: 569
+    - name: perimeter1
+      kind: vector
+      type: float64
+      length: 569
+    - name: area1
+      kind: vector
+      type: float64
+      length: 569
+    - name: smoothness1
+      kind: vector
+      type: float64
+      length: 569
+    - name: compactness1
+      kind: vector
+      type: float64
+      length: 569
+    - name: concavity1
+      kind: vector
+      type: float64
+      length: 569
+    - name: concave_points1
+      kind: vector
+      type: float64
+      length: 569
+    - name: symmetry1
+      kind: vector
+      type: float64
+      length: 569
+    - name: fractal_dimension1
+      kind: vector
+      type: float64
+      length: 569
+    - name: radius2
+      kind: vector
+      type: float64
+      length: 569
+    - name: texture2
+      kind: vector
+      type: float64
+      length: 569
+    - name: perimeter2
+      kind: vector
+      type: float64
+      length: 569
+    - name: area2
+      kind: vector
+      type: float64
+      length: 569
+    - name: smoothness2
+      kind: vector
+      type: float64
+      length: 569
+    - name: compactness2
+      kind: vector
+      type: float64
+      length: 569
+    - name: concavity2
+      kind: vector
+      type: float64
+      length: 569
+    - name: concave_points2
+      kind: vector
+      type: float64
+      length: 569
+    - name: symmetry2
+      kind: vector
+      type: float64
+      length: 569
+    - name: fractal_dimension2
+      kind: vector
+      type: float64
+      length: 569
+    - name: radius3
+      kind: vector
+      type: float64
+      length: 569
+    - name: texture3
+      kind: vector
+      type: float64
+      length: 569
+    - name: perimeter3
+      kind: vector
+      type: float64
+      length: 569
+    - name: area3
+      kind: vector
+      type: float64
+      length: 569
+    - name: smoothness3
+      kind: vector
+      type: float64
+      length: 569
+    - name: compactness3
+      kind: vector
+      type: float64
+      length: 569
+    - name: concavity3
+      kind: vector
+      type: float64
+      length: 569
+    - name: concave_points3
+      kind: vector
+      type: float64
+      length: 569
+    - name: symmetry3
+      kind: vector
+      type: float64
+      length: 569
+    - name: fractal_dimension3
+      kind: vector
+      type: float64
+      length: 569
+    - name: Diagnosis
+      kind: vector
+      type: string
+      length: 569
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: 8edb29f96f043f66a9da79f5bd911c700c4ed49ae32c78bbc53cc9f066c711ce
+tasks:
+- name: default
+  type: classification
+  target: Diagnosis
+  features:
+  - radius1
+  - texture1
+  - perimeter1
+  - area1
+  - smoothness1
+  - compactness1
+  - concavity1
+  - concave_points1
+  - symmetry1
+  - fractal_dimension1
+  - radius2
+  - texture2
+  - perimeter2
+  - area2
+  - smoothness2
+  - compactness2
+  - concavity2
+  - concave_points2
+  - symmetry2
+  - fractal_dimension2
+  - radius3
+  - texture3
+  - perimeter3
+  - area3
+  - smoothness3
+  - compactness3
+  - concavity3
+  - concave_points3
+  - symmetry3
+  - fractal_dimension3

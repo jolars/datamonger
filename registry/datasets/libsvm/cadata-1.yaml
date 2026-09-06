@@ -1,0 +1,56 @@
+schema_version: 1
+source: libsvm
+name: cadata
+version: '1'
+title: California Housing
+description: California housing regression data distributed through the LIBSVM dataset collection.
+modality: tabular
+provenance:
+  provider: LIBSVM
+  upstream_name: cadata
+  landing_page: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/regression.html#cadata
+  retrieved_at: '2026-09-06'
+license:
+  status: unknown
+artifacts:
+- name: data
+  format: libsvm
+  compression: none
+  size: 4809120
+  sha256: 4b98406f0239b753384ebb477f90ab0621d287108a408743181f12395bf5ae05
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/regression/cadata
+representation:
+  decoder: libsvm
+  decoder_version: 1
+  inputs:
+    data: data
+  options:
+    index_base: 1
+    feature_count: 8
+    duplicate_features: error
+    label_type: float64
+    row_order: source
+    target_name: response
+  expect:
+    components:
+    - name: features
+      kind: sparse_matrix
+      type: float64
+      rows: 20640
+      columns: 8
+    - name: response
+      kind: vector
+      type: float64
+      length: 20640
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: 63e4b305e1f12480287b7e5202a34537c804035140bc9d4f782972beed86c82f
+tasks:
+- name: default
+  type: regression
+  features: features
+  target: response
