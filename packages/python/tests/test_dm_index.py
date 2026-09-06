@@ -149,7 +149,7 @@ def test_curated_dataset_manifests_are_valid_and_cover_mvp() -> None:
 
 
 def test_candidate_release_contains_every_curated_dataset() -> None:
-    release_path = ROOT / "registry/releases/candidate-0001/release.yaml"
+    release_path = ROOT / "registry/releases/candidate-0002/release.yaml"
     release = dm_index.load_yaml(release_path)
     manifest_paths = sorted(
         path.relative_to(ROOT).as_posix()
@@ -161,9 +161,9 @@ def test_candidate_release_contains_every_curated_dataset() -> None:
         for manifest in manifests
     }
 
-    assert release["release"] == "candidate-0001"
-    assert release["tag"] == "registry-candidate-0001"
-    assert release["sequence"] == 1
+    assert release["release"] == "candidate-0002"
+    assert release["tag"] == "registry-candidate-0002"
+    assert release["sequence"] == 2
     assert release["manifests"] == manifest_paths
     assert {
         (default["source"], default["name"], default["version"])
@@ -780,6 +780,10 @@ def test_changed_existing_output_is_never_overwritten(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     ("release", "expected_digest"),
     [
+        (
+            ROOT / "registry/releases/candidate-0002/release.yaml",
+            "3eee3e1cb6730d73d3a2a1f251d693b17f4e8c3fc520ebf256b4304ac82584c6",
+        ),
         (
             ROOT / "registry/releases/candidate-0001/release.yaml",
             "e956a6dfb2a0504bdb9d0a44094bb5711af815f0b42b3dd5c071eec181743257",

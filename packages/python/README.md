@@ -55,7 +55,7 @@ catalog lookup:
 ```python
 from datamonger import fetch_data, resolve_registry
 
-registry = resolve_registry("candidate-0001")
+registry = resolve_registry("candidate-0002")
 print(registry.index_sha256)
 iris = fetch_data("iris", source="uci", registry=registry)
 ```

@@ -21,6 +21,19 @@ two contracts share a lifecycle.
 | Release-catalog schema | 1 | `schema/catalog-v1.schema.json` |
 | Language-neutral conformance descriptors | 1 | `../tests/conformance/README.md` |
 
+## Release candidate
+
+Specification release candidate `spec-v1-rc1` identifies the first immutable
+publication of this inventory. It is paired with registry release
+`candidate-0002`, whose strong selector has index SHA-256
+`3eee3e1cb6730d73d3a2a1f251d693b17f4e8c3fc520ebf256b4304ac82584c6`.
+
+At publication, the Python reference client passes conformance descriptor
+schema version 1. R and Julia implementations have not yet passed the corpus,
+and the registry's canonical verification records remain provisional pending
+independent reproduction. The candidate is unsigned, its datasets are
+upstream-only, and it makes no preservation guarantee.
+
 ## Feature set
 
 Revision 1 includes immutable, digest-selected registry indexes; explicit

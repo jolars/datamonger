@@ -6,11 +6,12 @@ fixes the source bytes, the decoding recipe, the expected shape, and a digest of
 the decoded logical values. A strong registry selector fixes the complete set of
 records used by an analysis.
 
-Datamonger is pre-release software. The revision 1 feature set is frozen, and
-the Python reference client implements it, but independent R and Julia clients
-have not yet certified the contracts. The ten-dataset `candidate-0001` registry
-is a prerelease; its verification records are provisional, and all of its
-artifacts remain upstream-only.
+Datamonger is pre-release software. Specification release candidate
+`spec-v1-rc1` freezes the revision 1 feature set, and the Python reference client
+implements it, but independent R and Julia clients have not yet certified the
+contracts. The paired ten-dataset `candidate-0002` registry is a prerelease; its
+verification records are provisional, and all of its artifacts remain
+upstream-only.
 
 ## What Datamonger verifies
 
@@ -101,10 +102,10 @@ errors, and cache management.
 
 ## Current registries
 
-`candidate-0001` contains ten reviewed UCI and LIBSVM datasets spanning
+`candidate-0002` contains ten reviewed UCI and LIBSVM datasets spanning
 regression, binary and multiclass classification, unsupervised data, dense and
 sparse data, and a train/test split. Its selector is
-[`registry/releases/candidate-0001/selector.json`](registry/releases/candidate-0001/selector.json).
+[`registry/releases/candidate-0002/selector.json`](registry/releases/candidate-0002/selector.json).
 The Python package continues to bundle the smaller `proof-0001` snapshot until
 the candidate contracts and records are independently certified.
 

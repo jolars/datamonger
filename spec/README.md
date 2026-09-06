@@ -13,7 +13,8 @@ the profile and its versioned contract inventory:
 - `schema/` contains closed Draft 2020-12 JSON Schemas for authoring and
   generated records.
 
-The version numbers are binding even though the exact specification release
-candidate has not yet been cut. Any change that alters logical output or
-reinterprets existing bytes requires a new decoder, canonical-form, schema, or
-behavioral-contract version as appropriate.
+Specification release candidate [`spec-v1-rc1`](revision-1.md#release-candidate)
+freezes this inventory and pairs it with the strongly selected `candidate-0002`
+registry. Any change that alters logical output or reinterprets existing bytes
+requires a new specification candidate and a new decoder, canonical-form,
+schema, or behavioral-contract version as appropriate.
