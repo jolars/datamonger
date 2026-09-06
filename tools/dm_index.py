@@ -16,7 +16,7 @@ from referencing import Registry as SchemaRegistry
 from referencing import Resource
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_RELEASE = Path("registry/releases/proof-0001/release.yaml")
+DEFAULT_RELEASE = Path("registry/releases/candidate-0001/release.yaml")
 
 Identity = tuple[str, str, str]
 

@@ -100,7 +100,7 @@ round-trip registry tests.
   multiclass classification, unsupervised data, dense and sparse data, and a
   multi-artifact train/test split.
 - [x] Review provenance, licensing, shapes, names, and representative values.
-- [ ] Publish candidate records only in prerelease registries.
+- [x] Publish candidate records only in prerelease registries.
 
 Exit criterion: every candidate is hermetically valid and passes scheduled live
 retrieval with the reference client.

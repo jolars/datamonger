@@ -3,10 +3,11 @@
 Datamonger is a cross-language registry and artifact system for retrieving,
 verifying, and identically decoding public research datasets.
 
-The vertical proof, the specification-and-registry milestone, and the Python
-retrieval and decoding milestones are complete. Normative draft contracts live in
-[`spec/`](spec/); see [DESIGN.md](DESIGN.md) for the architecture and
-[TODO.md](TODO.md) for the implementation roadmap.
+The vertical proof, the specification-and-registry milestone, the Python
+retrieval and decoding milestones, and the tooling-and-candidate-data milestone
+are complete. Normative draft contracts live in [`spec/`](spec/); see
+[DESIGN.md](DESIGN.md) for the architecture and [TODO.md](TODO.md) for the
+implementation roadmap.
 
 ## Development
 
@@ -69,7 +70,7 @@ still match the immutable registry record.
 ```console
 cd packages/python
 uv run python ../../tools/dm_canary.py \
-  ../../registry/releases/proof-0001/selector.json
+  ../../registry/releases/candidate-0001/selector.json
 ```
 
 The Markdown report exits with status 0 when every check passes, status 1 when
@@ -85,19 +86,31 @@ or updates an implementation-specific GitHub issue with the complete report;
 the next successful run closes it. Canary results describe current
 availability and integrity, not preservation.
 
+## Candidate registry
+
+The prerelease `candidate-0001` registry contains all ten reviewed UCI and
+LIBSVM candidate datasets. Its strong selector is checked in at
+`registry/releases/candidate-0001/selector.json`; the selected index is
+published as the sole asset of the `registry-candidate-0001` GitHub prerelease.
+The verification records remain provisional until an independent
+implementation reproduces them, and no stable registry includes these records.
+
+The scheduled upstream-verification workflow checks every candidate artifact
+location and decoded dataset through the remote index. This is deliberately
+separate from the hermetic quality gate because upstream drift and availability
+are operational signals, not package-test failures.
+
 ## Vertical-proof registry
 
 The legacy prerelease `proof-0001` registry contains UCI Iris and LIBSVM
 `heart_scale`. Its strong selector is checked in at
 `registry/releases/proof-0001/selector.json`; the selected index is published as
-the sole asset of the `registry-proof-0001` GitHub prerelease. The Python client
-also ships the exact index and its trusted digest as its default registry.
-Dataset artifacts remain upstream-only.
+the sole asset of the `registry-proof-0001` GitHub prerelease. Dataset artifacts
+remain upstream-only.
 
-The scheduled upstream-verification workflow checks both datasets through that
-remote index. It is deliberately separate from the hermetic quality gate
-because upstream drift and availability are operational signals, not
-package-test failures.
+The Python client continues to bundle this exact legacy index and trusted digest
+as its offline default. Selecting the newer candidate registry remains explicit
+while the draft contracts are not independently certified.
 
 ## Conformance registry
 

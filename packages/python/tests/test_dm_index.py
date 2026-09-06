@@ -148,6 +148,29 @@ def test_curated_dataset_manifests_are_valid_and_cover_mvp() -> None:
     assert all(manifest["provenance"].get("citation") for manifest in uci_manifests)
 
 
+def test_candidate_release_contains_every_curated_dataset() -> None:
+    release_path = ROOT / "registry/releases/candidate-0001/release.yaml"
+    release = dm_index.load_yaml(release_path)
+    manifest_paths = sorted(
+        path.relative_to(ROOT).as_posix()
+        for path in (ROOT / "registry/datasets").glob("*/*.yaml")
+    )
+    manifests = [dm_index.load_yaml(ROOT / path) for path in manifest_paths]
+    identities = {
+        (manifest["source"], manifest["name"], manifest["version"])
+        for manifest in manifests
+    }
+
+    assert release["release"] == "candidate-0001"
+    assert release["tag"] == "registry-candidate-0001"
+    assert release["sequence"] == 1
+    assert release["manifests"] == manifest_paths
+    assert {
+        (default["source"], default["name"], default["version"])
+        for default in release["defaults"]
+    } == identities
+
+
 def test_valid_release_builds_and_validates_generated_documents(tmp_path: Path) -> None:
     prepare_root(tmp_path)
     release_path = make_release(tmp_path, [make_manifest()], [default()])
@@ -566,10 +589,10 @@ def test_cli_resolves_release_against_alternate_root(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, explicit_release: bool
 ) -> None:
     prepare_root(tmp_path)
-    release_root = tmp_path / "registry/releases/proof-0001"
+    release_root = tmp_path / dm_index.DEFAULT_RELEASE.parent
     release_root.mkdir(parents=True)
     release_path = make_release(
-        tmp_path, [make_manifest()], [default()], release="proof-0001"
+        tmp_path, [make_manifest()], [default()], release=release_root.name
     )
     release_path.replace(release_root / "release.yaml")
     index_bytes, selector_bytes = dm_index.build(
@@ -582,7 +605,7 @@ def test_cli_resolves_release_against_alternate_root(
     )
     arguments = ["dm-index", "check"]
     if explicit_release:
-        arguments.append("registry/releases/proof-0001/release.yaml")
+        arguments.append(dm_index.DEFAULT_RELEASE.as_posix())
     arguments.extend(["--root", str(tmp_path)])
     monkeypatch.setattr("sys.argv", arguments)
 
@@ -660,6 +683,10 @@ def test_changed_existing_output_is_never_overwritten(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     ("release", "expected_digest"),
     [
+        (
+            ROOT / "registry/releases/candidate-0001/release.yaml",
+            "e956a6dfb2a0504bdb9d0a44094bb5711af815f0b42b3dd5c071eec181743257",
+        ),
         (
             ROOT / "registry/releases/proof-0001/release.yaml",
             "98cdbc7c8c795dcd021775de4c955c2442e6e1f2d7911e4c53b72327d90f6578",
