@@ -109,7 +109,7 @@ retrieval with the reference client.
 
 - [x] Freeze the revision 1 feature set and version every contract.
 - [x] Finish user, package, contributor, trust, and operations documentation.
-- [ ] Cut a feature-frozen specification and registry release candidate.
+- [x] Cut a feature-frozen specification and registry release candidate.
 - [ ] Require a new release candidate for every output-affecting correction.
 
 Exit criterion: the candidate is complete enough to implement without consulting
