@@ -122,12 +122,30 @@ def test_curated_dataset_manifests_are_valid_and_cover_mvp() -> None:
     task_types = {
         task["type"] for manifest in manifests for task in manifest.get("tasks", [])
     }
-
     assert expected_identities <= identities
     assert len(manifests) >= 10
     assert decoders >= {"delimited-text", "libsvm", "libsvm-split"}
     assert task_types >= {"classification", "regression"}
     assert any(not manifest.get("tasks") for manifest in manifests)
+
+    immutable_proof_identities = {
+        ("libsvm", "heart_scale", "1"),
+        ("uci", "iris", "1"),
+    }
+    reviewed_manifests = [
+        manifest
+        for manifest in manifests
+        if (manifest["source"], manifest["name"], manifest["version"])
+        not in immutable_proof_identities
+    ]
+    assert all(manifest["license"].get("evidence") for manifest in reviewed_manifests)
+
+    uci_manifests = [
+        manifest for manifest in reviewed_manifests if manifest["source"] == "uci"
+    ]
+    assert all(manifest["provenance"].get("upstream_id") for manifest in uci_manifests)
+    assert all(manifest["provenance"].get("authors") for manifest in uci_manifests)
+    assert all(manifest["provenance"].get("citation") for manifest in uci_manifests)
 
 
 def test_valid_release_builds_and_validates_generated_documents(tmp_path: Path) -> None:

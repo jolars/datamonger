@@ -99,7 +99,7 @@ round-trip registry tests.
 - [x] Curate roughly ten UCI and LIBSVM entries covering regression, binary and
   multiclass classification, unsupervised data, dense and sparse data, and a
   multi-artifact train/test split.
-- [ ] Review provenance, licensing, shapes, names, and representative values.
+- [x] Review provenance, licensing, shapes, names, and representative values.
 - [ ] Publish candidate records only in prerelease registries.
 
 Exit criterion: every candidate is hermetically valid and passes scheduled live

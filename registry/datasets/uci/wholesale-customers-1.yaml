@@ -19,6 +19,7 @@ license:
   status: known
   identifier: CC-BY-4.0
   url: https://creativecommons.org/licenses/by/4.0/
+  evidence: The UCI dataset page states that the dataset is licensed under CC BY 4.0.
 artifacts:
 - name: data
   format: csv
