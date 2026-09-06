@@ -29,9 +29,11 @@ from datamonger._validate import require_array
 
 _IDENTIFIER = re.compile(r"[a-z0-9][a-z0-9._-]*\Z")
 _VERSION = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]*\Z")
+_RELEASE = re.compile(r"[a-z0-9][a-z0-9._-]*\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _CATALOG_FIELDS = {"schema_version", "releases"}
-_SELECTOR_FIELDS = {"release", "index_sha256", "index_url"}
+_SELECTOR_FIELDS = {"schema_version", "release", "index_sha256", "index_url"}
+_SELECTOR_STRING_FIELDS = {"release", "index_sha256", "index_url"}
 _DEFAULT_CATALOG_URL = (
     "https://raw.githubusercontent.com/jolars/datamonger/main/registry/catalog.json"
 )
@@ -53,8 +55,19 @@ def _require_array(value: object, field: str) -> Sequence[object]:
 def validate_registry_selector(registry: Registry) -> None:
     """Require the complete grammar of a strong registry selector."""
 
-    if not isinstance(registry.release, str) or not registry.release:
-        raise RegistryError("registry selector release must be a nonempty string")
+    if (
+        isinstance(registry.schema_version, bool)
+        or not isinstance(registry.schema_version, int)
+        or registry.schema_version != 1
+    ):
+        raise UnsupportedRegistryError(
+            f"unsupported registry selector schema {registry.schema_version!r}"
+        )
+    if (
+        not isinstance(registry.release, str)
+        or _RELEASE.fullmatch(registry.release) is None
+    ):
+        raise RegistryError("registry selector release identifier is invalid")
     if (
         not isinstance(registry.index_sha256, str)
         or _SHA256.fullmatch(registry.index_sha256) is None
@@ -62,16 +75,8 @@ def validate_registry_selector(registry: Registry) -> None:
         raise RegistryIntegrityError(
             "registry selector SHA-256 must contain 64 lowercase hexadecimal digits"
         )
-    if not isinstance(registry.index_url, str):
-        raise RegistryError("registry selector index URL must be an absolute URI")
-    try:
-        parsed_url = urlsplit(registry.index_url)
-    except ValueError as error:
-        raise RegistryError(
-            "registry selector index URL must be an absolute URI"
-        ) from error
-    if not parsed_url.scheme:
-        raise RegistryError("registry selector index URL must be an absolute URI")
+    if not _is_http_url(registry.index_url):
+        raise RegistryError("registry selector index URL must be an HTTP(S) URL")
 
 
 def _is_https_url(value: object) -> bool:
@@ -82,6 +87,18 @@ def _is_https_url(value: object) -> bool:
     except ValueError:
         return False
     return parsed_url.scheme == "https" and bool(parsed_url.netloc)
+
+
+def _is_http_url(value: object) -> bool:
+    if not isinstance(value, str):
+        return False
+    if not value.startswith(("http://", "https://")):
+        return False
+    try:
+        parsed_url = urlsplit(value)
+    except ValueError:
+        return False
+    return parsed_url.scheme in {"http", "https"} and bool(parsed_url.netloc)
 
 
 def _catalog_bytes(catalog_url: str) -> bytes:
@@ -110,8 +127,8 @@ def resolve_registry(
 ) -> Registry:
     """Resolve a bare release through a TLS-trusted HTTPS catalog lookup."""
 
-    if not isinstance(release, str) or not release:
-        raise RegistryError("registry release must be a nonempty string")
+    if not isinstance(release, str) or _RELEASE.fullmatch(release) is None:
+        raise RegistryError("registry release identifier is invalid")
     try:
         parsed = json.loads(_catalog_bytes(catalog_url).decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
@@ -120,7 +137,12 @@ def resolve_registry(
         ) from error
     if not isinstance(parsed, Mapping):
         raise RegistryError("registry catalog must be a JSON object")
-    if parsed.get("schema_version") != 1:
+    catalog_schema = parsed.get("schema_version")
+    if (
+        isinstance(catalog_schema, bool)
+        or not isinstance(catalog_schema, int)
+        or catalog_schema != 1
+    ):
         raise UnsupportedRegistryError(
             f"unsupported registry catalog schema {parsed.get('schema_version')!r}"
         )
@@ -135,15 +157,18 @@ def resolve_registry(
             raise RegistryError("registry catalog selector must be a JSON object")
         if set(raw_selector) != _SELECTOR_FIELDS:
             raise RegistryError(
-                "registry catalog selector must contain exactly release, "
-                "index_sha256, and index_url"
+                "registry catalog selector must contain exactly schema_version, "
+                "release, index_sha256, and index_url"
             )
-        if not all(isinstance(raw_selector[field], str) for field in _SELECTOR_FIELDS):
+        if not all(
+            isinstance(raw_selector[field], str) for field in _SELECTOR_STRING_FIELDS
+        ):
             raise RegistryError("registry catalog selector fields must be strings")
         selector = Registry(
             release=cast(str, raw_selector["release"]),
             index_sha256=cast(str, raw_selector["index_sha256"]),
             index_url=cast(str, raw_selector["index_url"]),
+            schema_version=raw_selector["schema_version"],
         )
         validate_registry_selector(selector)
         if selector.release in selectors:
@@ -231,7 +256,12 @@ def load_registry(
         ) from error
     if not isinstance(parsed, Mapping):
         raise UnsupportedRegistryError("registry index must be a JSON object")
-    if parsed.get("schema_version") != 1:
+    index_schema = parsed.get("schema_version")
+    if (
+        isinstance(index_schema, bool)
+        or not isinstance(index_schema, int)
+        or index_schema != 1
+    ):
         raise UnsupportedRegistryError(
             f"unsupported registry schema {parsed.get('schema_version')!r}"
         )
@@ -287,7 +317,12 @@ def resolve_dataset(
             # Records carry their own schema version; a future record schema
             # inside a supported index envelope must fail loudly rather than
             # be reinterpreted under version 1 assumptions.
-            if raw_dataset.get("schema_version") != 1:
+            dataset_schema = raw_dataset.get("schema_version")
+            if (
+                isinstance(dataset_schema, bool)
+                or not isinstance(dataset_schema, int)
+                or dataset_schema != 1
+            ):
                 raise UnsupportedRegistryError(
                     f"unsupported dataset schema {raw_dataset.get('schema_version')!r}"
                 )

@@ -1,8 +1,8 @@
 # Datamonger Python client
 
-This package is the Python reference client for Datamonger's normative draft
-contracts. Its public interfaces may change until specification revision 1 is
-independently certified.
+This package is the Python reference client for Datamonger's feature-frozen
+revision 1 contracts. Its public interfaces may change until specification
+revision 1 is independently certified.
 
 The client bundles the immutable `proof-0001` registry snapshot and verifies it
 against a trusted digest shipped in the package. It is the default registry, so
@@ -70,6 +70,7 @@ project root:
 
 ```json
 {
+  "schema_version": 1,
   "release": "2026.08",
   "index_sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
   "index_url": "https://registry.example/2026.08/index.json"

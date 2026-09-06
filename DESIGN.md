@@ -1052,11 +1052,9 @@ is not an MVP requirement.
 
 ### Naming
 
-`fetch_data` is a generic name, and in R in particular it is a plausible
-collision with user code and other packages. Before the first release, decide
-whether to keep it, prefix it, or export both a prefixed canonical name and an
-unprefixed alias. This is cheap now and expensive once it is in anyone's
-scripts.
+Revision 1 keeps `fetch_data` as the shared primary API name. In languages where
+it plausibly collides with user code or another package, ordinary namespace
+qualification remains available without creating a second canonical spelling.
 
 ### Error taxonomy
 

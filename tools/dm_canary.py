@@ -122,8 +122,15 @@ def _string(value: object, field: str) -> str:
 
 
 def _integer(value: object, field: str) -> int:
-    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
-        raise UnsupportedRegistryError(f"{field} must be a nonnegative integer")
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, int)
+        or value < 0
+        or value > 2**53 - 1
+    ):
+        raise UnsupportedRegistryError(
+            f"{field} must be a nonnegative exact JSON integer"
+        )
     return value
 
 
@@ -133,16 +140,17 @@ def _read_selector(path: Path) -> Registry:
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
         raise ValueError(f"cannot read registry selector {path}: {error}") from error
     selector = _mapping(value, "registry selector")
-    expected_fields = {"release", "index_sha256", "index_url"}
+    expected_fields = {"schema_version", "release", "index_sha256", "index_url"}
     if set(selector) != expected_fields:
         raise ValueError(
-            "registry selector must contain exactly release, index_sha256, "
-            "and index_url"
+            "registry selector must contain exactly schema_version, release, "
+            "index_sha256, and index_url"
         )
     registry = Registry(
         release=cast(str, selector["release"]),
         index_sha256=cast(str, selector["index_sha256"]),
         index_url=cast(str, selector["index_url"]),
+        schema_version=selector["schema_version"],
     )
     validate_registry_selector(registry)
     return registry

@@ -36,6 +36,7 @@ _FLOAT = re.compile(r"[+-]?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\Z"
 _FIELDS = re.compile(r"[ \t]+")
 _INT64_MIN = -(2**63)
 _INT64_MAX = 2**63 - 1
+_MAX_EXACT_JSON_INTEGER = 2**53 - 1
 _SUPPORTED_COMPRESSIONS = {"none", "gzip", "bzip2"}
 _SUPPORTED_OPTIONS = {
     "index_base",
@@ -71,8 +72,11 @@ def _validate_options(
         isinstance(feature_count, bool)
         or not isinstance(feature_count, int)
         or feature_count <= 0
+        or feature_count > _MAX_EXACT_JSON_INTEGER
     ):
-        raise UnsupportedDecoderError("feature_count must be a positive integer")
+        raise UnsupportedDecoderError(
+            "feature_count must be a positive integer in the exact JSON range"
+        )
 
     label_type = options["label_type"]
     if label_type not in {"float64", "int64"}:

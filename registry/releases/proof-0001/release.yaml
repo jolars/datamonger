@@ -1,3 +1,4 @@
+schema_version: 1
 release: proof-0001
 sequence: 0
 repository: jolars/datamonger

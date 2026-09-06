@@ -1,11 +1,12 @@
 {
   "schema_version": 1,
+  "canonical_form": 1,
   "cases": [
     {
       "id": "delimited-mixed-csv",
       "dataset": "conformance:mixed_csv@1",
-      "area": "delimited-text",
-      "status": "active-python",
+      "decoder": "delimited-text",
+      "decoder_version": 1,
       "input": "artifacts/mixed.csv",
       "recipe": {
         "encoding": "utf-8",
@@ -27,8 +28,8 @@
     {
       "id": "delimited-mixed-tsv",
       "dataset": "conformance:mixed_tsv@1",
-      "area": "delimited-text",
-      "status": "active-python",
+      "decoder": "delimited-text",
+      "decoder_version": 1,
       "input": "artifacts/mixed.tsv",
       "recipe": {
         "encoding": "utf-8",
@@ -50,8 +51,8 @@
     {
       "id": "libsvm-small",
       "dataset": "conformance:small_libsvm@1",
-      "area": "libsvm",
-      "status": "active-python",
+      "decoder": "libsvm",
+      "decoder_version": 1,
       "input": "artifacts/small.libsvm",
       "recipe": {
         "index_base": 1,
@@ -66,8 +67,8 @@
     {
       "id": "svmlight-small",
       "dataset": "conformance:small_svmlight@1",
-      "area": "libsvm",
-      "status": "active-python",
+      "decoder": "libsvm",
+      "decoder_version": 1,
       "input": "artifacts/small-test.svmlight",
       "recipe": {
         "index_base": 1,
@@ -82,8 +83,8 @@
     {
       "id": "libsvm-split-small",
       "dataset": "conformance:small_libsvm_split@1",
-      "area": "libsvm-split",
-      "status": "active-python",
+      "decoder": "libsvm-split",
+      "decoder_version": 1,
       "input": {
         "train": "artifacts/small.libsvm",
         "test": "artifacts/small-test.svmlight"

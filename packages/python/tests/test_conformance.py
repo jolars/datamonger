@@ -40,6 +40,8 @@ def load_cases(name: str) -> list[dict[str, object]]:
 
 
 def test_shared_decoder_case_descriptors_are_closed_and_resolvable() -> None:
+    document = json.loads((CORPUS / "cases.json").read_bytes())
+    assert document["canonical_form"] == 1
     cases = load_cases("cases.json")
     identifiers = [case["id"] for case in cases]
 
@@ -47,14 +49,14 @@ def test_shared_decoder_case_descriptors_are_closed_and_resolvable() -> None:
     for case in cases:
         assert set(case) == {
             "id",
-            "area",
-            "status",
+            "decoder",
+            "decoder_version",
             "input",
             "recipe",
             "expected_sha256",
             "dataset",
         }
-        assert case["status"] in {"active-python", "milestone-3"}
+        assert case["decoder_version"] == 1
         inputs = case["input"]
         if isinstance(inputs, str):
             assert (CORPUS / inputs).is_file()
@@ -68,14 +70,10 @@ def test_shared_decoder_case_descriptors_are_closed_and_resolvable() -> None:
 
 @pytest.mark.parametrize(
     "case",
-    [
-        case
-        for case in load_cases("cases.json")
-        if case["area"] == "delimited-text" and case["status"] == "active-python"
-    ],
+    [case for case in load_cases("cases.json") if case["decoder"] == "delimited-text"],
     ids=lambda case: case["id"],
 )
-def test_active_delimited_text_cases_match_golden_digest(
+def test_required_delimited_text_cases_match_golden_digest(
     case: dict[str, object],
 ) -> None:
     recipe = case["recipe"]
@@ -88,14 +86,10 @@ def test_active_delimited_text_cases_match_golden_digest(
 
 @pytest.mark.parametrize(
     "case",
-    [
-        case
-        for case in load_cases("cases.json")
-        if case["area"] == "libsvm" and case["status"] == "active-python"
-    ],
+    [case for case in load_cases("cases.json") if case["decoder"] == "libsvm"],
     ids=lambda case: case["id"],
 )
-def test_active_libsvm_cases_match_golden_digest(
+def test_required_libsvm_cases_match_golden_digest(
     case: dict[str, object],
 ) -> None:
     recipe = case["recipe"]
@@ -108,14 +102,10 @@ def test_active_libsvm_cases_match_golden_digest(
 
 @pytest.mark.parametrize(
     "case",
-    [
-        case
-        for case in load_cases("cases.json")
-        if case["area"] == "libsvm-split" and case["status"] == "active-python"
-    ],
+    [case for case in load_cases("cases.json") if case["decoder"] == "libsvm-split"],
     ids=lambda case: case["id"],
 )
-def test_active_libsvm_split_cases_match_golden_digest(
+def test_required_libsvm_split_cases_match_golden_digest(
     case: dict[str, object],
 ) -> None:
     inputs = case["input"]
@@ -133,6 +123,8 @@ def test_active_libsvm_split_cases_match_golden_digest(
 
 
 def test_canonical_case_descriptors_have_exact_hex_golden_values() -> None:
+    document = json.loads((CORPUS / "canonical/cases.json").read_bytes())
+    assert document["canonical_form"] == 1
     cases = load_cases("canonical/cases.json")
     identifiers = [case["id"] for case in cases]
 
@@ -146,6 +138,8 @@ def test_canonical_case_descriptors_have_exact_hex_golden_values() -> None:
 
 
 def test_shared_error_cases_map_to_distinct_python_types() -> None:
+    document = json.loads((CORPUS / "errors.json").read_bytes())
+    assert document["error_taxonomy_version"] == 1
     cases = load_cases("errors.json")
     python_types = {
         "unknown-dataset": UnknownDatasetError,
@@ -174,15 +168,25 @@ def test_shared_error_cases_map_to_distinct_python_types() -> None:
 def test_shared_malformed_decoder_cases_are_rejected(
     case: dict[str, object],
 ) -> None:
-    assert set(case) == {"id", "area", "input", "recipe", "expected"}
-    assert case["area"] in {"delimited-text", "libsvm", "libsvm-split"}
+    document = json.loads((CORPUS / "malformed.json").read_bytes())
+    assert document["error_taxonomy_version"] == 1
+    assert set(case) == {
+        "id",
+        "decoder",
+        "decoder_version",
+        "input",
+        "recipe",
+        "expected",
+    }
+    assert case["decoder"] in {"delimited-text", "libsvm", "libsvm-split"}
+    assert case["decoder_version"] == 1
     assert case["expected"] == "decode"
     recipe = case["recipe"]
     inputs = case["input"]
     assert isinstance(recipe, dict)
 
     input_paths: tuple[Path, ...]
-    if case["area"] in {"delimited-text", "libsvm"}:
+    if case["decoder"] in {"delimited-text", "libsvm"}:
         assert isinstance(inputs, str)
         input_paths = (CORPUS / inputs,)
     else:
@@ -195,9 +199,9 @@ def test_shared_malformed_decoder_cases_are_rejected(
     assert all(path.is_file() for path in input_paths)
 
     with pytest.raises(DecodeError):
-        if case["area"] == "delimited-text":
+        if case["decoder"] == "delimited-text":
             decode_delimited_text(input_paths[0], recipe)
-        elif case["area"] == "libsvm":
+        elif case["decoder"] == "libsvm":
             decode_libsvm(input_paths[0], recipe)
         else:
             decode_libsvm_split(
@@ -260,6 +264,14 @@ def test_every_initial_representation_round_trips_its_registry_golden(
 def test_committed_fuzz_regressions_are_decode_errors(
     case: dict[str, object], tmp_path: Path
 ) -> None:
+    assert case["decoder_version"] == 1
+    assert set(case) == {
+        "id",
+        "decoder",
+        "decoder_version",
+        "input_hex",
+        "expected",
+    }
     artifact = tmp_path / "fuzz-input"
     artifact.write_bytes(bytes.fromhex(str(case["input_hex"])))
 

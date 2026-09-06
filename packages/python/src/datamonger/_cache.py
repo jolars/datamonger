@@ -38,6 +38,15 @@ class DownloadedFile:
     content_coding: str | None
 
 
+def _is_http_url(url: str) -> bool:
+    if not url.startswith(("http://", "https://")):
+        return False
+    try:
+        return bool(urlsplit(url).netloc)
+    except ValueError:
+        return False
+
+
 def default_cache_root() -> Path:
     """Return the Python client's private application cache root."""
 
@@ -243,7 +252,7 @@ def _validate_download(
         size=size,
         integrity_error=integrity_error,
     )
-    if urlsplit(url).scheme not in {"http", "https"}:
+    if not _is_http_url(url):
         raise retrieval_error(f"unsupported retrieval URL scheme for {url!r}")
     return target
 
@@ -346,6 +355,11 @@ def _download_to_temporary(
     try:
         request = urllib.request.Request(url, headers={"Accept-Encoding": "identity"})
         with urllib.request.urlopen(request, timeout=30) as response:
+            final_url = response.geturl()
+            if not _is_http_url(final_url):
+                raise retrieval_error(
+                    f"retrieval redirected to an unsupported URL {final_url!r}"
+                )
             decoder, content_coding = _content_decoder(
                 response.headers.get_all("Content-Encoding", []), url, retrieval_error
             )
@@ -437,7 +451,7 @@ def download_unverified(
 ) -> DownloadedFile:
     """Download a URL without a predeclared digest for authoring inspection."""
 
-    if urlsplit(url).scheme not in {"http", "https"}:
+    if not _is_http_url(url):
         raise retrieval_error(f"unsupported retrieval URL scheme for {url!r}")
     try:
         directory.mkdir(parents=True, exist_ok=True)

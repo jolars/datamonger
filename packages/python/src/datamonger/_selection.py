@@ -13,7 +13,7 @@ from datamonger._models import Pathish, Registry
 from datamonger._registry import BUNDLED_REGISTRY, validate_registry_selector
 
 _PROJECT_SELECTOR = Path(".datamonger") / "selector.json"
-_SELECTOR_FIELDS = {"release", "index_sha256", "index_url"}
+_SELECTOR_FIELDS = {"schema_version", "release", "index_sha256", "index_url"}
 _session_registry: Registry | None = None
 
 
@@ -46,14 +46,18 @@ def _read_project_registry(path: Path) -> Registry:
     if set(raw) != _SELECTOR_FIELDS:
         raise RegistryError(
             f"project selector {path} must contain exactly "
-            "release, index_sha256, and index_url"
+            "schema_version, release, index_sha256, and index_url"
         )
-    if not all(isinstance(raw[field], str) for field in _SELECTOR_FIELDS):
-        raise RegistryError(f"project selector {path} fields must be strings")
+    if not all(
+        isinstance(raw[field], str)
+        for field in {"release", "index_sha256", "index_url"}
+    ):
+        raise RegistryError(f"project selector {path} selector fields must be strings")
     registry = Registry(
         release=cast(str, raw["release"]),
         index_sha256=cast(str, raw["index_sha256"]),
         index_url=cast(str, raw["index_url"]),
+        schema_version=raw["schema_version"],
     )
     validate_registry_selector(registry)
     return registry

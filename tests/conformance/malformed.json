@@ -1,9 +1,11 @@
 {
   "schema_version": 1,
+  "error_taxonomy_version": 1,
   "cases": [
     {
       "id": "delimited-nonfinite-float",
-      "area": "delimited-text",
+      "decoder": "delimited-text",
+      "decoder_version": 1,
       "input": "artifacts/malformed-float.csv",
       "recipe": {
         "encoding": "utf-8",
@@ -19,7 +21,8 @@
     },
     {
       "id": "libsvm-out-of-order-features",
-      "area": "libsvm",
+      "decoder": "libsvm",
+      "decoder_version": 1,
       "input": "artifacts/malformed-order.libsvm",
       "recipe": {
         "index_base": 1,
@@ -33,7 +36,8 @@
     },
     {
       "id": "libsvm-split-malformed-test",
-      "area": "libsvm-split",
+      "decoder": "libsvm-split",
+      "decoder_version": 1,
       "input": {
         "train": "artifacts/small.libsvm",
         "test": "artifacts/malformed-order.libsvm"

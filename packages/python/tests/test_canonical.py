@@ -61,7 +61,7 @@ def test_language_neutral_canonical_golden_cases(case: dict[str, Any]) -> None:
     assert canonical_bytes((component,)) == bytes.fromhex(case["expected_hex"])
 
 
-def test_int64_vector_has_exact_provisional_encoding() -> None:
+def test_int64_vector_has_exact_version_1_encoding() -> None:
     component = LogicalComponent(
         name="count",
         logical_type="int64",
@@ -119,7 +119,7 @@ def test_bool_padding_and_invalid_bits_are_zero() -> None:
     assert encoded[-2:] == bytes((0b00011101, 0b00011101))
 
 
-def test_float64_csr_matrix_has_exact_provisional_encoding() -> None:
+def test_float64_csr_matrix_has_exact_version_1_encoding() -> None:
     component = LogicalSparseMatrix(
         name="features",
         rows=2,

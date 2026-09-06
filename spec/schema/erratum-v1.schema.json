@@ -18,7 +18,10 @@
   "properties": {
     "schema_version": {"const": 1},
     "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$"},
-    "release": {"type": "string", "minLength": 1},
+    "release": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
     "dataset": {"$ref": "#/$defs/identity"},
     "target": {"$ref": "#/$defs/target"},
     "original": {

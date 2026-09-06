@@ -107,7 +107,7 @@ retrieval with the reference client.
 
 ## Milestone 5: Specification release candidate
 
-- [ ] Freeze the revision 1 feature set and version every contract.
+- [x] Freeze the revision 1 feature set and version every contract.
 - [ ] Finish user, package, contributor, trust, and operations documentation.
 - [ ] Cut a feature-frozen specification and registry release candidate.
 - [ ] Require a new release candidate for every output-affecting correction.

@@ -5,11 +5,13 @@ locations and never identities.
 
 ## Registry selection and trust
 
-A strong registry selector is `(release, index_sha256)`. `index_url` is its
-retrieval location. A client must validate the lowercase SHA-256 grammar, hash
-the exact retrieved index bytes before parsing them, parse the bytes as UTF-8
-JSON, and then require the embedded `release` and `schema_version` to match its
-supported contract.
+A strong registry selector is `(release, index_sha256)`. Its versioned document
+also carries `schema_version`; `index_url` is its retrieval location. Index and
+artifact locations are absolute HTTP or HTTPS URLs with lower-case schemes. A
+client must validate the release and lowercase SHA-256 grammars, hash the exact
+retrieved index bytes before parsing them, parse the bytes as UTF-8 JSON, and
+then require the embedded `release` and `schema_version` to match its supported
+contract.
 
 A bare release name resolved through an HTTPS catalog is a TLS-trusted
 convenience lookup, not a cryptographic pin. Clients must expose the resulting
@@ -47,6 +49,10 @@ Locations are attempted in manifest order. A transport failure, unsupported or
 malformed content coding, size mismatch, or digest mismatch discards the
 temporary bytes and permits the next location to be tried. Invalid bytes must
 never become a cache entry.
+
+Location URLs must be unique within an artifact. A redirect target must also be
+an absolute HTTP or HTTPS URL; redirects do not create or alter artifact
+identity.
 
 If all locations fail, diagnostics must retain each attempted location and
 classify the result as an integrity failure when any location returned complete

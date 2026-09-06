@@ -185,7 +185,32 @@ def test_valid_release_builds_and_validates_generated_documents(tmp_path: Path) 
         selector["index_sha256"]
         == __import__("hashlib").sha256(index_bytes).hexdigest()
     )
+    assert selector["schema_version"] == 1
     assert index["datasets"][0]["source"] == "uci"
+
+
+def test_release_source_requires_its_schema_version(tmp_path: Path) -> None:
+    prepare_root(tmp_path)
+    release_path = make_release(tmp_path, [make_manifest()], [default()])
+    release = yaml.safe_load(release_path.read_text(encoding="utf-8"))
+    del release["schema_version"]
+    release_path.write_text(yaml.safe_dump(release, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(ValueError, match=r"schema_version.*required"):
+        dm_index.build(release_path, root=tmp_path)
+
+
+@pytest.mark.parametrize("release", ["Uppercase", "has space", "slash/name"])
+def test_release_identifiers_have_a_portable_grammar(
+    tmp_path: Path, release: str
+) -> None:
+    prepare_root(tmp_path)
+    release_path = make_release(
+        tmp_path, [make_manifest()], [default()], release=release
+    )
+
+    with pytest.raises(ValueError, match="release"):
+        dm_index.build(release_path, root=tmp_path)
 
 
 def write_release_outputs(release_path: Path, root: Path) -> None:
@@ -344,6 +369,78 @@ def test_semantic_manifest_validation_rejects_cross_field_errors(
     release_path = make_release(tmp_path, [manifest], [default()])
 
     with pytest.raises(ValueError, match=message):
+        dm_index.build(release_path, root=tmp_path)
+
+
+def test_duplicate_download_locations_are_rejected(tmp_path: Path) -> None:
+    prepare_root(tmp_path)
+    manifest = make_manifest()
+    manifest["artifacts"][0]["downloads"].append(
+        copy.deepcopy(manifest["artifacts"][0]["downloads"][0])
+    )
+    release_path = make_release(tmp_path, [manifest], [default()])
+
+    with pytest.raises(ValueError, match="unique url"):
+        dm_index.build(release_path, root=tmp_path)
+
+
+def test_download_locations_must_be_http_urls(tmp_path: Path) -> None:
+    prepare_root(tmp_path)
+    manifest = make_manifest()
+    manifest["artifacts"][0]["downloads"][0]["url"] = "file:///tmp/data.csv"
+    release_path = make_release(tmp_path, [manifest], [default()])
+
+    with pytest.raises(ValueError, match="url"):
+        dm_index.build(release_path, root=tmp_path)
+
+
+def test_wire_integers_are_limited_to_the_json_exact_range(tmp_path: Path) -> None:
+    prepare_root(tmp_path)
+    manifest = make_manifest()
+    manifest["artifacts"][0]["size"] = 2**53
+    release_path = make_release(tmp_path, [manifest], [default()])
+
+    with pytest.raises(ValueError, match="size"):
+        dm_index.build(release_path, root=tmp_path)
+
+
+@pytest.mark.parametrize(
+    "task",
+    [
+        {"name": "missing-target", "type": "classification", "features": "x"},
+        {"name": "targeted", "type": "unsupervised", "target": "class"},
+        {
+            "name": "overlapping-roles",
+            "type": "classification",
+            "features": ["class", "sepal length"],
+            "target": "class",
+        },
+        {
+            "name": "mixed-scopes",
+            "type": "regression",
+            "target": "class",
+            "splits": {"train": {"target": "class"}},
+        },
+    ],
+)
+def test_task_roles_are_unambiguous(tmp_path: Path, task: dict[str, Any]) -> None:
+    prepare_root(tmp_path)
+    manifest = make_manifest()
+    manifest["tasks"] = [task]
+    release_path = make_release(tmp_path, [manifest], [default()])
+
+    with pytest.raises(ValueError, match=r"task|tasks|feature and target"):
+        dm_index.build(release_path, root=tmp_path)
+
+
+def test_conflicting_verification_records_require_an_erratum(tmp_path: Path) -> None:
+    prepare_root(tmp_path)
+    manifest = make_manifest()
+    verification = manifest["representation"]["expect"]["verification"]
+    verification.append(verification[0] | {"digest": "0" * 64})
+    release_path = make_release(tmp_path, [manifest], [default()])
+
+    with pytest.raises(ValueError, match="one active verification"):
         dm_index.build(release_path, root=tmp_path)
 
 

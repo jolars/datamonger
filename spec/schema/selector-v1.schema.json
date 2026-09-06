@@ -4,10 +4,18 @@
   "title": "Datamonger strong registry selector version 1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["release", "index_sha256", "index_url"],
+  "required": ["schema_version", "release", "index_sha256", "index_url"],
   "properties": {
-    "release": {"type": "string", "minLength": 1},
+    "schema_version": {"const": 1},
+    "release": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
     "index_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-    "index_url": {"type": "string", "format": "uri"}
+    "index_url": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https?://[^/\\s?#]+"
+    }
   }
 }

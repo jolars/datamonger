@@ -37,6 +37,7 @@ def write_project_selector(root: Path, selected: Registry) -> Path:
     path.write_text(
         json.dumps(
             {
+                "schema_version": selected.schema_version,
                 "release": selected.release,
                 "index_sha256": selected.index_sha256,
                 "index_url": selected.index_url,
@@ -133,20 +134,22 @@ def test_fetch_uses_session_then_project_selectors(
         (b"[]", "JSON object"),
         (b'{"release":"only"}', "exactly"),
         (
-            b'{"release":"r","index_sha256":"00000000000000000000000000000000'
+            b'{"schema_version":1,"release":"r",'
+            b'"index_sha256":"00000000000000000000000000000000'
             b'00000000000000000000000000000000","index_url":"https://example.com",'
             b'"latest":true}',
             "exactly",
         ),
         (
-            b'{"release":"r","index_sha256":"not-a-digest",'
+            b'{"schema_version":1,"release":"r","index_sha256":"not-a-digest",'
             b'"index_url":"https://example.com"}',
             "SHA-256",
         ),
         (
-            b'{"release":"r","index_sha256":"00000000000000000000000000000000'
+            b'{"schema_version":1,"release":"r",'
+            b'"index_sha256":"00000000000000000000000000000000'
             b'00000000000000000000000000000000","index_url":"relative/index.json"}',
-            "absolute URI",
+            r"HTTP\(S\)",
         ),
     ],
 )

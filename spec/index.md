@@ -9,7 +9,7 @@ An index is a UTF-8 JSON object validated by `schema/index-v1.schema.json`. It
 contains:
 
 - `schema_version`, equal to `1`;
-- `release`, the nonempty release identifier;
+- `release`, matching `[a-z0-9][a-z0-9._-]*`;
 - `defaults`, an array of unique `{source, name, version}` records;
 - `datasets`, an array of unique manifest records; and
 - when nonempty, `errata`, an array of approved erratum records.
@@ -17,7 +17,8 @@ contains:
 Every default must identify a dataset in the same index, and each `(source,
 name)` has at most one default. Dataset records use the manifest schema version
 declared in the record. Unknown index, manifest, canonical-form, or decoder
-versions are errors rather than extension points.
+versions are errors rather than extension points. A missing version is not
+version 1.
 
 ## Deterministic generation
 
@@ -47,9 +48,18 @@ Schema version 1 contains no non-integer JSON numbers. Equivalent parsed source
 trees therefore produce byte-identical indexes independent of YAML key order,
 checkout path, working directory, locale, timezone, or process hash seed.
 
-The distributed selector contains `release`, `index_sha256`, and `index_url`.
-The digest is SHA-256 over the complete generated index including its final LF.
-The selector is serialized by the same JSON rules.
+Every integer carried in a version 1 registry JSON or YAML document must be
+between zero and `9007199254740991` (`2^53 - 1`), inclusive, unless its schema
+gives a smaller bound. This restriction preserves exact values in all
+target-language JSON implementations. Wider `uint64` fields in the canonical
+binary form are framing widths, not permission to publish larger registry
+integers.
+
+The distributed selector contains `schema_version`, equal to `1`, plus
+`release`, `index_sha256`, and `index_url`. The URL is an absolute HTTP or HTTPS
+URL. The digest is SHA-256 over the complete generated index including its
+final LF. `schema_version` is not part of the strong `(release, index_sha256)`
+identity. The selector is serialized by the same JSON rules.
 
 Generated indexes and selectors are never edited manually. Creating an absent
 output is permitted; replacing an existing output with different bytes is an
@@ -77,3 +87,8 @@ identifier with all earlier indexes in the registry tree under the rules in
 `identity.md`. It also validates artifact and input references, policy/location
 agreement, expected component shape, and approved errata. These semantic checks
 are required in addition to JSON Schema validation.
+
+The release authoring source is itself a version 1 document and must contain
+`schema_version`, equal to `1`. Its `sequence` is a nonnegative exact JSON
+integer, its release uses the grammar above, and its GitHub tag uses
+`[A-Za-z0-9][A-Za-z0-9._-]*`.

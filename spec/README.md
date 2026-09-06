@@ -1,6 +1,7 @@
-# Datamonger normative draft specification
+# Datamonger normative specification
 
-These versioned contracts are normative for the current implementation draft:
+The revision 1 feature set is frozen. [`revision-1.md`](revision-1.md) defines
+the profile and its versioned contract inventory:
 
 - `identity.md` defines dataset identity, resolution, and release evolution.
 - `retrieval.md` defines selectors, HTTP byte boundaries, fallback, and cache
@@ -12,7 +13,7 @@ These versioned contracts are normative for the current implementation draft:
 - `schema/` contains closed Draft 2020-12 JSON Schemas for authoring and
   generated records.
 
-The version numbers are binding even though the overall specification has not
-yet reached its feature-frozen release candidate. Any future change that alters
-logical output or reinterprets existing bytes requires a new decoder,
-canonical-form, or schema version as appropriate.
+The version numbers are binding even though the exact specification release
+candidate has not yet been cut. Any change that alters logical output or
+reinterprets existing bytes requires a new decoder, canonical-form, schema, or
+behavioral-contract version as appropriate.

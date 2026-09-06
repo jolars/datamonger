@@ -63,7 +63,10 @@ def _string(value: object, field: str) -> str:
 
 
 def _integer(value: object, field: str) -> int:
-    return require_integer(value, field, UnsupportedRegistryError)
+    integer = require_integer(value, field, UnsupportedRegistryError)
+    if not 0 <= integer <= 2**53 - 1:
+        raise UnsupportedRegistryError(f"{field} must be an exact JSON integer")
+    return integer
 
 
 def _load_registry(
@@ -402,10 +405,11 @@ def _verification_record(
             revoked.append(_object(erratum.get("original"), "erratum.original"))
 
     records = _array(expect.get("verification"), "representation.expect.verification")
-    for raw_record in records:
+    for raw_record in reversed(records):
         record = _object(raw_record, "verification record")
         if (
-            record.get("canonical_form") == 1
+            type(record.get("canonical_form")) is int
+            and record.get("canonical_form") == 1
             and record.get("algorithm") == "sha256"
             and record not in revoked
         ):
@@ -480,11 +484,16 @@ def fetch_data(
     representation = _object(dataset.get("representation"), "dataset.representation")
     decoder = representation.get("decoder")
     decoder_version = representation.get("decoder_version")
-    if decoder_version != 1 or decoder not in {
-        "delimited-text",
-        "libsvm",
-        "libsvm-split",
-    }:
+    if (
+        type(decoder_version) is not int
+        or decoder_version != 1
+        or decoder
+        not in {
+            "delimited-text",
+            "libsvm",
+            "libsvm-split",
+        }
+    ):
         raise UnsupportedDecoderError(
             "the Python client supports delimited-text, LIBSVM, and "
             "LIBSVM split version 1"

@@ -6,7 +6,7 @@ by `libsvm` version `1`. Unknown or omitted options are errors.
 ## Recipe
 
 - `index_base` is `1`.
-- `feature_count` is a positive integer.
+- `feature_count` is a positive integer no greater than `2^53 - 1`.
 - `duplicate_features` is `error`.
 - `label_type` is `int64` or `float64`.
 - `row_order` is `source`.

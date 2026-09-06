@@ -171,6 +171,7 @@ def _selector(
     ).encode()
     state.responses["/index.json"] = Response(index_bytes)
     selector = {
+        "schema_version": 1,
         "release": "test-0001",
         "index_sha256": hashlib.sha256(index_bytes).hexdigest(),
         "index_url": f"{base_url}/index.json",

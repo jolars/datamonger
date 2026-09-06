@@ -52,6 +52,7 @@ def catalog_bytes(*selectors: Registry) -> bytes:
             "schema_version": 1,
             "releases": [
                 {
+                    "schema_version": selector.schema_version,
                     "release": selector.release,
                     "index_sha256": selector.index_sha256,
                     "index_url": selector.index_url,
@@ -137,8 +138,27 @@ def test_resolve_registry_requires_an_explicit_release_name(
         lambda *_args, **_kwargs: pytest.fail("invalid names must fail before I/O"),
     )
 
-    with pytest.raises(RegistryError, match="nonempty string"):
+    with pytest.raises(RegistryError, match="release identifier"):
         resolve_registry("")
+
+
+def test_resolve_registry_rejects_an_unversioned_selector(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    contents = (
+        b'{"schema_version":1,"releases":[{"release":"r",'
+        b'"index_sha256":"00000000000000000000000000000000'
+        b'00000000000000000000000000000000",'
+        b'"index_url":"https://example.com/index.json"}]}'
+    )
+    monkeypatch.setattr(
+        _registry.urllib.request,
+        "urlopen",
+        lambda *_args, **_kwargs: CatalogResponse(contents),
+    )
+
+    with pytest.raises(RegistryError, match="selector must contain exactly"):
+        resolve_registry("r")
 
 
 def test_resolve_registry_requires_https_catalog(
@@ -218,6 +238,7 @@ def test_resolve_registry_rejects_unknown_release(
         ),
         (
             b'{"schema_version":1,"releases":[{"release":"r",'
+            b'"schema_version":1,'
             b'"index_sha256":"00000000000000000000000000000000'
             b'00000000000000000000000000000000",'
             b'"index_url":"https://example.com/index.json","extra":true}]}',
@@ -226,6 +247,7 @@ def test_resolve_registry_rejects_unknown_release(
         ),
         (
             b'{"schema_version":1,"releases":[{"release":"r",'
+            b'"schema_version":1,'
             b'"index_sha256":"invalid",'
             b'"index_url":"https://example.com/index.json"}]}',
             RegistryIntegrityError,
@@ -255,3 +277,21 @@ def test_resolve_registry_rejects_malformed_catalogs(
 
     with pytest.raises(error, match=message):
         resolve_registry("r")
+
+
+@pytest.mark.parametrize(
+    "registry",
+    [
+        Registry("Uppercase", "0" * 64, "https://example.com/index.json"),
+        Registry("release", "0" * 64, "file:///tmp/index.json"),
+        Registry(
+            "release",
+            "0" * 64,
+            "https://example.com/index.json",
+            schema_version=2,
+        ),
+    ],
+)
+def test_registry_selector_contract_is_closed(registry: Registry) -> None:
+    with pytest.raises(RegistryError):
+        _registry.validate_registry_selector(registry)

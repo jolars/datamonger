@@ -55,8 +55,8 @@ rules below.
 For a dataset identifier present in an earlier and a later release:
 
 - identity-bearing fields must be equal;
-- every earlier task must remain present with the same name and value; new
-  uniquely named tasks may be appended;
+- every earlier task must remain present with the same name and value; task
+  array order is not semantic, and new uniquely named tasks may be added;
 - every earlier component expectation must remain unchanged; and
 - every earlier verification record must remain present unchanged; new records
   may be appended.
@@ -75,3 +75,20 @@ new decoder version and therefore a new dataset version. A canonical-form
 version is verification framing rather than dataset identity; a later release
 may append a digest for a newer canonical-form version without changing the
 dataset version.
+
+For each `(canonical_form, algorithm)` pair, a dataset must have exactly one
+non-revoked verification record. Multiple records with that pair are valid only
+when included errata revoke every superseded record. When more than one
+supported pair is available, a client uses the last supported, non-revoked
+record in manifest order and reports that choice.
+
+## Tasks
+
+A task uses either top-level roles or named `splits`, never both. Classification
+and regression tasks require a `target` at the top level or in every split;
+`features` is optional. Unsupervised tasks require `features` at the top level
+or in every split and must not declare a `target`. Feature-array order is
+semantic. Split names are unique. Within one top-level or split role record,
+component references must be unique, must resolve to the decoded
+representation, and must not name the same component as both a feature and the
+target.

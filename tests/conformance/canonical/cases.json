@@ -1,5 +1,6 @@
 {
   "schema_version": 1,
+  "canonical_form": 1,
   "cases": [
     {
       "id": "int64-vector-invalid-storage",

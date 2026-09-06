@@ -4,24 +4,28 @@
     {
       "id": "csv-closing-quote-suffix",
       "decoder": "delimited-text",
+      "decoder_version": 1,
       "input_hex": "780a226122620a",
       "expected": "decode-error"
     },
     {
       "id": "csv-invalid-utf8",
       "decoder": "delimited-text",
+      "decoder_version": 1,
       "input_hex": "780aff0a",
       "expected": "decode-error"
     },
     {
       "id": "libsvm-qid-token",
       "decoder": "libsvm",
+      "decoder_version": 1,
       "input_hex": "2b31207169643a3120313a310a",
       "expected": "decode-error"
     },
     {
       "id": "libsvm-bare-carriage-return",
       "decoder": "libsvm",
+      "decoder_version": 1,
       "input_hex": "2b3120313a310d",
       "expected": "decode-error"
     }

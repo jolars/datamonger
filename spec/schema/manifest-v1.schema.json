@@ -110,7 +110,11 @@
       "required": ["kind", "url"],
       "properties": {
         "kind": {"enum": ["upstream", "mirror"]},
-        "url": {"type": "string", "format": "uri"}
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https?://[^/\\s?#]+"
+        }
       }
     },
     "preservation": {
@@ -218,7 +222,7 @@
         "feature_count": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 18446744073709551615
+          "maximum": 9007199254740991
         },
         "duplicate_features": {"const": "error"},
         "label_type": {"enum": ["float64", "int64"]},
@@ -347,7 +351,7 @@
     "uint64": {
       "type": "integer",
       "minimum": 0,
-      "maximum": 18446744073709551615
+      "maximum": 9007199254740991
     },
     "taskRoles": {
       "type": "object",
@@ -393,7 +397,43 @@
           "propertyNames": {"$ref": "#/$defs/identifier"},
           "additionalProperties": {"$ref": "#/$defs/taskRoles"}
         }
-      }
+      },
+      "allOf": [
+        {
+          "not": {
+            "anyOf": [
+              {"required": ["splits", "features"]},
+              {"required": ["splits", "target"]}
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {"type": {"const": "unsupervised"}},
+            "required": ["type"]
+          },
+          "then": {
+            "anyOf": [{"required": ["features"]}, {"required": ["splits"]}],
+            "not": {"required": ["target"]},
+            "properties": {
+              "splits": {
+                "additionalProperties": {
+                  "required": ["features"],
+                  "not": {"required": ["target"]}
+                }
+              }
+            }
+          },
+          "else": {
+            "anyOf": [{"required": ["target"]}, {"required": ["splits"]}],
+            "properties": {
+              "splits": {
+                "additionalProperties": {"required": ["target"]}
+              }
+            }
+          }
+        }
+      ]
     }
   }
 }

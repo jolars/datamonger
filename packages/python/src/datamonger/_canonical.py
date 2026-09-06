@@ -1,4 +1,4 @@
-"""Provisional canonical-form version 1 encoder."""
+"""Canonical-form version 1 encoder."""
 
 from __future__ import annotations
 

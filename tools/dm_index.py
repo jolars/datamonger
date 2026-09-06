@@ -205,6 +205,7 @@ def _validate_dataset(dataset: Mapping[str, Any]) -> None:
             _mapping(raw, "artifact.download")
             for raw in _sequence(artifact.get("downloads"), "artifact.downloads")
         ]
+        _unique(downloads, "artifact.downloads", "url")
         kinds = [download.get("kind") for download in downloads]
         if distribution == "upstream-only" and any(
             kind != "upstream" for kind in kinds
@@ -360,19 +361,23 @@ def _validate_dataset(dataset: Mapping[str, Any]) -> None:
     _unique(tasks, f"{identity}.tasks", "name")
     for raw_task in tasks:
         task = _mapping(raw_task, "task")
-        roles: list[object] = [task.get("features"), task.get("target")]
+        role_records = [task]
         raw_splits = task.get("splits")
         if isinstance(raw_splits, Mapping):
             for raw_roles in raw_splits.values():
-                split_roles = _mapping(raw_roles, "task split")
-                roles.extend((split_roles.get("features"), split_roles.get("target")))
-        for role in roles:
-            names = (
-                role
-                if isinstance(role, Sequence) and not isinstance(role, str)
-                else [role]
+                role_records.append(_mapping(raw_roles, "task split"))
+        for roles in role_records:
+            role_features = roles.get("features")
+            feature_names = (
+                role_features
+                if isinstance(role_features, Sequence)
+                and not isinstance(role_features, str)
+                else [role_features]
             )
-            for name in names:
+            role_target = roles.get("target")
+            if role_target is not None and role_target in feature_names:
+                raise ValueError("task feature and target roles must be distinct")
+            for name in [*feature_names, role_target]:
                 if name is not None and name not in component_by_name:
                     raise ValueError(f"task refers to unknown component {name!r}")
 
@@ -566,6 +571,39 @@ def _validate_errata(
                 )
 
 
+def _validate_active_verification(
+    errata: Sequence[object],
+    datasets: Mapping[Identity, Mapping[str, Any]],
+) -> None:
+    revoked: dict[Identity, list[object]] = {}
+    for raw in errata:
+        erratum = _mapping(raw, "erratum")
+        target = _mapping(erratum.get("target"), "erratum.target")
+        if target.get("kind") != "verification":
+            continue
+        identity = _identity(
+            _mapping(erratum.get("dataset"), "erratum.dataset"),
+            "erratum.dataset",
+        )
+        revoked.setdefault(identity, []).append(erratum.get("original"))
+
+    for identity, dataset in datasets.items():
+        records_by_key: dict[tuple[object, object], list[object]] = {}
+        for raw in _verification(dataset):
+            record = _mapping(raw, "verification")
+            key = (record.get("canonical_form"), record.get("algorithm"))
+            records_by_key.setdefault(key, []).append(raw)
+        for key, records in records_by_key.items():
+            active = [
+                record for record in records if record not in revoked.get(identity, [])
+            ]
+            if len(active) != 1:
+                label = f"{identity[0]}:{identity[1]}@{identity[2]}"
+                raise ValueError(
+                    f"{label} must have one active verification record for {key!r}"
+                )
+
+
 def _history_indexes(
     release_path: Path, current_sequence: int
 ) -> list[Mapping[str, Any]]:
@@ -667,6 +705,7 @@ def build(release_path: Path, *, root: Path | None = None) -> tuple[bytes, bytes
     if release in history_releases:
         raise ValueError(f"release identifier {release!r} is already immutable")
     _validate_errata(errata, dataset_by_identity, histories)
+    _validate_active_verification(errata, dataset_by_identity)
     current_errata = {
         _string(erratum.get("id"), "erratum.id"): erratum for erratum in errata
     }
@@ -701,6 +740,7 @@ def build(release_path: Path, *, root: Path | None = None) -> tuple[bytes, bytes
 
     index_bytes = _json_bytes(index)
     selector = {
+        "schema_version": 1,
         "release": release,
         "index_sha256": hashlib.sha256(index_bytes).hexdigest(),
         "index_url": (

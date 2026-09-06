@@ -28,6 +28,7 @@ class Registry:
     release: str
     index_sha256: str
     index_url: str
+    schema_version: int = 1
 
 
 @dataclass(frozen=True)
