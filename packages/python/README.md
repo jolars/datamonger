@@ -4,6 +4,27 @@ This package is the Python reference client for Datamonger's feature-frozen
 revision 1 contracts. Its public interfaces may change until specification
 revision 1 is independently certified.
 
+## Installation and status
+
+The package requires Python 3.11 or newer and has not yet been published to
+PyPI. Install it from the repository root with:
+
+```console
+python -m pip install ./packages/python
+```
+
+For development, enter the repository's devenv shell and use the locked
+environment documented in the
+[contributor guide](https://github.com/jolars/datamonger/blob/main/CONTRIBUTING.md).
+
+The package requires pandas, NumPy, SciPy, platformdirs, and portalocker. The
+project code is MIT-licensed; datasets retain their own licenses and terms. See
+the repository's
+[trust model](https://github.com/jolars/datamonger/blob/main/TRUST.md) before
+relying on registry license, distribution, or preservation metadata.
+
+## Quick start
+
 The client bundles the immutable `proof-0001` registry snapshot and verifies it
 against a trusted digest shipped in the package. It is the default registry, so
 the index remains available without network access:
@@ -21,13 +42,20 @@ precedence, by a `registry=` argument, a session setting, the nearest project
 selector, and finally `BUNDLED_REGISTRY`. Updates are always explicit—none of
 these scopes resolves a floating release name.
 
+For a reproducible analysis, pass an explicit dataset `version` and use
+`return_info=True`. Retain the resolved `dataset_id`, `registry_release`,
+`registry_index_sha256`, artifact digests, verification level, canonical-form
+version, and canonical digest.
+
+## Registry selection
+
 To discover a published selector by its bare release name, make an explicit
 catalog lookup:
 
 ```python
 from datamonger import fetch_data, resolve_registry
 
-registry = resolve_registry("2026.09")
+registry = resolve_registry("candidate-0001")
 print(registry.index_sha256)
 iris = fetch_data("iris", source="uci", registry=registry)
 ```
@@ -83,6 +111,8 @@ it never causes a fallback to another registry. The release and digest form the
 strong selector. The URL is only its retrieval location, and possession of a
 digest authenticates nothing beyond the channel from which the selector came.
 
+## Return types and decoded verification
+
 The decoded return type is fixed by the representation:
 
 | Representation | Artifact formats | Python return type |
@@ -117,6 +147,8 @@ diagnostic or performance-sensitive work, `verify_decoded=False` explicitly
 skips those checks while retaining mandatory artifact size and SHA-256
 verification; `FetchInfo.verification` then reports `"artifact"` rather than
 `"decoded"`.
+
+## Metadata and artifact access
 
 Inspect registry metadata without retrieving an artifact with `data_info()`, or
 enumerate every version in the active immutable release with `list_data()`:
@@ -180,8 +212,11 @@ Expected failures derive from `DatamongerError` and are exported by
 
 All artifact selection and retrieval failures derive from `RetrievalError`.
 `ArtifactSelectionError` additionally distinguishes an omitted, ambiguous, or
-unknown artifact name. Registry-specific subclasses distinguish index retrieval,
-offline availability, selector integrity, and embedded release mismatches.
+unknown artifact name. `RegistryError` is the base for
+`RegistryIntegrityError`, `RegistryOfflineError`, `RegistryReleaseError`, and
+`RegistryRetrievalError`; `UnsupportedRegistryError` is also a registry failure.
+
+## Cache management
 
 Inspect the cache with `cache_info()`:
 
@@ -203,6 +238,10 @@ to remove old entries. The two filters intersect when combined. Calling
 removed entries and entries skipped because another process is publishing or
 reading them. Cache eviction is always explicit; the client never evicts data
 automatically.
+
+Every public operation that reads or changes the cache accepts `cache_dir=`.
+Pass the same private directory consistently to isolate an application or test.
+The platform-default location is reported by `cache_info().location`.
 
 ## Cache coordination
 
@@ -227,3 +266,36 @@ owners, so a stale record is immediately reclaimable without a timeout that
 could misclassify a slow but live reader. The cache root is client-private and
 must reside on a filesystem that implements local advisory file locking and
 atomic replacement.
+
+## Public API summary
+
+| Name | Purpose |
+| --- | --- |
+| `fetch_data()` | Resolve, retrieve, verify, and decode one dataset. |
+| `fetch_artifact()` | Retrieve one verified artifact without decoding it. |
+| `data_info()` | Inspect metadata for one resolved dataset version. |
+| `list_data()` | List every version in the selected registry. |
+| `resolve_registry()` | Discover a strong selector through an HTTPS catalog. |
+| `active_registry()` | Report the selector an unqualified call will use. |
+| `set_registry()` | Set or clear the process-local session selector. |
+| `cache_info()` | Inspect cached indexes and artifacts without network access. |
+| `cache_clean()` | Explicitly evict matching inactive cache entries. |
+
+The package also exports these public values and immutable result types:
+
+| Name | Contents |
+| --- | --- |
+| `BUNDLED_REGISTRY` | The package's default strong selector. |
+| `Registry` | A selector's release, index digest, URL, and schema version. |
+| `FetchResult` | Decoded `data` and its `FetchInfo`. |
+| `FetchInfo` | Resolved identity, selector, artifact digests, and verification record. |
+| `DataInfo` | Provenance, license, artifacts, representation, expectations, relations, and tasks. |
+| `SparseDataset` | A CSR feature matrix and response vector. |
+| `SparseDatasetSplit` | Separate train and test `SparseDataset` records. |
+| `DatasetData` | The union of all decoded return types. |
+| `CacheEntry` | One inspected registry or artifact cache object. |
+| `CacheInfo` | Cache location, total size, and entries. |
+| `CacheCleanResult` | Removed and skipped entries, plus `bytes_removed`. |
+
+Expected public failures are exported from `datamonger.errors`; all derive from
+`DatamongerError`.

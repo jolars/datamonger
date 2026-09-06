@@ -18,6 +18,11 @@ dependencies = [
   "scipy>=1.14",
 ]
 
+[project.urls]
+Documentation = "https://github.com/jolars/datamonger#documentation"
+Issues = "https://github.com/jolars/datamonger/issues"
+Repository = "https://github.com/jolars/datamonger"
+
 [dependency-groups]
 dev = [
   "hypothesis>=6",
