@@ -1,0 +1,153 @@
+name: Publish registry
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: Registry release identifier, such as 2026.08
+        required: true
+        type: string
+      prerelease:
+        description: Mark the GitHub Release as a prerelease
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: publish-registry-${{ inputs.release }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REGISTRY_RELEASE: ${{ inputs.release }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+
+      - name: Validate release inputs and generated files
+        id: metadata
+        run: |
+          if [[ ! "$REGISTRY_RELEASE" =~ ^[a-z0-9][a-z0-9._-]*$ ]]; then
+            echo "Invalid registry release identifier: $REGISTRY_RELEASE" >&2
+            exit 1
+          fi
+
+          release_directory="registry/releases/$REGISTRY_RELEASE"
+          release_file="$release_directory/release.yaml"
+          if [[ ! -f "$release_file" ]]; then
+            echo "Missing $release_file on the default branch." >&2
+            exit 1
+          fi
+
+          uv run --project packages/python python tools/dm_index.py check "$release_file"
+          tag="$(
+            uv run --project packages/python python -c '
+          import pathlib
+          import sys
+
+          import yaml
+
+          release_file = pathlib.Path(sys.argv[1])
+          expected_release = sys.argv[2]
+          expected_repository = sys.argv[3]
+          record = yaml.safe_load(release_file.read_text(encoding="utf-8"))
+          if record["release"] != expected_release:
+              raise SystemExit("release.yaml identifier does not match the workflow input")
+          if record["repository"] != expected_repository:
+              raise SystemExit("release.yaml repository does not match this repository")
+          print(record["tag"])
+          ' "$release_file" "$REGISTRY_RELEASE" "$GITHUB_REPOSITORY"
+          )"
+
+          expected_url="https://github.com/$GITHUB_REPOSITORY/releases/download/$tag/index.json"
+          selector_url="$(jq -r .index_url "$release_directory/selector.json")"
+          if [[ "$selector_url" != "$expected_url" ]]; then
+            echo "Selector URL $selector_url does not match $expected_url." >&2
+            exit 1
+          fi
+
+          echo "directory=$release_directory" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Create immutable registry release
+        env:
+          PRERELEASE: ${{ inputs.prerelease }}
+          RELEASE_DIRECTORY: ${{ steps.metadata.outputs.directory }}
+          RELEASE_TAG: ${{ steps.metadata.outputs.tag }}
+        run: |
+          if git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
+            if ! git diff --quiet "$RELEASE_TAG" -- "$RELEASE_DIRECTORY"; then
+              echo "Existing tag $RELEASE_TAG contains different release files." >&2
+              exit 1
+            fi
+          else
+            git tag "$RELEASE_TAG" "$GITHUB_SHA"
+            git push origin "refs/tags/$RELEASE_TAG"
+          fi
+
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            actual_prerelease="$(
+              gh release view "$RELEASE_TAG" --json isPrerelease --jq .isPrerelease
+            )"
+            if [[ "$actual_prerelease" != "$PRERELEASE" ]]; then
+              echo "Existing release prerelease status does not match the input." >&2
+              exit 1
+            fi
+          else
+            flags=(
+              --title "Registry $REGISTRY_RELEASE"
+              --notes "Immutable Datamonger registry release $REGISTRY_RELEASE."
+              --verify-tag
+            )
+            if [[ "$PRERELEASE" == true ]]; then
+              flags+=(--prerelease)
+            fi
+            gh release create "$RELEASE_TAG" "${flags[@]}" \
+              "$RELEASE_DIRECTORY/index.json"
+          fi
+
+          asset_count="$(
+            gh release view "$RELEASE_TAG" --json assets --jq '.assets | length'
+          )"
+          asset_name="$(
+            gh release view "$RELEASE_TAG" --json assets --jq '.assets[0].name'
+          )"
+          if [[ "$asset_count" != 1 || "$asset_name" != index.json ]]; then
+            echo "Registry release must contain index.json as its sole asset." >&2
+            exit 1
+          fi
+
+          download_directory="$RUNNER_TEMP/registry-release"
+          mkdir -p "$download_directory"
+          gh release download "$RELEASE_TAG" \
+            --pattern index.json \
+            --dir "$download_directory"
+          expected_sha="$(jq -r .index_sha256 "$RELEASE_DIRECTORY/selector.json")"
+          actual_sha="$(sha256sum "$download_directory/index.json" | cut -d ' ' -f 1)"
+          if [[ "$actual_sha" != "$expected_sha" ]]; then
+            echo "Published index digest does not match selector.json." >&2
+            exit 1
+          fi
+
+      - name: Re-fetch and verify upstream data
+        id: canary
+        env:
+          RELEASE_DIRECTORY: ${{ steps.metadata.outputs.directory }}
+        run: |
+          uv run --project packages/python python tools/dm_canary.py \
+            "$RELEASE_DIRECTORY/selector.json" \
+            | tee "$RUNNER_TEMP/dm-canary.md"
+
+      - name: Publish canary summary
+        if: always() && steps.canary.outcome != 'skipped'
+        run: cat "$RUNNER_TEMP/dm-canary.md" >> "$GITHUB_STEP_SUMMARY"

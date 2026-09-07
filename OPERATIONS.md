@@ -21,6 +21,93 @@ how maintainers apply them.
 - A verification record remains provisional until an independent
   implementation reproduces it.
 
+## Configure release automation
+
+Versionary manages the R, Python, and Julia package versions, changelogs, tags,
+and GitHub Releases. It does not manage registry or specification releases.
+Before enabling [`.github/workflows/versionary.yml`](.github/workflows/versionary.yml),
+configure the repository as follows:
+
+1. Add a `RELEASE_TOKEN` secret containing a fine-grained personal access token
+   with Contents, Pull requests, and Issues read/write access to this
+   repository. The token must be able to trigger downstream workflows; the
+   built-in `GITHUB_TOKEN` cannot trigger the Python publication workflow from
+   a Versionary-created release.
+2. Configure a PyPI trusted publisher for project `datamonger`, repository
+   `jolars/datamonger`, workflow `publish-python.yml`, and environment `pypi`.
+   Use a pending publisher before the first PyPI release if the project does
+   not yet exist.
+3. Install the Julia Registrator GitHub App for the repository. Do not install
+   TagBot for this release path—Versionary owns the package tags and GitHub
+   Releases.
+
+The explicit Versionary package names produce distinct tag namespaces:
+`datamonger-python-vX.Y.Z`, `datamonger-r-vX.Y.Z`, and
+`datamonger-julia-vX.Y.Z`. The ecosystems otherwise use the same package name,
+so the prefixes prevent Git tag collisions.
+
+## Release client packages
+
+After CI succeeds on `main`, Versionary opens or updates one release PR for each
+releasable client. A commit belongs to a client when it changes files under
+that client's package directory. Merging one release PR does not merge or
+publish either of the others.
+
+### Python
+
+The Python release is fully automated:
+
+1. Merge the `datamonger-python` Versionary release PR.
+2. Versionary creates a non-draft GitHub Release.
+3. The `Publish Python` workflow checks out that tag, builds and verifies the
+   wheel and source distribution, and publishes them to PyPI through trusted
+   publishing.
+
+The publishing job deliberately receives only the downloaded distributions and
+an OpenID Connect token. Package building runs in a separate, unprivileged job.
+
+### R
+
+The R release remains a reviewed CRAN handoff:
+
+1. Merge the `datamonger-r` Versionary release PR. Versionary creates its tag
+   and a draft GitHub Release.
+2. Manually run the `Prepare R release` workflow with that tag. It verifies the
+   draft and package versions, runs `R CMD build` and `R CMD check --as-cran`,
+   and attaches the source tarball to the draft.
+3. Submit that exact tarball to CRAN.
+4. After CRAN accepts it, publish the existing GitHub draft. Do not create a new
+   tag or release.
+
+### Julia
+
+The Julia release uses General's Registrator handoff:
+
+1. Merge the `datamonger-julia` Versionary release PR. Versionary creates its
+   tag and a draft GitHub Release.
+2. Open the tagged release commit on GitHub and add this commit comment:
+
+   ```text
+   @JuliaRegistrator register subdir=packages/julia
+   ```
+
+3. Review the Registrator pull request and wait for it to merge into General.
+4. Publish the existing GitHub draft. Versionary has already created the tag,
+   and Julia's package manager does not require TagBot to create another one.
+
+## Coordinate registry and client releases
+
+Registry releases are independent of package releases. Publish a registry
+release first, and only then merge client changes that adopt its bundled strong
+selector. Those changes produce independent client release PRs in the normal
+way; no Versionary `follows` relationship is involved.
+
+A registry release does not require a client release. Users can select the new
+registry remotely before a later client bundles it. Conversely, every bundled
+selector must refer to an already published registry asset. Coordinated stable
+client releases must eventually bundle the same stable selector, even though
+their PyPI, CRAN, and General publication steps complete at different times.
+
 ## Prepare a registry release
 
 Work from a clean branch based on the commit intended for publication.
@@ -83,19 +170,21 @@ has been independently reproduced.
 The repository currently publishes registry candidates as GitHub prereleases.
 After the release commit is reviewed and present on the default branch:
 
-1. Create and push the exact Git tag named by `release.yaml` at that commit.
-2. Create a GitHub prerelease for that existing tag and upload the generated
-   `index.json` as its sole asset, named `index.json`.
-3. Confirm that the asset URL is byte-for-byte the `index_url` in
-   `selector.json`. Download it, compute SHA-256, and compare the result with
-   `index_sha256`.
-4. Run `dm-canary` with the checked-in selector. This verifies the remote index,
-   every declared location, decoded component expectations, and a supported
-   canonical digest without consulting the artifact cache.
-5. Confirm that the catalog on the default branch contains the exact selector.
+1. Manually run the `Publish registry` workflow from the default branch. Enter
+   the release identifier from `release.yaml` and select `prerelease`. The
+   workflow revalidates every generated file and the selector URL, creates the
+   exact tag named by `release.yaml`, publishes `index.json` as the sole release
+   asset, and downloads it to verify its SHA-256. Rerunning it verifies an
+   existing immutable release without replacing its tag or asset. It then runs
+   `dm-canary` against the published asset without consulting the artifact
+   cache.
+2. Inspect the canary report in the workflow summary. Investigate any remote
+   index, location, artifact, decoding, or canonical-digest failure; the release
+   remains immutable even when this post-publication check fails.
+3. Confirm that the catalog on the default branch contains the exact selector.
    Resolve its bare release name with the Python client and compare the returned
    `Registry` with the checked-in selector.
-6. Update `.github/workflows/upstream-verification.yml` when the newly published
+4. Update `.github/workflows/upstream-verification.yml` when the newly published
    release becomes the active canary target. Add every released independent
    client to its implementation matrix.
 

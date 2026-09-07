@@ -1,0 +1,75 @@
+name: Prepare R release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Versionary draft tag, such as datamonger-r-v0.1.0
+        required: true
+        type: string
+
+concurrency:
+  group: prepare-r-${{ inputs.release_tag }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ inputs.release_tag }}
+      R_KEEP_PKG_SOURCE: "yes"
+      _R_CHECK_CRAN_INCOMING_REMOTE_: "false"
+    steps:
+      - name: Validate draft release
+        run: |
+          if [[ "$RELEASE_TAG" != datamonger-r-v* ]]; then
+            echo "Expected a datamonger-r-v* release tag." >&2
+            exit 1
+          fi
+          if [[ "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" != true ]]; then
+            echo "Release $RELEASE_TAG is not a draft." >&2
+            exit 1
+          fi
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.release_tag }}
+
+      - uses: r-lib/actions/setup-r@465b7d8e732ca3921382b1674c59bada9cbf3399 # v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-tinytex@465b7d8e732ca3921382b1674c59bada9cbf3399 # v2
+
+      - uses: r-lib/actions/setup-r-dependencies@465b7d8e732ca3921382b1674c59bada9cbf3399 # v2
+        with:
+          working-directory: packages/r
+
+      - name: Match package and tag versions
+        run: |
+          package_version="$(sed -n 's/^Version:[[:space:]]*//p' packages/r/DESCRIPTION)"
+          tag_version="${RELEASE_TAG#datamonger-r-v}"
+          if [[ "$package_version" != "$tag_version" ]]; then
+            echo "DESCRIPTION has $package_version, but the tag has $tag_version." >&2
+            exit 1
+          fi
+
+      - name: Build source package
+        working-directory: packages/r
+        run: R CMD build .
+
+      - name: Run CRAN-style checks
+        working-directory: packages/r
+        run: R CMD check --as-cran datamonger_*.tar.gz
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ${{ inputs.release_tag }}-source
+          path: packages/r/datamonger_*.tar.gz
+          if-no-files-found: error
+
+      - name: Attach source package to draft
+        run: gh release upload "$RELEASE_TAG" packages/r/datamonger_*.tar.gz --clobber

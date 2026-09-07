@@ -1,0 +1,27 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jolars/versionary/v1.4.0/schemas/config.json",
+  "version": 1,
+  "review-mode": "pr",
+  "release-type": "simple",
+  "monorepo-mode": "independent",
+  "separate-release-prs": true,
+  "bootstrap-sha": "ff064bc725ed4795b164315fa74ae0178a9f91d5",
+  "release-draft": false,
+  "release-reference-comments": "best-effort",
+  "packages": {
+    "packages/python": {
+      "release-type": "python",
+      "package-name": "datamonger-python",
+    },
+    "packages/r": {
+      "release-type": "r",
+      "package-name": "datamonger-r",
+      "release-draft": true,
+    },
+    "packages/julia": {
+      "release-type": "julia",
+      "package-name": "datamonger-julia",
+      "release-draft": true,
+    },
+  },
+}
