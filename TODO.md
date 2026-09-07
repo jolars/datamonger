@@ -121,7 +121,7 @@ the Python source.
   consent and packaging constraints.
 - [x] Implement the Julia client against the corrected release candidate.
 - [x] Run all three clients through the shared conformance suite.
-- [ ] Independently reproduce and review every candidate verification record.
+- [x] Independently reproduce and review every candidate verification record.
 - [ ] Freeze specification revision 1 and publish the first stable registry.
 - [ ] Release coordinated R, Python, and Julia clients using the same snapshot.
 

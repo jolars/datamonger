@@ -8,10 +8,11 @@ records used by an analysis.
 
 Datamonger is pre-release software. Specification release candidate
 `spec-v1-rc1` freezes the revision 1 feature set. The Python reference client and
-the independent R and Julia clients implement it; coordinated cross-client
-certification remains. The paired ten-dataset `candidate-0002` registry is a
-prerelease; its verification records are provisional, and all of its artifacts
-remain upstream-only.
+the independent R and Julia clients implement it, pass the shared conformance
+suite, and reproduce all ten candidate canonical verification records. Stable
+publication and coordinated client releases remain. The paired ten-dataset
+`candidate-0002` registry is a prerelease; its verification records are
+provisional, and all of its artifacts remain upstream-only.
 
 ## What Datamonger verifies
 
@@ -150,7 +151,8 @@ regression, binary and multiclass classification, unsupervised data, dense and
 sparse data, and a train/test split. Its selector is
 [`registry/releases/candidate-0002/selector.json`](registry/releases/candidate-0002/selector.json).
 All three client packages continue to bundle the smaller `proof-0001` snapshot
-until the candidate contracts and records are independently certified.
+until the certified candidate is promoted to the first stable registry and the
+coordinated releases adopt its selector.
 
 The immutable releases under [`tests/registry`](tests/registry) and the
 language-neutral corpus under [`tests/conformance`](tests/conformance) are for
