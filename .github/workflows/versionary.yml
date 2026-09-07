@@ -19,7 +19,7 @@ jobs:
       pull-requests: write
       issues: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -27,7 +27,7 @@ jobs:
           token: ${{ secrets.RELEASE_TOKEN }}
 
       - id: versionary
-        uses: jolars/versionary@5009f8dee643598ffc3744c0fb67d57b42f9a81d # v1.4.0
+        uses: jolars/versionary@v1
         with:
           token: ${{ secrets.RELEASE_TOKEN }}
           versionary-version: 1.4.0
