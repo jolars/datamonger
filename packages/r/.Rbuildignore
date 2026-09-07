@@ -1,0 +1,7 @@
+^\.Rproj\.user$
+^.*\.Rproj$
+^cran-comments\.md$
+^README\.Rmd$
+^revdep$
+^tests_live$
+^src/.*\.(o|so|dll)$

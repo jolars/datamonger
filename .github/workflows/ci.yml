@@ -39,3 +39,28 @@ jobs:
             tests/registry/releases/test-0001/release.yaml
       - name: Build package
         run: uv build
+
+  r-quality:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/r
+    env:
+      R_KEEP_PKG_SOURCE: "yes"
+      _R_CHECK_CRAN_INCOMING_REMOTE_: "false"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up R
+        uses: r-lib/actions/setup-r@465b7d8e732ca3921382b1674c59bada9cbf3399 # v2
+        with:
+          use-public-rspm: true
+      - name: Install R dependencies
+        uses: r-lib/actions/setup-r-dependencies@465b7d8e732ca3921382b1674c59bada9cbf3399 # v2
+        with:
+          working-directory: packages/r
+      - name: Check shared fixture copies
+        run: diff -r ../../tests/conformance tests/testthat/fixtures/conformance
+      - name: Build R package
+        run: R CMD build .
+      - name: Check R package
+        run: R CMD check --no-manual --as-cran datamonger_*.tar.gz

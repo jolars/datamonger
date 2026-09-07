@@ -2,9 +2,10 @@
 
 ## Project Structure & Module Organization
 
-The Python reference client lives in `packages/python`. Library code is under
-`packages/python/src/datamonger`, hermetic tests are in `packages/python/tests`,
-and network-dependent smoke tests are isolated in `packages/python/tests_live`.
+The Python reference client lives in `packages/python`, and the R client lives
+in `packages/r`. Python library code is under `packages/python/src/datamonger`;
+hermetic tests are beside each client, and network-dependent smoke tests are
+isolated in each client's `tests_live` directory.
 Dataset manifests and release indexes belong in `registry/`; format contracts
 belong in `spec/`. Use `tools/dm_index.py` to validate generated registry data.
 Consult `DESIGN.md` for architecture and `TODO.md` for the active roadmap.
@@ -29,8 +30,15 @@ From `packages/python`, focused commands are:
   release indexes.
 - `uv build`—build the Python distribution.
 
+From `packages/r`, focused commands are:
+
+- `Rscript -e 'testthat::test_local(".")'`—run hermetic R tests.
+- `R CMD build .`—build the R source package.
+- `R CMD check --as-cran datamonger_*.tar.gz`—run CRAN-style checks.
+
 Run `uv run pytest tests_live/test_proof_registry.py` only when network access
-and upstream availability are expected.
+and upstream availability are expected. The corresponding R candidate audit is
+`Rscript tests_live/test_candidate_registry.R` from `packages/r`.
 
 ## Coding Style & Naming Conventions
 
@@ -38,12 +46,15 @@ Target Python 3.11 or newer. Use four-space indentation, Ruff formatting with
 an 88-character line limit, and the configured `B`, `E`, `F`, `I`, `RUF`,
 `SIM`, and `UP` lint rules. Keep public APIs typed; strict mypy must pass. Use
 `snake_case` for modules, functions, and variables, and `PascalCase` for types.
+For R, use two-space indentation and `snake_case`; keep exported interfaces and
+S3 return classes documented.
 
 ## Testing Guidelines
 
-Use pytest. Name files `test_*.py` and tests `test_<behavior>`. Add regression
-tests alongside the affected module, prefer existing fixtures in
-`tests/fixtures`, and keep routine tests deterministic and offline. No coverage
+Use pytest for Python and testthat for R. Add regression tests beside the
+affected client, prefer existing fixtures, and keep routine tests deterministic
+and offline. The R package copies the small shared corpus into its package tests;
+`devenv test` verifies that copy against `tests/conformance`. No coverage
 threshold is configured; cover new branches and failure modes directly.
 
 ## Commit & Pull Request Guidelines

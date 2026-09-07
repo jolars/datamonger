@@ -69,6 +69,11 @@ Manifest.toml
 # Output files from R CMD check
 /*.Rcheck/
 
+# Compiled R package objects
+packages/r/src/*.o
+packages/r/src/*.so
+packages/r/src/*.dll
+
 # RStudio files
 .Rproj.user/
 

@@ -1,0 +1,28 @@
+Package: datamonger
+Title: Reproducible Retrieval and Decoding of Public Research Data
+Version: 0.1.0
+Authors@R: person("Johan", "Larsson", email = "johan@jolars.co",
+    role = c("aut", "cre"))
+Description: Retrieves public research datasets through immutable registry
+    selectors, verifies their exact bytes, and decodes them according to
+    versioned, cross-language contracts. Decoded logical values are verified
+    against canonical digests so that R, Python, and Julia clients can agree.
+License: MIT + file LICENSE
+URL: https://github.com/jolars/datamonger
+BugReports: https://github.com/jolars/datamonger/issues
+Depends:
+    R (>= 4.1.0)
+Imports:
+    curl,
+    digest,
+    filelock,
+    jsonlite,
+    Matrix,
+    tools,
+    utils
+Suggests:
+    testthat (>= 3.0.0)
+SystemRequirements: zlib
+Config/testthat/edition: 3
+Encoding: UTF-8
+RoxygenNote: 7.3.3

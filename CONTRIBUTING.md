@@ -43,8 +43,9 @@ devenv test
 ```
 
 The quality gate formats and lints Python, type-checks the package and tools,
-runs the hermetic test suite, checks generated registry data, and builds the
-Python distribution. Focused commands from `packages/python` are:
+runs both hermetic client suites, checks generated registry data and shared
+fixture synchronization, builds both distributions, and runs a CRAN-style R
+package check. Focused commands from `packages/python` are:
 
 ```console
 uv run pytest
@@ -56,16 +57,27 @@ uv run python ../../tools/dm_index.py check
 uv build
 ```
 
+Focused commands from `packages/r` are:
+
+```console
+Rscript -e 'testthat::test_local(".")'
+R CMD build .
+R CMD check --as-cran datamonger_*.tar.gz
+```
+
+Run `Rscript tests_live/test_candidate_registry.R` separately to retrieve and
+verify every record in the published candidate registry.
+
 Live-source tests and canaries require network access and healthy upstreams.
 They are not substitutes for deterministic tests and are not part of the
 routine hermetic gate.
 
 ## Code changes
 
-Prefer test-driven changes. Put deterministic Python tests in
-`packages/python/tests`, reuse fixtures where possible, and simulate HTTP
-behavior with the local test server. Put unavoidable network checks in
-`packages/python/tests_live`.
+Prefer test-driven changes. Put deterministic tests under the affected client,
+reuse fixtures where possible, and simulate HTTP behavior rather than requiring
+network access. Put unavoidable network checks in a separately invoked live
+suite.
 
 When behavior is shared across languages, add or update a language-neutral case
 under `tests/conformance` before making a client-specific implementation pass

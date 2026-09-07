@@ -7,11 +7,11 @@ the decoded logical values. A strong registry selector fixes the complete set of
 records used by an analysis.
 
 Datamonger is pre-release software. Specification release candidate
-`spec-v1-rc1` freezes the revision 1 feature set, and the Python reference client
-implements it, but independent R and Julia clients have not yet certified the
-contracts. The paired ten-dataset `candidate-0002` registry is a prerelease; its
-verification records are provisional, and all of its artifacts remain
-upstream-only.
+`spec-v1-rc1` freezes the revision 1 feature set. The Python reference client and
+the independent R client implement it; Julia and coordinated cross-client
+certification remain. The paired ten-dataset `candidate-0002` registry is a
+prerelease; its verification records are provisional, and all of its artifacts
+remain upstream-only.
 
 ## What Datamonger verifies
 
@@ -87,10 +87,31 @@ The [Python package guide](packages/python/README.md) documents registry
 selection, return types, metadata, verified artifact access, offline operation,
 errors, and cache management.
 
+## Try the R client
+
+The R package is also pre-release and is not yet on CRAN. Install it from a
+checkout, then make an explicit cache choice:
+
+```r
+install.packages("packages/r", repos = NULL, type = "source")
+library(datamonger)
+
+options(datamonger.cache_consent = TRUE)
+iris <- fetch_data("iris", source = "uci")
+```
+
+Without consent, the R client uses the session temporary directory. Its
+registry selection, verification, offline, metadata, artifact, and cache
+management operations follow the same revision 1 contracts as the Python
+client. See the [R package guide](packages/r/README.md) for R return types and
+the cache-consent policy.
+
 ## Documentation
 
 - [Python package guide](packages/python/README.md)—installation and public API
   behavior.
+- [R package guide](packages/r/README.md)—installation, cache consent, and
+  public API behavior.
 - [Normative specification](spec/README.md)—the frozen revision 1 contracts for
   independent implementations.
 - [Trust model](TRUST.md)—trust roots, guarantees, and non-guarantees.

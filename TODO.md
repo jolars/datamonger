@@ -117,7 +117,7 @@ the Python source.
 
 ## Milestone 6: Port, certify, and freeze
 
-- [ ] Implement the R client against the release candidate and address CRAN cache
+- [x] Implement the R client against the release candidate and address CRAN cache
   consent and packaging constraints.
 - [ ] Implement the Julia client against the corrected release candidate.
 - [ ] Run all three clients through the shared conformance suite.

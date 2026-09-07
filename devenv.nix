@@ -1,7 +1,19 @@
 { pkgs, ... }:
 
 {
-  packages = [ pkgs.ruff ];
+  packages = [
+    pkgs.ruff
+    pkgs.zlib
+    (pkgs.rWrapper.override {
+      packages = with pkgs.rPackages; [
+        curl
+        digest
+        filelock
+        jsonlite
+        testthat
+      ];
+    })
+  ];
 
   languages.python = {
     enable = true;
@@ -18,6 +30,7 @@
   };
 
   enterTest = ''
+    dm_repo_root="$PWD"
     cd packages/python
     ${pkgs.ruff}/bin/ruff format --check . ../../tools
     ${pkgs.ruff}/bin/ruff check . ../../tools
@@ -29,5 +42,14 @@
     uv run python ../../tools/dm_index.py check \
       tests/registry/releases/test-0002/release.yaml
     uv build
+    cd "$dm_repo_root"
+    ${pkgs.diffutils}/bin/diff -r \
+      tests/conformance packages/r/tests/testthat/fixtures/conformance
+    dm_r_check_dir="$(mktemp -d)"
+    trap 'rm -rf "$dm_r_check_dir"' EXIT
+    cd "$dm_r_check_dir"
+    R CMD build "$dm_repo_root/packages/r"
+    _R_CHECK_CRAN_INCOMING_REMOTE_=false \
+      R CMD check --no-manual --as-cran datamonger_*.tar.gz
   '';
 }
