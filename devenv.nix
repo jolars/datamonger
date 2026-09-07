@@ -2,6 +2,7 @@
 
 {
   packages = [
+    pkgs.julia
     pkgs.ruff
     pkgs.zlib
     (pkgs.rWrapper.override {
@@ -45,6 +46,10 @@
     cd "$dm_repo_root"
     ${pkgs.diffutils}/bin/diff -r \
       tests/conformance packages/r/tests/testthat/fixtures/conformance
+    ${pkgs.diffutils}/bin/diff -r \
+      tests/conformance packages/julia/test/fixtures/conformance
+    ${pkgs.julia}/bin/julia --project=packages/julia -e \
+      'using Pkg; Pkg.instantiate(); Pkg.test()'
     dm_r_check_dir="$(mktemp -d)"
     trap 'rm -rf "$dm_r_check_dir"' EXIT
     cd "$dm_r_check_dir"

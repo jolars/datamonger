@@ -43,9 +43,9 @@ devenv test
 ```
 
 The quality gate formats and lints Python, type-checks the package and tools,
-runs both hermetic client suites, checks generated registry data and shared
-fixture synchronization, builds both distributions, and runs a CRAN-style R
-package check. Focused commands from `packages/python` are:
+runs all three hermetic client suites, checks generated registry data and shared
+fixture synchronization, builds the Python and R distributions, and runs a
+CRAN-style R package check. Focused commands from `packages/python` are:
 
 ```console
 uv run pytest
@@ -65,8 +65,14 @@ R CMD build .
 R CMD check --as-cran datamonger_*.tar.gz
 ```
 
-Run `Rscript tests_live/test_candidate_registry.R` separately to retrieve and
-verify every record in the published candidate registry.
+The focused Julia command from `packages/julia` is:
+
+```console
+julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.test()'
+```
+
+Run the R and Julia `tests_live/test_candidate_registry.*` scripts separately
+to retrieve and verify every record in the published candidate registry.
 
 Live-source tests and canaries require network access and healthy upstreams.
 They are not substitutes for deterministic tests and are not part of the

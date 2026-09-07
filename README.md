@@ -8,8 +8,8 @@ records used by an analysis.
 
 Datamonger is pre-release software. Specification release candidate
 `spec-v1-rc1` freezes the revision 1 feature set. The Python reference client and
-the independent R client implement it; Julia and coordinated cross-client
-certification remain. The paired ten-dataset `candidate-0002` registry is a
+the independent R and Julia clients implement it; coordinated cross-client
+certification remains. The paired ten-dataset `candidate-0002` registry is a
 prerelease; its verification records are provisional, and all of its artifacts
 remain upstream-only.
 
@@ -106,12 +106,34 @@ management operations follow the same revision 1 contracts as the Python
 client. See the [R package guide](packages/r/README.md) for R return types and
 the cache-consent policy.
 
+## Try the Julia client
+
+Instantiate the pre-release Julia package from a checkout, then load it:
+
+```julia
+using Pkg
+Pkg.activate("packages/julia")
+Pkg.instantiate()
+
+using Datamonger
+iris = fetch_data("iris"; source="uci")
+heart = fetch_data("heart_scale"; source="libsvm")
+```
+
+An explicit `cache_dir` grants permission to use that directory. Otherwise, set
+`DATAMONGER_CACHE_CONSENT=true` to use the platform cache in noninteractive
+work; without consent, the client uses a session-temporary directory. See the
+[Julia package guide](packages/julia/README.md) for native return types and the
+complete public API.
+
 ## Documentation
 
 - [Python package guide](packages/python/README.md)—installation and public API
   behavior.
 - [R package guide](packages/r/README.md)—installation, cache consent, and
   public API behavior.
+- [Julia package guide](packages/julia/README.md)—installation, native return
+  types, cache consent, and public API behavior.
 - [Normative specification](spec/README.md)—the frozen revision 1 contracts for
   independent implementations.
 - [Trust model](TRUST.md)—trust roots, guarantees, and non-guarantees.
@@ -127,8 +149,8 @@ the cache-consent policy.
 regression, binary and multiclass classification, unsupervised data, dense and
 sparse data, and a train/test split. Its selector is
 [`registry/releases/candidate-0002/selector.json`](registry/releases/candidate-0002/selector.json).
-The Python package continues to bundle the smaller `proof-0001` snapshot until
-the candidate contracts and records are independently certified.
+All three client packages continue to bundle the smaller `proof-0001` snapshot
+until the candidate contracts and records are independently certified.
 
 The immutable releases under [`tests/registry`](tests/registry) and the
 language-neutral corpus under [`tests/conformance`](tests/conformance) are for

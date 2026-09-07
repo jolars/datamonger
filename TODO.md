@@ -119,7 +119,7 @@ the Python source.
 
 - [x] Implement the R client against the release candidate and address CRAN cache
   consent and packaging constraints.
-- [ ] Implement the Julia client against the corrected release candidate.
+- [x] Implement the Julia client against the corrected release candidate.
 - [ ] Run all three clients through the shared conformance suite.
 - [ ] Independently reproduce and review every candidate verification record.
 - [ ] Freeze specification revision 1 and publish the first stable registry.

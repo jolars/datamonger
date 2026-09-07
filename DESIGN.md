@@ -1499,7 +1499,7 @@ Do not initially implement:
 5. **Freeze candidate.** Cut a feature-frozen specification revision 1 release
    candidate. Corrections found during independent implementation produce a new
    candidate rather than silently changing the contract.
-6. **Port, certify, and freeze.** Implement the Python and Julia clients from the
+6. **Port, certify, and freeze.** Implement the R and Julia clients from the
    candidate specification, driven by the conformance suite. Independently
    reproduce the verification records for every candidate dataset, resolve
    discrepancies, then freeze specification revision 1 and cut the first stable

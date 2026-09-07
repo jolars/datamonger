@@ -37,6 +37,8 @@ jobs:
           uv run python ../../tools/dm_index.py check
           uv run python ../../tools/dm_index.py check \
             tests/registry/releases/test-0001/release.yaml
+          uv run python ../../tools/dm_index.py check \
+            tests/registry/releases/test-0002/release.yaml
       - name: Build package
         run: uv build
 
@@ -64,3 +66,21 @@ jobs:
         run: R CMD build .
       - name: Check R package
         run: R CMD check --no-manual --as-cran datamonger_*.tar.gz
+
+  julia-quality:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        julia-version: ["1.10", "1"]
+    defaults:
+      run:
+        working-directory: packages/julia
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: julia-actions/setup-julia@fa02766e078afaaf09b14210362cee14137e6a32 # v3.0.2
+        with:
+          version: ${{ matrix.julia-version }}
+      - name: Check shared fixture copies
+        run: diff -r ../../tests/conformance test/fixtures/conformance
+      - name: Run hermetic tests
+        run: julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.test()'

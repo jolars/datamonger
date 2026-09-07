@@ -226,7 +226,7 @@ publishing a later corrected release, updating the catalog, and moving the
 scheduled canary target. Keep old selectors and release assets available so
 published analyses remain auditable.
 
-The Python cache evicts nothing automatically. Users can inspect and clean it
+Client caches evict nothing automatically. Users can inspect and clean them
 with `cache_info()` and `cache_clean()`; active objects are skipped. Operators
 must not treat user caches as mirrors or backups. Durable preservation requires
 an explicit reviewed deposit and corresponding registry metadata.
