@@ -1,6 +1,6 @@
 Package: datamonger
 Title: Reproducible Retrieval and Decoding of Public Research Data
-Version: 0.1.0
+Version: 0.0.0.9000
 Authors@R: person("Johan", "Larsson", email = "johan@jolars.co",
     role = c("aut", "cre"))
 Description: Retrieves public research datasets through immutable registry
