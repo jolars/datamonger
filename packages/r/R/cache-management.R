@@ -77,7 +77,7 @@
 #' associates artifacts with dataset versions referenced by bundled and cached
 #' registry indexes.
 #'
-#' @param cache_dir Explicit cache directory, or `NULL` for the consent policy.
+#' @param cache_dir Explicit cache directory, or `NULL` for the platform default.
 #' @return A `datamonger_cache_info` record.
 #' @export
 cache_info <- function(cache_dir = NULL) {
@@ -133,7 +133,7 @@ cache_info <- function(cache_dir = NULL) {
 #'
 #' @param dataset Canonical `source:name@version` identifier, or `NULL`.
 #' @param older_than A nonnegative `difftime` or number of seconds, or `NULL`.
-#' @param cache_dir Explicit cache directory, or `NULL` for the consent policy.
+#' @param cache_dir Explicit cache directory, or `NULL` for the platform default.
 #' @return A `datamonger_cache_clean_result` containing removed and skipped
 #'   entries and `bytes_removed`.
 #' @export

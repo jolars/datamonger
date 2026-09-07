@@ -91,21 +91,20 @@ errors, and cache management.
 ## Try the R client
 
 The R package is also pre-release and is not yet on CRAN. Install it from a
-checkout, then make an explicit cache choice:
+checkout, then load a dataset:
 
 ```r
 install.packages("packages/r", repos = NULL, type = "source")
 library(datamonger)
 
-options(datamonger.cache_consent = TRUE)
 iris <- fetch_data("iris", source = "uci")
 ```
 
-Without consent, the R client uses the session temporary directory. Its
-registry selection, verification, offline, metadata, artifact, and cache
-management operations follow the same revision 1 contracts as the Python
-client. See the [R package guide](packages/r/README.md) for R return types and
-the cache-consent policy.
+The R client uses its standard platform cache by default. Its registry
+selection, verification, offline, metadata, artifact, and cache management
+operations follow the same revision 1 contracts as the Python client. See the
+[R package guide](packages/r/README.md) for R return types and the complete
+public API.
 
 ## Try the Julia client
 
@@ -121,20 +120,19 @@ iris = fetch_data("iris"; source="uci")
 heart = fetch_data("heart_scale"; source="libsvm")
 ```
 
-An explicit `cache_dir` grants permission to use that directory. Otherwise, set
-`DATAMONGER_CACHE_CONSENT=true` to use the platform cache in noninteractive
-work; without consent, the client uses a session-temporary directory. See the
-[Julia package guide](packages/julia/README.md) for native return types and the
-complete public API.
+The Julia client uses its standard platform cache by default. Pass an explicit
+`cache_dir` to any public operation to use another location. See the [Julia
+package guide](packages/julia/README.md) for native return types and the complete
+public API.
 
 ## Documentation
 
 - [Python package guide](packages/python/README.md)—installation and public API
   behavior.
-- [R package guide](packages/r/README.md)—installation, cache consent, and
+- [R package guide](packages/r/README.md)—installation, cache management, and
   public API behavior.
 - [Julia package guide](packages/julia/README.md)—installation, native return
-  types, cache consent, and public API behavior.
+  types, cache management, and public API behavior.
 - [Normative specification](spec/README.md)—the frozen revision 1 contracts for
   independent implementations.
 - [Trust model](TRUST.md)—trust roots, guarantees, and non-guarantees.

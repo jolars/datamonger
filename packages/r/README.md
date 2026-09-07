@@ -13,18 +13,15 @@ repository root:
 install.packages("packages/r", repos = NULL, type = "source")
 ```
 
-## Cache consent
+## Cache
 
-Passing `cache_dir` gives Datamonger permission to use that path for the call.
-Without it, Datamonger asks once before using the platform cache returned by
-`tools::R_user_dir()` in an interactive session. If consent is absent or
-declined, it uses a directory under `tempdir()`.
-
-For non-interactive work, configure the choice explicitly:
+Datamonger uses the platform cache returned by `tools::R_user_dir()` by default.
+Passing `cache_dir` uses that path for the call instead. For temporary caching,
+create a session directory and pass it consistently:
 
 ```r
-options(datamonger.cache_consent = TRUE)  # Persistent user cache.
-options(datamonger.cache_consent = FALSE) # Session-temporary cache.
+temporary_cache <- file.path(tempdir(), "datamonger", "r")
+iris <- fetch_data("iris", source = "uci", cache_dir = temporary_cache)
 ```
 
 The package never writes persistent files at installation or startup. Cache
@@ -40,7 +37,6 @@ are retrieved on first use:
 ```r
 library(datamonger)
 
-options(datamonger.cache_consent = TRUE)
 iris <- fetch_data("iris", source = "uci")
 heart <- fetch_data("heart_scale", source = "libsvm")
 ```

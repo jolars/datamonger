@@ -196,12 +196,11 @@ The sequence is therefore:
    after independent implementations agree.
 
 R is the recommended reference client. Its packaging environment has the
-tightest constraints, in particular CRAN's policy that a package must not write
-outside the session temporary directory without explicit user consent, and its
-dependency culture is the most conservative. Discovering those constraints
-first is cheaper than discovering them last. The choice is not load-bearing,
-though, and using whichever client will see daily use is a defensible
-alternative.
+tightest constraints, including CRAN's requirements for small, actively managed
+state under `tools::R_user_dir()`, and its dependency culture is the most
+conservative. Discovering those constraints first is cheaper than discovering
+them last. The choice is not load-bearing, though, and using whichever client
+will see daily use is a defensible alternative.
 
 Losing the "three languages on day one" story for a few months is worth a
 specification that has survived contact with reality before being paid for
@@ -861,14 +860,13 @@ crash recovery behavior.
 Once artifacts are cached, normal retrieval works offline.
 
 Clients use the standard application cache location for each operating system
-rather than assuming `~/.datamonger`. In R this means `tools::R_user_dir()`,
-and CRAN policy requires explicit user consent before first writing there. The
-R client must therefore prompt on first use in an interactive session, honor a
-configuration option in a non-interactive one, and fall back to the session
-temporary directory when consent is absent. Julia's `DataDeps.jl` has
-established a comparable consent norm, and the Julia client should follow it.
-Datamonger performs no telemetry of any kind, and this should be stated in each
-package's documentation.
+rather than assuming `~/.datamonger`. In R this means `tools::R_user_dir()`.
+Clients use these cache locations by default and accept an explicit cache path
+for applications, tests, and users that require isolation or temporary storage.
+They create persistent state only when an operation retrieves a registry or
+artifact, never during installation or startup. Datamonger performs no
+telemetry of any kind, and this should be stated in each package's
+documentation.
 
 The cache needs management operations from the start, because unbounded growth
 is a real problem and eviction interacts with the offline guarantee:
@@ -1450,7 +1448,7 @@ Implement:
 * a bundled registry snapshot as offline fallback and trust root for that
   snapshot;
 * registry resolution;
-* local caching with explicit user consent and manual management;
+* local caching in standard platform directories with manual management;
 * SHA-256 verification of artifacts;
 * default-on, versioned canonical-digest verification of decoded results;
 * atomic downloads and cache publication safe against concurrent publishers,

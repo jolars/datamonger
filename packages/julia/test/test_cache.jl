@@ -20,27 +20,11 @@
     @test !isfile(joinpath(directory, digest))
 end
 
-@testset "persistent cache requires consent" begin
-    previous = get(ENV, "DATAMONGER_CACHE_CONSENT", nothing)
-    try
-        Datamonger._CACHE_CONSENT[] = nothing
-        delete!(ENV, "DATAMONGER_CACHE_CONSENT")
-        @test startswith(datamonger_cache_dir(), tempdir())
+@testset "platform cache is the default" begin
+    @test datamonger_cache_dir() == default_cache_dir()
 
-        Datamonger._CACHE_CONSENT[] = nothing
-        ENV["DATAMONGER_CACHE_CONSENT"] = "true"
-        @test datamonger_cache_dir() == default_cache_dir()
-
-        explicit = mktempdir()
-        @test datamonger_cache_dir(explicit) == abspath(explicit)
-    finally
-        Datamonger._CACHE_CONSENT[] = nothing
-        if previous === nothing
-            delete!(ENV, "DATAMONGER_CACHE_CONSENT")
-        else
-            ENV["DATAMONGER_CACHE_CONSENT"] = previous
-        end
-    end
+    explicit = mktempdir()
+    @test datamonger_cache_dir(explicit) == abspath(explicit)
 end
 
 @testset "invalid cache roots use the cache category" begin

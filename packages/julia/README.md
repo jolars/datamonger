@@ -17,18 +17,15 @@ Pkg.instantiate()
 using Datamonger
 ```
 
-## Cache consent
+## Cache
 
-Passing `cache_dir` gives Datamonger permission to use that path for the call.
-Without it, Datamonger asks once before using the platform application cache in
-an interactive session. If consent is absent or declined, it uses a
-process-temporary directory under `tempdir()`.
+Datamonger uses the platform application cache by default. Passing `cache_dir`
+uses that path for the call instead. For temporary caching, create a process
+directory and pass it consistently:
 
-For noninteractive work, configure the choice explicitly:
-
-```console
-export DATAMONGER_CACHE_CONSENT=true  # Persistent platform cache.
-export DATAMONGER_CACHE_CONSENT=false # Session-temporary cache.
+```julia
+temporary_cache = mktempdir()
+iris = fetch_data("iris"; source="uci", cache_dir=temporary_cache)
 ```
 
 The package writes no persistent files at installation or startup. Cache growth

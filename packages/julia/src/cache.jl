@@ -6,8 +6,6 @@ const _LOCK_SH = 1
 const _LOCK_EX = 2
 const _LOCK_NB = 4
 const _LOCK_UN = 8
-const _CACHE_CONSENT = Ref{Union{Nothing,Bool}}(nothing)
-const _TEMP_CACHE_DIR = Ref{Union{Nothing,String}}(nothing)
 
 mutable struct CacheLease
     handle::Any
@@ -32,44 +30,9 @@ function default_cache_dir()
     return abspath(joinpath(base, "datamonger", "julia"))
 end
 
-function _configured_cache_consent()
-    value = get(ENV, "DATAMONGER_CACHE_CONSENT", nothing)
-    value === nothing && return nothing
-    normalized = lowercase(strip(value))
-    normalized in ("1", "true", "yes") && return true
-    normalized in ("0", "false", "no") && return false
-    throw(ArgumentError(
-        "DATAMONGER_CACHE_CONSENT must be true/false, yes/no, or 1/0",
-    ))
-end
-
-"""Select an explicit, consented persistent, or process-temporary cache path."""
+"""Select an explicit cache path or the private platform default."""
 function datamonger_cache_dir(cache_dir=nothing)
-    cache_dir !== nothing && return abspath(cache_dir)
-    consent = _CACHE_CONSENT[]
-    if consent === nothing
-        consent = _configured_cache_consent()
-    end
-    if consent === nothing && isinteractive()
-        print(
-            stderr,
-            "Allow Datamonger to use the persistent cache at ",
-            default_cache_dir(),
-            "? [y/N] ",
-        )
-        answer = lowercase(strip(readline(stdin)))
-        consent = answer in ("y", "yes")
-    elseif consent === nothing
-        consent = false
-    end
-    _CACHE_CONSENT[] = consent
-    if consent
-        return default_cache_dir()
-    end
-    if _TEMP_CACHE_DIR[] === nothing
-        _TEMP_CACHE_DIR[] = mktempdir(; prefix="datamonger-julia-")
-    end
-    return _TEMP_CACHE_DIR[]
+    return cache_dir === nothing ? default_cache_dir() : abspath(cache_dir)
 end
 
 function _lease_path(cache_dir, namespace, digest; publication=false)

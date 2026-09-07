@@ -121,7 +121,7 @@
 #' @param artifact Artifact name. It may be omitted for a single-artifact
 #'   dataset.
 #' @param registry Strong registry selector, or `NULL` for the active selector.
-#' @param cache_dir Explicit cache directory, or `NULL` for the consent policy.
+#' @param cache_dir Explicit cache directory, or `NULL` for the platform default.
 #' @param offline If `TRUE`, use verified cached bytes without network access.
 #' @return The path to verified artifact bytes in the R client's private cache.
 #' @export
@@ -191,7 +191,7 @@ data_info <- function(
 #' List dataset versions in the selected registry
 #'
 #' @param registry Strong registry selector, or `NULL` for the active selector.
-#' @param cache_dir Explicit cache directory, or `NULL` for the consent policy.
+#' @param cache_dir Explicit cache directory, or `NULL` for the platform default.
 #' @param offline If `TRUE`, use a bundled or verified cached registry only.
 #' @return A list of `datamonger_data_info` records.
 #' @export

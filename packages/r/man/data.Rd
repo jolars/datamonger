@@ -23,8 +23,8 @@ list_data(registry = NULL, cache_dir = NULL, offline = FALSE)
   \item{artifact}{An artifact name. It may be omitted for a single-artifact
   dataset.}
   \item{registry}{A strong selector, or \code{NULL} for the active selector.}
-  \item{cache_dir}{An explicitly authorized cache path, or \code{NULL} to use
-  the cache-consent policy.}
+  \item{cache_dir}{An explicit cache path, or \code{NULL} for the platform
+  default.}
   \item{offline}{Whether to forbid all network access.}
   \item{verify_decoded}{Whether to verify expected shape and canonical digest.}
   \item{return_info}{Whether to return reproducibility metadata with the data.}
