@@ -26,6 +26,9 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha }}
           token: ${{ secrets.RELEASE_TOKEN }}
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+
       - id: versionary
         uses: jolars/versionary@v1
         with:
