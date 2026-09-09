@@ -1,7 +1,7 @@
 # Datamonger normative specification
 
-The revision 1 feature set is frozen. [`revision-1.md`](revision-1.md) defines
-the profile and its versioned contract inventory:
+Specification revision 1 is frozen and stable. [`revision-1.md`](revision-1.md)
+defines the profile and its versioned contract inventory:
 
 - `identity.md` defines dataset identity, resolution, and release evolution.
 - `retrieval.md` defines selectors, HTTP byte boundaries, fallback, and cache
@@ -13,8 +13,9 @@ the profile and its versioned contract inventory:
 - `schema/` contains closed Draft 2020-12 JSON Schemas for authoring and
   generated records.
 
-Specification release candidate [`spec-v1-rc1`](revision-1.md#release-candidate)
-freezes this inventory and pairs it with the strongly selected `candidate-0002`
-registry. Any change that alters logical output or reinterprets existing bytes
-requires a new specification candidate and a new decoder, canonical-form,
-schema, or behavioral-contract version as appropriate.
+Specification release [`spec-v1`](revision-1.md#stable-release) freezes this
+inventory and pairs it with the strongly selected `2026.09` registry. Python,
+R, and Julia pass the shared conformance corpus and reproduce every registry
+verification record. Any change that alters logical output or reinterprets
+existing bytes requires a later specification revision and a new decoder,
+canonical-form, schema, or behavioral-contract version as appropriate.

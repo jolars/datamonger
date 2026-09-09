@@ -26,6 +26,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       REGISTRY_RELEASE: ${{ inputs.release }}
+      UV_PYTHON: "3.11"
     steps:
       - uses: actions/checkout@v7
         with:

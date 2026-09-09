@@ -6,13 +6,11 @@ fixes the source bytes, the decoding recipe, the expected shape, and a digest of
 the decoded logical values. A strong registry selector fixes the complete set of
 records used by an analysis.
 
-Datamonger is pre-release software. Specification release candidate
-`spec-v1-rc1` freezes the revision 1 feature set. The Python reference client and
-the independent R and Julia clients implement it, pass the shared conformance
-suite, and reproduce all ten candidate canonical verification records. Stable
-publication and coordinated client releases remain. The paired ten-dataset
-`candidate-0002` registry is a prerelease; its verification records are
-provisional, and all of its artifacts remain upstream-only.
+Specification revision 1 is frozen as `spec-v1`, paired with the first stable
+registry, `2026.09`. The Python reference client and the independent R and Julia
+clients pass the shared conformance suite and reproduce all ten registry
+canonical verification records. All dataset artifacts remain upstream-only.
+Coordinated client releases bundling the stable snapshot are the next milestone.
 
 ## What Datamonger verifies
 
@@ -32,8 +30,7 @@ for the trust model and its limits.
 
 ## Try the Python client
 
-The package has not yet been published to PyPI. Install it from a checkout with
-Python 3.11 or newer:
+Install the Python client from a checkout with Python 3.11 or newer:
 
 ```console
 python -m pip install ./packages/python
@@ -144,13 +141,25 @@ public API.
 
 ## Current registries
 
-`candidate-0002` contains ten reviewed UCI and LIBSVM datasets spanning
-regression, binary and multiclass classification, unsupervised data, dense and
-sparse data, and a train/test split. Its selector is
-[`registry/releases/candidate-0002/selector.json`](registry/releases/candidate-0002/selector.json).
+The first stable registry, `2026.09`, contains ten reviewed UCI and LIBSVM
+datasets spanning regression, binary and multiclass classification, unsupervised
+data, dense and sparse data, and a train/test split. Its selector is
+[`registry/releases/2026.09/selector.json`](registry/releases/2026.09/selector.json).
 All three client packages continue to bundle the smaller `proof-0001` snapshot
-until the certified candidate is promoted to the first stable registry and the
-coordinated releases adopt its selector.
+until coordinated releases adopt the stable selector. Select it explicitly
+with the Python client:
+
+```python
+from datamonger import fetch_data, resolve_registry
+
+registry = resolve_registry("2026.09")
+iris = fetch_data("iris", source="uci", registry=registry)
+```
+
+Record and reuse the resolved strong selector for reproducibility. See the
+[certification record](registry/releases/2026.09/README.md) for the publication
+checks and upstream availability limitations. Earlier proof and candidate
+releases remain available under their original selectors.
 
 The immutable releases under [`tests/registry`](tests/registry) and the
 language-neutral corpus under [`tests/conformance`](tests/conformance) are for

@@ -1,6 +1,6 @@
 # Datamonger Specification Revision 1
 
-This document is normative. Revision 1 is a feature-frozen profile of the
+This document is normative. Revision 1 is the frozen stable profile of the
 independently versioned contracts below. Equal version numbers do not imply that
 two contracts share a lifecycle.
 
@@ -21,18 +21,36 @@ two contracts share a lifecycle.
 | Release-catalog schema | 1 | `schema/catalog-v1.schema.json` |
 | Language-neutral conformance descriptors | 1 | `../tests/conformance/README.md` |
 
-## Release candidate
+## Stable release
+
+Specification release `spec-v1` freezes this inventory and pairs it with the
+first stable registry, `2026.09`. Its strong selector has index SHA-256
+`4c1676acbd8c1164d900161605b60da5b04503e633620230185254a7beff7d61`.
+The complete selector and certification record are under
+[`registry/releases/2026.09`](../registry/releases/2026.09).
+
+The Python reference client and the independent R and Julia clients pass the
+shared revision 1 conformance corpus and reproduce all ten canonical
+verification records. Registry `2026.09` preserves every dataset record and
+default from `candidate-0002`; only the registry release identifier changes.
+No contract semantics or conformance cases changed after `spec-v1-rc1`.
+
+The stable registry is unsigned, its datasets are upstream-only, and it makes
+no preservation guarantee. Coordinated client releases adopting its bundled
+selector are a separate release step.
+
+## Release candidate history
 
 Specification release candidate `spec-v1-rc1` identifies the first immutable
 publication of this inventory. It is paired with registry release
 `candidate-0002`, whose strong selector has index SHA-256
 `3eee3e1cb6730d73d3a2a1f251d693b17f4e8c3fc520ebf256b4304ac82584c6`.
 
-At publication, the Python reference client passes conformance descriptor
-schema version 1. R and Julia implementations have not yet passed the corpus,
-and the registry's canonical verification records remain provisional pending
-independent reproduction. The candidate is unsigned, its datasets are
-upstream-only, and it makes no preservation guarantee.
+At candidate publication, only the Python reference client had passed
+conformance descriptor schema version 1, and the registry's canonical
+verification records were provisional pending independent reproduction. The
+later R and Julia certification satisfied that prerequisite for stable release.
+The immutable candidate remains available under its original selector.
 
 ## Feature set
 

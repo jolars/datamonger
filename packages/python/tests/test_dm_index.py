@@ -171,6 +171,21 @@ def test_candidate_release_contains_every_curated_dataset() -> None:
     } == identities
 
 
+def test_first_stable_release_preserves_certified_candidate_records() -> None:
+    candidate = json.loads(
+        (ROOT / "registry/releases/candidate-0002/index.json").read_bytes()
+    )
+    release_path = ROOT / "registry/releases/2026.09/release.yaml"
+    release = dm_index.load_yaml(release_path)
+    index_bytes, _ = dm_index.build(release_path)
+    stable = json.loads(index_bytes)
+
+    assert release["release"] == "2026.09"
+    assert release["tag"] == "registry-2026.09"
+    assert release["sequence"] == 3
+    assert stable == {**candidate, "release": "2026.09"}
+
+
 def test_valid_release_builds_and_validates_generated_documents(tmp_path: Path) -> None:
     prepare_root(tmp_path)
     release_path = make_release(tmp_path, [make_manifest()], [default()])
@@ -780,6 +795,10 @@ def test_changed_existing_output_is_never_overwritten(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     ("release", "expected_digest"),
     [
+        (
+            ROOT / "registry/releases/2026.09/release.yaml",
+            "4c1676acbd8c1164d900161605b60da5b04503e633620230185254a7beff7d61",
+        ),
         (
             ROOT / "registry/releases/candidate-0002/release.yaml",
             "3eee3e1cb6730d73d3a2a1f251d693b17f4e8c3fc520ebf256b4304ac82584c6",
