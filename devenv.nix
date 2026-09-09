@@ -2,6 +2,7 @@
 
 {
   packages = [
+    pkgs.jq
     pkgs.julia
     pkgs.ruff
     pkgs.zlib
@@ -38,6 +39,7 @@
     uv run mypy
     uv run pytest
     uv run python ../../tools/dm_index.py check
+    uv run python ../../tools/dm_registry_release.py check
     uv run python ../../tools/dm_index.py check \
       tests/registry/releases/test-0001/release.yaml
     uv run python ../../tools/dm_index.py check \

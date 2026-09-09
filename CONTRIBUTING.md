@@ -127,12 +127,13 @@ or reviewed mirror locations and the digests of the bytes served there.
    and shape, task roles, and the representative values printed by `dm-add`.
    Check for IDs or bookkeeping columns that should not silently become model
    features.
-5. Add the manifest to a new, unpublished release source under
-   `registry/releases`. Do not edit a generated `index.json` or `selector.json`
-   and do not alter an already published release.
-6. Build and check the new release as described in
-   [OPERATIONS.md](OPERATIONS.md). Re-fetch changed manifests before publication,
-   and run the canary against the published asset afterward.
+5. Add the manifest and its default to `registry/collection.yaml`. Do not edit
+   generated indexes or selectors, and do not alter a published release.
+6. Commit the registry change with `feat(registry): ...` or `fix(registry): ...`.
+   Versionary prepares the release PR and its generated snapshot as described
+   in [OPERATIONS.md](OPERATIONS.md). Review and independently verify the new
+   records before merging that PR; the publisher re-fetches manifests before
+   publishing and runs the canary against the published asset afterward.
 
 A release-scoped metadata improvement may retain a dataset version only when it
 obeys the append-only evolution rules in

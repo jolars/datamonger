@@ -9,6 +9,12 @@
   "release-draft": false,
   "release-reference-comments": "best-effort",
   "packages": {
+    "registry": {
+      "release-type": "simple",
+      "package-name": "registry",
+      "release-draft": true,
+      "exclude-paths": ["releases", "catalog.json", "latest.json", "README.md"],
+    },
     "packages/python": {
       "release-type": "python",
       "package-name": "datamonger-python",

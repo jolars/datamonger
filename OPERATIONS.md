@@ -23,8 +23,9 @@ how maintainers apply them.
 
 ## Configure release automation
 
-Versionary manages the R, Python, and Julia package versions, changelogs, tags,
-and GitHub Releases. It does not manage registry or specification releases.
+Versionary manages the registry and the R, Python, and Julia package versions,
+changelogs, tags, and GitHub Releases. Specification releases remain separately
+tagged.
 Before enabling [`.github/workflows/versionary.yml`](.github/workflows/versionary.yml),
 configure the repository as follows:
 
@@ -44,7 +45,9 @@ configure the repository as follows:
 The explicit Versionary package names produce distinct tag namespaces:
 `datamonger-python-vX.Y.Z`, `datamonger-r-vX.Y.Z`, and
 `datamonger-julia-vX.Y.Z`. The ecosystems otherwise use the same package name,
-so the prefixes prevent Git tag collisions.
+so the prefixes prevent Git tag collisions. The registry uses `registry-vX.Y.Z`
+and the `simple` strategy with `registry/version.txt`. It creates drafts that
+the registry publisher completes after validating and attaching the index.
 
 ## Release client packages
 
@@ -110,88 +113,81 @@ their PyPI, CRAN, and General publication steps complete at different times.
 
 ## Prepare a registry release
 
-Work from a clean branch based on the commit intended for publication.
-
 1. Add or revise manifests under `registry/datasets` according to
    [CONTRIBUTING.md](CONTRIBUTING.md). Review identity, provenance, license,
    distribution, preservation, decoded shapes, representative values, and task
-   roles.
-2. Create a new directory under `registry/releases` with a `release.yaml` that
-   conforms to
-   [`spec/schema/release-source-v1.schema.json`](spec/schema/release-source-v1.schema.json).
-   Use a new release identifier and a `sequence` greater than every historical
-   baseline it follows. Set `tag` to the Git tag that will own the GitHub
-   Release asset.
-3. List every manifest included in the release, every default, and any approved
-   errata. A later release may omit a dataset, but it may not mutate a repeated
-   identity outside the evolution rules.
-4. Generate the immutable index and selector from `packages/python`:
-
-   ```console
-   uv run python ../../tools/dm_index.py build \
-     registry/releases/<release>/release.yaml
-   ```
-
-   For a production release, this also regenerates the mutable
-   `registry/catalog.json`. The build refuses to replace an existing immutable
-   generated file with different bytes.
-5. Inspect the complete diff. Confirm that the selector's release and URL match
-   `release.yaml`, and independently compute the index digest:
-
-   ```console
-   sha256sum ../../registry/releases/<release>/index.json
-   uv run python ../../tools/dm_index.py check \
-     registry/releases/<release>/release.yaml
-   ```
-6. Run the hermetic gate from the repository root:
+   roles. Update `registry/collection.yaml` to select the manifests, defaults,
+   and approved errata for the next release.
+2. Commit release-worthy registry changes with Conventional Commits. After CI
+   passes on `main`, Versionary opens a separate registry release PR that bumps
+   `registry/version.txt`, updates `registry/CHANGELOG.md`, and records its
+   release target. Registry versions are independent of client and contract
+   versions.
+3. The same workflow runs `dm_registry_release.py prepare` on that PR branch.
+   It creates `registry/releases/<version>/release.yaml` with the Versionary
+   tag and the next sequence number, then uses `dm-index` to generate the index
+   and selector. It also updates `registry/catalog.json` and `registry/latest.json`.
+   The complete snapshot is committed to the release PR for review. CI requires
+   these files to match the Versionary target and collection inputs.
+4. Inspect the release PR, including the dataset diff and generated selector.
+   Run the full hermetic gate and the pending-snapshot check from its checkout:
 
    ```console
    devenv test
+   uv run --project packages/python python tools/dm_registry_release.py check --pending
    ```
-7. Re-run `dm-add` against each new or changed completed manifest. This
-   re-fetches every declared location, requires identical bytes, and checks the
-   recorded artifact and decoded expectations:
+
+5. Re-run `dm-add` against new or changed completed manifests and independently
+   reproduce new canonical verification records before approving the release:
 
    ```console
-   cd packages/python
-   uv run python ../../tools/dm_add.py \
-     ../../registry/datasets/<source>/<name>-<version>.yaml > /dev/null
+   uv run --project packages/python python tools/dm_add.py \
+     registry/datasets/<source>/<name>-<version>.yaml > /dev/null
    ```
 
-   The full canary consumes the index from the selector's published URL, so it
-   is the post-publication gate below rather than a pre-publication check.
+Keep the human review record in the release PR. Record who reviewed licensing
+and preservation evidence and which independent implementations reproduced
+new verification records. Automation does not replace this review. Merge the
+Versionary registry PR only after its snapshot is complete and CI passes.
 
-Keep the human review record in the pull request. In particular, record who
-reviewed licensing and preservation evidence and whether canonical verification
-has been independently reproduced.
+Do not hand-edit generated snapshots or bump `registry/version.txt` outside the
+Versionary release PR. To reproduce the generated files on that branch, run
+`uv run --project packages/python python tools/dm_registry_release.py prepare`.
+The command validates in a temporary directory and refuses to replace an
+existing immutable file with different bytes.
 
 ## Publish a registry
 
-Publish candidates as GitHub prereleases. Stable releases must first satisfy
-the [stable release gate](#stable-release-gate). After the release commit is
-reviewed and present on the default branch:
+After the registry release PR merges and CI passes:
 
-1. Manually run the `Publish registry` workflow from the default branch. Enter
-   the release identifier from `release.yaml`. Select `prerelease` for candidates
-   and leave it unchecked for stable releases. The workflow revalidates every
-   generated file and the selector URL, creates the
-   exact tag named by `release.yaml`, publishes `index.json` as the sole release
-   asset, and downloads it to verify its SHA-256. Rerunning it verifies an
-   existing immutable release without replacing its tag or asset. It then runs
-   `dm-canary` against the published asset without consulting the artifact
-   cache.
-2. Inspect the canary report in the workflow summary. Investigate any remote
-   index, location, artifact, decoding, or canonical-digest failure; the release
-   remains immutable even when this post-publication check fails.
-3. Confirm that the catalog on the default branch contains the exact selector.
-   Resolve its bare release name with the Python client and compare the returned
-   `Registry` with the checked-in selector.
-4. Update `.github/workflows/upstream-verification.yml` when the newly published
-   release becomes the active canary target. Add every released independent
-   client to its implementation matrix.
+1. Versionary creates `registry-v<version>` and its draft GitHub Release.
+2. The Versionary workflow passes the registry tag from `release_targets` to
+   the reusable `Publish registry` workflow. This explicit handoff works for
+   draft releases, which do not emit a `release.published` event.
+3. The publisher checks out that exact tag, verifies the Versionary target,
+   generated snapshot, and selector URL, and re-fetches every manifest through
+   `dm-add` using Python 3.11. A failure leaves the release as a draft.
+4. It uploads `index.json` as the sole asset, downloads it to verify SHA-256,
+   and publishes the verified draft. It then runs `dm-canary` against the public
+   selector without using the artifact cache.
+5. Inspect the canary summary and confirm that catalog resolution returns the
+   checked-in selector. Run independent client audits for the new release.
+   The scheduled canary automatically follows `registry/latest.json`.
 
-Do not delete and recreate a release asset to fix a mistake. Follow the
-correction procedure below.
+The publisher never creates tags or releases; Versionary owns them. It never
+replaces an existing asset. To finish a failed publication or verify an existing
+release, manually dispatch `Publish registry` from `main` with its existing
+`registry-v<version>` tag. An uploaded asset must already match the expected
+bytes. A published release with a missing or incorrect asset fails verification
+without being modified. Failures after public publication are operational
+incidents; published bytes remain immutable.
+
+The historical `registry-2026.09` release predates this integration and remains
+unchanged. Versionary records it as the `1.0.0` baseline, without creating a
+`registry-v1.0.0` tag or a `1.0.0` catalog alias. The next feature release is
+`1.1.0` with tag `registry-v1.1.0`; a fix produces `1.0.1`. Earlier proof and
+candidate selectors remain valid. See [`registry/README.md`](registry/README.md)
+for the authoring files and versioning policy.
 
 ## Cut a specification release candidate
 
@@ -324,28 +320,21 @@ an explicit reviewed deposit and corresponding registry metadata.
 
 ## Stable release gate
 
-Do not promote revision 1 or its registry to stable until the R, Python, and
-Julia clients pass the complete shared conformance corpus against the same
-release candidate, independent implementations reproduce and review every
-candidate verification record, and all corrections have been incorporated into
-a new candidate. Coordinated client releases must bundle the same stable
-registry selector.
+Stable registry releases require the R, Python, and Julia clients to pass the
+shared conformance corpus, and independent implementations to reproduce and
+review each new canonical verification record. Specification corrections must
+follow the version boundaries in `spec/revision-1.md`. The release PR must
+record the strong selector, maintainer review, implementation versions,
+conformance and live-verification results, and known limitations.
 
-For the first stable release, `2026.09`, retain the certified `candidate-0002`
-dataset records and defaults unchanged. Record the candidate and stable strong
-selectors, prior maintainer review, implementation versions, conformance
-results, live verification results, and known limitations in the release
-directory. Run live verification with Python 3.11, matching CI and the scheduled
-canary. Also record failures observed on other supported runtimes.
-
-Publish `registry-2026.09` through the registry workflow with `prerelease=false`.
-Then publish `spec-v1` as a stable GitHub Release at the same commit, identifying
-the frozen inventory in `spec/revision-1.md` and the paired registry selector.
-Keep `index.json` as the registry release's sole asset; certification is tracked
+The first stable registry, `2026.09`, and specification `spec-v1` have already
+passed this gate. Their publication evidence is in
+[`registry/releases/2026.09/README.md`](registry/releases/2026.09/README.md).
+Keep `index.json` as each registry release's sole asset; certification belongs
 in Git and release notes.
 
 After publication, verify catalog resolution and run all three clients against
-the stable selector. From the repository root in the devenv shell:
+the new stable selector. For `2026.09`, from the repository root:
 
 ```console
 uv run --project packages/python --python 3.11 python tools/dm_canary.py \
@@ -354,5 +343,7 @@ uv run --project packages/python --python 3.11 python tools/dm_canary.py \
 julia --project=packages/julia packages/julia/tests_live/test_candidate_registry.jl 2026.09
 ```
 
-Only then mark stable publication complete in `TODO.md`. Update bundled client
-snapshots in the subsequent coordinated client release work.
+Substitute the new release identifier for later audits. Run Python live checks
+with 3.11, matching the publication and scheduled canaries, and record failures
+observed on other supported runtimes. Coordinated client releases must adopt
+the same already published stable snapshot through their own Versionary PRs.
