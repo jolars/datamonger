@@ -18,6 +18,8 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
+    outputs:
+      registry_tag: ${{ steps.registry.outputs.tag }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -34,3 +36,41 @@ jobs:
         with:
           token: ${{ secrets.RELEASE_TOKEN }}
           versionary-version: 1.4.0
+
+      - name: Select registry release work
+        id: registry
+        env:
+          REVIEW_REQUESTS: ${{ steps.versionary.outputs.review_requests }}
+          RELEASE_TARGETS: ${{ steps.versionary.outputs.release_targets }}
+        run: |
+          branch="$(jq -r '.[] | select(.packagePaths == ["registry"]) | .branch' <<< "$REVIEW_REQUESTS")"
+          tag="$(jq -r '.[] | select(.path == "registry") | .tag' <<< "$RELEASE_TARGETS")"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare registry snapshot in its release PR
+        if: steps.registry.outputs.branch != ''
+        env:
+          REGISTRY_BRANCH: ${{ steps.registry.outputs.branch }}
+        run: |
+          git check-ref-format "refs/heads/$REGISTRY_BRANCH"
+          git fetch origin "refs/heads/$REGISTRY_BRANCH"
+          git checkout --detach FETCH_HEAD
+          uv run --project packages/python python tools/dm_registry_release.py prepare
+          uv run --project packages/python python tools/dm_registry_release.py check --pending
+          git add registry/releases registry/catalog.json registry/latest.json
+          if ! git diff --cached --quiet; then
+            git -c user.name='github-actions[bot]' \
+              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+              commit -m 'chore: prepare registry release snapshot'
+            git push origin "HEAD:refs/heads/$REGISTRY_BRANCH"
+          fi
+
+  publish-registry:
+    needs: release
+    if: needs.release.outputs.registry_tag != ''
+    permissions:
+      contents: write
+    uses: ./.github/workflows/publish-registry.yml
+    with:
+      tag: ${{ needs.release.outputs.registry_tag }}

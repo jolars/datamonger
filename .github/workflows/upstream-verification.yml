@@ -42,7 +42,7 @@ jobs:
         continue-on-error: true
         run: |
           uv run python ../../tools/dm_canary.py \
-            ../../registry/releases/2026.09/selector.json 2>&1 \
+            ../../registry/latest.json 2>&1 \
             | tee "$RUNNER_TEMP/dm-canary.md"
       - name: Publish run summary
         if: always()

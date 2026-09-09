@@ -39,6 +39,15 @@ jobs:
             tests/registry/releases/test-0001/release.yaml
           uv run python ../../tools/dm_index.py check \
             tests/registry/releases/test-0002/release.yaml
+      - name: Check Versionary registry snapshot
+        env:
+          REGISTRY_RELEASE_PR: ${{ startsWith(github.head_ref, 'versionary/release-registry-') }}
+        run: |
+          flags=()
+          if [[ "$REGISTRY_RELEASE_PR" == true ]]; then
+            flags+=(--pending)
+          fi
+          uv run python ../../tools/dm_registry_release.py check "${flags[@]}"
       - name: Build package
         run: uv build
 
