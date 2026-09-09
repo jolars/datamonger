@@ -58,6 +58,23 @@ reproduce all ten verification records:
 The [operations runbook](../../../OPERATIONS.md#stable-release-gate) records the
 commands for repeating all three audits against the published stable selector.
 
+## Published release verification
+
+Both [`registry-2026.09`](https://github.com/jolars/datamonger/releases/tag/registry-2026.09)
+and [`spec-v1`](https://github.com/jolars/datamonger/releases/tag/spec-v1) are
+published as stable releases at commit `5d22864cd59002c5a74b85a781048b5c4c155807`.
+The [release PR CI run](https://github.com/jolars/datamonger/actions/runs/34324309381)
+passed Python, R, and both Julia versions (1.10 and current).
+The [publication workflow](https://github.com/jolars/datamonger/actions/runs/34324802623)
+downloaded the published index, verified its digest, and passed all 22 canary
+checks.
+
+Fresh local audits against the published `2026.09` selector also passed in
+Python 3.11.13, R 4.6.1, and Julia 1.12.7, reproducing every digest in the table
+above. The downloaded asset is byte-identical to the checked-in index, and
+`resolve_registry("2026.09")` returns the exact checked-in selector. An explicit
+stable-selector Iris fetch returns a verified 150-row, five-column data frame.
+
 ## Limitations
 
 The registry is unsigned, and all artifacts remain upstream-only. Stable

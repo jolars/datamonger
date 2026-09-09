@@ -122,7 +122,7 @@ the Python source.
 - [x] Implement the Julia client against the corrected release candidate.
 - [x] Run all three clients through the shared conformance suite.
 - [x] Independently reproduce and review every candidate verification record.
-- [ ] Freeze specification revision 1 and publish the first stable registry.
+- [x] Freeze specification revision 1 and publish the first stable registry.
 - [ ] Release coordinated R, Python, and Julia clients using the same snapshot.
 
 Exit criterion: the same strong registry selector yields identical canonical
