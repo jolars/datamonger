@@ -165,14 +165,16 @@ Keep the human review record in the pull request. In particular, record who
 reviewed licensing and preservation evidence and whether canonical verification
 has been independently reproduced.
 
-## Publish a prerelease
+## Publish a registry
 
-The repository currently publishes registry candidates as GitHub prereleases.
-After the release commit is reviewed and present on the default branch:
+Publish candidates as GitHub prereleases. Stable releases must first satisfy
+the [stable release gate](#stable-release-gate). After the release commit is
+reviewed and present on the default branch:
 
 1. Manually run the `Publish registry` workflow from the default branch. Enter
-   the release identifier from `release.yaml` and select `prerelease`. The
-   workflow revalidates every generated file and the selector URL, creates the
+   the release identifier from `release.yaml`. Select `prerelease` for candidates
+   and leave it unchecked for stable releases. The workflow revalidates every
+   generated file and the selector URL, creates the
    exact tag named by `release.yaml`, publishes `index.json` as the sole release
    asset, and downloads it to verify its SHA-256. Rerunning it verifies an
    existing immutable release without replacing its tag or asset. It then runs
@@ -275,7 +277,7 @@ First preserve the complete report and classify the failing layer:
 - **Implementation-only failure:** Compare the same strong selector and
   canonical record across all released clients. An implementation regression
   is fixed in that client; a contract ambiguity requires a corrected
-  specification release candidate.
+  specification revision and affected contract versions.
 
 Record timestamps, affected selectors and dataset IDs, attempted locations,
 expected and observed digests, client versions, and whether cached copies remain
@@ -292,8 +294,8 @@ and contract treatment depends on the change:
 | Change artifact name, size, SHA-256, format, compression, or representation recipe | New dataset version and new registry release |
 | Change task metadata or component expectations | Follow the append-only and erratum rules in `spec/identity.md`; publish a new registry release |
 | Replace an incorrect verification record | Approved verification erratum that revokes the original and appends a replacement in a new registry release |
-| Change decoded logical output | New decoder version, new dataset version, conformance updates, and a new specification release candidate |
-| Change canonical bytes or error semantics | New affected contract version, conformance updates, and a new specification release candidate |
+| Change decoded logical output | New decoder version, new dataset version, conformance updates, and a later specification revision |
+| Change canonical bytes or error semantics | New affected contract version, conformance updates, and a later specification revision |
 | Editorial clarification with no semantic effect | Review and publish with the existing contract version; document why it is non-semantic |
 
 An erratum must conform to
@@ -328,3 +330,29 @@ release candidate, independent implementations reproduce and review every
 candidate verification record, and all corrections have been incorporated into
 a new candidate. Coordinated client releases must bundle the same stable
 registry selector.
+
+For the first stable release, `2026.09`, retain the certified `candidate-0002`
+dataset records and defaults unchanged. Record the candidate and stable strong
+selectors, prior maintainer review, implementation versions, conformance
+results, live verification results, and known limitations in the release
+directory. Run live verification with Python 3.11, matching CI and the scheduled
+canary. Also record failures observed on other supported runtimes.
+
+Publish `registry-2026.09` through the registry workflow with `prerelease=false`.
+Then publish `spec-v1` as a stable GitHub Release at the same commit, identifying
+the frozen inventory in `spec/revision-1.md` and the paired registry selector.
+Keep `index.json` as the registry release's sole asset; certification is tracked
+in Git and release notes.
+
+After publication, verify catalog resolution and run all three clients against
+the stable selector. From the repository root in the devenv shell:
+
+```console
+uv run --project packages/python --python 3.11 python tools/dm_canary.py \
+  registry/releases/2026.09/selector.json
+(cd packages/r && Rscript tests_live/test_candidate_registry.R 2026.09)
+julia --project=packages/julia packages/julia/tests_live/test_candidate_registry.jl 2026.09
+```
+
+Only then mark stable publication complete in `TODO.md`. Update bundled client
+snapshots in the subsequent coordinated client release work.

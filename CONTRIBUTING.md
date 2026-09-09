@@ -26,11 +26,11 @@ Read the document that owns the behavior:
 - [`DESIGN.md`](DESIGN.md) records rationale; it does not override a normative
   contract.
 
-Revision 1 is feature-frozen. Discuss a proposed contract extension before
+Revision 1 is frozen and stable. Discuss a proposed contract extension before
 implementing it. An editorial clarification may keep the current contract
 version only when it changes no accepted input, logical output, identity,
 retrieval behavior, or failure classification. Output-affecting changes need
-the versions and release-candidate treatment described by the specification.
+the later revision and contract versions described by the specification.
 
 ## Development environment
 
@@ -73,6 +73,7 @@ julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.test()'
 
 Run the R and Julia `tests_live/test_candidate_registry.*` scripts separately
 to retrieve and verify every record in the published candidate registry.
+Pass `2026.09` as the first argument to audit the stable registry instead.
 
 Live-source tests and canaries require network access and healthy upstreams.
 They are not substitutes for deterministic tests and are not part of the

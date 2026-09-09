@@ -79,8 +79,9 @@ Distribution policy and preservation status are independent of integrity:
 - Preservation status `durable` requires a reviewed durable deposit. A mirror
   without that record is not a preservation guarantee.
 
-The current proof and candidate registry artifacts are upstream-only. Their
-digests can detect upstream drift, but they cannot recover bytes that disappear.
+The stable `2026.09` registry and the earlier proof and candidate artifacts are
+upstream-only. Their digests can detect upstream drift, but they cannot recover
+bytes that disappear.
 A user's verified local cache may permit offline reuse, but it is not a project
 preservation service.
 

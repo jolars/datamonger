@@ -2,7 +2,8 @@ using Datamonger
 using JSON3
 
 repository_root = normpath(joinpath(@__DIR__, "..", "..", ".."))
-release_root = joinpath(repository_root, "registry", "releases", "candidate-0002")
+release = isempty(ARGS) ? "candidate-0002" : only(ARGS)
+release_root = joinpath(repository_root, "registry", "releases", release)
 selector_document = JSON3.read(
     read(joinpath(release_root, "selector.json")),
     Dict{String,Any},
@@ -14,7 +15,7 @@ selected = Datamonger.Registry(
     selector_document["index_url"],
     selector_document["schema_version"],
 )
-cache_dir = mktempdir(; prefix="datamonger-candidate-0002-")
+cache_dir = mktempdir(; prefix="datamonger-$release-")
 
 for dataset in index["datasets"]
     result = fetch_data(
