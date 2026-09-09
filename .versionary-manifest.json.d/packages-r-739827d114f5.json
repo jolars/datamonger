@@ -1,0 +1,11 @@
+{
+  "manifest-version": 1,
+  "path": "packages/r",
+  "baseline-sha": "060063843f78125521235bbaea2e15e5d8ec87ed",
+  "release-target": {
+    "path": "packages/r",
+    "version": "0.1.0",
+    "tag": "datamonger-r-v0.1.0"
+  },
+  "release-branch": "versionary/release-datamonger-r-739827d114f5"
+}
