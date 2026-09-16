@@ -26,7 +26,7 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
           ref: ${{ github.event.workflow_run.head_sha }}
-          token: ${{ secrets.RELEASE_TOKEN }}
+          token: ${{ secrets.RELEASE_TOKEN || github.token }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
