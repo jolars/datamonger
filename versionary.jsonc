@@ -13,21 +13,26 @@
       "release-type": "simple",
       "package-name": "registry",
       "release-draft": true,
-      "exclude-paths": ["releases", "catalog.json", "latest.json", "README.md"],
+      "exclude-paths": [
+        "releases",
+        "catalog.json",
+        "latest.json",
+        "README.md"
+      ]
     },
     "packages/python": {
       "release-type": "python",
-      "package-name": "datamonger-python",
+      "package-name": "datamonger-python"
     },
     "packages/r": {
       "release-type": "r",
       "package-name": "datamonger-r",
-      "release-draft": true,
+      "release-draft": true
     },
     "packages/julia": {
       "release-type": "julia",
       "package-name": "datamonger-julia",
-      "release-draft": true,
-    },
-  },
+      "release-draft": true
+    }
+  }
 }
