@@ -9,6 +9,26 @@ id = "datamonger"
 path = ".."
 url = "https://github.com/jolars/datamonger"
 
+[[package]]
+id = "python"
+name = "Datamonger for Python"
+slug = "python"
+ecosystem = "python"
+repository = "datamonger"
+path = "packages/python"
+metadata_path = "pyproject.toml"
+targets = [{ id = "api", extractor = "python", path = "src/datamonger", role = "public-api" }]
+
+[[package]]
+id = "r"
+name = "Datamonger for R"
+slug = "r"
+ecosystem = "r"
+repository = "datamonger"
+path = "packages/r"
+metadata_path = "DESCRIPTION"
+targets = [{ id = "api", extractor = "r", path = ".", role = "public-api" }]
+
 [[content]]
 id = "guide"
 owner = "project"
@@ -19,3 +39,75 @@ format = "gfm"
 
 [content.execution]
 mode = "never"
+
+[[concept]]
+id = "fetch-data"
+kind = "equivalent"
+members = [
+  { package = "python", item = "datamonger.fetch_data" },
+  { package = "r", item = "fetch_data" },
+]
+
+[[concept]]
+id = "fetch-artifact"
+kind = "equivalent"
+members = [
+  { package = "python", item = "datamonger.fetch_artifact" },
+  { package = "r", item = "fetch_artifact" },
+]
+
+[[concept]]
+id = "list-data"
+kind = "equivalent"
+members = [
+  { package = "python", item = "datamonger.list_data" },
+  { package = "r", item = "list_data" },
+]
+
+[[concept]]
+id = "data-info"
+kind = "equivalent"
+members = [
+  { package = "python", item = "datamonger.data_info" },
+  { package = "r", item = "data_info" },
+]
+
+[[concept]]
+id = "resolve-registry"
+kind = "equivalent"
+members = [
+  { package = "python", item = "datamonger.resolve_registry" },
+  { package = "r", item = "resolve_registry" },
+]
+
+[[concept]]
+id = "active-registry"
+kind = "equivalent"
+members = [
+  { package = "python", item = "datamonger.active_registry" },
+  { package = "r", item = "active_registry" },
+]
+
+[[concept]]
+id = "set-registry"
+kind = "equivalent"
+members = [
+  { package = "python", item = "datamonger.set_registry" },
+  { package = "r", item = "set_registry" },
+]
+
+[[concept]]
+id = "cache-info"
+kind = "equivalent"
+members = [
+  { package = "python", item = "datamonger.cache_info" },
+  { package = "r", item = "cache_info" },
+]
+
+[[concept]]
+id = "cache-clean"
+kind = "equivalent"
+members = [
+  { package = "python", item = "datamonger.cache_clean" },
+  { package = "r", item = "cache_clean" },
+]

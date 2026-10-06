@@ -5,7 +5,8 @@ bytes, and consistent decoded values across languages.
 
 Start with the [Python guide](python.md), [R guide](r.md), or
 [Julia guide](julia.md). Use the [command-line client](cli.md) when you need
-verified raw artifacts. This prototype brings the four client guides into one searchable site.
+verified raw artifacts. The site includes Python and R API references and nine
+shared concepts. Julia and the CLI have authored guides.
 
 ## Reproducible data access
 
