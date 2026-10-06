@@ -111,6 +111,20 @@ selector must refer to an already published registry asset. Coordinated stable
 client releases must eventually bundle the same stable selector, even though
 their PyPI, CRAN, and General publication steps complete at different times.
 
+For a CLI release, merge the Versionary `packages/cli` release PR after CI
+passes. Versionary creates `datamonger-cli-v<version>` and a draft GitHub
+Release. Then dispatch the `Release` workflow with that tag:
+
+```console
+gh workflow run release.yml --ref datamonger-cli-v<version> \
+  -f tag=datamonger-cli-v<version>
+```
+
+`dist` builds archives for x64 Linux (musl), x64 and ARM macOS, and x64
+Windows from that tag, uploads SHA-256 checksums to the existing draft, and publishes it.
+The workflow's pull request run only plans the release. Check the draft tag,
+release, and artifact checksums before dispatching a live release.
+
 ## Prepare a registry release
 
 1. Add or revise manifests under `registry/datasets` according to

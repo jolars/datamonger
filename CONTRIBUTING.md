@@ -43,7 +43,7 @@ devenv test
 ```
 
 The quality gate formats and lints Python, type-checks the package and tools,
-runs all three hermetic client suites, checks generated registry data and shared
+runs the Rust CLI and all three hermetic language client suites, checks generated registry data and shared
 fixture synchronization, builds the Python and R distributions, and runs a
 CRAN-style R package check. Focused commands from `packages/python` are:
 
@@ -69,6 +69,14 @@ The focused Julia command from `packages/julia` is:
 
 ```console
 julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.test()'
+```
+
+Focused CLI commands from `packages/cli` are:
+
+```console
+cargo fmt --check
+cargo clippy --locked --all-targets -- -D warnings
+cargo test --locked
 ```
 
 Run the R and Julia `tests_live/test_candidate_registry.*` scripts separately

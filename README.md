@@ -10,7 +10,9 @@ Specification revision 1 is frozen as `spec-v1`, paired with the first stable
 registry, `2026.09`. The Python reference client and the independent R and Julia
 clients pass the shared conformance suite and reproduce all ten registry
 canonical verification records. All dataset artifacts remain upstream-only.
-Coordinated client releases bundling the stable snapshot are the next milestone.
+The standalone Rust CLI bundles `2026.09` for verified artifact downloads.
+Coordinated language client releases bundling the stable snapshot are the next
+milestone.
 
 ## What Datamonger verifies
 
@@ -122,6 +124,22 @@ The Julia client uses its standard platform cache by default. Pass an explicit
 package guide](packages/julia/README.md) for native return types and the complete
 public API.
 
+## Try the CLI
+
+Build the single-binary Rust client from `packages/cli` with
+`cargo build --release --locked`, or install an archive from a CLI GitHub
+release. The binary works with the bundled stable registry offline:
+
+```console
+datamonger list --source uci
+datamonger info uci:iris
+datamonger fetch uci:iris --output-dir ./data
+```
+
+`fetch` verifies artifact size and SHA-256 and keeps the registered raw bytes.
+It does not decode datasets. See the [CLI guide](packages/cli/README.md) for
+artifact selection, JSON output, cache management, and registry pinning.
+
 ## Documentation
 
 - [Python package guide](packages/python/README.md)—installation and public API
@@ -130,6 +148,8 @@ public API.
   public API behavior.
 - [Julia package guide](packages/julia/README.md)—installation, native return
   types, cache management, and public API behavior.
+- [CLI guide](packages/cli/README.md)—single-binary installation, commands,
+  verified downloads, and registry selection.
 - [Normative specification](spec/README.md)—the frozen revision 1 contracts for
   independent implementations.
 - [Trust model](TRUST.md)—trust roots, guarantees, and non-guarantees.

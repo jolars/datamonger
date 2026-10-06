@@ -31,6 +31,11 @@
     };
   };
 
+  languages.rust = {
+    enable = true;
+    toolchainFile = ./rust-toolchain.toml;
+  };
+
   enterTest = ''
     dm_repo_root="$PWD"
     cd packages/python
@@ -45,6 +50,17 @@
     uv run python ../../tools/dm_index.py check \
       tests/registry/releases/test-0002/release.yaml
     uv build
+    cd "$dm_repo_root"
+    diff registry/releases/2026.09/index.json packages/cli/assets/index.json
+    diff registry/releases/2026.09/selector.json packages/cli/assets/selector.json
+    for schema in index manifest erratum selector catalog; do
+      diff "spec/schema/''${schema}-v1.schema.json" \
+        "packages/cli/assets/''${schema}-v1.schema.json"
+    done
+    cd packages/cli
+    cargo fmt --check
+    cargo clippy --locked --all-targets -- -D warnings
+    cargo test --locked
     cd "$dm_repo_root"
     ${pkgs.diffutils}/bin/diff -r \
       tests/conformance packages/r/tests/testthat/fixtures/conformance

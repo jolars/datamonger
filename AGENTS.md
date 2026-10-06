@@ -3,7 +3,8 @@
 ## Project Structure & Module Organization
 
 The Python reference client lives in `packages/python`; the R and Julia clients
-live in `packages/r` and `packages/julia`. Python library code is under
+live in `packages/r` and `packages/julia`; the standalone Rust CLI lives in
+`packages/cli`. Python library code is under
 `packages/python/src/datamonger`; hermetic tests are beside each client, and
 network-dependent smoke tests are isolated in each client's `tests_live`
 directory.
@@ -43,6 +44,11 @@ From `packages/julia`, focused commands are:
   hermetic Julia suite.
 - `julia --project=. tests_live/test_candidate_registry.jl`—audit the published
   candidate when network access is expected.
+
+From `packages/cli`, run `cargo fmt --check`,
+`cargo clippy --locked --all-targets -- -D warnings`, and `cargo test --locked`.
+The CLI bundles stable registry assets in `packages/cli/assets`; `devenv test`
+checks them against `registry/releases/2026.09` and `spec/schema`.
 
 Run `uv run pytest tests_live/test_proof_registry.py` only when network access
 and upstream availability are expected. The R and Julia candidate audits are

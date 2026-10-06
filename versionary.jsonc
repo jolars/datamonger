@@ -33,6 +33,11 @@
       "release-type": "julia",
       "package-name": "datamonger-julia",
       "release-draft": true
+    },
+    "packages/cli": {
+      "release-type": "rust",
+      "package-name": "datamonger-cli",
+      "release-draft": true
     }
   }
 }
