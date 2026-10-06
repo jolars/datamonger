@@ -1,0 +1,15 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "datamonger-docs",
+  "compatibility_date": "2026-10-06",
+  "workers_dev": false,
+  "assets": {
+    "directory": "./site"
+  },
+  "routes": [
+    {
+      "pattern": "datamonger.dev",
+      "custom_domain": true
+    }
+  ]
+}

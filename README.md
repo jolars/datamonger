@@ -142,6 +142,8 @@ artifact selection, JSON output, cache management, and registry pinning.
 
 ## Documentation
 
+- [Documentation website](https://datamonger.dev/)—guides, Python and R API
+  references, and shared concepts.
 - [Python package guide](packages/python/README.md)—installation and public API
   behavior.
 - [R package guide](packages/r/README.md)—installation, cache management, and
