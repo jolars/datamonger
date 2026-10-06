@@ -37,7 +37,7 @@ jobs:
         run: .build/diplodocus/target/debug/diplodocus check --config documentation/diplodocus.toml
       - name: Build documentation site
         run: .build/diplodocus/target/debug/diplodocus build --config documentation/diplodocus.toml --output documentation/site
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "24"
           cache: npm
