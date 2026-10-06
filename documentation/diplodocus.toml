@@ -1,0 +1,21 @@
+[project]
+name = "Datamonger"
+
+[presentation]
+description = "Retrieve, verify, and decode research datasets in Python, R, and Julia."
+
+[[repository]]
+id = "datamonger"
+path = ".."
+url = "https://github.com/jolars/datamonger"
+
+[[content]]
+id = "guide"
+owner = "project"
+repository = "datamonger"
+path = "documentation/pages"
+mount = ""
+format = "gfm"
+
+[content.execution]
+mode = "never"
