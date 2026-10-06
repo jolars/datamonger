@@ -1,0 +1,4 @@
+packages/cli/assets/index.json text eol=lf
+registry/releases/*/index.json text eol=lf
+tests/registry/releases/*/index.json text eol=lf
+tests/conformance/artifacts/* text eol=lf
