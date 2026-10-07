@@ -45,9 +45,16 @@ content-addressed cache:
 ```python
 from datamonger import fetch_data
 
-iris = fetch_data("iris", source="uci")
+iris = fetch_data("uci:iris")
 heart = fetch_data("heart_scale", source="libsvm")
 ```
+
+All three packages accept `"source:name"` and `"source:name@version"` references
+in `fetch_data()`, `data_info()`, and `fetch_artifact()`, matching CLI dataset
+selectors. Bare names require `source`. Omit `source` for qualified references
+and omit `version` when the reference embeds it; duplicate arguments are errors
+even when the values agree. Without a version, resolution uses the registry's
+declared default.
 
 Use an explicit version and request reproducibility metadata for an analysis:
 
@@ -96,7 +103,7 @@ checkout, then load a dataset:
 install.packages("packages/r", repos = NULL, type = "source")
 library(datamonger)
 
-iris <- fetch_data("iris", source = "uci")
+iris <- fetch_data("uci:iris")
 ```
 
 The R client uses its standard platform cache by default. Its registry
@@ -115,7 +122,7 @@ Pkg.activate("packages/julia")
 Pkg.instantiate()
 
 using Datamonger
-iris = fetch_data("iris"; source="uci")
+iris = fetch_data("uci:iris")
 heart = fetch_data("heart_scale"; source="libsvm")
 ```
 

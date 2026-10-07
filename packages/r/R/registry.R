@@ -279,6 +279,38 @@ active_registry <- function(project_dir = getwd()) {
   index
 }
 
+.parse_dataset_reference <- function(name, source, version) {
+  if (!.is_scalar_character(name)) {
+    .abort_category("unknown-dataset", "invalid dataset reference")
+  }
+  if (grepl(":|@", name)) {
+    pattern <- paste0(
+      "\\A([a-z0-9][a-z0-9._-]*):([a-z0-9][a-z0-9._-]*)",
+      "(?:@([A-Za-z0-9][A-Za-z0-9._+-]*))?\\z"
+    )
+    matched <- regmatches(name, regexec(pattern, name, perl = TRUE))[[1]]
+    if (length(matched) == 0L) {
+      .abort_category("unknown-dataset", "invalid dataset reference")
+    }
+    if (!is.null(source)) {
+      stop("source must be omitted for a qualified dataset reference", call. = FALSE)
+    }
+    embedded_version <- if (nzchar(matched[[4]])) matched[[4]] else NULL
+    if (!is.null(embedded_version) && !is.null(version)) {
+      stop("version must be omitted when the reference includes it", call. = FALSE)
+    }
+    return(list(
+      source = matched[[2]],
+      name = matched[[3]],
+      version = embedded_version %||% version
+    ))
+  }
+  if (is.null(source)) {
+    stop("source is required for a bare dataset name", call. = FALSE)
+  }
+  list(source = source, name = name, version = version)
+}
+
 .resolve_dataset <- function(index, source, name, version = NULL) {
   valid <- .is_scalar_character(source) &&
     grepl(.identifier_pattern, source, perl = TRUE) &&

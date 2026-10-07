@@ -11,10 +11,16 @@ Inspect dataset metadata before fetching data:
 ```r
 library(datamonger)
 
-info <- data_info("iris", source = "uci", version = "1")
+info <- data_info("uci:iris@1")
 print(info)
-iris <- fetch_data("iris", source = "uci", version = "1")
+iris <- fetch_data("uci:iris@1")
 ```
+
+Dataset operations also accept separate arguments, such as
+`fetch_data("iris", source = "uci", version = "1")`. Omit `source` for qualified
+references and omit `version` when the reference embeds it. Duplicate arguments
+raise an error even when the values agree. `"uci:iris"` selects the registry's
+declared default version.
 
 The default registry index is bundled. Fetching an uncached dataset needs
 network access. Record an explicit dataset version and a strong registry

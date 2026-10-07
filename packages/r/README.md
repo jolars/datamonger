@@ -41,6 +41,20 @@ iris <- fetch_data("iris", source = "uci")
 heart <- fetch_data("heart_scale", source = "libsvm")
 ```
 
+`fetch_data()`, `data_info()`, and `fetch_artifact()` also accept the dataset
+references used by the CLI:
+
+```r
+iris <- fetch_data("uci:iris")
+iris_v1 <- fetch_data("uci:iris@1")
+iris_v1 <- fetch_data("uci:iris", version = "1")
+```
+
+A bare name requires `source`. Omit `source` for qualified references, and omit
+`version` when the reference embeds it. Duplicate arguments raise an error even
+when the values agree. An omitted version selects the registry's declared
+default.
+
 For reproducible analysis, select an explicit version and retain the returned
 metadata:
 

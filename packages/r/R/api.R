@@ -114,10 +114,12 @@
 
 #' Retrieve one verified artifact without decoding it
 #'
-#' @param name Dataset name.
-#' @param source Dataset source.
-#' @param version Exact dataset version, or `NULL` to resolve the registry
-#'   default.
+#' @param name Bare dataset name, `source:name`, or `source:name@version`.
+#' @param source Dataset source. Required for bare names; omit it for qualified
+#'   references, even if the values would agree.
+#' @param version Exact dataset version. Omit it when the reference embeds a
+#'   version, even if the values would agree. If neither form supplies a version,
+#'   resolve the registry default.
 #' @param artifact Artifact name. It may be omitted for a single-artifact
 #'   dataset.
 #' @param registry Strong registry selector, or `NULL` for the active selector.
@@ -127,12 +129,16 @@
 #' @export
 fetch_artifact <- function(
     name,
-    source,
+    source = NULL,
     version = NULL,
     artifact = NULL,
     registry = NULL,
     cache_dir = NULL,
     offline = FALSE) {
+  reference <- .parse_dataset_reference(name, source, version)
+  source <- reference$source
+  name <- reference$name
+  version <- reference$version
   cache_dir <- .selected_cache_dir(cache_dir)
   registry <- .selected_registry(registry)
   index <- .load_registry(registry, cache_dir, offline)
@@ -177,11 +183,15 @@ fetch_artifact <- function(
 #' @export
 data_info <- function(
     name,
-    source,
+    source = NULL,
     version = NULL,
     registry = NULL,
     cache_dir = NULL,
     offline = FALSE) {
+  reference <- .parse_dataset_reference(name, source, version)
+  source <- reference$source
+  name <- reference$name
+  version <- reference$version
   cache_dir <- .selected_cache_dir(cache_dir)
   registry <- .selected_registry(registry)
   index <- .load_registry(registry, cache_dir, offline)
@@ -325,13 +335,17 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
 #' @export
 fetch_data <- function(
     name,
-    source,
+    source = NULL,
     version = NULL,
     registry = NULL,
     cache_dir = NULL,
     offline = FALSE,
     verify_decoded = TRUE,
     return_info = FALSE) {
+  reference <- .parse_dataset_reference(name, source, version)
+  source <- reference$source
+  name <- reference$name
+  version <- reference$version
   for (argument in c("offline", "verify_decoded", "return_info")) {
     value <- get(argument, inherits = FALSE)
     if (!.is_scalar_logical(value)) {

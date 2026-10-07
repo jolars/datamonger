@@ -1050,6 +1050,15 @@ is not an MVP requirement.
 
 ### Naming
 
+`fetch_data()`, `fetch_artifact()`, and `data_info()` accept either a bare dataset
+name with a separate `source` argument or a qualified reference such as
+`"uci:iris"` or `"uci:iris@1"`. Qualified references use the same spelling as
+CLI dataset selectors. A bare name requires `source`; a qualified reference
+requires it to be omitted. A separate `version` may accompany `"uci:iris"`, but
+must be omitted when the reference embeds a version. Duplicate source or
+version arguments are errors even when the values agree. An omitted version
+selects the registry's declared default.
+
 Revision 1 keeps `fetch_data` as the shared primary API name. In languages where
 it plausibly collides with user code or another package, ordinary namespace
 qualification remains available without creating a second canonical spelling.

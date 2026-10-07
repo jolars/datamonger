@@ -200,6 +200,29 @@ function _load_registry(registry::Registry, cache_dir; offline=false)
     return index
 end
 
+function _parse_dataset_reference(name, source, version)
+    name isa String || throw(UnknownDatasetError("invalid dataset reference"))
+    if occursin(':', name) || occursin('@', name)
+        matched = match(
+            r"\A([a-z0-9][a-z0-9._-]*):([a-z0-9][a-z0-9._-]*)(?:@([A-Za-z0-9][A-Za-z0-9._+-]*))?\z",
+            name,
+        )
+        matched === nothing && throw(UnknownDatasetError("invalid dataset reference"))
+        source === nothing || throw(ArgumentError(
+            "source must be omitted for a qualified dataset reference",
+        ))
+        embedded_version = matched[3]
+        embedded_version === nothing || version === nothing ||
+            throw(ArgumentError("version must be omitted when the reference includes it"))
+        return (
+            String(matched[1]), String(matched[2]),
+            embedded_version === nothing ? version : String(embedded_version),
+        )
+    end
+    source === nothing && throw(ArgumentError("source is required for a bare dataset name"))
+    return source, name, version
+end
+
 function _resolve_dataset(index::AbstractDict, source, name, version)
     source isa String && name isa String &&
         occursin(_IDENTIFIER_PATTERN, source) && occursin(_IDENTIFIER_PATTERN, name) &&

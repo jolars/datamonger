@@ -29,6 +29,10 @@ from datamonger._validate import require_array
 
 _IDENTIFIER = re.compile(r"[a-z0-9][a-z0-9._-]*\Z")
 _VERSION = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]*\Z")
+_DATASET_REFERENCE = re.compile(
+    r"([a-z0-9][a-z0-9._-]*):([a-z0-9][a-z0-9._-]*)"
+    r"(?:@([A-Za-z0-9][A-Za-z0-9._+-]*))?\Z"
+)
 _RELEASE = re.compile(r"[a-z0-9][a-z0-9._-]*\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _CATALOG_FIELDS = {"schema_version", "releases"}
@@ -273,6 +277,26 @@ def load_registry(
     _require_array(parsed.get("datasets"), "datasets")
     _require_array(parsed.get("defaults"), "defaults")
     return cast(Mapping[str, Any], parsed)
+
+
+def parse_dataset_reference(
+    name: str, *, source: str | None, version: str | None
+) -> tuple[str, str, str | None]:
+    """Normalize separate arguments or a qualified dataset reference."""
+
+    if ":" in name or "@" in name:
+        match = _DATASET_REFERENCE.fullmatch(name)
+        if match is None:
+            raise UnknownDatasetError(f"invalid dataset reference {name!r}")
+        if source is not None:
+            raise ValueError("source must be omitted for a qualified dataset reference")
+        embedded_version = match.group(3)
+        if embedded_version is not None and version is not None:
+            raise ValueError("version must be omitted when the reference includes it")
+        return match.group(1), match.group(2), embedded_version or version
+    if source is None:
+        raise ValueError("source is required for a bare dataset name")
+    return source, name, version
 
 
 def _valid_identity(source: str, name: str, version: str | None) -> bool:

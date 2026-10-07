@@ -1,3 +1,64 @@
+@testset "dataset references" begin
+    cache_dir = mktempdir()
+    seeded = seed_conformance_cache(cache_dir)
+    selections = [
+        ("mixed_csv", (; source="conformance")),
+        ("conformance:mixed_csv", (;)),
+        ("conformance:mixed_csv", (; version="1")),
+        ("conformance:mixed_csv@1", (;)),
+    ]
+    for (name, keywords) in selections
+        options = (;
+            keywords..., registry=seeded.selector, cache_dir, offline=true,
+        )
+        info = data_info(name; options...)
+        result = fetch_data(name; options..., return_info=true)
+        artifact = fetch_artifact(name; options...)
+        @test info.dataset_id == result.info.dataset_id == "conformance:mixed_csv@1"
+        @test (info.source, info.name, info.version) == ("conformance", "mixed_csv", "1")
+        @test result.info.verification == :decoded
+        @test size(result.data) == (5, 4)
+        @test bytes2hex(sha256(read(artifact))) == info.artifacts[1]["sha256"]
+    end
+    for name in ("conformance:missing", "conformance:mixed_csv@2")
+        @test_throws UnknownDatasetError data_info(
+            name; registry=seeded.selector, cache_dir, offline=true,
+        )
+    end
+end
+
+@testset "invalid dataset references" begin
+    registry = Registry("uncached", "0"^64, "https://example.invalid/index")
+    ambiguous = [
+        (name="mixed_csv", source=nothing, version=nothing),
+        (name="conformance:mixed_csv", source="conformance", version=nothing),
+        (name="conformance:mixed_csv", source="other", version=nothing),
+        (name="conformance:mixed_csv@1", source=nothing, version="1"),
+        (name="conformance:mixed_csv@1", source=nothing, version="2"),
+    ]
+    malformed = [
+        ":mixed_csv", "conformance:", "conformance:mixed_csv@",
+        "conformance:mixed_csv@1@2", "conformance:other:mixed_csv",
+        " conformance:mixed_csv", "conformance:mixed_csv\n",
+        "Conformance:mixed_csv", "conformance:mixed/csv", "mixed_csv@1",
+    ]
+    for operation in (fetch_data, data_info, fetch_artifact)
+        for selection in ambiguous
+            cache_dir = joinpath(mktempdir(), "cache")
+            @test_throws ArgumentError operation(
+                selection.name; selection.source, selection.version,
+                registry, cache_dir, offline=true,
+            )
+            @test !isdir(cache_dir)
+        end
+        for name in malformed
+            @test_throws UnknownDatasetError operation(
+                name; registry, cache_dir=mktempdir(), offline=true,
+            )
+        end
+    end
+end
+
 @testset "public API conformance" begin
     cache_dir = mktempdir()
     seeded = seed_conformance_cache(cache_dir)

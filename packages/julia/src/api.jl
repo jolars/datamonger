@@ -97,16 +97,24 @@ function _retrieve_artifact(artifact, cache_dir, offline)
     )
 end
 
-"""Retrieve one verified artifact without decoding it."""
+"""
+Retrieve one verified artifact without decoding it.
+
+`name` accepts a bare name with `source`, `source:name`, or `source:name@version`.
+Omit `source` for qualified references and omit `version` when the reference
+embeds it, even if the values would agree. An omitted version selects the
+registry default.
+"""
 function fetch_artifact(
     name;
-    source,
+    source=nothing,
     version=nothing,
     artifact=nothing,
     registry=nothing,
     cache_dir=nothing,
     offline=false,
 )
+    source, name, version = _parse_dataset_reference(name, source, version)
     offline isa Bool || throw(ArgumentError("offline must be true or false"))
     cache_dir = datamonger_cache_dir(cache_dir)
     selected = _selected_registry(registry)
@@ -158,15 +166,23 @@ function _data_info(dataset, registry)
     )
 end
 
-"""Inspect one resolved dataset without retrieving its artifacts."""
+"""
+Inspect one resolved dataset without retrieving its artifacts.
+
+`name` accepts a bare name with `source`, `source:name`, or `source:name@version`.
+Omit `source` for qualified references and omit `version` when the reference
+embeds it, even if the values would agree. An omitted version selects the
+registry default.
+"""
 function data_info(
     name;
-    source,
+    source=nothing,
     version=nothing,
     registry=nothing,
     cache_dir=nothing,
     offline=false,
 )
+    source, name, version = _parse_dataset_reference(name, source, version)
     offline isa Bool || throw(ArgumentError("offline must be true or false"))
     cache_dir = datamonger_cache_dir(cache_dir)
     selected = _selected_registry(registry)
@@ -277,10 +293,17 @@ function _verification_record(index, dataset, expect)
     throw(UnsupportedDecoderError("no supported decoded-verification record"))
 end
 
-"""Resolve, retrieve, verify, and decode one registered dataset."""
+"""
+Resolve, retrieve, verify, and decode one registered dataset.
+
+`name` accepts a bare name with `source`, `source:name`, or `source:name@version`.
+Omit `source` for qualified references and omit `version` when the reference
+embeds it, even if the values would agree. An omitted version selects the
+registry default.
+"""
 function fetch_data(
     name;
-    source,
+    source=nothing,
     version=nothing,
     registry=nothing,
     cache_dir=nothing,
@@ -288,6 +311,7 @@ function fetch_data(
     verify_decoded=true,
     return_info=false,
 )
+    source, name, version = _parse_dataset_reference(name, source, version)
     all(value -> value isa Bool, (offline, verify_decoded, return_info)) ||
         throw(ArgumentError("offline, verify_decoded, and return_info must be booleans"))
     cache_dir = datamonger_cache_dir(cache_dir)

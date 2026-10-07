@@ -5,21 +5,25 @@
 \alias{list_data}
 \title{Retrieve or Inspect Registered Data}
 \usage{
-fetch_data(name, source, version = NULL, registry = NULL, cache_dir = NULL,
+fetch_data(name, source = NULL, version = NULL, registry = NULL, cache_dir = NULL,
   offline = FALSE, verify_decoded = TRUE, return_info = FALSE)
 
-fetch_artifact(name, source, version = NULL, artifact = NULL,
+fetch_artifact(name, source = NULL, version = NULL, artifact = NULL,
   registry = NULL, cache_dir = NULL, offline = FALSE)
 
-data_info(name, source, version = NULL, registry = NULL, cache_dir = NULL,
+data_info(name, source = NULL, version = NULL, registry = NULL, cache_dir = NULL,
   offline = FALSE)
 
 list_data(registry = NULL, cache_dir = NULL, offline = FALSE)
 }
 \arguments{
-  \item{name}{The dataset name.}
-  \item{source}{The dataset source.}
-  \item{version}{An exact version, or \code{NULL} for the registry default.}
+  \item{name}{A bare dataset name, \code{source:name}, or
+  \code{source:name@version}.}
+  \item{source}{The dataset source. Required for bare names; omit it for
+  qualified references, even if the values would agree.}
+  \item{version}{An exact version. Omit it when the reference embeds a version,
+  even if the values would agree. If neither form supplies a version, resolve
+  the registry default.}
   \item{artifact}{An artifact name. It may be omitted for a single-artifact
   dataset.}
   \item{registry}{A strong selector, or \code{NULL} for the active selector.}

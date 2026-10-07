@@ -18,6 +18,94 @@ reseal_index <- function(index, cache_dir) {
   )
 }
 
+test_that("dataset references select the same data, artifacts, and metadata", {
+  cache_dir <- tempfile("datamonger-cache-")
+  seeded <- seed_conformance_cache(cache_dir)
+  selections <- list(
+    list(name = "mixed_csv", source = "conformance"),
+    list(name = "conformance:mixed_csv"),
+    list(name = "conformance:mixed_csv", version = "1"),
+    list(name = "conformance:mixed_csv@1")
+  )
+  for (selection in selections) {
+    arguments <- c(selection, list(
+      registry = seeded$selector, cache_dir = cache_dir, offline = TRUE
+    ))
+    info <- do.call(data_info, arguments)
+    result <- do.call(fetch_data, c(arguments, list(return_info = TRUE)))
+    artifact <- do.call(fetch_artifact, arguments)
+    expect_identical(info$dataset_id, "conformance:mixed_csv@1")
+    expect_identical(result$info$dataset_id, info$dataset_id)
+    expect_identical(info$source, "conformance")
+    expect_identical(info$name, "mixed_csv")
+    expect_identical(info$version, "1")
+    expect_identical(result$info$verification, "decoded")
+    expect_identical(dim(result$data), c(5L, 4L))
+    expect_identical(
+      digest::digest(file = artifact, algo = "sha256"),
+      info$artifacts[[1]]$sha256
+    )
+  }
+})
+
+test_that("ambiguous arguments fail before registry loading", {
+  registry <- registry_selector(
+    "uncached", paste(rep("0", 64), collapse = ""), "https://example.invalid/index"
+  )
+  selections <- list(
+    list(name = "mixed_csv"),
+    list(name = "conformance:mixed_csv", source = "conformance"),
+    list(name = "conformance:mixed_csv", source = "other"),
+    list(name = "conformance:mixed_csv@1", version = "1"),
+    list(name = "conformance:mixed_csv@1", version = "2")
+  )
+  for (operation in list(fetch_data, data_info, fetch_artifact)) {
+    for (selection in selections) {
+      cache_dir <- tempfile("datamonger-cache-")
+      expect_error(
+        do.call(operation, c(selection, list(
+          registry = registry, cache_dir = cache_dir, offline = TRUE
+        ))),
+        "source|version"
+      )
+      expect_false(dir.exists(cache_dir))
+    }
+  }
+})
+
+test_that("malformed references fail as unknown datasets", {
+  registry <- registry_selector(
+    "uncached", paste(rep("0", 64), collapse = ""), "https://example.invalid/index"
+  )
+  references <- c(
+    ":mixed_csv", "conformance:", "conformance:mixed_csv@",
+    "conformance:mixed_csv@1@2", "conformance:other:mixed_csv",
+    " conformance:mixed_csv", "conformance:mixed_csv\n",
+    "Conformance:mixed_csv", "conformance:mixed/csv", "mixed_csv@1"
+  )
+  for (operation in list(fetch_data, data_info, fetch_artifact)) {
+    for (reference in references) {
+      expect_error(
+        operation(reference, registry = registry, cache_dir = tempfile(), offline = TRUE),
+        class = "datamonger_unknown_dataset"
+      )
+    }
+  }
+})
+
+test_that("qualified references preserve resolution errors", {
+  cache_dir <- tempfile("datamonger-cache-")
+  seeded <- seed_conformance_cache(cache_dir)
+  for (reference in c("conformance:missing", "conformance:mixed_csv@2")) {
+    expect_error(
+      data_info(
+        reference, registry = seeded$selector, cache_dir = cache_dir, offline = TRUE
+      ),
+      class = "datamonger_unknown_dataset"
+    )
+  }
+})
+
 test_that("metadata operations expose identity and provenance without artifacts", {
   cache_dir <- tempfile("datamonger-cache-")
   seeded <- seed_conformance_cache(cache_dir)

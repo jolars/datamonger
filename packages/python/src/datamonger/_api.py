@@ -40,7 +40,11 @@ from datamonger._models import (
     Pathish,
     Registry,
 )
-from datamonger._registry import load_registry, resolve_dataset
+from datamonger._registry import (
+    load_registry,
+    parse_dataset_reference,
+    resolve_dataset,
+)
 from datamonger._selection import active_registry
 from datamonger._validate import (
     require_array,
@@ -228,7 +232,7 @@ def _retrieve_artifact(
 def fetch_artifact(
     name: str,
     *,
-    source: str,
+    source: str | None = None,
     version: str | None = None,
     artifact: str | None = None,
     registry: Registry | None = None,
@@ -237,12 +241,20 @@ def fetch_artifact(
 ) -> Path:
     """Resolve and retrieve one verified artifact without decoding it.
 
+    ``name`` accepts a bare name with ``source``, ``source:name``, or
+    ``source:name@version``. Omit ``source`` for qualified references and omit
+    ``version`` when the reference embeds it, even if the values would agree.
+    An omitted version selects the registry default.
+
     ``artifact`` may be omitted only when the resolved dataset version declares
     exactly one artifact. An explicit registry overrides session and project
     selection. ``offline=True`` permits verified cache hits but performs no
     network requests.
     """
 
+    source, name, version = parse_dataset_reference(
+        name, source=source, version=version
+    )
     cache_root = Path(cache_dir) if cache_dir is not None else default_cache_root()
     selected_registry = registry if registry is not None else active_registry()
     index = _load_registry(selected_registry, cache_root, offline=offline)
@@ -299,7 +311,7 @@ def _data_info(
 def data_info(
     name: str,
     *,
-    source: str,
+    source: str | None = None,
     version: str | None = None,
     registry: Registry | None = None,
     cache_dir: Pathish | None = None,
@@ -307,11 +319,19 @@ def data_info(
 ) -> DataInfo:
     """Return registry metadata for the version selected by fetch resolution.
 
+    ``name`` accepts a bare name with ``source``, ``source:name``, or
+    ``source:name@version``. Omit ``source`` for qualified references and omit
+    ``version`` when the reference embeds it, even if the values would agree.
+    An omitted version selects the registry default.
+
     This operation retrieves only the selected registry index. An explicit
     registry overrides session and project selection, and ``offline=True``
     permits a bundled or verified cached index without network requests.
     """
 
+    source, name, version = parse_dataset_reference(
+        name, source=source, version=version
+    )
     cache_root = Path(cache_dir) if cache_dir is not None else default_cache_root()
     selected_registry = registry if registry is not None else active_registry()
     index = _load_registry(selected_registry, cache_root, offline=offline)
@@ -421,7 +441,7 @@ def _verification_record(
 def fetch_data(
     name: str,
     *,
-    source: str,
+    source: str | None = None,
     version: str | None = None,
     registry: Registry | None = None,
     cache_dir: Pathish | None = None,
@@ -435,7 +455,7 @@ def fetch_data(
 def fetch_data(
     name: str,
     *,
-    source: str,
+    source: str | None = None,
     version: str | None = None,
     registry: Registry | None = None,
     cache_dir: Pathish | None = None,
@@ -449,7 +469,7 @@ def fetch_data(
 def fetch_data(
     name: str,
     *,
-    source: str,
+    source: str | None = None,
     version: str | None = None,
     registry: Registry | None = None,
     cache_dir: Pathish | None = None,
@@ -462,7 +482,7 @@ def fetch_data(
 def fetch_data(
     name: str,
     *,
-    source: str,
+    source: str | None = None,
     version: str | None = None,
     registry: Registry | None = None,
     cache_dir: Pathish | None = None,
@@ -472,10 +492,18 @@ def fetch_data(
 ) -> DatasetData | FetchResult:
     """Resolve, retrieve, verify, and decode one registered dataset.
 
+    ``name`` accepts a bare name with ``source``, ``source:name``, or
+    ``source:name@version``. Omit ``source`` for qualified references and omit
+    ``version`` when the reference embeds it, even if the values would agree.
+    An omitted version selects the registry default.
+
     An explicit registry overrides session and project selection. ``offline=True``
     requires both the selected registry and its artifact to be bundled or cached.
     """
 
+    source, name, version = parse_dataset_reference(
+        name, source=source, version=version
+    )
     cache_root = Path(cache_dir) if cache_dir is not None else default_cache_root()
     selected_registry = registry if registry is not None else active_registry()
     index = _load_registry(selected_registry, cache_root, offline=offline)
