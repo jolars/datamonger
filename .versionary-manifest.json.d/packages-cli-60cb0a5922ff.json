@@ -1,0 +1,11 @@
+{
+  "manifest-version": 1,
+  "path": "packages/cli",
+  "baseline-sha": "ad31693fbd924f68032afe27df71a05fc10c2dec",
+  "release-target": {
+    "path": "packages/cli",
+    "version": "0.2.0",
+    "tag": "datamonger-cli-v0.2.0"
+  },
+  "release-branch": "versionary/release-datamonger-cli-60cb0a5922ff"
+}
