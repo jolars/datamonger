@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.0](https://github.com/jolars/datamonger/compare/datamonger-python-v0.1.0...datamonger-python-v0.2.0) (2026-10-09)
+
+### Features
+- support qualified dataset references ([`3e9fbce`](https://github.com/jolars/datamonger/commit/3e9fbcec1ed403e32a35cf68758555421c702c19))
+- publish first stable registry and specification (#7) ([`5d22864`](https://github.com/jolars/datamonger/commit/5d22864cd59002c5a74b85a781048b5c4c155807))
+
 ## [0.1.0](https://github.com/jolars/datamonger/compare/datamonger-python-v0.0.0...datamonger-python-v0.1.0) (2026-09-07)
 
 ### Features
