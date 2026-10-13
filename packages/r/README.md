@@ -85,6 +85,11 @@ task metadata without retrieving artifacts. `fetch_artifact()` retrieves only
 verified artifact bytes. `offline = TRUE` forbids network access and requires
 the selected index and artifacts to be bundled or already cached.
 
+The [offline conformance example](vignettes/offline-conformance.Rmd) retrieves
+the shared mixed CSV fixture from a temporary cache, verifies its decoded
+digest, and renders its values and a plot. The package includes its inputs, so
+the example also runs after installation without a repository checkout.
+
 ## Registry selection
 
 An explicit strong selector fixes the release and exact index bytes:

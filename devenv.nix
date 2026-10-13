@@ -4,6 +4,7 @@
   packages = [
     pkgs.jq
     pkgs.julia
+    pkgs.pandoc
     pkgs.ruff
     pkgs.zlib
     (pkgs.rWrapper.override {
@@ -15,6 +16,7 @@
         pkgload
         evaluate
         knitr
+        rmarkdown
         testthat
       ];
     })

@@ -28,6 +28,10 @@ selector for reproducibility, and check dataset license and provenance metadata.
 
 Use the R section in the navigation bar to browse the extracted API reference.
 
+Try the [offline conformance walkthrough](../../packages/r/vignettes/offline-conformance.Rmd)
+to retrieve a bundled fixture, verify its decoded values, and inspect a table
+and plot without network access. The example uses a private temporary cache.
+
 See the [complete R client guide](https://github.com/jolars/datamonger/blob/main/packages/r/README.md)
 for return types, registry selection, offline use, and cache management.
 

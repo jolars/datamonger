@@ -29,10 +29,18 @@ R CMD INSTALL --library=/tmp/datamonger-docs-library packages/r
 Open <http://127.0.0.1:8001/>. To generate deployable files, replace `serve` with
 `build` and omit `--port 8001 --live-reload`. Generated snapshots, site files,
 and npm dependencies are ignored by Git. `check` does not execute examples.
-`build` and `serve` use native R for authors, citations, and any Rd examples or
-R Markdown vignettes. The current R package has no examples or vignettes, and
-its README and the authored Markdown guides remain illustrative. Building the
-current site does not fetch datasets.
+`build` and `serve` use native R for authors, citations, and executable package
+documentation. The [offline conformance walkthrough](../packages/r/vignettes/offline-conformance.Rmd)
+retrieves a bundled CSV from a private temporary cache, verifies its decoded
+values and canonical digest, and renders tables and a plot. Every retrieval
+uses `offline = TRUE`; building the article makes no network requests. The
+README and authored Markdown guide examples remain illustrative.
+
+The R package includes the shared conformance corpus and its test registry, so
+the article also runs from an installed package. `R CMD build packages/r`
+renders the standard R vignette with knitr, rmarkdown, and Pandoc, which are
+included in the repository's devenv environment. Diplodocus executes the same
+source with its native knitr collector.
 
 The published configuration intentionally disables Julia API extraction because
 15 exported macro-generated error types cannot be resolved statically. The

@@ -94,8 +94,22 @@ That suite uses isolated Tiny Stats fixtures; it verifies the renderer but does
 not substitute for the Datamonger checks above. The Wrangler deployment dry run
 passed. No site was deployed.
 
-The R package currently contains no Rd examples or R Markdown vignettes. All
-current guide and README examples are display-only, so this assessment does not
-verify that dataset-fetching examples execute. Add a small offline example based
-on the shared conformance corpus to exercise retrieval, decoding, and rendered
-output without relying on upstream availability.
+At the time of this assessment, the R package contained no Rd examples or
+R Markdown vignettes. The guide and README examples were display-only, so the
+original site checks did not verify example execution.
+
+## Offline execution follow-up
+
+The [offline conformance walkthrough](../packages/r/vignettes/offline-conformance.Rmd)
+now exercises the public `fetch_artifact()` and `fetch_data()` operations with
+the shared mixed CSV fixture. Its inputs are bundled in the R package. Each run
+seeds a private temporary cache, requires `offline = TRUE`, checks the five rows
+and four typed columns against their expected values, and verifies the canonical
+digest from the shared corpus. The article renders those values, reproducibility
+metadata, and a PNG plot, then removes its cache.
+
+A follow-up build with Diplodocus commit `03ade23` succeeded in the prepared
+Datamonger environment, including the complete Julia target. The R article's
+test also passed with network retrieval mocked to fail. These checks verify
+execution of this offline example; the original published-site counts and
+display-only guide examples above remain separate evidence.
