@@ -1,26 +1,43 @@
 # Datamonger documentation
 
-Diplodocus builds the site at <https://datamonger.dev/> from the authored pages
-in `pages/` and the Python and R package sources. The site includes API
-references and nine shared concepts. Julia and the CLI have authored guides.
-The short guides link to the package READMEs for more detail. The build does
-not execute examples or download datasets.
+Diplodocus builds the site at <https://datamonger.dev/> from authored guides,
+Python and R API sources, and R package documents. Julia has a package overview
+and guide. Nine concepts connect equivalent Python and R operations.
+See [the dogfooding assessment](assessment.md) for coverage and known limits.
 
 ## Local preview
 
-With Datamonger and Diplodocus checked out beside each other, build Diplodocus
-with Rust 1.98.0. Then run these commands from the Datamonger repository root:
+With Datamonger and Diplodocus checked out beside each other, build the pinned
+Diplodocus revision `dd35393d258f8192b66c66564fd0ff10f1e048e7` in its devenv shell:
 
 ```console
+cd ../diplodocus
+devenv shell -- cargo build --locked --bin diplodocus
+cd ../datamonger
+```
+
+Enter Datamonger's `devenv shell` for R and the package dependencies. Compile the
+R client's native extension before the first build or after changing its C code:
+
+```console
+mkdir -p /tmp/datamonger-docs-library
+R CMD INSTALL --library=/tmp/datamonger-docs-library packages/r
 ../diplodocus/target/debug/diplodocus check --config documentation/diplodocus.toml
 ../diplodocus/target/debug/diplodocus serve --config documentation/diplodocus.toml --output documentation/site --port 8001 --live-reload
 ```
 
-Open <http://127.0.0.1:8001/>. To generate deployable files without serving
-them, replace `serve` with `build` and omit `--port 8001 --live-reload`.
-Generated snapshots, site files, and npm dependencies are ignored by Git.
-The R extractor currently reports nonfatal documentation warnings during a
-successful check.
+Open <http://127.0.0.1:8001/>. To generate deployable files, replace `serve` with
+`build` and omit `--port 8001 --live-reload`. Generated snapshots, site files,
+and npm dependencies are ignored by Git. `check` does not execute examples.
+`build` and `serve` use native R for authors, citations, and any Rd examples or
+R Markdown vignettes. The current R package has no examples or vignettes, and
+its README and the authored Markdown guides remain illustrative. Building the
+current site does not fetch datasets.
+
+The published configuration intentionally disables Julia API extraction because
+15 exported macro-generated error types cannot be resolved statically. The
+assessment records how to enable extraction in this configuration to reproduce
+the failure; there is no separate API configuration.
 
 ## Publishing
 

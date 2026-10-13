@@ -2,7 +2,17 @@
 name = "Datamonger"
 
 [presentation]
+site-url = "https://datamonger.dev/"
+canonical-url-style = "clean"
 description = "Retrieve, verify, and decode research datasets in Python, R, and Julia."
+
+[presentation.footer]
+docs-version = "dev"
+links = [
+  { label = "GitHub", url = "https://github.com/jolars/datamonger" },
+  { label = "Report an issue", url = "https://github.com/jolars/datamonger/issues" },
+]
+built-with = true
 
 [[repository]]
 id = "datamonger"
@@ -16,7 +26,7 @@ slug = "python"
 ecosystem = "python"
 repository = "datamonger"
 path = "packages/python"
-metadata_path = "pyproject.toml"
+metadata-path = "pyproject.toml"
 targets = [{ id = "api", extractor = "python", path = "src/datamonger", role = "public-api" }]
 
 [[package]]
@@ -26,8 +36,18 @@ slug = "r"
 ecosystem = "r"
 repository = "datamonger"
 path = "packages/r"
-metadata_path = "DESCRIPTION"
+metadata-path = "DESCRIPTION"
 targets = [{ id = "api", extractor = "r", path = ".", role = "public-api" }]
+
+[[package]]
+id = "julia"
+name = "Datamonger for Julia"
+slug = "julia"
+ecosystem = "julia"
+repository = "datamonger"
+path = "packages/julia"
+metadata-path = "Project.toml"
+targets = [{ id = "api", extractor = "julia", path = "src/Datamonger.jl", role = "public-api" }]
 
 [[content]]
 id = "guide"
@@ -40,12 +60,46 @@ format = "gfm"
 [content.execution]
 mode = "never"
 
+[[content]]
+id = "python-pages"
+owner = "python"
+repository = "datamonger"
+path = "documentation/package-pages/python"
+mount = ""
+format = "gfm"
+
+[content.execution]
+mode = "never"
+
+[[content]]
+id = "r-pages"
+owner = "r"
+repository = "datamonger"
+path = "documentation/package-pages/r"
+mount = ""
+format = "gfm"
+
+[content.execution]
+mode = "never"
+
+[[content]]
+id = "julia-pages"
+owner = "julia"
+repository = "datamonger"
+path = "documentation/package-pages/julia"
+mount = ""
+format = "gfm"
+
+[content.execution]
+mode = "never"
+
 [[concept]]
 id = "fetch-data"
 kind = "equivalent"
 members = [
   { package = "python", item = "datamonger.fetch_data" },
   { package = "r", item = "fetch_data" },
+  { package = "julia", item = "Datamonger.fetch_data" },
 ]
 
 [[concept]]
@@ -54,6 +108,7 @@ kind = "equivalent"
 members = [
   { package = "python", item = "datamonger.fetch_artifact" },
   { package = "r", item = "fetch_artifact" },
+  { package = "julia", item = "Datamonger.fetch_artifact" },
 ]
 
 [[concept]]
@@ -62,6 +117,7 @@ kind = "equivalent"
 members = [
   { package = "python", item = "datamonger.list_data" },
   { package = "r", item = "list_data" },
+  { package = "julia", item = "Datamonger.list_data" },
 ]
 
 [[concept]]
@@ -70,6 +126,7 @@ kind = "equivalent"
 members = [
   { package = "python", item = "datamonger.data_info" },
   { package = "r", item = "data_info" },
+  { package = "julia", item = "Datamonger.data_info" },
 ]
 
 [[concept]]
@@ -78,6 +135,7 @@ kind = "equivalent"
 members = [
   { package = "python", item = "datamonger.resolve_registry" },
   { package = "r", item = "resolve_registry" },
+  { package = "julia", item = "Datamonger.resolve_registry" },
 ]
 
 [[concept]]
@@ -86,6 +144,7 @@ kind = "equivalent"
 members = [
   { package = "python", item = "datamonger.active_registry" },
   { package = "r", item = "active_registry" },
+  { package = "julia", item = "Datamonger.active_registry" },
 ]
 
 [[concept]]
@@ -94,6 +153,7 @@ kind = "equivalent"
 members = [
   { package = "python", item = "datamonger.set_registry" },
   { package = "r", item = "set_registry" },
+  { package = "julia", item = "Datamonger.set_registry" },
 ]
 
 [[concept]]
@@ -102,6 +162,7 @@ kind = "equivalent"
 members = [
   { package = "python", item = "datamonger.cache_info" },
   { package = "r", item = "cache_info" },
+  { package = "julia", item = "Datamonger.cache_info" },
 ]
 
 [[concept]]
@@ -110,4 +171,5 @@ kind = "equivalent"
 members = [
   { package = "python", item = "datamonger.cache_clean" },
   { package = "r", item = "cache_clean" },
+  { package = "julia", item = "Datamonger.cache_clean" },
 ]

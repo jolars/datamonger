@@ -27,8 +27,10 @@ The default registry index is bundled. Fetching an uncached dataset needs
 network access. Record an explicit dataset version and a strong registry
 selector for reproducibility, and check dataset license and provenance metadata.
 
-This prototype provides an authored Julia guide. Diplodocus does not yet
-extract Julia API documentation.
+Diplodocus supports static Julia API extraction, but Datamonger generates its
+concrete error types with a macro that the extractor cannot resolve. This site
+therefore provides an authored guide and package overview until that limit is
+addressed.
 
 See the [complete Julia client guide](https://github.com/jolars/datamonger/blob/main/packages/julia/README.md)
 for return types, registry selection, offline use, and cache management.

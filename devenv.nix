@@ -12,6 +12,9 @@
         digest
         filelock
         jsonlite
+        pkgload
+        evaluate
+        knitr
         testthat
       ];
     })

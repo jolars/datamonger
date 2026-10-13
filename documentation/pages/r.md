@@ -26,7 +26,7 @@ The default registry index is bundled. Fetching an uncached dataset needs
 network access. Record an explicit dataset version and a strong registry
 selector for reproducibility, and check dataset license and provenance metadata.
 
-The complete client guide below documents the public API.
+Use the R section in the navigation bar to browse the extracted API reference.
 
 See the [complete R client guide](https://github.com/jolars/datamonger/blob/main/packages/r/README.md)
 for return types, registry selection, offline use, and cache management.
