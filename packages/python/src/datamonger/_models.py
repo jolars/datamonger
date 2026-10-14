@@ -26,9 +26,13 @@ class Registry:
     """Location and strong selector for one immutable registry index."""
 
     release: str
+    """Immutable registry release identifier, such as ``"2026.09"``."""
     index_sha256: str
+    """SHA-256 of the exact index bytes, as 64 lowercase hexadecimal digits."""
     index_url: str
+    """Absolute HTTP or HTTPS URL used to retrieve an unbundled index."""
     schema_version: int = 1
+    """Version of the registry selector schema; the client supports version 1."""
 
 
 @dataclass(frozen=True)
@@ -36,12 +40,19 @@ class FetchInfo:
     """Reproducibility metadata for a completed fetch."""
 
     dataset_id: str
+    """Resolved dataset identifier in ``source:name@version`` form."""
     registry_release: str
+    """Immutable registry release used to resolve and verify this fetch."""
     registry_index_sha256: str
+    """SHA-256 of the selected registry index's exact bytes."""
     artifact_digests: Mapping[str, str]
+    """Artifact names mapped to the verified SHA-256 digests of their bytes."""
     verification: VerificationLevel
+    """Completed verification level: ``"artifact"`` or ``"decoded"``."""
     canonical_form: int | None
+    """Canonical-form version used for decoded verification, or ``None`` if skipped."""
     canonical_digest: str | None
+    """Verified SHA-256 of the canonical decoded data, or ``None`` if skipped."""
 
 
 @dataclass(frozen=True)
@@ -49,22 +60,39 @@ class DataInfo:
     """Registry metadata for one resolved dataset version."""
 
     dataset_id: str
+    """Resolved dataset identifier in ``source:name@version`` form."""
     source: str
+    """Source namespace that identifies the dataset's provider or collection."""
     name: str
+    """Dataset name within its source namespace, without a version suffix."""
     version: str
+    """Exact dataset version selected explicitly or through the registry default."""
     registry_release: str
+    """Immutable registry release containing this dataset record."""
     registry_index_sha256: str
+    """SHA-256 of the selected registry index's exact bytes."""
     title: str
+    """Human-readable dataset title supplied by the registry."""
     description: str
+    """Registry prose describing the dataset's contents and purpose."""
     modality: str
+    """Registry category for the data, such as ``"tabular"``."""
     provenance: Mapping[str, Any]
+    """Registry record of the dataset's origin and upstream references."""
     license: Mapping[str, Any]
+    """Registry record of the dataset's license and usage terms."""
     artifacts: tuple[Mapping[str, Any], ...]
+    """Artifact records describing retrieval URLs, byte sizes, digests, and formats."""
     representation: Mapping[str, Any]
+    """Decoder selection, options, artifact roles, and expected logical output."""
     expected_components: tuple[Mapping[str, Any], ...]
+    """Declared component names, logical types, and shapes used in verification."""
     verification_records: tuple[Mapping[str, Any], ...]
+    """Declared canonical-form versions and digests, without verifying decoded data."""
     related: tuple[Mapping[str, Any], ...]
+    """Registry links to related datasets, or an empty tuple when none are declared."""
     tasks: tuple[Mapping[str, Any], ...]
+    """Registry task descriptions, or an empty tuple when none are declared."""
 
 
 @dataclass(frozen=True)
@@ -72,7 +100,9 @@ class SparseDataset:
     """A named sparse feature matrix and its response vector."""
 
     features: sparse.csr_matrix
+    """Float64 feature matrix in CSR format, with one row per observation."""
     response: ResponseArray
+    """Int64 or float64 response vector aligned with the feature matrix's rows."""
 
 
 @dataclass(frozen=True)
@@ -80,7 +110,9 @@ class SparseDatasetSplit:
     """Separate training and test sparse datasets from one representation."""
 
     train: SparseDataset
+    """Training features and responses from the representation's training artifact."""
     test: SparseDataset
+    """Test features and responses using the same feature dimension as training data."""
 
 
 DatasetData: TypeAlias = pd.DataFrame | SparseDataset | SparseDatasetSplit
@@ -91,7 +123,9 @@ class FetchResult:
     """Decoded data together with its reproducibility metadata."""
 
     data: DatasetData
+    """Decoded pandas table, sparse dataset, or sparse training and test split."""
     info: FetchInfo
+    """Registry, artifact, and verification metadata for this completed fetch."""
 
 
 @dataclass(frozen=True)
@@ -99,13 +133,28 @@ class CacheEntry:
     """One content-addressed object found in the Python client cache."""
 
     kind: CacheEntryKind
+    """Object category: a dataset ``"artifact"`` or a ``"registry"`` index."""
     sha256: str
+    """Expected SHA-256 digest encoded in the object's cache filename."""
     size: int
+    """Size of the cached file in bytes at inspection time."""
     modified_at: datetime
+    """File modification time as a timezone-aware UTC datetime."""
     path: Path
+    """Local path to the content-addressed cached file."""
     valid: bool
+    """Whether the inspected file's SHA-256 matches the digest in its filename."""
     datasets: tuple[str, ...]
+    """Sorted dataset identifiers referencing this artifact in known registry indexes.
+
+    Registry entries and artifacts with no known references have an empty tuple.
+    References come from the bundled index and valid cached indexes.
+    """
     registry_release: str | None
+    """Release read from a valid cached registry index, or ``None`` if unavailable.
+
+    Artifact entries always use ``None``.
+    """
 
 
 @dataclass(frozen=True)
@@ -113,8 +162,11 @@ class CacheInfo:
     """A point-in-time inventory of the Python client cache."""
 
     location: Path
+    """Cache root inspected, whether or not the directory exists."""
     total_size: int
+    """Sum of the inventoried files' sizes in bytes, including invalid entries."""
     entries: tuple[CacheEntry, ...]
+    """Inspected registry and artifact entries, sorted by kind and expected digest."""
 
 
 @dataclass(frozen=True)
@@ -122,8 +174,11 @@ class CacheCleanResult:
     """The entries removed or skipped by one manual cache eviction."""
 
     location: Path
+    """Cache root from which matching objects were selected for eviction."""
     removed: tuple[CacheEntry, ...]
+    """Entries actually deleted after acquiring their exclusive cache leases."""
     skipped: tuple[CacheEntry, ...]
+    """Matching entries retained because another operation held an active lease."""
 
     @property
     def bytes_removed(self) -> int:

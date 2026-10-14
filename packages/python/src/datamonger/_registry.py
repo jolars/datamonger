@@ -50,6 +50,13 @@ BUNDLED_REGISTRY = Registry(
         "registry-proof-0001/index.json"
     ),
 )
+"""Strong selector for the immutable registry index shipped with the Python package.
+
+This selector is the fallback when no session or project selector is set. Its
+release and SHA-256 pin the bundled index; they do not track the latest release.
+The client reads and verifies that index locally, including in offline mode.
+Dataset artifacts still need retrieval or a verified cached copy.
+"""
 
 
 def _require_array(value: object, field: str) -> Sequence[object]:

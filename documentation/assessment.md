@@ -61,6 +61,10 @@ records, not independent documentation quality or executed-example coverage.
 Four additional R diagnostics report file-level Rd attribution rather than
 exact byte spans. These are tooling limitations, not missing package prose.
 
+The Python field prose and missing R aliases in items 3 and 4 were Datamonger
+content gaps. The [source documentation follow-up](#source-documentation-follow-up)
+records their fixes in the package sources.
+
 ## Reproduce the Julia limit
 
 Temporarily replace `targets = []` in the Julia package declaration of
@@ -113,3 +117,43 @@ Datamonger environment, including the complete Julia target. The R article's
 test also passed with network retrieval mocked to fail. These checks verify
 execution of this offline example; the original published-site counts and
 display-only guide examples above remain separate evidence.
+
+## Source documentation follow-up
+
+The [Python value objects](../packages/python/src/datamonger/_models.py) now
+document all 48 public dataclass fields with attribute docstrings. The prose
+explains resolved dataset identifiers, registry digests, verification levels,
+optional canonical metadata, sparse feature and response alignment, and cache
+units and inspection semantics. The existing `bytes_removed` property also
+has prose. [`BUNDLED_REGISTRY`](../packages/python/src/datamonger/_registry.py)
+now explains its pinned index, fallback selection, local verification, and
+offline artifact requirements.
+
+Three maintained R help topics cover all eight methods from item 4:
+
+- [Exact integer display](../packages/r/man/int64.Rd) documents
+  `format.datamonger_int64` and `print.datamonger_int64`, including preservation
+  of decimal digits and missing values.
+- [Sparse matrix inspection](../packages/r/man/csr-matrix.Rd) documents
+  `dim.datamonger_csr_matrix` and `print.datamonger_csr_matrix`, including the
+  large-dimension fallback and CSR storage.
+- [Metadata summaries](../packages/r/man/metadata-print.Rd) documents
+  `print.datamonger_registry`, `print.datamonger_fetch_info`,
+  `print.datamonger_data_info`, and `print.datamonger_cache_info`, including the
+  summary fields and invisible return values.
+
+The Python hermetic suite passes all 387 tests, and Ruff and strict mypy pass.
+An isolated R package build and CRAN-style check pass the Rd, alias, usage,
+cross-reference, and code/documentation checks, as well as the package tests
+and vignette rebuild. Its sole NOTE concerns the existing development version
+`0.0.0.9000`. Installed R help resolves all eight method aliases.
+
+An isolated build with the current Diplodocus checkout succeeds with all three
+language targets enabled. The portable snapshot retains prose for all 49
+extracted Python fields, including `bytes_removed`, for `BUNDLED_REGISTRY`,
+and for all eight R methods. The methods share the three help-topic pages.
+All 53 affected API pages pass browser checks at widths of 1440 and 390 pixels:
+successful HTTP responses, the expected prose, one title, no viewport overflow,
+and no JavaScript errors. Representative desktop and mobile screenshots were
+inspected. Diplodocus's standard `site-capture` suite also passes 71 tests with
+one skipped test.
