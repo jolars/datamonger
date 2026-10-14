@@ -414,7 +414,23 @@ function _cache_associations(cache_dir)
     return datasets
 end
 
-"""Verify and inventory cached registry indexes and artifacts."""
+"""
+Verify and inventory cached registry indexes and artifacts without accessing the network.
+
+# Examples
+
+Inspect an empty private cache without changing the user's cache:
+
+```jldoctest
+julia> using Datamonger
+
+julia> mktempdir() do directory
+           info = cache_info(; cache_dir=directory)
+           (info.total_size, length(info.entries))
+       end
+(0, 0)
+```
+"""
 function cache_info(; cache_dir=nothing)
     cache_dir = datamonger_cache_dir(cache_dir)
     ispath(cache_dir) && !isdir(cache_dir) &&

@@ -143,7 +143,19 @@ def _merge_references(
 
 
 def cache_info(*, cache_dir: Pathish | None = None) -> CacheInfo:
-    """Report cached registries and artifacts without accessing the network."""
+    """Report cached registries and artifacts without accessing the network.
+
+    Examples
+    --------
+    Inspect an empty private cache without changing the user's cache:
+
+    >>> from tempfile import TemporaryDirectory
+    >>> from datamonger import cache_info
+    >>> with TemporaryDirectory() as directory:
+    ...     info = cache_info(cache_dir=directory)
+    ...     print(info.total_size, len(info.entries))
+    0 0
+    """
 
     cache_root = Path(cache_dir) if cache_dir is not None else default_cache_root()
     entries: list[CacheEntry] = []

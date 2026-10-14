@@ -1,14 +1,14 @@
 # Datamonger documentation
 
 Diplodocus builds the site at <https://datamonger.dev/> from authored guides,
-Python and R API sources, and R package documents. Julia has a package overview
-and guide. Nine concepts connect equivalent Python and R operations.
+Python, R, and Julia API sources, and R package documents. Nine concepts connect
+equivalent operations across all three language clients.
 See [the dogfooding assessment](assessment.md) for coverage and known limits.
 
 ## Local preview
 
 With Datamonger and Diplodocus checked out beside each other, build the pinned
-Diplodocus revision `dd35393d258f8192b66c66564fd0ff10f1e048e7` in its devenv shell:
+Diplodocus revision `8c79eeae24abf2fceea15886cc66c22a0d4d1d6d` in its devenv shell:
 
 ```console
 cd ../diplodocus
@@ -16,21 +16,26 @@ devenv shell -- cargo build --locked --bin diplodocus
 cd ../datamonger
 ```
 
-Enter Datamonger's `devenv shell` for R and the package dependencies. Compile the
-R client's native extension before the first build or after changing its C code:
+Enter Datamonger's `devenv shell` for Python, R, Julia, and the package dependencies.
+The shell prepares the Python environment. Instantiate the Julia project and
+compile the R client's native extension before the first build or after changing
+its dependencies or C code:
 
 ```console
 mkdir -p /tmp/datamonger-docs-library
+julia --project=packages/julia -e 'using Pkg; Pkg.instantiate()'
 R CMD INSTALL --library=/tmp/datamonger-docs-library packages/r
-../diplodocus/target/debug/diplodocus check --config documentation/diplodocus.toml
 ../diplodocus/target/debug/diplodocus serve --config documentation/diplodocus.toml --output documentation/site --port 8001 --live-reload
 ```
 
 Open <http://127.0.0.1:8001/>. To generate deployable files, replace `serve` with
 `build` and omit `--port 8001 --live-reload`. Generated snapshots, site files,
-and npm dependencies are ignored by Git. `check` does not execute examples.
-`build` and `serve` use native R for authors, citations, and executable package
-documentation. The [offline conformance walkthrough](../packages/r/vignettes/offline-conformance.Rmd)
+and npm dependencies are ignored by Git. `build` and `serve` validate sources,
+complete Julia's generated error types through the prepared runtime, execute
+Python and Julia API doctests, and use native R for package documents and examples.
+`check` remains static and reports 15 unresolved generated Julia types for this
+workspace; use `build` for complete validation.
+The [offline conformance walkthrough](../packages/r/vignettes/offline-conformance.Rmd)
 retrieves a bundled CSV from a private temporary cache, verifies its decoded
 values and canonical digest, and renders tables and a plot. Every retrieval
 uses `offline = TRUE`; building the article makes no network requests. The
@@ -42,10 +47,11 @@ renders the standard R vignette with knitr, rmarkdown, and Pandoc, which are
 included in the repository's devenv environment. Diplodocus executes the same
 source with its native knitr collector.
 
-The published configuration intentionally disables Julia API extraction because
-15 exported macro-generated error types cannot be resolved statically. The
-assessment records how to enable extraction in this configuration to reproduce
-the failure; there is no separate API configuration.
+The Python and Julia `cache_info` doctests inspect fresh temporary directories
+and verify that an empty cache has no entries or bytes. They make no network
+requests and leave the user's cache untouched. API doctest failures prevent
+publication. Ordinary Markdown fences in the README and guides remain
+illustrative.
 
 ## Publishing
 

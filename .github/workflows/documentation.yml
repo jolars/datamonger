@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: jolars/diplodocus
-          ref: dd35393d258f8192b66c66564fd0ff10f1e048e7
+          ref: 8c79eeae24abf2fceea15886cc66c22a0d4d1d6d
           path: .build/diplodocus
           persist-credentials: false
       - name: Install Diplodocus Rust toolchain
@@ -33,6 +33,18 @@ jobs:
           key: documentation
       - name: Build Diplodocus
         run: cargo +1.98.0 build --locked --manifest-path .build/diplodocus/Cargo.toml --bin diplodocus
+      - name: Install uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          python-version: "3.11"
+      - name: Prepare the Python client
+        run: uv sync --locked --project packages/python --no-dev
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: "1.12"
+      - name: Prepare the Julia client
+        run: julia --project=packages/julia -e 'using Pkg; Pkg.instantiate()'
       - uses: r-lib/actions/setup-r@v2
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
@@ -45,10 +57,8 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/datamonger-r"
           R CMD INSTALL --library="$RUNNER_TEMP/datamonger-r" packages/r
-      - name: Check documentation sources
-        run: .build/diplodocus/target/debug/diplodocus check --config documentation/diplodocus.toml
       - name: Build documentation site
-        run: .build/diplodocus/target/debug/diplodocus build --config documentation/diplodocus.toml --output documentation/site
+        run: uv run --no-sync --project packages/python .build/diplodocus/target/debug/diplodocus build --config documentation/diplodocus.toml --output documentation/site
       - uses: actions/setup-node@v7
         with:
           node-version: "24"
