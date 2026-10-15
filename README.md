@@ -1,4 +1,4 @@
-# Datamonger
+# Datamonger <img src="https://raw.githubusercontent.com/jolars/datamonger/refs/heads/main/assets/logo.png" align="right" width="139" alt="A datamonger carrying a box of data" />
 
 Datamonger is a cross-language registry and artifact system for retrieving,
 verifying, and identically decoding public research datasets. A registry record
@@ -9,8 +9,8 @@ records used by an analysis.
 Specification revision 1 is frozen as `spec-v1`, paired with the first stable
 registry, `2026.09`. The Python reference client and the independent R and Julia
 clients pass the shared conformance suite and reproduce all ten registry
-canonical verification records. All dataset artifacts remain upstream-only.
-The standalone Rust CLI bundles `2026.09` for verified artifact downloads.
+canonical verification records. All dataset artifacts remain upstream-only. The
+standalone Rust CLI bundles `2026.09` for verified artifact downloads.
 Coordinated language client releases bundling the stable snapshot are the next
 milestone.
 
@@ -27,8 +27,8 @@ Datamonger keeps several distinct claims separate:
 
 A digest provides integrity relative to the channel that supplied it. It does
 not authenticate a selector obtained from an untrusted source, grant permission
-to use a dataset, or preserve an upstream-only artifact. See [TRUST.md](TRUST.md)
-for the trust model and its limits.
+to use a dataset, or preserve an upstream-only artifact. See
+[TRUST.md](TRUST.md) for the trust model and its limits.
 
 ## Try the Python client
 
@@ -68,10 +68,10 @@ print(result.info.artifact_digests)
 print(result.info.canonical_form, result.info.canonical_digest)
 ```
 
-Record the canonical dataset identifier, registry release, and index digest.
-For a project that uses a registry other than the bundled snapshot, also check
-the complete strong selector into `.datamonger/selector.json`. A bare release
-name is only a TLS-trusted discovery mechanism; the returned selector becomes a
+Record the canonical dataset identifier, registry release, and index digest. For
+a project that uses a registry other than the bundled snapshot, also check the
+complete strong selector into `.datamonger/selector.json`. A bare release name
+is only a TLS-trusted discovery mechanism; the returned selector becomes a
 reproducible pin when it is recorded and reused.
 
 Before using a dataset, inspect its provenance and license status:
@@ -108,9 +108,9 @@ iris <- fetch_data("uci:iris")
 
 The R client uses its standard platform cache by default. Its registry
 selection, verification, offline, metadata, artifact, and cache management
-operations follow the same revision 1 contracts as the Python client. See the
-[R package guide](packages/r/README.md) for R return types and the complete
-public API.
+operations follow the same revision 1 contracts as the Python client. See the [R
+package guide](packages/r/README.md) for R return types and the complete public
+API.
 
 ## Try the Julia client
 
@@ -128,8 +128,8 @@ heart = fetch_data("heart_scale"; source="libsvm")
 
 The Julia client uses its standard platform cache by default. Pass an explicit
 `cache_dir` to any public operation to use another location. See the [Julia
-package guide](packages/julia/README.md) for native return types and the complete
-public API.
+package guide](packages/julia/README.md) for native return types and the
+complete public API.
 
 ## Try the CLI
 
@@ -175,8 +175,8 @@ datasets spanning regression, binary and multiclass classification, unsupervised
 data, dense and sparse data, and a train/test split. Its selector is
 [`registry/releases/2026.09/selector.json`](registry/releases/2026.09/selector.json).
 All three client packages continue to bundle the smaller `proof-0001` snapshot
-until coordinated releases adopt the stable selector. Select it explicitly
-with the Python client:
+until coordinated releases adopt the stable selector. Select it explicitly with
+the Python client:
 
 ```python
 from datamonger import fetch_data, resolve_registry
@@ -203,6 +203,6 @@ CI:
 devenv test
 ```
 
-Network-dependent upstream verification is deliberately separate from this
-gate. See [CONTRIBUTING.md](CONTRIBUTING.md) for development workflows and
+Network-dependent upstream verification is deliberately separate from this gate.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development workflows and
 [OPERATIONS.md](OPERATIONS.md) for live verification and release procedures.
