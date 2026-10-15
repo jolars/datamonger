@@ -16,3 +16,6 @@ hosting = "github"
 # Versionary creates the draft release, then this workflow adds binaries.
 create-release = false
 dispatch-releases = true
+
+[dist.github-action-commits]
+"actions/checkout" = "v7"

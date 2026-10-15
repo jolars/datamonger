@@ -3,6 +3,9 @@ version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
+    # Cargo-dist must generate this workflow with matching action versions.
+    exclude-paths:
+      - .github/workflows/release.yml
     schedule:
       interval: weekly
     commit-message:

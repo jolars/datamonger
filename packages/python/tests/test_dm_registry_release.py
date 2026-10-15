@@ -23,8 +23,39 @@ SPEC.loader.exec_module(dm_registry_release)
 
 @pytest.fixture
 def registry_root(tmp_path: Path) -> Path:
-    for directory in ("registry", "spec/schema", ".versionary-manifest.json.d"):
+    # Release PRs already contain their pending snapshot, so use a fixed baseline.
+    for directory in (
+        "registry/datasets",
+        "registry/releases/2026.09",
+        "spec/schema",
+    ):
         shutil.copytree(ROOT / directory, tmp_path / directory)
+    shutil.copyfile(
+        ROOT / "registry/collection.yaml", tmp_path / "registry/collection.yaml"
+    )
+    (tmp_path / "registry/version.txt").write_text("1.0.0\n")
+    state_directory = tmp_path / ".versionary-manifest.json.d"
+    state_directory.mkdir()
+    (state_directory / "registry-test.json").write_text(
+        json.dumps(
+            {
+                "path": "registry",
+                "release-target": {
+                    "path": "registry",
+                    "version": "1.0.0",
+                    "tag": "registry-2026.09",
+                },
+            }
+        )
+        + "\n"
+    )
+    shutil.copyfile(
+        tmp_path / "registry/releases/2026.09/selector.json",
+        tmp_path / "registry/latest.json",
+    )
+    (tmp_path / "registry/catalog.json").write_bytes(
+        dm_registry_release.dm_index.build_catalog(root=tmp_path)
+    )
     return tmp_path
 
 
