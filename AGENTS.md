@@ -9,7 +9,11 @@ live in `packages/r` and `packages/julia`; the standalone Rust CLI lives in
 network-dependent smoke tests are isolated in each client's `tests_live`
 directory.
 Dataset manifests and release indexes belong in `registry/`; format contracts
-belong in `spec/`. Use `tools/dm_index.py` to validate generated registry data.
+belong in `spec/`. Curated dataset recipes, documentation, and deposit receipts
+belong in `curation/<name>/<version>/`; shared tooling belongs in `tools/`.
+Keep maintainer instructions in `README.md` and deposited dataset documentation
+in `DATASET.md`. Store source and generated data outside the working tree.
+Use `tools/dm_index.py` to validate generated registry data.
 Consult `DESIGN.md` for architecture and `TODO.md` for the active roadmap.
 
 ## Build, Test, and Development Commands
@@ -25,8 +29,8 @@ From `packages/python`, focused commands are:
 
 - `uv run pytest`—run the hermetic unit suite.
 - `uv run pytest tests/test_decoder.py`—run one test module.
-- `ruff format . ../../tools`—format Python sources and tooling.
-- `ruff check . ../../tools`—run lint checks.
+- `ruff format . ../../tools ../../curation`—format Python sources and tooling.
+- `ruff check . ../../tools ../../curation`—run lint checks.
 - `uv run mypy`—type-check the package and registry builder in strict mode.
 - `uv run python ../../tools/dm_index.py check`—verify checked-in production
   release indexes.

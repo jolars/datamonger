@@ -1,0 +1,30 @@
+{
+  "id": 23398467,
+  "url": "https://zenodo.org/records/23398467",
+  "doi": "10.5281/zenodo.23398467",
+  "state": "published",
+  "submitted": true,
+  "access": {
+    "record": "public",
+    "files": "restricted",
+    "embargo": {
+      "active": false,
+      "reason": null
+    },
+    "status": "restricted"
+  },
+  "rights_review": "accepted",
+  "reviewed_by": "Johan Larsson",
+  "reviewed_at": "2026-10-15",
+  "rights_url": "https://hivdb.stanford.edu/_wrapper/pages/FAQ/FAQ.html",
+  "files_sha256": {
+    "verify.R": "6a6087da61d3d13955fc3af1229b37a9171c4b7e3c6004b80b397518946da541",
+    "data.csv": "893a104177f8d946fcd7ff429406757aa0d24be890982f0a7ee9cb9540ae00d3",
+    "convert.R": "5beea54fbe9468c10b55efabcfbc1ba699c85634bffc5e8e0dd07a6b307d0cc2",
+    "read_source.R": "65b3245d4fb146498bcbf81aa3939bec14482d1e6b8c97db56838c09fe9b634c",
+    "README.md": "56523e37f26439aca8d7a5812b1c8530bbc43490987335f3a98c4a0b1c399756",
+    "RIGHTS.md": "43f1bad09c2007f90dfa3503370793d5de442b73d1a6700a8a274042b8c8cfa7",
+    "prepare.py": "4900264a0b84ed2edb6c8f089d668d1aaee3115039732e9ddfd39d099e5532c2",
+    "provenance.json": "13facb40c429c558a7573fff02626a8c0079d68a5496227248df52786f05c505"
+  }
+}

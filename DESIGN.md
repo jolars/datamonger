@@ -892,6 +892,15 @@ automatically, since doing so would break offline reuse without warning.
 
 Datamonger-controlled mirroring is **not** part of the MVP.
 
+A post-MVP conversion workflow lives in `curation/rhee2006/1`. It supports
+preparing a portable CSV from digest-pinned Stanford HIVDB text under the proposed
+`datamonger:rhee2006@1` identity. The `datamonger` source denotes responsibility
+for the curated representation, not ownership of the source data. Original
+authorship and preparation remain in provenance. The dataset is deposited at
+`doi:10.5281/zenodo.23398467`, with its redistribution basis recorded in the
+workflow's `RIGHTS.md`. Dataset publication does not register the dataset or
+publish a registry release; those steps retain their normal review requirements.
+
 Upstream-only retrieval plus verification already delivers the core value:
 detecting when upstream data changes and refusing to hand back the wrong bytes.
 Mirroring, by contrast, is where the per-artifact legal review cost and the

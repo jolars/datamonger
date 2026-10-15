@@ -44,8 +44,8 @@
   enterTest = ''
     dm_repo_root="$PWD"
     cd packages/python
-    ${pkgs.ruff}/bin/ruff format --check . ../../tools
-    ${pkgs.ruff}/bin/ruff check . ../../tools
+    ${pkgs.ruff}/bin/ruff format --check . ../../tools ../../curation
+    ${pkgs.ruff}/bin/ruff check . ../../tools ../../curation
     uv run mypy
     uv run pytest
     uv run python ../../tools/dm_index.py check

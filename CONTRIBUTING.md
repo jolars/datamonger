@@ -50,8 +50,8 @@ CRAN-style R package check. Focused commands from `packages/python` are:
 ```console
 uv run pytest
 uv run pytest tests/test_decoder.py
-ruff format . ../../tools
-ruff check . ../../tools
+ruff format . ../../tools ../../curation
+ruff check . ../../tools ../../curation
 uv run mypy
 uv run python ../../tools/dm_index.py check
 uv build

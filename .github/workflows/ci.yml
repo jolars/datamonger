@@ -56,9 +56,9 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked --all-groups
       - name: Check formatting
-        run: uv run ruff format --check . ../../tools
+        run: uv run ruff format --check . ../../tools ../../curation
       - name: Lint
-        run: uv run ruff check . ../../tools
+        run: uv run ruff check . ../../tools ../../curation
       - name: Type check
         run: uv run mypy
       - name: Run hermetic tests

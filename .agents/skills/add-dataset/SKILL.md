@@ -1,12 +1,14 @@
 ---
 name: add-dataset
-description: Add a dataset or a new dataset version to Datamonger's registry, including source review, manifest authoring, collection registration, and validation. Use for registry additions, not client fetch usage or registry publication.
+description: Add or curate a Datamonger dataset, including source review, authorized conversion and dataset deposits, manifest authoring, collection registration, and validation. Not for client fetch usage or registry release publication.
 ---
 
 # Add a Datamonger Dataset
 
 Produce a reviewed manifest under `registry/datasets/<source>/<name>-<version>.yaml`
 and select it in `registry/collection.yaml` for the next registry release.
+For a conversion or deposit trial, complete the requested stage without adding
+an unpublished or inaccessible artifact to the production collection.
 Run commands from the repository root in its devenv shell.
 
 Read [the dataset contribution workflow](../../../CONTRIBUTING.md#adding-or-revising-a-dataset),
@@ -27,15 +29,17 @@ use existing manifests as examples rather than copying their claims or digests.
 - Use `license.status: unknown` when evidence is insufficient. Public download
   access does not establish a license, and a provider's software license may
   not cover its datasets. Record useful evidence without inventing reviewer
-  identities or attestations.
+  identities or attestations. Source terms or a public-domain statement can
+  establish a reviewed redistribution basis without a named SPDX license;
+  record the evidence accurately rather than inferring a CC0 dedication.
 - Use `upstream-only` for upstream downloads. Claim a mirror or durable
   preservation only with the evidence and review required by
   [TRUST.md](../../../TRUST.md#distribution-preservation-and-upstream-risk).
 
 ## Draft a supported representation
 
-Keep drafts and downloaded artifacts in temporary storage outside the working
-tree. Never commit upstream dataset artifacts.
+Keep drafts and downloaded or converted artifacts in temporary storage outside
+the working tree. Commit recipes and documentation, not dataset artifacts.
 
 Choose an existing version 1 decoder and read its contract:
 
@@ -54,6 +58,10 @@ Useful examples are `registry/datasets/uci/iris-1.yaml`,
 
 If the available artifact cannot satisfy an existing decoder, explain the
 specific incompatibility and look for an official supported representation.
+Trace prepared collections back to their original sources before introducing
+a decoder for a binary format such as RDS. If conversion or preservation is
+within the user's scope, follow [curated representations and deposits](references/curated-deposits.md),
+then return here to author the manifest against the deposited artifacts.
 Do not silently clean, convert, or rehost data, or extend a frozen contract to
 make an ordinary registry addition pass.
 
@@ -146,5 +154,6 @@ the independent verification described there.
 
 Report the canonical dataset ID, files changed, source and license evidence,
 decoded dimensions and task roles, validation results, and any unresolved
-limitations or skipped live checks. If committing, use `feat(registry): ...`
+limitations or skipped live checks. For a deposit, include its URL, publication
+and file-access status, and download verification. If committing, use `feat(registry): ...`
 for an addition.
