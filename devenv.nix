@@ -7,19 +7,6 @@
     pkgs.pandoc
     pkgs.ruff
     pkgs.zlib
-    (pkgs.rWrapper.override {
-      packages = with pkgs.rPackages; [
-        curl
-        digest
-        filelock
-        jsonlite
-        pkgload
-        evaluate
-        knitr
-        rmarkdown
-        testthat
-      ];
-    })
   ];
 
   languages.python = {
@@ -39,6 +26,26 @@
   languages.rust = {
     enable = true;
     toolchainFile = ./rust-toolchain.toml;
+  };
+
+  languages.r = {
+    enable = true;
+    package = (
+      pkgs.rWrapper.override {
+        packages = with pkgs.rPackages; [
+          curl
+          digest
+          filelock
+          jsonlite
+          pkgload
+          evaluate
+          knitr
+          rmarkdown
+          testthat
+          devtools
+        ];
+      }
+    );
   };
 
   enterTest = ''
