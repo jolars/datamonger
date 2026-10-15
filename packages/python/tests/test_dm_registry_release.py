@@ -74,10 +74,24 @@ def test_prepare_is_deterministic_and_preserves_historical_releases(
     previous = json.loads(
         (registry_root / "registry/releases/2026.09/index.json").read_bytes()
     )
-    assert json.loads((directory / "index.json").read_bytes()) == {
-        **previous,
-        "release": "1.1.0",
-    }
+    index = json.loads((directory / "index.json").read_bytes())
+    collection = yaml.safe_load(
+        (registry_root / "registry/collection.yaml").read_text()
+    )
+    assert index["schema_version"] == previous["schema_version"]
+    assert index["release"] == "1.1.0"
+    for key, records in (
+        ("defaults", collection["defaults"]),
+        (
+            "datasets",
+            [
+                yaml.safe_load((registry_root / path).read_text())
+                for path in collection["manifests"]
+            ],
+        ),
+    ):
+        assert len(index[key]) == len(records)
+        assert all(record in index[key] for record in records)
     assert (registry_root / "registry/latest.json").read_bytes() == (
         directory / "selector.json"
     ).read_bytes()

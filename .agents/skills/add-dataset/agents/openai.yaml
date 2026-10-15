@@ -1,0 +1,3 @@
+interface:
+  display_name: "Add Datamonger Dataset"
+  short_description: "Add and verify a dataset in the Datamonger registry"

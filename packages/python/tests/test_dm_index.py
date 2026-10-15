@@ -153,7 +153,8 @@ def test_candidate_release_preserves_its_curated_snapshot() -> None:
     release = dm_index.load_yaml(release_path)
     snapshot = json.loads((release_path.parent / "index.json").read_bytes())
     manifest_paths = sorted(
-        f"registry/datasets/{record['source']}/{record['name']}-{record['version']}.yaml"
+        f"registry/datasets/{record['source']}/"
+        f"{record['name']}-{record['version']}.yaml"
         for record in snapshot["datasets"]
     )
     manifests = [dm_index.load_yaml(ROOT / path) for path in manifest_paths]
