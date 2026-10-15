@@ -2,9 +2,7 @@
   if (is.null(registry)) active_registry() else registry
 }
 
-.selected_cache_dir <- function(cache_dir) {
-  datamonger_cache_dir(cache_dir)
-}
+.selected_cache_dir <- function(cache_dir) datamonger_cache_dir(cache_dir)
 
 .dataset_artifacts <- function(dataset) {
   artifacts <- .require_array(dataset$artifacts, "dataset artifacts")
@@ -24,14 +22,22 @@
     }
     .dm_abort(
       "datamonger_artifact_selection",
-      paste0("artifact name is required; available artifacts: ", paste(names, collapse = ", "))
+      paste0(
+        "artifact name is required; available artifacts: ",
+        paste(names, collapse = ", ")
+      )
     )
   }
   match <- which(names == artifact)
   if (length(match) != 1L) {
     .dm_abort(
       "datamonger_artifact_selection",
-      paste0("unknown artifact '", artifact, "'; available artifacts: ", paste(names, collapse = ", "))
+      paste0(
+        "unknown artifact '",
+        artifact,
+        "'; available artifacts: ",
+        paste(names, collapse = ", ")
+      )
     )
   }
   artifacts[[match]]
@@ -42,13 +48,19 @@
   if (!identical(sort(names(inputs)), sort(roles))) {
     .abort_category(
       "unsupported-registry",
-      paste0("representation inputs must be exactly: ", paste(roles, collapse = ", "))
+      paste0(
+        "representation inputs must be exactly: ",
+        paste(roles, collapse = ", ")
+      )
     )
   }
   artifacts <- .dataset_artifacts(dataset)
   artifact_names <- vapply(artifacts, `[[`, character(1), "name")
   lapply(roles, function(role) {
-    name <- .require_string(inputs[[role]], paste0("representation input ", role))
+    name <- .require_string(
+      inputs[[role]],
+      paste0("representation input ", role)
+    )
     match <- which(artifact_names == name)
     if (length(match) != 1L) {
       .abort_category(
@@ -62,7 +74,10 @@
 
 .artifact_locations <- function(artifact) {
   name <- .require_string(artifact$name, "artifact name")
-  distribution <- .require_string(artifact$distribution, "artifact distribution")
+  distribution <- .require_string(
+    artifact$distribution,
+    "artifact distribution"
+  )
   if (identical(distribution, "metadata-only")) {
     .abort_category(
       "artifact-unavailable",
@@ -77,20 +92,33 @@
   }
   downloads <- .require_array(artifact$downloads, "artifact downloads")
   if (!length(downloads)) {
-    .abort_category("unsupported-registry", "artifact has no retrieval locations")
+    .abort_category(
+      "unsupported-registry",
+      "artifact has no retrieval locations"
+    )
   }
-  vapply(downloads, function(download) {
-    .require_object(download, "artifact download")
-    kind <- .require_string(download$kind, "artifact download kind")
-    if (!(kind %in% c("mirror", "upstream"))) {
-      .abort_category("unsupported-registry", "unsupported artifact download kind")
-    }
-    url <- .require_string(download$url, "artifact download URL")
-    if (!.is_http_url(url)) {
-      .abort_category("unsupported-registry", "artifact download URL is invalid")
-    }
-    url
-  }, character(1))
+  vapply(
+    downloads,
+    function(download) {
+      .require_object(download, "artifact download")
+      kind <- .require_string(download$kind, "artifact download kind")
+      if (!(kind %in% c("mirror", "upstream"))) {
+        .abort_category(
+          "unsupported-registry",
+          "unsupported artifact download kind"
+        )
+      }
+      url <- .require_string(download$url, "artifact download URL")
+      if (!.is_http_url(url)) {
+        .abort_category(
+          "unsupported-registry",
+          "artifact download URL is invalid"
+        )
+      }
+      url
+    },
+    character(1)
+  )
 }
 
 .retrieve_artifact <- function(artifact, cache_dir, offline) {
@@ -118,23 +146,25 @@
 #' @param source Dataset source. Required for bare names; omit it for qualified
 #'   references, even if the values would agree.
 #' @param version Exact dataset version. Omit it when the reference embeds a
-#'   version, even if the values would agree. If neither form supplies a version,
-#'   resolve the registry default.
+#'   version, even if the values would agree. If neither form supplies a
+#'   version, resolve the registry default.
 #' @param artifact Artifact name. It may be omitted for a single-artifact
 #'   dataset.
 #' @param registry Strong registry selector, or `NULL` for the active selector.
-#' @param cache_dir Explicit cache directory, or `NULL` for the platform default.
+#' @param cache_dir Explicit cache directory, or `NULL` for the platform
+#'   default.
 #' @param offline If `TRUE`, use verified cached bytes without network access.
 #' @return The path to verified artifact bytes in the R client's private cache.
 #' @export
 fetch_artifact <- function(
-    name,
-    source = NULL,
-    version = NULL,
-    artifact = NULL,
-    registry = NULL,
-    cache_dir = NULL,
-    offline = FALSE) {
+  name,
+  source = NULL,
+  version = NULL,
+  artifact = NULL,
+  registry = NULL,
+  cache_dir = NULL,
+  offline = FALSE
+) {
   reference <- .parse_dataset_reference(name, source, version)
   source <- reference$source
   name <- reference$name
@@ -143,17 +173,30 @@ fetch_artifact <- function(
   registry <- .selected_registry(registry)
   index <- .load_registry(registry, cache_dir, offline)
   dataset <- .resolve_dataset(index, source, name, version)
-  leased <- .retrieve_artifact(.select_artifact(dataset, artifact), cache_dir, offline)
+  leased <- .retrieve_artifact(
+    .select_artifact(dataset, artifact),
+    cache_dir,
+    offline
+  )
   .release_lock(leased$lease)
   leased$path
 }
 
 .data_info <- function(dataset, registry) {
-  representation <- .require_object(dataset$representation, "dataset representation")
+  representation <- .require_object(
+    dataset$representation,
+    "dataset representation"
+  )
   expect <- .require_object(representation$expect, "representation expectation")
   structure(
     list(
-      dataset_id = paste0(dataset$source, ":", dataset$name, "@", dataset$version),
+      dataset_id = paste0(
+        dataset$source,
+        ":",
+        dataset$name,
+        "@",
+        dataset$version
+      ),
       source = .require_string(dataset$source, "dataset source"),
       name = .require_string(dataset$name, "dataset name"),
       version = .require_string(dataset$version, "dataset version"),
@@ -166,8 +209,14 @@ fetch_artifact <- function(
       license = .require_object(dataset$license, "dataset license"),
       artifacts = .dataset_artifacts(dataset),
       representation = representation,
-      expected_components = .require_array(expect$components, "expected components"),
-      verification_records = .require_array(expect$verification, "verification records"),
+      expected_components = .require_array(
+        expect$components,
+        "expected components"
+      ),
+      verification_records = .require_array(
+        expect$verification,
+        "verification records"
+      ),
       related = dataset$related %||% list(),
       tasks = dataset$tasks %||% list()
     ),
@@ -178,16 +227,18 @@ fetch_artifact <- function(
 #' Inspect one registered dataset without retrieving artifacts
 #'
 #' @inheritParams fetch_artifact
-#' @return A `datamonger_data_info` record with identity, provenance, license,
-#'   representation, task, and verification metadata.
+#' @return
+#' A `datamonger_data_info` record with identity, provenance, license,
+#' representation, task, and verification metadata.
 #' @export
 data_info <- function(
-    name,
-    source = NULL,
-    version = NULL,
-    registry = NULL,
-    cache_dir = NULL,
-    offline = FALSE) {
+  name,
+  source = NULL,
+  version = NULL,
+  registry = NULL,
+  cache_dir = NULL,
+  offline = FALSE
+) {
   reference <- .parse_dataset_reference(name, source, version)
   source <- reference$source
   name <- reference$name
@@ -201,7 +252,8 @@ data_info <- function(
 #' List dataset versions in the selected registry
 #'
 #' @param registry Strong registry selector, or `NULL` for the active selector.
-#' @param cache_dir Explicit cache directory, or `NULL` for the platform default.
+#' @param cache_dir Explicit cache directory, or `NULL` for the platform
+#'   default.
 #' @param offline If `TRUE`, use a bundled or verified cached registry only.
 #' @return A list of `datamonger_data_info` records.
 #' @export
@@ -218,13 +270,21 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
 }
 
 .component_matches <- function(component, expectation) {
-  if (!identical(component$kind, expectation$kind) ||
+  if (
+    !identical(component$kind, expectation$kind) ||
       !identical(component$name, expectation$name) ||
-      !identical(component$logical_type, expectation$type %||% component$logical_type)) {
+      !identical(
+        component$logical_type,
+        expectation$type %||% component$logical_type
+      )
+  ) {
     return(FALSE)
   }
   if (identical(component$kind, "vector")) {
-    return(identical(as.numeric(length(component$values)), as.numeric(expectation$length)))
+    return(identical(
+      as.numeric(length(component$values)),
+      as.numeric(expectation$length)
+    ))
   }
   identical(as.numeric(component$rows), as.numeric(expectation$rows)) &&
     identical(as.numeric(component$columns), as.numeric(expectation$columns))
@@ -235,7 +295,12 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
   if (length(components) != length(expected)) {
     .abort_category(
       "decoded-integrity",
-      paste0("expected ", length(expected), " components, decoded ", length(components))
+      paste0(
+        "expected ",
+        length(expected),
+        " components, decoded ",
+        length(components)
+      )
     )
   }
   for (index in seq_along(components)) {
@@ -243,7 +308,11 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
     if (!.component_matches(components[[index]], expectation)) {
       .abort_category(
         "decoded-integrity",
-        paste0("decoded component '", components[[index]]$name, "' does not match its expectation")
+        paste0(
+          "decoded component '",
+          components[[index]]$name,
+          "' does not match its expectation"
+        )
       )
     }
   }
@@ -261,8 +330,10 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
   revoked <- list()
   for (erratum in errata) {
     .require_object(erratum, "registry erratum")
-    if (.json_equal(erratum$dataset, identity) &&
-        identical(erratum$target$kind, "verification")) {
+    if (
+      .json_equal(erratum$dataset, identity) &&
+        identical(erratum$target$kind, "verification")
+    ) {
       revoked[[length(revoked) + 1L]] <- erratum$original
     }
   }
@@ -270,34 +341,59 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
   for (index in rev(seq_along(records))) {
     record <- .require_object(records[[index]], "verification record")
     is_revoked <- any(vapply(revoked, .json_equal, logical(1), record))
-    if (identical(record$canonical_form, 1L) &&
-        identical(record$algorithm, "sha256") && !is_revoked) {
+    if (
+      identical(record$canonical_form, 1L) &&
+        identical(record$algorithm, "sha256") &&
+        !is_revoked
+    ) {
       return(record)
     }
   }
-  .abort_category("unsupported-decoder", "no supported decoded-verification record")
+  .abort_category(
+    "unsupported-decoder",
+    "no supported decoded-verification record"
+  )
 }
 
 .validate_representation <- function(dataset) {
-  representation <- .require_object(dataset$representation, "dataset representation")
+  representation <- .require_object(
+    dataset$representation,
+    "dataset representation"
+  )
   decoder <- representation$decoder
-  if (!identical(representation$decoder_version, 1L) ||
-      !(decoder %in% c("delimited-text", "libsvm", "libsvm-split"))) {
+  if (
+    !identical(representation$decoder_version, 1L) ||
+      !(decoder %in% c("delimited-text", "libsvm", "libsvm-split"))
+  ) {
     .abort_category(
       "unsupported-decoder",
       "R supports delimited-text, LIBSVM, and LIBSVM split version 1"
     )
   }
-  roles <- if (identical(decoder, "libsvm-split")) c("train", "test") else "data"
+  roles <- if (identical(decoder, "libsvm-split")) {
+    c("train", "test")
+  } else {
+    "data"
+  }
   artifacts <- .representation_artifacts(dataset, representation, roles)
   options <- .require_object(representation$options, "representation options")
-  compressions <- vapply(artifacts, function(artifact) {
-    compression <- .require_string(artifact$compression, "artifact compression")
-    if (!(compression %in% c("none", "gzip", "bzip2"))) {
-      .abort_category("unsupported-decoder", "unsupported artifact compression")
-    }
-    compression
-  }, character(1))
+  compressions <- vapply(
+    artifacts,
+    function(artifact) {
+      compression <- .require_string(
+        artifact$compression,
+        "artifact compression"
+      )
+      if (!(compression %in% c("none", "gzip", "bzip2"))) {
+        .abort_category(
+          "unsupported-decoder",
+          "unsupported artifact compression"
+        )
+      }
+      compression
+    },
+    character(1)
+  )
   formats <- vapply(
     artifacts,
     function(artifact) .require_string(artifact$format, "artifact format"),
@@ -305,14 +401,23 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
   )
   if (identical(decoder, "delimited-text")) {
     if (!(formats[[1]] %in% c("csv", "tsv"))) {
-      .abort_category("unsupported-decoder", "delimited-text requires CSV or TSV")
+      .abort_category(
+        "unsupported-decoder",
+        "delimited-text requires CSV or TSV"
+      )
     }
     expected_delimiter <- if (identical(formats[[1]], "csv")) "," else "\t"
     if (!identical(options$delimiter, expected_delimiter)) {
-      .abort_category("unsupported-decoder", "artifact format and delimiter disagree")
+      .abort_category(
+        "unsupported-decoder",
+        "artifact format and delimiter disagree"
+      )
     }
   } else if (any(!(formats %in% c("libsvm", "svmlight")))) {
-    .abort_category("unsupported-decoder", "LIBSVM decoder requires LIBSVM or SVMLight")
+    .abort_category(
+      "unsupported-decoder",
+      "LIBSVM decoder requires LIBSVM or SVMLight"
+    )
   }
   list(
     representation = representation,
@@ -329,19 +434,21 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
 #' @param verify_decoded Whether to verify expected shape and the canonical
 #'   logical digest. Artifact verification cannot be disabled.
 #' @param return_info Whether to return reproducibility metadata with the data.
-#' @return An R data frame, `datamonger_sparse_dataset`, or
-#'   `datamonger_sparse_dataset_split`. With `return_info = TRUE`, returns a
-#'   `datamonger_fetch_result` containing `data` and `info`.
+#' @return
+#' An R data frame, `datamonger_sparse_dataset`, or
+#' `datamonger_sparse_dataset_split`. With `return_info = TRUE`, returns a
+#' `datamonger_fetch_result` containing `data` and `info`.
 #' @export
 fetch_data <- function(
-    name,
-    source = NULL,
-    version = NULL,
-    registry = NULL,
-    cache_dir = NULL,
-    offline = FALSE,
-    verify_decoded = TRUE,
-    return_info = FALSE) {
+  name,
+  source = NULL,
+  version = NULL,
+  registry = NULL,
+  cache_dir = NULL,
+  offline = FALSE,
+  verify_decoded = TRUE,
+  return_info = FALSE
+) {
   reference <- .parse_dataset_reference(name, source, version)
   source <- reference$source
   name <- reference$name
@@ -359,9 +466,14 @@ fetch_data <- function(
   setup <- .validate_representation(dataset)
 
   leased <- list()
-  on.exit({
-    for (object in leased) .release_lock(object$lease)
-  }, add = TRUE)
+  on.exit(
+    {
+      for (object in leased) {
+        .release_lock(object$lease)
+      }
+    },
+    add = TRUE
+  )
   for (artifact in setup$artifacts) {
     leased[[length(leased) + 1L]] <- .retrieve_artifact(
       artifact,
@@ -373,11 +485,11 @@ fetch_data <- function(
   decoded <- switch(
     setup$decoder,
     `delimited-text` = .decode_delimited(
-      paths[[1]], setup$options, setup$compressions[[1]]
+      paths[[1]],
+      setup$options,
+      setup$compressions[[1]]
     ),
-    libsvm = .decode_libsvm(
-      paths[[1]], setup$options, setup$compressions[[1]]
-    ),
+    libsvm = .decode_libsvm(paths[[1]], setup$options, setup$compressions[[1]]),
     `libsvm-split` = .decode_libsvm_split(
       paths[[1]],
       paths[[2]],
@@ -391,7 +503,10 @@ fetch_data <- function(
   canonical_form <- NULL
   canonical_digest <- NULL
   if (isTRUE(verify_decoded)) {
-    expect <- .require_object(setup$representation$expect, "representation expectation")
+    expect <- .require_object(
+      setup$representation$expect,
+      "representation expectation"
+    )
     .validate_components(decoded$components, expect$components)
     record <- .verification_record(index, dataset, expect)
     canonical_form <- record$canonical_form
@@ -401,8 +516,10 @@ fetch_data <- function(
       .abort_category(
         "decoded-integrity",
         paste0(
-          "decoded SHA-256 mismatch: expected ", expected_digest,
-          ", received ", canonical_digest
+          "decoded SHA-256 mismatch: expected ",
+          expected_digest,
+          ", received ",
+          canonical_digest
         )
       )
     }

@@ -4,7 +4,10 @@
   if (!(namespace %in% .cache_namespaces)) {
     .abort_category("cache", paste0("unsupported cache namespace ", namespace))
   }
-  if (!.is_scalar_character(digest) || !grepl(.sha256_pattern, digest, perl = TRUE)) {
+  if (
+    !.is_scalar_character(digest) ||
+      !grepl(.sha256_pattern, digest, perl = TRUE)
+  ) {
     .abort_category("cache", "invalid cache SHA-256 digest")
   }
   file.path(cache_dir, namespace, "sha256", digest)
@@ -12,13 +15,7 @@
 
 .lease_path <- function(cache_dir, namespace, digest, publication = FALSE) {
   suffix <- if (publication) ".publish.lock" else ".lock"
-  file.path(
-    cache_dir,
-    ".leases",
-    namespace,
-    "sha256",
-    paste0(digest, suffix)
-  )
+  file.path(cache_dir, ".leases", namespace, "sha256", paste0(digest, suffix))
 }
 
 .create_directory <- function(path) {
@@ -41,8 +38,10 @@
     filelock::lock(path, exclusive = exclusive, timeout = timeout),
     error = function(error) {
       message <- conditionMessage(error)
-      if (identical(timeout, 0) &&
-          grepl("already has|timed? out|timeout", message, ignore.case = TRUE)) {
+      if (
+        identical(timeout, 0) &&
+          grepl("already has|timed? out|timeout", message, ignore.case = TRUE)
+      ) {
         return(NULL)
       }
       .abort_category(
@@ -79,7 +78,12 @@
     error = function(error) {
       .abort_category(
         "cache",
-        paste0("cannot inspect cached object ", path, ": ", conditionMessage(error))
+        paste0(
+          "cannot inspect cached object ",
+          path,
+          ": ",
+          conditionMessage(error)
+        )
       )
     }
   )
@@ -88,8 +92,10 @@
 }
 
 .decode_http_gzip <- function(contents, url) {
-  if (length(contents) < 18L ||
-      !identical(contents[1:3], as.raw(c(0x1f, 0x8b, 0x08)))) {
+  if (
+    length(contents) < 18L ||
+      !identical(contents[1:3], as.raw(c(0x1f, 0x8b, 0x08)))
+  ) {
     .dm_abort(
       "datamonger_retrieval_exhausted",
       paste0("malformed gzip content coding from ", url)
@@ -108,7 +114,9 @@
       .dm_abort(
         "datamonger_retrieval_exhausted",
         paste0(
-          "malformed gzip content coding from ", url, ": ",
+          "malformed gzip content coding from ",
+          url,
+          ": ",
           conditionMessage(error)
         )
       )
@@ -125,14 +133,20 @@
   }
   lines <- strsplit(tail(blocks, 1L), "\r\n", fixed = TRUE)[[1]]
   if (!grepl("^HTTP/[0-9.]+ [0-9]{3}(?: |$)", lines[[1]], perl = TRUE)) {
-    .dm_abort("datamonger_retrieval_exhausted", "malformed HTTP response headers")
+    .dm_abort(
+      "datamonger_retrieval_exhausted",
+      "malformed HTTP response headers"
+    )
   }
   result <- list()
   for (line in lines[-1L]) {
     match <- regexec("^([^:[:space:]]+):[[:space:]]*(.*)$", line, perl = TRUE)
     fields <- regmatches(line, match)[[1]]
     if (length(fields) != 3L) {
-      .dm_abort("datamonger_retrieval_exhausted", "malformed HTTP response header")
+      .dm_abort(
+        "datamonger_retrieval_exhausted",
+        "malformed HTTP response header"
+      )
     }
     name <- tolower(fields[[2]])
     result[[name]] <- c(result[[name]], fields[[3]])
@@ -214,8 +228,11 @@
   .validate_transport_headers(headers, encoded_size, url)
   codings <- tolower(.header_tokens(headers, "content-encoding"))
   non_identity <- codings[codings != "identity"]
-  if (any(!nzchar(codings)) || length(non_identity) > 1L ||
-      (length(non_identity) && !(non_identity %in% c("gzip", "x-gzip")))) {
+  if (
+    any(!nzchar(codings)) ||
+      length(non_identity) > 1L ||
+      (length(non_identity) && !(non_identity %in% c("gzip", "x-gzip")))
+  ) {
     .dm_abort(
       "datamonger_retrieval_exhausted",
       paste0("unsupported HTTP content coding from ", url)
@@ -229,9 +246,10 @@
 }
 
 .retrieve_url_raw <- function(
-    url,
-    require_https = FALSE,
-    class = "datamonger_registry_retrieval") {
+  url,
+  require_https = FALSE,
+  class = "datamonger_registry_retrieval"
+) {
   path <- tempfile("datamonger-http-")
   on.exit(unlink(path), add = TRUE)
   tryCatch(
@@ -245,18 +263,22 @@
 
 .discard_cache_object <- function(path) {
   if (file.exists(path) && !isTRUE(unlink(path) == 0L)) {
-    .abort_category("cache", paste0("cannot discard invalid cache object ", path))
+    .abort_category(
+      "cache",
+      paste0("cannot discard invalid cache object ", path)
+    )
   }
 }
 
 .publish_download <- function(
-    cache_dir,
-    namespace,
-    digest,
-    size,
-    urls,
-    integrity_class,
-    retrieval_class) {
+  cache_dir,
+  namespace,
+  digest,
+  size,
+  urls,
+  integrity_class,
+  retrieval_class
+) {
   target <- .cache_path(cache_dir, namespace, digest)
   .create_directory(dirname(target))
   failures <- character()
@@ -270,11 +292,15 @@
         .download_url_to_file(url, temporary)
         actual_size <- file.info(temporary)$size
         actual_digest <- .sha256_file(temporary)
-        if ((!is.null(size) && actual_size != size) ||
-            !identical(actual_digest, digest)) {
+        if (
+          (!is.null(size) && actual_size != size) ||
+            !identical(actual_digest, digest)
+        ) {
           integrity_failure <- TRUE
           stop(structure(
-            list(message = paste0("artifact bytes from ", url, " failed integrity")),
+            list(
+              message = paste0("artifact bytes from ", url, " failed integrity")
+            ),
             class = c("datamonger_location_failure", "error", "condition")
           ))
         }
@@ -287,7 +313,10 @@
         if (!.matches_cache_object(target, digest, size)) {
           .discard_cache_object(target)
           if (!file.rename(temporary, target)) {
-            .abort_category("cache", paste0("cannot publish cache object ", target))
+            .abort_category(
+              "cache",
+              paste0("cannot publish cache object ", target)
+            )
           }
         }
         .release_lock(publication)
@@ -310,21 +339,25 @@
   class <- if (integrity_failure) integrity_class else retrieval_class
   .dm_abort(
     class,
-    paste0("all retrieval locations failed: ", paste(failures, collapse = "; ")),
+    paste0(
+      "all retrieval locations failed: ",
+      paste(failures, collapse = "; ")
+    ),
     locations = urls
   )
 }
 
 .retrieve_cached_object <- function(
-    cache_dir,
-    namespace,
-    digest,
-    size,
-    urls,
-    offline,
-    integrity_class,
-    offline_class,
-    retrieval_class) {
+  cache_dir,
+  namespace,
+  digest,
+  size,
+  urls,
+  offline,
+  integrity_class,
+  offline_class,
+  retrieval_class
+) {
   target <- .cache_path(cache_dir, namespace, digest)
   lease <- .acquire_lock(
     .lease_path(cache_dir, namespace, digest),

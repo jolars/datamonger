@@ -1,6 +1,9 @@
 .pack_unsigned <- function(value, bytes) {
   if (!.is_exact_number(value) || value >= 256^bytes) {
-    .abort_category("decoded-integrity", "canonical framing integer is out of range")
+    .abort_category(
+      "decoded-integrity",
+      "canonical framing integer is out of range"
+    )
   }
   result <- raw(bytes)
   remaining <- value
@@ -18,7 +21,10 @@
 .pack_int64 <- function(value) {
   normalized <- .normalize_int64(as.character(value), allow_plus = TRUE)
   if (is.null(normalized)) {
-    .abort_category("decoded-integrity", "canonical int64 value is out of range")
+    .abort_category(
+      "decoded-integrity",
+      "canonical int64 value is out of range"
+    )
   }
   negative <- startsWith(normalized, "-")
   digits <- strtoi(strsplit(sub("^-", "", normalized), "", fixed = TRUE)[[1]])
@@ -31,7 +37,10 @@
       carry <- current %/% 256L
     }
     if (carry != 0L) {
-      .abort_category("decoded-integrity", "canonical int64 value is out of range")
+      .abort_category(
+        "decoded-integrity",
+        "canonical int64 value is out of range"
+      )
     }
   }
   if (negative) {
@@ -51,7 +60,10 @@
   for (index in which(values)) {
     byte <- (index - 1L) %/% 8L + 1L
     bit <- (index - 1L) %% 8L
-    result[[byte]] <- as.raw(bitwOr(as.integer(result[[byte]]), bitwShiftL(1L, bit)))
+    result[[byte]] <- as.raw(bitwOr(
+      as.integer(result[[byte]]),
+      bitwShiftL(1L, bit)
+    ))
   }
   result
 }
@@ -74,7 +86,10 @@
 
 .utf8_bytes <- function(value) {
   if (!.is_scalar_character(value)) {
-    .abort_category("decoded-integrity", "canonical string must be a scalar string")
+    .abort_category(
+      "decoded-integrity",
+      "canonical string must be a scalar string"
+    )
   }
   converted <- iconv(value, from = "UTF-8", to = "UTF-8", sub = NA_character_)
   if (is.na(converted)) {
@@ -87,22 +102,25 @@
   values <- component$values
   type <- component$logical_type
   if (length(values) != length(valid)) {
-    .abort_category("decoded-integrity", "component values and validity disagree")
+    .abort_category(
+      "decoded-integrity",
+      "component values and validity disagree"
+    )
   }
   if (identical(type, "bool")) {
     return(.bitmap(as.logical(values) & valid))
   }
   parts <- lapply(seq_along(values), function(index) {
     switch(
-        type,
-        float64 = .float_bytes(values[[index]], valid[[index]]),
-        int64 = .pack_int64(if (valid[[index]]) values[[index]] else "0"),
-        string = {
-          bytes <- if (valid[[index]]) .utf8_bytes(values[[index]]) else raw()
-          c(.pack_u64(length(bytes)), bytes)
-        },
-        .abort_category("decoded-integrity", "unsupported canonical logical type")
-      )
+      type,
+      float64 = .float_bytes(values[[index]], valid[[index]]),
+      int64 = .pack_int64(if (valid[[index]]) values[[index]] else "0"),
+      string = {
+        bytes <- if (valid[[index]]) .utf8_bytes(values[[index]]) else raw()
+        c(.pack_u64(length(bytes)), bytes)
+      },
+      .abort_category("decoded-integrity", "unsupported canonical logical type")
+    )
   })
   unlist(parts, use.names = FALSE)
 }
@@ -143,7 +161,10 @@
   if (identical(component$kind, "dense_matrix")) {
     valid <- component$valid
     if (length(component$values) != component$rows * component$columns) {
-      .abort_category("decoded-integrity", "dense dimensions and values disagree")
+      .abort_category(
+        "decoded-integrity",
+        "dense dimensions and values disagree"
+      )
     }
     return(c(
       common,
@@ -160,20 +181,26 @@
   offsets <- component$row_offsets
   indices <- component$column_indices
   values <- component$values
-  if (length(offsets) != component$rows + 1L ||
-      !length(offsets) || offsets[[1]] != 0 ||
+  if (
+    length(offsets) != component$rows + 1L ||
+      !length(offsets) ||
+      offsets[[1]] != 0 ||
       tail(offsets, 1L) != length(values) ||
       length(indices) != length(values) ||
       any(diff(offsets) < 0) ||
       any(indices < 0 | indices >= component$columns) ||
-      any(is.infinite(values) | (!is.nan(values) & values == 0))) {
+      any(is.infinite(values) | (!is.nan(values) & values == 0))
+  ) {
     .abort_category("decoded-integrity", "invalid canonical sparse matrix")
   }
   for (row in seq_len(component$rows)) {
     start <- offsets[[row]] + 1L
     end <- offsets[[row + 1L]]
     if (end >= start && any(diff(indices[start:end]) <= 0)) {
-      .abort_category("decoded-integrity", "sparse indices must increase within rows")
+      .abort_category(
+        "decoded-integrity",
+        "sparse indices must increase within rows"
+      )
     }
   }
   c(
@@ -193,7 +220,10 @@
 .canonical_bytes <- function(components) {
   names <- vapply(components, `[[`, character(1), "name")
   if (any(!nzchar(names)) || anyDuplicated(names)) {
-    .abort_category("decoded-integrity", "component names must be nonempty and unique")
+    .abort_category(
+      "decoded-integrity",
+      "component names must be nonempty and unique"
+    )
   }
   c(
     charToRaw("DMCF"),
@@ -209,8 +239,12 @@
 
 .descriptor_value <- function(value) {
   if (.is_scalar_character(value)) {
-    if (identical(value, "-zero")) return(-0)
-    if (identical(value, "nan")) return(NaN)
+    if (identical(value, "-zero")) {
+      return(-0)
+    }
+    if (identical(value, "nan")) {
+      return(NaN)
+    }
     if (identical(value, "invalid")) return(0)
   }
   value

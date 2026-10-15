@@ -40,10 +40,7 @@
 }
 
 .dm_abort <- function(class, message, ..., call = NULL) {
-  condition <- c(
-    list(message = message, call = call),
-    list(...)
-  )
+  condition <- c(list(message = message, call = call), list(...))
   class(condition) <- unique(c(
     class,
     .condition_parents(class),

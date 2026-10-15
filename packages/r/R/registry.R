@@ -23,12 +23,16 @@
       paste0("unsupported registry selector schema ", registry$schema_version)
     )
   }
-  if (!.is_scalar_character(registry$release) ||
-      !grepl(.release_pattern, registry$release, perl = TRUE)) {
+  if (
+    !.is_scalar_character(registry$release) ||
+      !grepl(.release_pattern, registry$release, perl = TRUE)
+  ) {
     .dm_abort("datamonger_registry", "registry release identifier is invalid")
   }
-  if (!.is_scalar_character(registry$index_sha256) ||
-      !grepl(.sha256_pattern, registry$index_sha256, perl = TRUE)) {
+  if (
+    !.is_scalar_character(registry$index_sha256) ||
+      !grepl(.sha256_pattern, registry$index_sha256, perl = TRUE)
+  ) {
     .dm_abort(
       "datamonger_registry_integrity",
       "registry SHA-256 must contain 64 lowercase hexadecimal digits"
@@ -52,10 +56,11 @@
 #' @return A `datamonger_registry` selector.
 #' @export
 registry_selector <- function(
-    release,
-    index_sha256,
-    index_url,
-    schema_version = 1L) {
+  release,
+  index_sha256,
+  index_url,
+  schema_version = 1L
+) {
   selected <- .new_registry(
     release = release,
     index_sha256 = index_sha256,
@@ -73,9 +78,11 @@ registry_selector <- function(
     description,
     "datamonger_registry"
   )
-  if (!.is_scalar_character(value$release) ||
+  if (
+    !.is_scalar_character(value$release) ||
       !.is_scalar_character(value$index_sha256) ||
-      !.is_scalar_character(value$index_url)) {
+      !.is_scalar_character(value$index_url)
+  ) {
     .dm_abort(
       "datamonger_registry",
       paste0(description, " string fields must be strings")
@@ -91,16 +98,18 @@ registry_selector <- function(
 
 #' Resolve a release through the mutable HTTPS catalog
 #'
-#' This is a TLS-trusted convenience lookup, not a cryptographic pin. Record
-#' and reuse the returned strong selector when reproducibility matters.
+#' This is a TLS-trusted convenience lookup, not a cryptographic pin. Record and
+#' reuse the returned strong selector when reproducibility matters.
 #'
 #' @param release Bare release identifier.
 #' @param catalog_url Absolute HTTPS release-catalog URL.
 #' @return A `datamonger_registry` selector.
 #' @export
 resolve_registry <- function(release, catalog_url = NULL) {
-  if (!.is_scalar_character(release) ||
-      !grepl(.release_pattern, release, perl = TRUE)) {
+  if (
+    !.is_scalar_character(release) ||
+      !grepl(.release_pattern, release, perl = TRUE)
+  ) {
     .dm_abort("datamonger_registry", "registry release identifier is invalid")
   }
   if (is.null(catalog_url)) {
@@ -269,8 +278,11 @@ active_registry <- function(project_dir = getwd()) {
     .dm_abort(
       "datamonger_registry_release",
       paste0(
-        "selected release '", registry$release,
-        "' does not match embedded release '", index$release, "'"
+        "selected release '",
+        registry$release,
+        "' does not match embedded release '",
+        index$release,
+        "'"
       )
     )
   }
@@ -293,11 +305,17 @@ active_registry <- function(project_dir = getwd()) {
       .abort_category("unknown-dataset", "invalid dataset reference")
     }
     if (!is.null(source)) {
-      stop("source must be omitted for a qualified dataset reference", call. = FALSE)
+      stop(
+        "source must be omitted for a qualified dataset reference",
+        call. = FALSE
+      )
     }
     embedded_version <- if (nzchar(matched[[4]])) matched[[4]] else NULL
     if (!is.null(embedded_version) && !is.null(version)) {
-      stop("version must be omitted when the reference includes it", call. = FALSE)
+      stop(
+        "version must be omitted when the reference includes it",
+        call. = FALSE
+      )
     }
     return(list(
       source = matched[[2]],
@@ -316,13 +334,20 @@ active_registry <- function(project_dir = getwd()) {
     grepl(.identifier_pattern, source, perl = TRUE) &&
     .is_scalar_character(name) &&
     grepl(.identifier_pattern, name, perl = TRUE) &&
-    (is.null(version) || (
-      .is_scalar_character(version) &&
-        grepl(.version_pattern, version, perl = TRUE)
-    ))
-  requested <- paste0(source, ":", name, if (!is.null(version)) paste0("@", version))
+    (is.null(version) ||
+      (.is_scalar_character(version) &&
+        grepl(.version_pattern, version, perl = TRUE)))
+  requested <- paste0(
+    source,
+    ":",
+    name,
+    if (!is.null(version)) paste0("@", version)
+  )
   if (!valid) {
-    .abort_category("unknown-dataset", paste0("invalid or unknown dataset ", requested))
+    .abort_category(
+      "unknown-dataset",
+      paste0("invalid or unknown dataset ", requested)
+    )
   }
 
   resolved_version <- version

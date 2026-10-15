@@ -44,9 +44,7 @@
   parsed
 }
 
-format.datamonger_int64 <- function(x, ...) {
-  unclass(x)
-}
+format.datamonger_int64 <- function(x, ...) unclass(x)
 
 print.datamonger_int64 <- function(x, ...) {
   print(format(x), quote = FALSE, ...)
@@ -76,13 +74,20 @@ print.datamonger_int64 <- function(x, ...) {
 }
 
 .utf8_text <- function(contents, description = "artifact") {
-  if (length(contents) >= 3L &&
-      identical(contents[seq_len(3L)], as.raw(c(0xef, 0xbb, 0xbf)))) {
-    .abort_category("decode", paste0(description, " has a UTF-8 byte-order mark"))
+  if (
+    length(contents) >= 3L &&
+      identical(contents[seq_len(3L)], as.raw(c(0xef, 0xbb, 0xbf)))
+  ) {
+    .abort_category(
+      "decode",
+      paste0(description, " has a UTF-8 byte-order mark")
+    )
   }
   text <- tryCatch(
     rawToChar(contents),
-    error = function(error) .abort_category("decode", paste0(description, " is not valid UTF-8"))
+    error = function(error) {
+      .abort_category("decode", paste0(description, " is not valid UTF-8"))
+    }
   )
   validated <- iconv(text, from = "UTF-8", to = "UTF-8", sub = NA_character_)
   if (is.na(validated)) {
@@ -126,12 +131,13 @@ print.datamonger_int64 <- function(x, ...) {
 }
 
 .sparse_component <- function(
-    name,
-    rows,
-    columns,
-    row_offsets,
-    column_indices,
-    values) {
+  name,
+  rows,
+  columns,
+  row_offsets,
+  column_indices,
+  values
+) {
   structure(
     list(
       name = name,
@@ -148,11 +154,12 @@ print.datamonger_int64 <- function(x, ...) {
 }
 
 .native_sparse_matrix <- function(
-    rows,
-    columns,
-    row_offsets,
-    column_indices,
-    values) {
+  rows,
+  columns,
+  row_offsets,
+  column_indices,
+  values
+) {
   if (rows <= .Machine$integer.max && columns <= .Machine$integer.max) {
     return(Matrix::sparseMatrix(
       i = rep(seq_len(rows), diff(row_offsets)),
@@ -175,9 +182,7 @@ print.datamonger_int64 <- function(x, ...) {
   )
 }
 
-dim.datamonger_csr_matrix <- function(x) {
-  c(x$rows, x$columns)
-}
+dim.datamonger_csr_matrix <- function(x) c(x$rows, x$columns)
 
 print.datamonger_csr_matrix <- function(x, ...) {
   cat(

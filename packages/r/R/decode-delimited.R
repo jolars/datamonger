@@ -40,8 +40,10 @@
       )
     }
   }
-  if (!.is_scalar_character(options$delimiter) ||
-      !(options$delimiter %in% c(",", "\t"))) {
+  if (
+    !.is_scalar_character(options$delimiter) ||
+      !(options$delimiter %in% c(",", "\t"))
+  ) {
     .abort_category("unsupported-decoder", "unsupported delimiter")
   }
   missing_values <- options$missing_values %||% list()
@@ -50,8 +52,10 @@
     "missing_values",
     "datamonger_unsupported_decoder"
   )
-  if (any(!vapply(missing_values, .is_scalar_character, logical(1))) ||
-      anyDuplicated(unlist(missing_values, use.names = FALSE))) {
+  if (
+    any(!vapply(missing_values, .is_scalar_character, logical(1))) ||
+      anyDuplicated(unlist(missing_values, use.names = FALSE))
+  ) {
     .abort_category(
       "unsupported-decoder",
       "missing values must be unique strings"
@@ -69,9 +73,12 @@
       "column",
       "datamonger_unsupported_decoder"
     )
-    if (!.is_scalar_character(column$name) || !nzchar(column$name) ||
+    if (
+      !.is_scalar_character(column$name) ||
+        !nzchar(column$name) ||
         !.is_scalar_character(column$type) ||
-        !(column$type %in% c("float64", "int64", "string", "bool"))) {
+        !(column$type %in% c("float64", "int64", "string", "bool"))
+    ) {
       .abort_category("unsupported-decoder", "column name or type is invalid")
     }
     column
@@ -90,20 +97,18 @@
   )
 }
 
-`%||%` <- function(left, right) {
-  if (is.null(left)) right else left
-}
+`%||%` <- function(left, right) if (is.null(left)) right else left
 
-.raw_field_text <- function(bytes) {
-  .utf8_text(as.raw(bytes), "delimited field")
-}
+.raw_field_text <- function(bytes) .utf8_text(as.raw(bytes), "delimited field")
 
 .parse_delimited_records <- function(contents, delimiter) {
   if (!length(contents)) {
     .abort_category("decode", "delimited artifact is empty")
   }
-  if (length(contents) >= 3L &&
-      identical(contents[seq_len(3L)], as.raw(c(0xef, 0xbb, 0xbf)))) {
+  if (
+    length(contents) >= 3L &&
+      identical(contents[seq_len(3L)], as.raw(c(0xef, 0xbb, 0xbf)))
+  ) {
     .abort_category("decode", "delimited artifact has a UTF-8 byte-order mark")
   }
   delimiter_byte <- as.integer(charToRaw(delimiter))
@@ -147,8 +152,10 @@
       next
     }
 
-    if (identical(state, "after_quote") &&
-        !(byte %in% c(delimiter_byte, 10L, 13L))) {
+    if (
+      identical(state, "after_quote") &&
+        !(byte %in% c(delimiter_byte, 10L, 13L))
+    ) {
       .abort_category("decode", "closing quote has a trailing suffix")
     }
     if (byte == quote_byte) {
@@ -189,8 +196,12 @@
     return(value)
   }
   if (identical(type, "bool")) {
-    if (identical(value, "true")) return(TRUE)
-    if (identical(value, "false")) return(FALSE)
+    if (identical(value, "true")) {
+      return(TRUE)
+    }
+    if (identical(value, "false")) {
+      return(FALSE)
+    }
     .abort_category(
       "decode",
       paste0("invalid bool at row ", row, ", column '", column, "'")
@@ -241,11 +252,7 @@
   data_columns <- vector("list", length(validated$columns))
   for (column_index in seq_along(validated$columns)) {
     column <- validated$columns[[column_index]]
-    raw_values <- vapply(
-      rows,
-      function(row) row[[column_index]],
-      character(1)
-    )
+    raw_values <- vapply(rows, function(row) row[[column_index]], character(1))
     valid <- !(raw_values %in% validated$missing_values)
     values <- switch(
       column$type,

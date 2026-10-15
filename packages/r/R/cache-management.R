@@ -17,14 +17,20 @@
     .parse_json_raw(contents, "cached registry"),
     error = function(error) NULL
   )
-  if (is.null(parsed) || !.is_object(parsed) || !identical(parsed$schema_version, 1L)) {
+  if (
+    is.null(parsed) ||
+      !.is_object(parsed) ||
+      !identical(parsed$schema_version, 1L)
+  ) {
     return(list(release = NULL, references = list()))
   }
   references <- list()
   datasets <- parsed$datasets
   if (is.list(datasets) && is.null(names(datasets))) {
     for (dataset in datasets) {
-      if (!.is_object(dataset) || !is.list(dataset$artifacts)) next
+      if (!.is_object(dataset) || !is.list(dataset$artifacts)) {
+        next
+      }
       id <- paste0(dataset$source, ":", dataset$name, "@", dataset$version)
       for (artifact in dataset$artifacts) {
         digest <- artifact$sha256
@@ -51,7 +57,9 @@
     exclusive = FALSE
   )
   on.exit(.release_lock(lease), add = TRUE)
-  if (!file.exists(path)) return(NULL)
+  if (!file.exists(path)) {
+    return(NULL)
+  }
   information <- file.info(path)
   contents <- if (identical(namespace, "registries")) .read_raw(path) else NULL
   actual <- .sha256_file(path)
@@ -77,7 +85,8 @@
 #' associates artifacts with dataset versions referenced by bundled and cached
 #' registry indexes.
 #'
-#' @param cache_dir Explicit cache directory, or `NULL` for the platform default.
+#' @param cache_dir Explicit cache directory, or `NULL` for the platform
+#'   default.
 #' @return A `datamonger_cache_info` record.
 #' @export
 cache_info <- function(cache_dir = NULL) {
@@ -87,7 +96,9 @@ cache_info <- function(cache_dir = NULL) {
   for (namespace in .cache_namespaces) {
     for (path in .cache_files(cache_dir, namespace)) {
       entry <- .inspect_cache_entry(cache_dir, namespace, path)
-      if (is.null(entry)) next
+      if (is.null(entry)) {
+        next
+      }
       if (identical(entry$kind, "registry") && entry$valid) {
         metadata <- .registry_references(entry$contents)
         entry$registry_release <- metadata$release
@@ -99,7 +110,8 @@ cache_info <- function(cache_dir = NULL) {
   }
   for (index in seq_along(entries)) {
     if (identical(entries[[index]]$kind, "artifact")) {
-      entries[[index]]$datasets <- references[[entries[[index]]$sha256]] %||% character()
+      entries[[index]]$datasets <- references[[entries[[index]]$sha256]] %||%
+        character()
     }
   }
   if (length(entries)) {
@@ -133,19 +145,31 @@ cache_info <- function(cache_dir = NULL) {
 #'
 #' @param dataset Canonical `source:name@version` identifier, or `NULL`.
 #' @param older_than A nonnegative `difftime` or number of seconds, or `NULL`.
-#' @param cache_dir Explicit cache directory, or `NULL` for the platform default.
-#' @return A `datamonger_cache_clean_result` containing removed and skipped
-#'   entries and `bytes_removed`.
+#' @param cache_dir Explicit cache directory, or `NULL` for the platform
+#'   default.
+#' @return
+#' A `datamonger_cache_clean_result` containing removed and skipped entries and
+#' `bytes_removed`.
 #' @export
 cache_clean <- function(dataset = NULL, older_than = NULL, cache_dir = NULL) {
-  if (!is.null(dataset) &&
+  if (
+    !is.null(dataset) &&
       (!.is_scalar_character(dataset) ||
-        !grepl(paste0("^", .dataset_id_pattern, "$"), dataset, perl = TRUE))) {
-    stop("dataset must be a canonical source:name@version identifier", call. = FALSE)
+        !grepl(paste0("^", .dataset_id_pattern, "$"), dataset, perl = TRUE))
+  ) {
+    stop(
+      "dataset must be a canonical source:name@version identifier",
+      call. = FALSE
+    )
   }
   if (!is.null(older_than)) {
     seconds <- as.numeric(older_than, units = "secs")
-    if (length(seconds) != 1L || is.na(seconds) || !is.finite(seconds) || seconds < 0) {
+    if (
+      length(seconds) != 1L ||
+        is.na(seconds) ||
+        !is.finite(seconds) ||
+        seconds < 0
+    ) {
       stop("older_than must be a nonnegative duration", call. = FALSE)
     }
   } else {
@@ -157,8 +181,14 @@ cache_clean <- function(dataset = NULL, older_than = NULL, cache_dir = NULL) {
   skipped <- list()
 
   for (entry in info$entries) {
-    if (!.cache_entry_selected(entry, dataset, cutoff)) next
-    namespace <- if (identical(entry$kind, "registry")) "registries" else "objects"
+    if (!.cache_entry_selected(entry, dataset, cutoff)) {
+      next
+    }
+    namespace <- if (identical(entry$kind, "registry")) {
+      "registries"
+    } else {
+      "objects"
+    }
     lease <- .acquire_lock(
       .lease_path(info$location, namespace, entry$sha256),
       exclusive = TRUE,
@@ -176,7 +206,10 @@ cache_clean <- function(dataset = NULL, older_than = NULL, cache_dir = NULL) {
       if (.cache_entry_selected(current_entry, dataset, cutoff)) {
         if (unlink(entry$path) != 0L) {
           .release_lock(lease)
-          .abort_category("cache", paste0("cannot remove cache object ", entry$path))
+          .abort_category(
+            "cache",
+            paste0("cannot remove cache object ", entry$path)
+          )
         }
         removed[[length(removed) + 1L]] <- current_entry
       }

@@ -1,8 +1,13 @@
 Package: datamonger
 Title: Reproducible Retrieval and Decoding of Public Research Data
 Version: 0.0.0.9000
-Authors@R: person("Johan", "Larsson", email = "johan@jolars.co",
-    role = c("aut", "cre"))
+Authors@R:
+    person(
+      "Johan",
+      "Larsson",
+      email = "johan@jolars.co",
+      role = c("aut", "cre")
+    )
 Description: Retrieves public research datasets through immutable registry
     selectors, verifies their exact bytes, and decodes them according to
     versioned, cross-language contracts. Decoded logical values are verified
@@ -24,8 +29,9 @@ Suggests:
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)
-VignetteBuilder: knitr
-SystemRequirements: zlib
+VignetteBuilder:
+    knitr
 Config/testthat/edition: 3
 Encoding: UTF-8
 RoxygenNote: 7.3.3
+SystemRequirements: zlib

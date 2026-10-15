@@ -9,9 +9,10 @@ vignette: >
 ---
 
 Datamonger can retrieve and decode data without contacting a registry or an
-upstream provider. This example uses the five-row mixed CSV from the
-[shared conformance corpus](https://github.com/jolars/datamonger/tree/main/tests/conformance),
-which R, Python, and Julia use to check the same logical values and digest.
+upstream provider. This example uses the five-row mixed CSV from the [shared
+conformance
+corpus](https://github.com/jolars/datamonger/tree/main/tests/conformance), which
+R, Python, and Julia use to check the same logical values and digest.
 
 The package includes the corpus and its test registry. The setup copies their
 known bytes into a fresh temporary cache. Every retrieval below uses
@@ -19,7 +20,10 @@ known bytes into a fresh temporary cache. Every retrieval below uses
 workflow, populate your cache with the selected registry and artifacts before
 disconnecting from the network.
 
-```{r setup, include=FALSE}
+```{r}
+#| label: setup
+#| include: false
+
 library(datamonger)
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", error = FALSE, dev = "png")
 
@@ -54,7 +58,9 @@ registry <- do.call(registry_selector, selector)
 digest against the immutable registry record. The fully qualified reference
 fixes the dataset source, name, and version.
 
-```{r retrieve}
+```{r}
+#| label: retrieve
+
 reference <- "conformance:mixed_csv@1"
 artifact <- fetch_artifact(reference, registry = registry,
                            cache_dir = cache_dir, offline = TRUE)
@@ -69,7 +75,9 @@ artifact_sha256
 digest. The decoder follows the declared column types, quoting, missing values,
 and source row order rather than guessing them from the CSV.
 
-```{r decode}
+```{r}
+#| label: decode
+
 result <- fetch_data(reference, registry = registry, cache_dir = cache_dir,
                      offline = TRUE, return_info = TRUE)
 data <- result$data
@@ -90,7 +98,10 @@ values remain missing, and the quoted comma and double quotes remain part of
 their labels. The `count` column uses `datamonger_int64`, which stores exact
 decimal strings so that large integers do not lose precision.
 
-```{r values, results='asis'}
+```{r}
+#| label: values
+#| results: "asis"
+
 display <- data
 display$count <- as.character(data$count)
 knitr::kable(display, row.names = FALSE)
@@ -102,7 +113,10 @@ The artifact digest identifies the original bytes. The canonical digest
 identifies their decoded logical values, including column types and missing
 values. Retain both with the registry selector when recording an analysis.
 
-```{r verification, results='asis'}
+```{r}
+#| label: verification
+#| results: "asis"
+
 verification <- data.frame(
   Field = c("Dataset", "Registry release", "Verification", "Canonical form",
             "Registry SHA-256", "Artifact SHA-256", "Canonical SHA-256"),
@@ -119,7 +133,16 @@ knitr::kable(verification, row.names = FALSE)
 The third row has no measurement. Plotting the observed rows preserves their
 source positions and makes the larger value in the fourth row visible.
 
-```{r measurements, echo=FALSE, fig.width=6, fig.height=4, fig.cap='Four observed measurements; the third row is missing.', fig.alt='Rows one, two, four, and five have measurements 1.5, zero, 20, and zero. Row three is missing.'}
+```{r}
+#| label: measurements
+#| echo: false
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: "Four observed measurements; the third row is missing."
+#| fig-alt: >-
+#|   Rows one, two, four, and five have measurements 1.5, zero, 20, and zero.
+#|   Row three is missing.
+
 plot(seq_len(nrow(data)), data$measurement, pch = 19, col = "#2563eb",
      xlab = "Source row", ylab = "Measurement", ylim = c(-1, 21))
 abline(h = 0, lty = 2, col = "gray50")
@@ -129,6 +152,9 @@ This small example verifies the complete path from cached artifact bytes to
 decoded values, reproducibility metadata, and a rendered figure. It uses a
 private temporary cache and removes that cache after execution.
 
-```{r cleanup, include=FALSE}
+```{r}
+#| label: cleanup
+#| include: false
+
 unlink(cache_dir, recursive = TRUE)
 ```

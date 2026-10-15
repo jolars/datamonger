@@ -42,7 +42,8 @@
     curl::curl_parse_url(value, default_scheme = FALSE),
     error = function(error) NULL
   )
-  !is.null(parsed) && nzchar(parsed$host) &&
+  !is.null(parsed) &&
+    nzchar(parsed$host) &&
     parsed$scheme %in% if (https_only) "https" else c("http", "https")
 }
 
@@ -53,7 +54,10 @@
   if (is.list(left) && is.list(right)) {
     left_names <- names(left)
     right_names <- names(right)
-    if (is.null(left_names) != is.null(right_names) || length(left) != length(right)) {
+    if (
+      is.null(left_names) != is.null(right_names) ||
+        length(left) != length(right)
+    ) {
       return(FALSE)
     }
     if (is.null(left_names)) {
@@ -75,34 +79,51 @@
   identical(left, right)
 }
 
-.is_object <- function(value) {
-  is.list(value) && !is.null(names(value))
-}
+.is_object <- function(value) is.list(value) && !is.null(names(value))
 
-.require_object <- function(value, field, class = "datamonger_unsupported_registry") {
+.require_object <- function(
+  value,
+  field,
+  class = "datamonger_unsupported_registry"
+) {
   if (!.is_object(value)) {
     .dm_abort(class, paste0(field, " must be an object"))
   }
   value
 }
 
-.require_array <- function(value, field, class = "datamonger_unsupported_registry") {
+.require_array <- function(
+  value,
+  field,
+  class = "datamonger_unsupported_registry"
+) {
   if (!is.list(value) || !is.null(names(value))) {
     .dm_abort(class, paste0(field, " must be an array"))
   }
   value
 }
 
-.require_string <- function(value, field, class = "datamonger_unsupported_registry") {
+.require_string <- function(
+  value,
+  field,
+  class = "datamonger_unsupported_registry"
+) {
   if (!.is_scalar_character(value)) {
     .dm_abort(class, paste0(field, " must be a string"))
   }
   value
 }
 
-.require_integer <- function(value, field, class = "datamonger_unsupported_registry") {
+.require_integer <- function(
+  value,
+  field,
+  class = "datamonger_unsupported_registry"
+) {
   if (!.is_exact_number(value)) {
-    .dm_abort(class, paste0(field, " must be an exact nonnegative JSON integer"))
+    .dm_abort(
+      class,
+      paste0(field, " must be an exact nonnegative JSON integer")
+    )
   }
   value
 }
@@ -128,7 +149,10 @@
       readBin(path, "raw", n = size)
     },
     error = function(error) {
-      .dm_abort(class, paste0("cannot read ", path, ": ", conditionMessage(error)))
+      .dm_abort(
+        class,
+        paste0("cannot read ", path, ": ", conditionMessage(error))
+      )
     }
   )
 }
@@ -142,15 +166,28 @@
       flush(connection)
     },
     error = function(error) {
-      .dm_abort(class, paste0("cannot write ", path, ": ", conditionMessage(error)))
+      .dm_abort(
+        class,
+        paste0("cannot write ", path, ": ", conditionMessage(error))
+      )
     }
   )
   invisible(path)
 }
 
-.parse_json_raw <- function(contents, description, class = "datamonger_registry") {
-  if (length(contents) >= 3L && identical(contents[seq_len(3L)], as.raw(c(0xef, 0xbb, 0xbf)))) {
-    .dm_abort(class, paste0(description, " must be UTF-8 without a byte-order mark"))
+.parse_json_raw <- function(
+  contents,
+  description,
+  class = "datamonger_registry"
+) {
+  if (
+    length(contents) >= 3L &&
+      identical(contents[seq_len(3L)], as.raw(c(0xef, 0xbb, 0xbf)))
+  ) {
+    .dm_abort(
+      class,
+      paste0(description, " must be UTF-8 without a byte-order mark")
+    )
   }
   text <- tryCatch(
     rawToChar(contents),
@@ -181,16 +218,22 @@
 }
 
 .hex_to_raw <- function(value) {
-  if (!.is_scalar_character(value) || nchar(value, type = "bytes") %% 2L != 0L ||
-      grepl("[^0-9a-fA-F]", value)) {
+  if (
+    !.is_scalar_character(value) ||
+      nchar(value, type = "bytes") %% 2L != 0L ||
+      grepl("[^0-9a-fA-F]", value)
+  ) {
     stop("invalid hexadecimal string", call. = FALSE)
   }
   if (!nzchar(value)) {
     return(raw())
   }
-  as.raw(strtoi(substring(
-    value,
-    seq.int(1L, nchar(value), 2L),
-    seq.int(2L, nchar(value), 2L)
-  ), 16L))
+  as.raw(strtoi(
+    substring(
+      value,
+      seq.int(1L, nchar(value), 2L),
+      seq.int(2L, nchar(value), 2L)
+    ),
+    16L
+  ))
 }

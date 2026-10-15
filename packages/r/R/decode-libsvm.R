@@ -12,7 +12,8 @@
     "LIBSVM options",
     "datamonger_unsupported_decoder"
   )
-  if (!identical(options$index_base, 1L) ||
+  if (
+    !identical(options$index_base, 1L) ||
       !identical(options$duplicate_features, "error") ||
       !.is_scalar_character(options$label_type) ||
       !(options$label_type %in% c("int64", "float64")) ||
@@ -20,7 +21,8 @@
       !.is_scalar_character(options$target_name) ||
       !nzchar(options$target_name) ||
       identical(options$target_name, "features") ||
-      !.is_exact_number(options$feature_count, minimum = 1)) {
+      !.is_exact_number(options$feature_count, minimum = 1)
+  ) {
     .abort_category("unsupported-decoder", "unsupported LIBSVM recipe")
   }
   options
@@ -39,9 +41,15 @@
 
 .decode_libsvm <- function(path, options, compression = "none") {
   options <- .validate_libsvm_options(options)
-  records <- .strict_records(.decompress_artifact(path, compression), allow_empty = TRUE)
+  records <- .strict_records(
+    .decompress_artifact(path, compression),
+    allow_empty = TRUE
+  )
   if (any(!nzchar(records)) || any(grepl("^[ \t]", records))) {
-    .abort_category("decode", "LIBSVM records must be nonblank without leading whitespace")
+    .abort_category(
+      "decode",
+      "LIBSVM records must be nonblank without leading whitespace"
+    )
   }
 
   row_offsets <- numeric(length(records) + 1L)
@@ -60,7 +68,10 @@
     if (identical(options$label_type, "int64")) {
       parsed_label <- .normalize_int64(label, allow_plus = TRUE)
       if (is.null(parsed_label)) {
-        .abort_category("decode", paste0("invalid int64 label at row ", row_index))
+        .abort_category(
+          "decode",
+          paste0("invalid int64 label at row ", row_index)
+        )
       }
       labels[[row_index]] <- parsed_label
     } else {
@@ -78,14 +89,24 @@
         field <- fields[-1L][[field_index]]
         parts <- strsplit(field, ":", fixed = TRUE)[[1]]
         if (length(parts) != 2L || !grepl("^(0|[1-9][0-9]*)$", parts[[1]])) {
-          .abort_category("decode", paste0("invalid feature at row ", row_index))
-        }
-        index <- suppressWarnings(as.numeric(parts[[1]]))
-        if (!is.finite(index) || index < 1 || index > options$feature_count ||
-            index <= previous) {
           .abort_category(
             "decode",
-            paste0("feature indices are invalid or unordered at row ", row_index)
+            paste0("invalid feature at row ", row_index)
+          )
+        }
+        index <- suppressWarnings(as.numeric(parts[[1]]))
+        if (
+          !is.finite(index) ||
+            index < 1 ||
+            index > options$feature_count ||
+            index <= previous
+        ) {
+          .abort_category(
+            "decode",
+            paste0(
+              "feature indices are invalid or unordered at row ",
+              row_index
+            )
           )
         }
         value <- .parse_libsvm_float(
@@ -93,7 +114,10 @@
           paste0("feature value at row ", row_index)
         )
         if (value == 0) {
-          .abort_category("decode", paste0("stored sparse zero at row ", row_index))
+          .abort_category(
+            "decode",
+            paste0("stored sparse zero at row ", row_index)
+          )
         }
         indices[[field_index]] <- index - 1
         values[[field_index]] <- value
@@ -149,11 +173,12 @@
 }
 
 .decode_libsvm_split <- function(
-    train_path,
-    test_path,
-    options,
-    train_compression = "none",
-    test_compression = "none") {
+  train_path,
+  test_path,
+  options,
+  train_compression = "none",
+  test_compression = "none"
+) {
   train <- .rename_sparse_components(
     .decode_libsvm(train_path, options, train_compression),
     "train",
