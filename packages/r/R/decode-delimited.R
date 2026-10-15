@@ -53,7 +53,7 @@
     "datamonger_unsupported_decoder"
   )
   if (
-    any(!vapply(missing_values, .is_scalar_character, logical(1))) ||
+    !all(vapply(missing_values, .is_scalar_character, logical(1))) ||
       anyDuplicated(unlist(missing_values, use.names = FALSE))
   ) {
     .abort_category(

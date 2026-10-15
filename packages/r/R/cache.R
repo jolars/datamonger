@@ -165,7 +165,7 @@
 .validate_transport_headers <- function(headers, encoded_size, url) {
   lengths <- .header_tokens(headers, "content-length")
   if (length(lengths)) {
-    if (any(!grepl("^[0-9]+$", lengths)) || length(unique(lengths)) != 1L) {
+    if (!all(grepl("^[0-9]+$", lengths)) || length(unique(lengths)) != 1L) {
       .dm_abort(
         "datamonger_retrieval_exhausted",
         paste0("malformed or conflicting Content-Length from ", url)

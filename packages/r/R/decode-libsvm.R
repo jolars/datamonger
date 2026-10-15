@@ -45,7 +45,7 @@
     .decompress_artifact(path, compression),
     allow_empty = TRUE
   )
-  if (any(!nzchar(records)) || any(grepl("^[ \t]", records))) {
+  if (!all(nzchar(records)) || any(grepl("^[ \t]", records))) {
     .abort_category(
       "decode",
       "LIBSVM records must be nonblank without leading whitespace"

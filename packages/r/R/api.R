@@ -1,6 +1,4 @@
-.selected_registry <- function(registry) {
-  if (is.null(registry)) active_registry() else registry
-}
+.selected_registry <- function(registry) registry %||% active_registry()
 
 .selected_cache_dir <- function(cache_dir) datamonger_cache_dir(cache_dir)
 
@@ -413,7 +411,7 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
         "artifact format and delimiter disagree"
       )
     }
-  } else if (any(!(formats %in% c("libsvm", "svmlight")))) {
+  } else if (!all((formats %in% c("libsvm", "svmlight")))) {
     .abort_category(
       "unsupported-decoder",
       "LIBSVM decoder requires LIBSVM or SVMLight"

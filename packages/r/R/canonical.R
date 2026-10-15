@@ -219,7 +219,7 @@
 
 .canonical_bytes <- function(components) {
   names <- vapply(components, `[[`, character(1), "name")
-  if (any(!nzchar(names)) || anyDuplicated(names)) {
+  if (!all(nzchar(names)) || anyDuplicated(names)) {
     .abort_category(
       "decoded-integrity",
       "component names must be nonempty and unique"
