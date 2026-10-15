@@ -6,6 +6,7 @@ manifests:
 - registry/datasets/libsvm/dna_scale-1.yaml
 - registry/datasets/libsvm/glass_scale-1.yaml
 - registry/datasets/libsvm/heart_scale-1.yaml
+- registry/datasets/libsvm/triazines_scale-1.yaml
 - registry/datasets/uci/abalone-1.yaml
 - registry/datasets/uci/breast-cancer-wisconsin-diagnostic-1.yaml
 - registry/datasets/uci/iris-1.yaml
@@ -26,6 +27,9 @@ defaults:
   version: '1'
 - source: libsvm
   name: heart_scale
+  version: '1'
+- source: libsvm
+  name: triazines_scale
   version: '1'
 - source: uci
   name: abalone

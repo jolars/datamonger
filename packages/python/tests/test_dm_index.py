@@ -148,12 +148,13 @@ def test_curated_dataset_manifests_are_valid_and_cover_mvp() -> None:
     assert all(manifest["provenance"].get("citation") for manifest in uci_manifests)
 
 
-def test_candidate_release_contains_every_curated_dataset() -> None:
+def test_candidate_release_preserves_its_curated_snapshot() -> None:
     release_path = ROOT / "registry/releases/candidate-0002/release.yaml"
     release = dm_index.load_yaml(release_path)
+    snapshot = json.loads((release_path.parent / "index.json").read_bytes())
     manifest_paths = sorted(
-        path.relative_to(ROOT).as_posix()
-        for path in (ROOT / "registry/datasets").glob("*/*.yaml")
+        f"registry/datasets/{record['source']}/{record['name']}-{record['version']}.yaml"
+        for record in snapshot["datasets"]
     )
     manifests = [dm_index.load_yaml(ROOT / path) for path in manifest_paths]
     identities = {
@@ -169,6 +170,23 @@ def test_candidate_release_contains_every_curated_dataset() -> None:
         (default["source"], default["name"], default["version"])
         for default in release["defaults"]
     } == identities
+
+
+def test_collection_contains_every_curated_dataset() -> None:
+    collection = dm_index.load_yaml(ROOT / "registry/collection.yaml")
+    paths = sorted(
+        path.relative_to(ROOT).as_posix()
+        for path in (ROOT / "registry/datasets").glob("*/*.yaml")
+    )
+    assert collection["manifests"] == paths
+    manifests = [dm_index.load_yaml(ROOT / path) for path in paths]
+    assert {
+        (default["source"], default["name"], default["version"])
+        for default in collection["defaults"]
+    } == {
+        (manifest["source"], manifest["name"], manifest["version"])
+        for manifest in manifests
+    }
 
 
 def test_first_stable_release_preserves_certified_candidate_records() -> None:

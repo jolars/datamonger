@@ -1,0 +1,59 @@
+schema_version: 1
+source: libsvm
+name: triazines_scale
+version: '1'
+title: Triazines
+description: Triazines quantitative structure-activity regression data distributed through
+  the LIBSVM dataset collection, with features scaled to [-1, 1] by the provider.
+modality: tabular
+provenance:
+  provider: LIBSVM
+  upstream_name: triazines_scale
+  landing_page: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/regression.html#triazines
+  retrieved_at: '2026-10-15'
+license:
+  status: unknown
+  evidence: The LIBSVM dataset page identifies the source as UCI Qualitative Structure Activity
+    Relationships but provides no license terms for the distributed artifact.
+artifacts:
+- name: data
+  format: libsvm
+  compression: none
+  size: 63546
+  sha256: d36131457115ef282bb48e3376d5d3002bfd4217b6b019ca9ce1cdc6d1b63ef5
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/regression/triazines_scale
+representation:
+  decoder: libsvm
+  decoder_version: 1
+  inputs:
+    data: data
+  options:
+    index_base: 1
+    feature_count: 60
+    duplicate_features: error
+    label_type: float64
+    row_order: source
+    target_name: response
+  expect:
+    components:
+    - name: features
+      kind: sparse_matrix
+      type: float64
+      rows: 186
+      columns: 60
+    - name: response
+      kind: vector
+      type: float64
+      length: 186
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: eb141acb7e651679ba1d579201069eed60d228a930a9bfd88c4ac64f990e849c
+tasks:
+- name: default
+  type: regression
+  features: features
+  target: response
