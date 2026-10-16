@@ -51,6 +51,9 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["B", "E", "F", "I", "RUF", "SIM", "UP"]
 
+[tool.ruff.lint.isort]
+known-first-party = ["datamonger"]
+
 [tool.mypy]
 strict = true
 files = [
