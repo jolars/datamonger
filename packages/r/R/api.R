@@ -14,6 +14,7 @@
     function(value) .require_string(value$name, "artifact name"),
     character(1)
   )
+
   if (is.null(artifact)) {
     if (length(artifacts) == 1L) {
       return(artifacts[[1]])
@@ -26,7 +27,9 @@
       )
     )
   }
+
   match <- which(names == artifact)
+
   if (length(match) != 1L) {
     .dm_abort(
       "datamonger_artifact_selection",
@@ -52,20 +55,24 @@
       )
     )
   }
+
   artifacts <- .dataset_artifacts(dataset)
   artifact_names <- vapply(artifacts, `[[`, character(1), "name")
+
   lapply(roles, function(role) {
     name <- .require_string(
       inputs[[role]],
       paste0("representation input ", role)
     )
     match <- which(artifact_names == name)
+
     if (length(match) != 1L) {
       .abort_category(
         "unsupported-registry",
         paste0("representation input refers to unknown artifact '", name, "'")
       )
     }
+
     artifacts[[match]]
   })
 }
@@ -76,43 +83,52 @@
     artifact$distribution,
     "artifact distribution"
   )
+
   if (identical(distribution, "metadata-only")) {
     .abort_category(
       "artifact-unavailable",
       paste0("artifact '", name, "' is metadata-only")
     )
   }
+
   if (!(distribution %in% c("mirror", "upstream-only"))) {
     .abort_category(
       "unsupported-registry",
       paste0("artifact '", name, "' has unsupported distribution")
     )
   }
+
   downloads <- .require_array(artifact$downloads, "artifact downloads")
+
   if (!length(downloads)) {
     .abort_category(
       "unsupported-registry",
       "artifact has no retrieval locations"
     )
   }
+
   vapply(
     downloads,
     function(download) {
       .require_object(download, "artifact download")
       kind <- .require_string(download$kind, "artifact download kind")
+
       if (!(kind %in% c("mirror", "upstream"))) {
         .abort_category(
           "unsupported-registry",
           "unsupported artifact download kind"
         )
       }
+
       url <- .require_string(download$url, "artifact download URL")
+
       if (!.is_http_url(url)) {
         .abort_category(
           "unsupported-registry",
           "artifact download URL is invalid"
         )
       }
+
       url
     },
     character(1)
@@ -122,9 +138,11 @@
 .retrieve_artifact <- function(artifact, cache_dir, offline) {
   urls <- .artifact_locations(artifact)
   digest <- .require_string(artifact$sha256, "artifact SHA-256")
+
   if (!grepl(.sha256_pattern, digest, perl = TRUE)) {
     .abort_category("unsupported-registry", "artifact SHA-256 is invalid")
   }
+
   .retrieve_cached_object(
     cache_dir = cache_dir,
     namespace = "objects",
@@ -176,7 +194,9 @@ fetch_artifact <- function(
     cache_dir,
     offline
   )
+
   .release_lock(leased$lease)
+
   leased$path
 }
 
@@ -185,7 +205,9 @@ fetch_artifact <- function(
     dataset$representation,
     "dataset representation"
   )
+
   expect <- .require_object(representation$expect, "representation expectation")
+
   structure(
     list(
       dataset_id = paste0(
@@ -244,6 +266,7 @@ data_info <- function(
   cache_dir <- .selected_cache_dir(cache_dir)
   registry <- .selected_registry(registry)
   index <- .load_registry(registry, cache_dir, offline)
+
   .data_info(.resolve_dataset(index, source, name, version), registry)
 }
 
@@ -259,6 +282,7 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
   cache_dir <- .selected_cache_dir(cache_dir)
   registry <- .selected_registry(registry)
   index <- .load_registry(registry, cache_dir, offline)
+
   lapply(index$datasets, function(dataset) {
     source <- .require_string(dataset$source, "dataset source")
     name <- .require_string(dataset$name, "dataset name")
@@ -278,18 +302,21 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
   ) {
     return(FALSE)
   }
+
   if (identical(component$kind, "vector")) {
     return(identical(
       as.numeric(length(component$values)),
       as.numeric(expectation$length)
     ))
   }
+
   identical(as.numeric(component$rows), as.numeric(expectation$rows)) &&
     identical(as.numeric(component$columns), as.numeric(expectation$columns))
 }
 
 .validate_components <- function(components, expected) {
   expected <- .require_array(expected, "expected components")
+
   if (length(components) != length(expected)) {
     .abort_category(
       "decoded-integrity",
@@ -301,8 +328,10 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
       )
     )
   }
+
   for (index in seq_along(components)) {
     expectation <- .require_object(expected[[index]], "component expectation")
+
     if (!.component_matches(components[[index]], expectation)) {
       .abort_category(
         "decoded-integrity",
@@ -314,6 +343,7 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
       )
     }
   }
+
   invisible(NULL)
 }
 
@@ -323,9 +353,11 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
     name = dataset$name,
     version = dataset$version
   )
+
   errata <- index$errata %||% list()
   .require_array(errata, "registry errata")
   revoked <- list()
+
   for (erratum in errata) {
     .require_object(erratum, "registry erratum")
     if (
@@ -335,10 +367,13 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
       revoked[[length(revoked) + 1L]] <- erratum$original
     }
   }
+
   records <- .require_array(expect$verification, "verification records")
+
   for (index in rev(seq_along(records))) {
     record <- .require_object(records[[index]], "verification record")
     is_revoked <- any(vapply(revoked, .json_equal, logical(1), record))
+
     if (
       identical(record$canonical_form, 1L) &&
         identical(record$algorithm, "sha256") &&
@@ -347,6 +382,7 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
       return(record)
     }
   }
+
   .abort_category(
     "unsupported-decoder",
     "no supported decoded-verification record"
@@ -358,7 +394,9 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
     dataset$representation,
     "dataset representation"
   )
+
   decoder <- representation$decoder
+
   if (
     !identical(representation$decoder_version, 1L) ||
       !(decoder %in% c("delimited-text", "libsvm", "libsvm-split"))
@@ -368,11 +406,13 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
       "R supports delimited-text, LIBSVM, and LIBSVM split version 1"
     )
   }
+
   roles <- if (identical(decoder, "libsvm-split")) {
     c("train", "test")
   } else {
     "data"
   }
+
   artifacts <- .representation_artifacts(dataset, representation, roles)
   options <- .require_object(representation$options, "representation options")
   compressions <- vapply(
@@ -392,11 +432,13 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
     },
     character(1)
   )
+
   formats <- vapply(
     artifacts,
     function(artifact) .require_string(artifact$format, "artifact format"),
     character(1)
   )
+
   if (identical(decoder, "delimited-text")) {
     if (!(formats[[1]] %in% c("csv", "tsv"))) {
       .abort_category(
@@ -417,6 +459,7 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
       "LIBSVM decoder requires LIBSVM or SVMLight"
     )
   }
+
   list(
     representation = representation,
     decoder = decoder,
@@ -451,12 +494,14 @@ fetch_data <- function(
   source <- reference$source
   name <- reference$name
   version <- reference$version
+
   for (argument in c("offline", "verify_decoded", "return_info")) {
     value <- get(argument, inherits = FALSE)
     if (!.is_scalar_logical(value)) {
       stop(paste0(argument, " must be TRUE or FALSE"), call. = FALSE)
     }
   }
+
   cache_dir <- .selected_cache_dir(cache_dir)
   registry <- .selected_registry(registry)
   index <- .load_registry(registry, cache_dir, offline)
@@ -464,6 +509,7 @@ fetch_data <- function(
   setup <- .validate_representation(dataset)
 
   leased <- list()
+
   on.exit(
     {
       for (object in leased) {
@@ -472,6 +518,7 @@ fetch_data <- function(
     },
     add = TRUE
   )
+
   for (artifact in setup$artifacts) {
     leased[[length(leased) + 1L]] <- .retrieve_artifact(
       artifact,
@@ -500,16 +547,19 @@ fetch_data <- function(
   verification <- "artifact"
   canonical_form <- NULL
   canonical_digest <- NULL
+
   if (isTRUE(verify_decoded)) {
     expect <- .require_object(
       setup$representation$expect,
       "representation expectation"
     )
+
     .validate_components(decoded$components, expect$components)
     record <- .verification_record(index, dataset, expect)
     canonical_form <- record$canonical_form
     expected_digest <- .require_string(record$digest, "canonical digest")
     canonical_digest <- .canonical_sha256(decoded$components)
+
     if (!identical(canonical_digest, expected_digest)) {
       .abort_category(
         "decoded-integrity",
@@ -526,6 +576,7 @@ fetch_data <- function(
 
   artifact_digests <- vapply(setup$artifacts, `[[`, character(1), "sha256")
   names(artifact_digests) <- vapply(setup$artifacts, `[[`, character(1), "name")
+
   info <- structure(
     list(
       dataset_id = paste0(source, ":", name, "@", dataset$version),
@@ -538,6 +589,7 @@ fetch_data <- function(
     ),
     class = "datamonger_fetch_info"
   )
+
   if (isTRUE(return_info)) {
     return(structure(
       list(data = decoded$data, info = info),

@@ -12,6 +12,7 @@
     "LIBSVM options",
     "datamonger_unsupported_decoder"
   )
+
   if (
     !identical(options$index_base, 1L) ||
       !identical(options$duplicate_features, "error") ||
@@ -25,6 +26,7 @@
   ) {
     .abort_category("unsupported-decoder", "unsupported LIBSVM recipe")
   }
+
   options
 }
 
@@ -32,10 +34,13 @@
   if (!grepl(.float_pattern, value, perl = TRUE)) {
     .abort_category("decode", paste0("invalid ", description))
   }
+
   parsed <- .parse_binary64(value)
+
   if (is.null(parsed)) {
     .abort_category("decode", paste0("non-finite ", description))
   }
+
   parsed
 }
 
@@ -45,6 +50,7 @@
     .decompress_artifact(path, compression),
     allow_empty = TRUE
   )
+
   if (!all(nzchar(records)) || any(grepl("^[ \t]", records))) {
     .abort_category(
       "decode",
@@ -55,6 +61,7 @@
   row_offsets <- numeric(length(records) + 1L)
   row_indices <- vector("list", length(records))
   row_values <- vector("list", length(records))
+
   labels <- if (identical(options$label_type, "int64")) {
     character(length(records))
   } else {
@@ -65,14 +72,17 @@
     record <- sub("[ \t]+$", "", records[[row_index]], perl = TRUE)
     fields <- strsplit(record, "[ \t]+", perl = TRUE)[[1]]
     label <- fields[[1]]
+
     if (identical(options$label_type, "int64")) {
       parsed_label <- .normalize_int64(label, allow_plus = TRUE)
+
       if (is.null(parsed_label)) {
         .abort_category(
           "decode",
           paste0("invalid int64 label at row ", row_index)
         )
       }
+
       labels[[row_index]] <- parsed_label
     } else {
       labels[[row_index]] <- .parse_libsvm_float(
@@ -84,17 +94,21 @@
     previous <- 0
     indices <- numeric(max(length(fields) - 1L, 0L))
     values <- numeric(max(length(fields) - 1L, 0L))
+
     if (length(fields) > 1L) {
       for (field_index in seq_along(fields[-1L])) {
         field <- fields[-1L][[field_index]]
         parts <- strsplit(field, ":", fixed = TRUE)[[1]]
+
         if (length(parts) != 2L || !grepl("^(0|[1-9][0-9]*)$", parts[[1]])) {
           .abort_category(
             "decode",
             paste0("invalid feature at row ", row_index)
           )
         }
+
         index <- suppressWarnings(as.numeric(parts[[1]]))
+
         if (
           !is.finite(index) ||
             index < 1 ||
@@ -109,25 +123,30 @@
             )
           )
         }
+
         value <- .parse_libsvm_float(
           parts[[2]],
           paste0("feature value at row ", row_index)
         )
+
         if (value == 0) {
           .abort_category(
             "decode",
             paste0("stored sparse zero at row ", row_index)
           )
         }
+
         indices[[field_index]] <- index - 1
         values[[field_index]] <- value
         previous <- index
       }
     }
+
     row_indices[[row_index]] <- indices
     row_values[[row_index]] <- values
     row_offsets[[row_index + 1L]] <- row_offsets[[row_index]] + length(values)
   }
+
   column_indices <- unlist(row_indices, use.names = FALSE)
   feature_values <- unlist(row_values, use.names = FALSE)
 
@@ -138,11 +157,13 @@
     column_indices,
     feature_values
   )
+
   response <- if (identical(options$label_type, "int64")) {
     .new_int64(labels)
   } else {
     labels
   }
+
   components <- list(
     .sparse_component(
       "features",
@@ -159,10 +180,12 @@
       rep(TRUE, length(records))
     )
   )
+
   data <- structure(
     list(features = matrix, response = response),
     class = "datamonger_sparse_dataset"
   )
+
   list(data = data, components = components)
 }
 

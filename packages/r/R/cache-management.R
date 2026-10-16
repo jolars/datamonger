@@ -56,13 +56,17 @@
     .lease_path(cache_dir, namespace, digest),
     exclusive = FALSE
   )
+
   on.exit(.release_lock(lease), add = TRUE)
+
   if (!file.exists(path)) {
     return(NULL)
   }
+
   information <- file.info(path)
   contents <- if (identical(namespace, "registries")) .read_raw(path) else NULL
   actual <- .sha256_file(path)
+
   structure(
     list(
       kind = if (identical(namespace, "registries")) "registry" else "artifact",
@@ -93,6 +97,7 @@ cache_info <- function(cache_dir = NULL) {
   cache_dir <- .selected_cache_dir(cache_dir)
   references <- .registry_references(.bundled_registry_bytes())$references
   entries <- list()
+
   for (namespace in .cache_namespaces) {
     for (path in .cache_files(cache_dir, namespace)) {
       entry <- .inspect_cache_entry(cache_dir, namespace, path)
@@ -108,12 +113,14 @@ cache_info <- function(cache_dir = NULL) {
       entries[[length(entries) + 1L]] <- entry
     }
   }
+
   for (index in seq_along(entries)) {
     if (identical(entries[[index]]$kind, "artifact")) {
       entries[[index]]$datasets <- references[[entries[[index]]$sha256]] %||%
         character()
     }
   }
+
   if (length(entries)) {
     order <- order(
       vapply(entries, `[[`, character(1), "kind"),
@@ -121,6 +128,7 @@ cache_info <- function(cache_dir = NULL) {
     )
     entries <- entries[order]
   }
+
   structure(
     list(
       location = cache_dir,
@@ -175,6 +183,7 @@ cache_clean <- function(dataset = NULL, older_than = NULL, cache_dir = NULL) {
   } else {
     seconds <- NULL
   }
+
   info <- cache_info(cache_dir)
   cutoff <- if (is.null(seconds)) NULL else Sys.time() - seconds
   removed <- list()
@@ -184,25 +193,30 @@ cache_clean <- function(dataset = NULL, older_than = NULL, cache_dir = NULL) {
     if (!.cache_entry_selected(entry, dataset, cutoff)) {
       next
     }
+
     namespace <- if (identical(entry$kind, "registry")) {
       "registries"
     } else {
       "objects"
     }
+
     lease <- .acquire_lock(
       .lease_path(info$location, namespace, entry$sha256),
       exclusive = TRUE,
       timeout = 0
     )
+
     if (is.null(lease)) {
       skipped[[length(skipped) + 1L]] <- entry
       next
     }
+
     if (file.exists(entry$path)) {
       current <- file.info(entry$path)
       current_entry <- entry
       current_entry$size <- as.numeric(current$size)
       current_entry$modified_at <- current$mtime
+
       if (.cache_entry_selected(current_entry, dataset, cutoff)) {
         if (unlink(entry$path) != 0L) {
           .release_lock(lease)
@@ -214,8 +228,10 @@ cache_clean <- function(dataset = NULL, older_than = NULL, cache_dir = NULL) {
         removed[[length(removed) + 1L]] <- current_entry
       }
     }
+
     .release_lock(lease)
   }
+
   structure(
     list(
       location = info$location,

@@ -4,12 +4,14 @@
   if (!(namespace %in% .cache_namespaces)) {
     .abort_category("cache", paste0("unsupported cache namespace ", namespace))
   }
+
   if (
     !.is_scalar_character(digest) ||
       !grepl(.sha256_pattern, digest, perl = TRUE)
   ) {
     .abort_category("cache", "invalid cache SHA-256 digest")
   }
+
   file.path(cache_dir, namespace, "sha256", digest)
 }
 
@@ -22,18 +24,22 @@
   if (dir.exists(path)) {
     return(invisible(path))
   }
+
   ok <- tryCatch(
     dir.create(path, recursive = TRUE, showWarnings = FALSE),
     error = function(error) FALSE
   )
+
   if (!isTRUE(ok) && !dir.exists(path)) {
     .abort_category("cache", paste0("cannot create cache directory ", path))
   }
+
   invisible(path)
 }
 
 .acquire_lock <- function(path, exclusive, timeout = Inf) {
   .create_directory(dirname(path))
+
   tryCatch(
     filelock::lock(path, exclusive = exclusive, timeout = timeout),
     error = function(error) {
@@ -44,6 +50,7 @@
       ) {
         return(NULL)
       }
+
       .abort_category(
         "cache",
         paste0("cannot acquire cache lease ", path, ": ", message)
@@ -56,6 +63,7 @@
   if (is.null(lock)) {
     return(invisible(NULL))
   }
+
   tryCatch(
     filelock::unlock(lock),
     error = function(error) {
@@ -72,7 +80,9 @@
   if (!file.exists(path) || isTRUE(file.info(path)$isdir)) {
     return(FALSE)
   }
+
   actual_size <- file.info(path)$size
+
   actual_digest <- tryCatch(
     .sha256_file(path),
     error = function(error) {
@@ -87,6 +97,7 @@
       )
     }
   )
+
   identical(actual_digest, digest) &&
     (is.null(size) || identical(as.numeric(actual_size), as.numeric(size)))
 }
@@ -101,13 +112,16 @@
       paste0("malformed gzip content coding from ", url)
     )
   }
+
   flags <- as.integer(contents[[4]])
+
   if (bitwAnd(flags, 0xe0L) != 0L) {
     .dm_abort(
       "datamonger_retrieval_exhausted",
       paste0("malformed gzip flags from ", url)
     )
   }
+
   tryCatch(
     .Call(C_dm_gzip_decompress, contents),
     error = function(error) {
@@ -128,17 +142,22 @@
   text <- rawToChar(headers)
   blocks <- strsplit(text, "\r\n\r\n", fixed = TRUE)[[1]]
   blocks <- blocks[nzchar(blocks)]
+
   if (!length(blocks)) {
     return(list())
   }
+
   lines <- strsplit(tail(blocks, 1L), "\r\n", fixed = TRUE)[[1]]
+
   if (!grepl("^HTTP/[0-9.]+ [0-9]{3}(?: |$)", lines[[1]], perl = TRUE)) {
     .dm_abort(
       "datamonger_retrieval_exhausted",
       "malformed HTTP response headers"
     )
   }
+
   result <- list()
+
   for (line in lines[-1L]) {
     match <- regexec("^([^:[:space:]]+):[[:space:]]*(.*)$", line, perl = TRUE)
     fields <- regmatches(line, match)[[1]]
@@ -156,14 +175,17 @@
 
 .header_tokens <- function(headers, name) {
   values <- headers[[name]]
+
   if (is.null(values)) {
     return(character())
   }
+
   trimws(unlist(strsplit(values, ",", fixed = TRUE), use.names = FALSE))
 }
 
 .validate_transport_headers <- function(headers, encoded_size, url) {
   lengths <- .header_tokens(headers, "content-length")
+
   if (length(lengths)) {
     if (!all(grepl("^[0-9]+$", lengths)) || length(unique(lengths)) != 1L) {
       .dm_abort(
@@ -178,7 +200,9 @@
       )
     }
   }
+
   transfer <- tolower(.header_tokens(headers, "transfer-encoding"))
+
   if (length(transfer) && !identical(transfer, "chunked")) {
     .dm_abort(
       "datamonger_retrieval_exhausted",
@@ -194,6 +218,7 @@
       paste0("invalid retrieval URL ", url)
     )
   }
+
   handle <- curl::new_handle(
     followlocation = TRUE,
     timeout = 30,
@@ -201,6 +226,7 @@
     http_transfer_decoding = TRUE,
     failonerror = FALSE
   )
+
   curl::handle_setheaders(handle, "Accept-Encoding" = "identity")
   response <- tryCatch(
     curl::curl_fetch_disk(url, path, handle = handle),
@@ -211,23 +237,27 @@
       )
     }
   )
+
   if (response$status_code < 200L || response$status_code >= 300L) {
     .dm_abort(
       "datamonger_retrieval_exhausted",
       paste0("HTTP ", response$status_code, " while retrieving ", url)
     )
   }
+
   if (!.is_http_url(response$url, https_only = require_https)) {
     .dm_abort(
       "datamonger_retrieval_exhausted",
       paste0("retrieval redirected to an invalid URL: ", response$url)
     )
   }
+
   headers <- .final_headers(response$headers)
   encoded_size <- file.info(path)$size
   .validate_transport_headers(headers, encoded_size, url)
   codings <- tolower(.header_tokens(headers, "content-encoding"))
   non_identity <- codings[codings != "identity"]
+
   if (
     any(!nzchar(codings)) ||
       length(non_identity) > 1L ||
@@ -238,10 +268,12 @@
       paste0("unsupported HTTP content coding from ", url)
     )
   }
+
   if (length(non_identity)) {
     decoded <- .decode_http_gzip(.read_raw(path), url)
     .write_raw(decoded, path)
   }
+
   invisible(path)
 }
 
@@ -252,12 +284,14 @@
 ) {
   path <- tempfile("datamonger-http-")
   on.exit(unlink(path), add = TRUE)
+
   tryCatch(
     .download_url_to_file(url, path, require_https = require_https),
     datamonger_retrieval_exhausted = function(error) {
       .dm_abort(class, conditionMessage(error))
     }
   )
+
   .read_raw(path, "datamonger_registry_retrieval")
 }
 
@@ -287,6 +321,7 @@
   for (url in urls) {
     temporary <- tempfile(".download-", tmpdir = dirname(target))
     succeeded <- FALSE
+
     tryCatch(
       {
         .download_url_to_file(url, temporary)
@@ -309,7 +344,9 @@
           .lease_path(cache_dir, namespace, digest, publication = TRUE),
           exclusive = TRUE
         )
+
         on.exit(.release_lock(publication), add = TRUE, after = FALSE)
+
         if (!.matches_cache_object(target, digest, size)) {
           .discard_cache_object(target)
           if (!file.rename(temporary, target)) {
@@ -331,11 +368,14 @@
         failures <<- c(failures, paste0(url, ": ", conditionMessage(error)))
       }
     )
+
     unlink(temporary)
+
     if (succeeded) {
       return(target)
     }
   }
+
   class <- if (integrity_failure) integrity_class else retrieval_class
   .dm_abort(
     class,
@@ -363,14 +403,18 @@
     .lease_path(cache_dir, namespace, digest),
     exclusive = FALSE
   )
+
   if (.matches_cache_object(target, digest, size)) {
     return(list(path = target, lease = lease))
   }
+
   .discard_cache_object(target)
+
   if (isTRUE(offline)) {
     .release_lock(lease)
     .dm_abort(offline_class, paste0("no valid cached object for ", digest))
   }
+
   path <- tryCatch(
     .publish_download(
       cache_dir,
@@ -386,5 +430,6 @@
       stop(error)
     }
   )
+
   list(path = path, lease = lease)
 }

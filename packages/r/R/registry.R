@@ -17,18 +17,21 @@
   if (!inherits(registry, "datamonger_registry")) {
     .dm_abort("datamonger_registry", "registry must be a registry selector")
   }
+
   if (!identical(registry$schema_version, 1L)) {
     .abort_category(
       "unsupported-registry",
       paste0("unsupported registry selector schema ", registry$schema_version)
     )
   }
+
   if (
     !.is_scalar_character(registry$release) ||
       !grepl(.release_pattern, registry$release, perl = TRUE)
   ) {
     .dm_abort("datamonger_registry", "registry release identifier is invalid")
   }
+
   if (
     !.is_scalar_character(registry$index_sha256) ||
       !grepl(.sha256_pattern, registry$index_sha256, perl = TRUE)
@@ -38,9 +41,11 @@
       "registry SHA-256 must contain 64 lowercase hexadecimal digits"
     )
   }
+
   if (!.is_http_url(registry$index_url)) {
     .dm_abort("datamonger_registry", "registry index URL must be HTTP or HTTPS")
   }
+
   invisible(registry)
 }
 
@@ -78,6 +83,7 @@ registry_selector <- function(
     description,
     "datamonger_registry"
   )
+
   if (
     !.is_scalar_character(value$release) ||
       !.is_scalar_character(value$index_sha256) ||
@@ -88,6 +94,7 @@ registry_selector <- function(
       paste0(description, " string fields must be strings")
     )
   }
+
   registry_selector(
     release = value$release,
     index_sha256 = value$index_sha256,
@@ -112,47 +119,57 @@ resolve_registry <- function(release, catalog_url = NULL) {
   ) {
     .dm_abort("datamonger_registry", "registry release identifier is invalid")
   }
+
   if (is.null(catalog_url)) {
     catalog_url <- .default_catalog_url
   }
+
   if (!.is_http_url(catalog_url, https_only = TRUE)) {
     .dm_abort("datamonger_registry", "registry catalog URL must be HTTPS")
   }
+
   contents <- .retrieve_url_raw(catalog_url, require_https = TRUE)
   catalog <- .parse_json_raw(contents, "registry catalog")
+
   .require_exact_fields(
     catalog,
     c("schema_version", "releases"),
     "registry catalog",
     "datamonger_registry"
   )
+
   if (!identical(catalog$schema_version, 1L)) {
     .abort_category(
       "unsupported-registry",
       paste0("unsupported registry catalog schema ", catalog$schema_version)
     )
   }
+
   releases <- .require_array(
     catalog$releases,
     "registry catalog releases",
     "datamonger_registry"
   )
+
   selectors <- lapply(
     releases,
     .selector_from_list,
     description = "registry catalog selector"
   )
+
   identifiers <- vapply(selectors, `[[`, character(1), "release")
   if (anyDuplicated(identifiers)) {
     .dm_abort("datamonger_registry", "registry catalog releases must be unique")
   }
   match <- which(identifiers == release)
+
   if (length(match) != 1L) {
     .dm_abort(
       "datamonger_registry",
       paste0("unknown registry release '", release, "'")
     )
   }
+
   selectors[[match]]
 }
 
@@ -165,7 +182,9 @@ set_registry <- function(registry) {
   if (!is.null(registry)) {
     .validate_registry(registry)
   }
+
   .session_state$registry <- registry
+
   invisible(NULL)
 }
 
@@ -237,6 +256,7 @@ active_registry <- function(project_dir = getwd()) {
 
 .load_registry <- function(registry, cache_dir, offline = FALSE) {
   .validate_registry(registry)
+
   if (.is_bundled_registry(registry)) {
     contents <- .bundled_registry_bytes()
     actual <- .sha256_raw(contents)
@@ -266,8 +286,10 @@ active_registry <- function(project_dir = getwd()) {
     on.exit(.release_lock(leased$lease), add = TRUE)
     contents <- .read_raw(leased$path, "datamonger_registry")
   }
+
   index <- .parse_json_raw(contents, "verified registry index")
   .require_object(index, "registry index")
+
   if (!identical(index$schema_version, 1L)) {
     .abort_category(
       "unsupported-registry",
@@ -288,6 +310,7 @@ active_registry <- function(project_dir = getwd()) {
   }
   .require_array(index$datasets, "registry datasets")
   .require_array(index$defaults, "registry defaults")
+
   index
 }
 
@@ -295,37 +318,46 @@ active_registry <- function(project_dir = getwd()) {
   if (!.is_scalar_character(name)) {
     .abort_category("unknown-dataset", "invalid dataset reference")
   }
+
   if (grepl(":|@", name)) {
     pattern <- paste0(
       "\\A([a-z0-9][a-z0-9._-]*):([a-z0-9][a-z0-9._-]*)",
       "(?:@([A-Za-z0-9][A-Za-z0-9._+-]*))?\\z"
     )
+
     matched <- regmatches(name, regexec(pattern, name, perl = TRUE))[[1]]
+
     if (length(matched) == 0L) {
       .abort_category("unknown-dataset", "invalid dataset reference")
     }
+
     if (!is.null(source)) {
       stop(
         "source must be omitted for a qualified dataset reference",
         call. = FALSE
       )
     }
+
     embedded_version <- if (nzchar(matched[[4]])) matched[[4]] else NULL
+
     if (!is.null(embedded_version) && !is.null(version)) {
       stop(
         "version must be omitted when the reference includes it",
         call. = FALSE
       )
     }
+
     return(list(
       source = matched[[2]],
       name = matched[[3]],
       version = embedded_version %||% version
     ))
   }
+
   if (is.null(source)) {
     stop("source is required for a bare dataset name", call. = FALSE)
   }
+
   list(source = source, name = name, version = version)
 }
 
@@ -337,12 +369,14 @@ active_registry <- function(project_dir = getwd()) {
     (is.null(version) ||
       (.is_scalar_character(version) &&
         grepl(.version_pattern, version, perl = TRUE)))
+
   requested <- paste0(
     source,
     ":",
     name,
     if (!is.null(version)) paste0("@", version)
   )
+
   if (!valid) {
     .abort_category(
       "unknown-dataset",
@@ -351,6 +385,7 @@ active_registry <- function(project_dir = getwd()) {
   }
 
   resolved_version <- version
+
   if (is.null(resolved_version)) {
     matches <- Filter(
       function(default) {
@@ -359,9 +394,11 @@ active_registry <- function(project_dir = getwd()) {
       },
       index$defaults
     )
+
     if (length(matches) != 1L || !.is_scalar_character(matches[[1]]$version)) {
       .abort_category("unknown-dataset", paste0("unknown dataset ", requested))
     }
+
     resolved_version <- matches[[1]]$version
   }
 
@@ -374,18 +411,22 @@ active_registry <- function(project_dir = getwd()) {
     },
     index$datasets
   )
+
   if (length(matches) != 1L) {
     .abort_category(
       "unknown-dataset",
       paste0("unknown dataset ", source, ":", name, "@", resolved_version)
     )
   }
+
   dataset <- matches[[1]]
+
   if (!identical(dataset$schema_version, 1L)) {
     .abort_category(
       "unsupported-registry",
       paste0("unsupported dataset schema ", dataset$schema_version)
     )
   }
+
   dataset
 }

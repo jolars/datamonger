@@ -51,15 +51,18 @@
   if (is.numeric(left) && is.numeric(right)) {
     return(identical(as.numeric(left), as.numeric(right)))
   }
+
   if (is.list(left) && is.list(right)) {
     left_names <- names(left)
     right_names <- names(right)
+
     if (
       is.null(left_names) != is.null(right_names) ||
         length(left) != length(right)
     ) {
       return(FALSE)
     }
+
     if (is.null(left_names)) {
       return(all(vapply(
         seq_along(left),
@@ -67,15 +70,18 @@
         logical(1)
       )))
     }
+
     if (!setequal(left_names, right_names)) {
       return(FALSE)
     }
+
     return(all(vapply(
       left_names,
       function(name) .json_equal(left[[name]], right[[name]]),
       logical(1)
     )))
   }
+
   identical(left, right)
 }
 
@@ -125,6 +131,7 @@
       paste0(field, " must be an exact nonnegative JSON integer")
     )
   }
+
   value
 }
 
@@ -136,6 +143,7 @@
       paste0(field, " must contain exactly: ", paste(fields, collapse = ", "))
     )
   }
+
   value
 }
 
@@ -195,9 +203,11 @@
       .dm_abort(class, paste0(description, " is not valid UTF-8 JSON"))
     }
   )
+
   if (is.na(iconv(text, from = "UTF-8", to = "UTF-8", sub = NA_character_))) {
     .dm_abort(class, paste0(description, " is not valid UTF-8 JSON"))
   }
+
   tryCatch(
     jsonlite::fromJSON(text, simplifyVector = FALSE, bigint_as_char = TRUE),
     error = function(error) {
@@ -225,9 +235,11 @@
   ) {
     stop("invalid hexadecimal string", call. = FALSE)
   }
+
   if (!nzchar(value)) {
     return(raw())
   }
+
   as.raw(strtoi(
     substring(
       value,
