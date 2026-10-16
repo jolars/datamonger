@@ -1,0 +1,56 @@
+{
+  "dataset_id": "datamonger:brca1@1",
+  "id": "23418110",
+  "state": "published",
+  "url": "https://zenodo.org/records/23418110",
+  "draft_url": "https://zenodo.org/uploads/23418110",
+  "doi": "10.5281/zenodo.23418110",
+  "access": {
+    "record": "public",
+    "files": "public",
+    "embargo": {
+      "active": false,
+      "reason": null
+    },
+    "status": "open"
+  },
+  "rights": [
+    {
+      "title": {
+        "en": "TCGA/GDC open-access data-use terms"
+      },
+      "description": {
+        "en": "Official TCGA open-access gene expression data, republished as a portable numeric representation under the GDC data analysis and access policies. Retain source attribution and the prohibition on attempts to reidentify participants. This source-policy assessment does not assert a standard SPDX license or a public-domain dedication. See README.md."
+      },
+      "link": "https://gdc.cancer.gov/analyze-data/data-analysis-policies"
+    },
+    {
+      "id": "mit",
+      "title": {
+        "en": "MIT License"
+      },
+      "description": {
+        "en": "A short and simple permissive license with conditions only requiring preservation of copyright and license notices. Licensed works, modifications, and larger works may be distributed under different terms and without source code."
+      },
+      "props": {
+        "url": "https://opensource.org/licenses/MIT",
+        "scheme": "spdx"
+      }
+    }
+  ],
+  "files_sha256": {
+    "convert.R": "fbeebbd7cf9027333a4c76e5395bef7099c9ce5b4cc6cee598f14f363a2f810c",
+    "verify.R": "ee2984b202d484f2d6960a22e0607ea8bd226c1c9e8652eca55e00876458fc8f",
+    "prepare.py": "64750ce1fed0a960008fa685d310c59be95b278e873686e2af686f1f84ab7837",
+    "provenance.json": "5275f7495423107b6605911876eb8992b9eca39a2a7f2df829859d2f71d9c42f",
+    "LICENSE": "bfc2dd3b099506cc71e65e8af09e3f9b3860d8fddf59801b30313c5d21caac36",
+    "README.md": "6901bc2c5c0e6a5baf62913c2299182b275c9519f8f701a1b168b2807a2bdcd8",
+    "data.csv.gz": "89c09744bf3229b7cc9c205791e5b4776c4d6b79ef06736e01e1d62eb9c6e012",
+    "read_source.R": "48697705b8cc9087b30dadef2554ac6ebc1bf82efcfbb4e5c027deee43be9f66"
+  },
+  "download_verification": "anonymous-public",
+  "data_url": "https://zenodo.org/api/records/23418110/files/data.csv.gz/content",
+  "rights_review": "Source terms reviewed in curation/brca1/1/RIGHTS.md.",
+  "verified_by": "Codex (automated download verification)",
+  "verified_at": "2026-10-16"
+}

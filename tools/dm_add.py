@@ -18,6 +18,7 @@ from typing import Any, Protocol, cast
 import dm_index
 import numpy as np
 import yaml
+
 from datamonger._cache import DownloadedFile, download_unverified
 from datamonger._canonical import canonical_sha256
 from datamonger._decode import decode_delimited_text

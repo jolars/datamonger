@@ -1,6 +1,7 @@
 schema_version: 1
 repository: jolars/datamonger
 manifests:
+- registry/datasets/datamonger/brca1-1.yaml
 - registry/datasets/libsvm/cadata-1.yaml
 - registry/datasets/libsvm/colon-cancer-1.yaml
 - registry/datasets/libsvm/dna_scale-1.yaml
@@ -13,6 +14,9 @@ manifests:
 - registry/datasets/uci/wholesale-customers-1.yaml
 - registry/datasets/uci/wine-quality-1.yaml
 defaults:
+- source: datamonger
+  name: brca1
+  version: '1'
 - source: libsvm
   name: cadata
   version: '1'

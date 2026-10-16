@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Literal, cast
 
 import dm_index
+
 from datamonger._api import _validate_components, _verification_record
 from datamonger._cache import DownloadedFile, download_unverified
 from datamonger._canonical import canonical_sha256

@@ -55,21 +55,29 @@ separate artifacts or a separately designed representation.
 
 ## Write documentation for dataset users
 
-Keep maintainer instructions separate from deposited documentation. For
-example, keep workflow instructions in a repository `README.md` and copy a
-`DATASET.md` into the bundle as its `README.md`.
+Prefer one self-contained README for dataset users in the deposit. Explain the
+scientific data, dimensions, column meanings and units or transforms, missing
+values, task roles, source, preparation, included files, verification, citation,
+and applicable reuse terms. List only deposited files, and explain any repository
+dependencies of attached reproduction scripts.
 
-The deposited README should explain the scientific data, dimensions, column
-meanings and units or transforms, missing values, task roles, preparation,
-included files, verification, citation, and rights. List only files actually
-included in the deposit. Explain any repository dependencies of attached
-reproduction scripts.
+Keep the public documentation in Git alongside the preparation code. In this
+repository, use `DATASET.md` for that document and upload it as `README.md`.
+Keep the repository's `README.md` for maintainer instructions. These filenames
+are a local convention, not Zenodo requirements.
 
-Keep local draft manifests, sandbox setup, upload instructions, reviewer
-checklists, and future registry steps in maintainer documentation. Avoid draft
-or private-status claims in permanent dataset documentation. Before publication,
-review the record title, description, attached README, provenance, and rights
-for consistency; a technically verified CSV does not validate these documents.
+Keep detailed rights evidence and review reasoning in Git, for example in
+`RIGHTS.md`. Put the applicable terms and source links in the public README and
+Zenodo's rights metadata. Deposit a separate license or rights file only when
+the license requires it or substantial terms warrant it. When depositing
+reproduction code, retain its license notices and distinguish its license from
+the data terms.
+
+Keep local manifests, sandbox setup, upload instructions, reviewer checklists,
+and future registry steps in maintainer documentation. Avoid draft or private
+status claims in permanent dataset documentation. Before publication, check the
+record title, description, README, file inventory, provenance, and rights for
+consistency; a verified CSV does not validate these documents.
 
 ## Deposit and verify
 
