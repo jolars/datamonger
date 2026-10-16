@@ -16,6 +16,14 @@ Pkg.instantiate()
 using Datamonger
 ```
 
+## Tutorials
+
+The [offline data workflow](tutorials/offline-workflow.md) walks through verified
+retrieval, missing values, sparse data, train/test splits, and cache management.
+The [reproducibility guide](tutorials/reproducibility.md) explains registry
+selectors and dataset versions. Diplodocus publishes both articles with the
+[Julia documentation](https://datamonger.dev/packages/julia/).
+
 ## Cache
 
 Datamonger uses the platform application cache by default. Passing `cache_dir`

@@ -34,4 +34,8 @@ and link equivalent operations across the three language clients.
 See the [complete Julia client guide](https://github.com/jolars/datamonger/blob/main/packages/julia/README.md)
 for return types, registry selection, offline use, and cache management.
 
+For a longer worked example, follow the
+[offline data workflow](../../packages/julia/tutorials/offline-workflow.md), then
+read about [registries and reproducibility](../../packages/julia/tutorials/reproducibility.md).
+
 Return to the [Datamonger overview](index.md).

@@ -55,6 +55,13 @@ renders the standard R vignette with knitr, rmarkdown, and Pandoc, which are
 included in the repository's devenv environment. Diplodocus executes the same
 source with its native knitr collector.
 
+The Julia package's [offline data workflow](../packages/julia/tutorials/offline-workflow.md)
+and [reproducibility guide](../packages/julia/tutorials/reproducibility.md) are
+mounted under its `tutorials/` section by the `julia-tutorials` content collection.
+They use the existing Diplodocus build and the shared API reference. Their Julia
+fences remain illustrative during site builds; the offline walkthrough can be
+run in order from a prepared repository checkout.
+
 The Python and Julia `cache_info` doctests inspect fresh temporary directories
 and verify that an empty cache has no entries or bytes. They make no network
 requests and leave the user's cache untouched. API doctest failures prevent

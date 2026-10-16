@@ -97,6 +97,17 @@ format = "gfm"
 [content.execution]
 mode = "never"
 
+[[content]]
+id = "julia-tutorials"
+owner = "julia"
+repository = "datamonger"
+path = "packages/julia/tutorials"
+mount = "tutorials"
+format = "gfm"
+
+[content.execution]
+mode = "never"
+
 [[concept]]
 id = "fetch-data"
 kind = "equivalent"
