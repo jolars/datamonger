@@ -377,7 +377,7 @@ function _cached_index_records(cache_dir)
     records = Tuple{Dict{String,Any},Union{Nothing,String}}[]
     bundled = joinpath(@__DIR__, "data", "index.json")
     try
-        push!(records, (JSON3.read(read(bundled), Dict{String,Any}), "proof-0001"))
+        push!(records, (JSON3.read(read(bundled), Dict{String,Any}), BUNDLED_REGISTRY.release))
     catch
     end
     directory = joinpath(cache_dir, "registries", "sha256")

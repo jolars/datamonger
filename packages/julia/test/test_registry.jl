@@ -45,7 +45,19 @@ end
 @testset "bundled registry" begin
     listed = list_data(; cache_dir=mktempdir(), offline=true)
     @test Set(info.dataset_id for info in listed) ==
-          Set(["libsvm:heart_scale@1", "uci:iris@1"])
+          Set([
+              "libsvm:cadata@1",
+              "libsvm:colon-cancer@1",
+              "libsvm:dna_scale@1",
+              "libsvm:glass_scale@1",
+              "libsvm:heart_scale@1",
+              "libsvm:triazines_scale@1",
+              "uci:abalone@1",
+              "uci:breast-cancer-wisconsin-diagnostic@1",
+              "uci:iris@1",
+              "uci:wholesale-customers@1",
+              "uci:wine-quality@1",
+          ])
 end
 
 @testset "registry identity and offline failures" begin

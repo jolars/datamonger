@@ -1,8 +1,7 @@
 # Datamonger Python client
 
-This package is the Python reference client for Datamonger's feature-frozen
-revision 1 contracts. Its public interfaces may change until specification
-revision 1 is independently certified.
+This package is the Python reference client for Datamonger's stable
+specification revision 1.
 
 ## Installation and status
 
@@ -25,7 +24,7 @@ relying on registry license, distribution, or preservation metadata.
 
 ## Quick start
 
-The client bundles the immutable `proof-0001` registry snapshot and verifies it
+The client bundles the immutable `1.1.0` registry snapshot and verifies it
 against a trusted digest shipped in the package. It is the default registry, so
 the index remains available without network access:
 

@@ -15,7 +15,7 @@ canonical digest of decoded values. Record the dataset version and the strong
 registry selector with your analysis. A bare registry release name is a
 lookup, not a cryptographic pin.
 
-The language clients currently bundle `proof-0001`; the CLI bundles `2026.09`.
+All clients bundle the stable `1.1.0` registry snapshot.
 A bundled index works offline, but an uncached artifact requires access to its
 upstream source. Dataset artifacts are not bundled.
 

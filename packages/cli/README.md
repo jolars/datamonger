@@ -9,7 +9,7 @@ Build with `cargo build --release --locked` from this directory, then install
 archives and SHA-256 checksums for x64 Linux (static musl), x64 and ARM macOS,
 and x64 Windows in [GitHub Releases](https://github.com/jolars/datamonger/releases).
 
-The CLI bundles the stable `2026.09` registry index. Listing and inspecting
+The CLI bundles the stable `1.1.0` registry index. Listing and inspecting
 that registry work offline:
 
 ```console
@@ -41,7 +41,7 @@ Project selectors are found from the current directory upward. Resolution
 through the HTTPS catalog is explicit:
 
 ```console
-datamonger registry resolve 2026.09 --output .datamonger/selector.json
+datamonger registry resolve 1.1.0 --output .datamonger/selector.json
 datamonger --selector .datamonger/selector.json list
 ```
 

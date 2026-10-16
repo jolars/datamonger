@@ -52,7 +52,7 @@ From `packages/julia`, focused commands are:
 From `packages/cli`, run `cargo fmt --check`,
 `cargo clippy --locked --all-targets -- -D warnings`, and `cargo test --locked`.
 The CLI bundles stable registry assets in `packages/cli/assets`; `devenv test`
-checks them against `registry/releases/2026.09` and `spec/schema`.
+checks them against `registry/releases/1.1.0` and `spec/schema`.
 
 Run `uv run pytest tests_live/test_proof_registry.py` only when network access
 and upstream availability are expected. The R and Julia candidate audits are

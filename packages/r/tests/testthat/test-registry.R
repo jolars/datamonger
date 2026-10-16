@@ -69,6 +69,18 @@ test_that("the bundled registry is a verified offline trust root", {
 
   expect_setequal(
     vapply(listed, `[[`, character(1), "dataset_id"),
-    c("libsvm:heart_scale@1", "uci:iris@1")
+    c(
+      "libsvm:cadata@1",
+      "libsvm:colon-cancer@1",
+      "libsvm:dna_scale@1",
+      "libsvm:glass_scale@1",
+      "libsvm:heart_scale@1",
+      "libsvm:triazines_scale@1",
+      "uci:abalone@1",
+      "uci:breast-cancer-wisconsin-diagnostic@1",
+      "uci:iris@1",
+      "uci:wholesale-customers@1",
+      "uci:wine-quality@1"
+    )
   )
 })

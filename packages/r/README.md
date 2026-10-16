@@ -1,8 +1,7 @@
 # Datamonger R client
 
-This package implements Datamonger specification release candidate
-`spec-v1-rc1`. It retrieves artifacts through strongly selected immutable
-registry indexes, verifies their bytes, decodes the revision 1 CSV, TSV,
+This package implements Datamonger specification revision 1. It retrieves
+artifacts through strongly selected immutable registry indexes, verifies their bytes, decodes the revision 1 CSV, TSV,
 LIBSVM, and SVMLight representations, and verifies the canonical logical
 digest.
 
@@ -31,7 +30,7 @@ reports every content-addressed entry. Datamonger performs no telemetry.
 
 ## Use
 
-The bundled `proof-0001` index is the default trust root. Its dataset artifacts
+The bundled `1.1.0` index is the default trust root. Its dataset artifacts
 are retrieved on first use:
 
 ```r
