@@ -1,0 +1,56 @@
+{
+  "dataset_id": "datamonger:scheetz2006@1",
+  "id": "23420731",
+  "state": "published",
+  "url": "https://zenodo.org/records/23420731",
+  "draft_url": "https://zenodo.org/uploads/23420731",
+  "access": {
+    "record": "public",
+    "files": "public",
+    "embargo": {
+      "active": false,
+      "reason": null
+    },
+    "status": "open"
+  },
+  "files_sha256": {
+    "data.csv.gz": "8348d10e5ef29b95c5a9a757e0cee189758364bfae22baef72027a041cf0156e",
+    "README.md": "fa14c4803daa61f01fd89bb154040bcfc66658c47e5e65447ccf94afd9247516",
+    "prepare.py": "b6f98795ba77b7e6a41a85df5240a5b41e27bf003333519de0c3ff763f8b9c34",
+    "read_source.R": "e4e85df1a2bc224458c27de9810761e357d811d30e126518a904b55d6c5d5ca7",
+    "convert.R": "0660091a7b9e7ffec3ca921ef63aa55f432d44da064b5806cd10dea2bc973ab6",
+    "verify.R": "d91a0e499e2ace3598ab128dedcf2445aee248daaef7e33e7b5bf848d9a1b7ca",
+    "provenance.json": "1dd60f4b943a40354aae8b49d514ba2f34b9f0ba8bada23c9b26a7fb202f3c6e",
+    "LICENSE": "bfc2dd3b099506cc71e65e8af09e3f9b3860d8fddf59801b30313c5d21caac36"
+  },
+  "rights_review": "Source terms reviewed in curation/scheetz2006/1/RIGHTS.md.",
+  "rights": [
+    {
+      "title": {
+        "en": "GEO source-data use and distribution terms"
+      },
+      "description": {
+        "en": "The numeric data are redistributed under GEO source terms. NCBI places no restrictions on use or distribution of GEO data, while warning that submitters may retain intellectual property rights. No additional data-specific restriction was found in the reviewed GSE5680 records. Retain source attribution and preparation details. This source-policy assessment does not assert a standard SPDX license or public-domain dedication. The MIT license applies only to scripts and documentation; see README.md."
+      },
+      "link": "https://www.ncbi.nlm.nih.gov/geo/info/disclaimer.html"
+    },
+    {
+      "id": "mit",
+      "title": {
+        "en": "MIT License"
+      },
+      "description": {
+        "en": "A short and simple permissive license with conditions only requiring preservation of copyright and license notices. Licensed works, modifications, and larger works may be distributed under different terms and without source code."
+      },
+      "props": {
+        "url": "https://opensource.org/licenses/MIT",
+        "scheme": "spdx"
+      }
+    }
+  ],
+  "download_verification": "anonymous-public",
+  "doi": "10.5281/zenodo.23420731",
+  "data_url": "https://zenodo.org/api/records/23420731/files/data.csv.gz/content",
+  "verified_by": "Codex (automated download verification)",
+  "verified_at": "2026-10-16"
+}
