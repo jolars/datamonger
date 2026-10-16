@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.0](https://github.com/jolars/datamonger/compare/datamonger-python-v0.1.0...datamonger-python-v0.2.0) (2026-10-16)
+
+### Features
+- bundle stable registry in all clients ([`1ea6a3e`](https://github.com/jolars/datamonger/commit/1ea6a3e122c617b32515ced7f1f6aa65cfca5421))
+- **datasets:** add triazines data set ([`bd27a7c`](https://github.com/jolars/datamonger/commit/bd27a7cbc0ce751d71025f36fb8690a8f20e352f))
+- support qualified dataset references ([`3e9fbce`](https://github.com/jolars/datamonger/commit/3e9fbcec1ed403e32a35cf68758555421c702c19))
+- publish first stable registry and specification (#7) ([`5d22864`](https://github.com/jolars/datamonger/commit/5d22864cd59002c5a74b85a781048b5c4c155807))
+
+### Bug Fixes
+- **ci:** stabilize Ruff import classification ([`1551fe1`](https://github.com/jolars/datamonger/commit/1551fe14f9327bfab7c6f6c3b3aa37f87e916065))
+- stabilize release PR checks ([`4ba5ac0`](https://github.com/jolars/datamonger/commit/4ba5ac0cd4f71e0491f5fd361a80cf8d9438b1d0))
+- prepare clients for documentation builds ([`5e8dd6c`](https://github.com/jolars/datamonger/commit/5e8dd6c4f816dbacb3406e69655830d061d6469c))
+
 ## [0.1.0](https://github.com/jolars/datamonger/compare/datamonger-python-v0.0.0...datamonger-python-v0.1.0) (2026-09-07)
 
 ### Features
