@@ -6,6 +6,10 @@ site-url = "https://datamonger.dev/"
 canonical-url-style = "clean"
 description = "Retrieve, verify, and decode research datasets in Python, R, and Julia."
 
+[presentation.logo]
+repository = "datamonger"
+path = "assets/logo.png"
+
 [presentation.footer]
 docs-version = "dev"
 links = [

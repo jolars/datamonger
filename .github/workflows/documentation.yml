@@ -59,6 +59,8 @@ jobs:
           R CMD INSTALL --library="$RUNNER_TEMP/datamonger-r" packages/r
       - name: Build documentation site
         run: uv run --no-sync --project packages/python .build/diplodocus/target/debug/diplodocus build --config documentation/diplodocus.toml --output documentation/site
+      - name: Install public assets and shared head markup
+        run: python tools/dm_docs.py
       - uses: actions/setup-node@v7
         with:
           node-version: "24"

@@ -35,6 +35,14 @@ complete Julia's generated error types through the prepared runtime, execute
 Python and Julia API doctests, and use native R for package documents and examples.
 `check` remains static and reports 15 unresolved generated Julia types for this
 workspace; use `build` for complete validation.
+
+After building, run `python tools/dm_docs.py` from the repository root to install
+the favicon files and shared HTML head markup. The script copies
+`documentation/public/` into the published root, `documentation/site/`, and
+adds `documentation/head.html` to every generated HTML page. CI runs this step
+before deployment. For local previews, rerun it after Diplodocus rebuilds the
+site. Keep favicon markup in the shared file so all pages use the same links.
+
 The [offline conformance walkthrough](../packages/r/vignettes/offline-conformance.Rmd)
 retrieves a bundled CSV from a private temporary cache, verifies its decoded
 values and canonical digest, and renders tables and a plot. Every retrieval
