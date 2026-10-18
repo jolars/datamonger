@@ -174,8 +174,8 @@ datasets spanning regression, binary and multiclass classification, unsupervised
 data, dense and sparse data, and a train/test split. Its selector is
 [`registry/releases/2026.09/selector.json`](registry/releases/2026.09/selector.json).
 <!-- bundled-registry:start -->
-All four clients bundle the stable `1.1.0` snapshot. Its selector is
-[`registry/releases/1.1.0/selector.json`](registry/releases/1.1.0/selector.json).
+All four clients bundle the stable `1.2.0` snapshot. Its selector is
+[`registry/releases/1.2.0/selector.json`](registry/releases/1.2.0/selector.json).
 <!-- bundled-registry:end -->
 Select a registry explicitly with the Python client:
 
