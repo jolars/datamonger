@@ -145,6 +145,7 @@ function _data_info(dataset, registry)
         _require_object(get(dataset, "representation", nothing), "representation"),
     )
     expect = _require_object(get(representation, "expect", nothing), "representation expectation")
+    citations, instructions = _citation_metadata(dataset)
     return DataInfo(
         "$source:$name@$version",
         source,
@@ -163,6 +164,8 @@ function _data_info(dataset, registry)
         _records(get(expect, "verification", nothing), "verification records"),
         _optional_records(get(dataset, "related", nothing), "related datasets"),
         _optional_records(get(dataset, "tasks", nothing), "tasks"),
+        citations,
+        instructions,
     )
 end
 
@@ -318,6 +321,7 @@ function fetch_data(
     selected = _selected_registry(registry)
     index = _load_registry(selected, cache_dir; offline)
     dataset = _resolve_dataset(index, source, name, version)
+    citations, instructions = _citation_metadata(dataset)
     setup = _validate_representation(dataset)
     objects = CachedObject[]
     try
@@ -372,6 +376,8 @@ function fetch_data(
             verification,
             canonical_form,
             canonical_digest,
+            citations,
+            instructions,
         )
         return return_info ? FetchResult(decoded.data, info) : decoded.data
     finally

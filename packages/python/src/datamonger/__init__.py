@@ -1,6 +1,6 @@
 """Datamonger Python reference client."""
 
-from datamonger._api import data_info, fetch_artifact, fetch_data, list_data
+from datamonger._api import cite_data, data_info, fetch_artifact, fetch_data, list_data
 from datamonger._cache_management import cache_clean, cache_info
 from datamonger._models import (
     CacheCleanResult,
@@ -32,6 +32,7 @@ __all__ = [
     "active_registry",
     "cache_clean",
     "cache_info",
+    "cite_data",
     "data_info",
     "fetch_artifact",
     "fetch_data",

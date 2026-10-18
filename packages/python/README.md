@@ -286,6 +286,7 @@ atomic replacement.
 | --- | --- |
 | `fetch_data()` | Resolve, retrieve, verify, and decode one dataset. |
 | `fetch_artifact()` | Retrieve one verified artifact without decoding it. |
+| `cite_data()` | Get curated dataset citations without retrieving artifacts. |
 | `data_info()` | Inspect metadata for one resolved dataset version. |
 | `list_data()` | List every version in the selected registry. |
 | `resolve_registry()` | Discover a strong selector through an HTTPS catalog. |
@@ -312,3 +313,29 @@ The package also exports these public values and immutable result types:
 
 Expected public failures are exported from `datamonger.errors`; all derive from
 `DatamongerError`.
+
+## Dataset citations
+
+Retrieve curated citation text without downloading dataset artifacts:
+
+```python
+from datamonger import cite_data
+
+print(cite_data("uci:wine-quality@1"))
+references = cite_data("uci:wine-quality@1", format="records", include_all=True)
+```
+
+A dataset can have several references, with optional `dataset`, `paper`, or
+`collection` roles and explanatory notes. Roles and upstream recommendations are
+independent. By default, `cite_data()` selects references marked as recommended.
+If no recommendation flags are recorded, it returns all references and explains
+that the recommendation is unknown. `include_all=True` includes every reference.
+`format="records"` preserves the citation text and optional fields.
+
+`data_info(...).citations` and `fetch_data(..., return_info=True).info.citations`
+always contain all references from the selected registry record.
+`citation_instructions` preserves upstream instructions, including requests to
+cite several references together. Missing citations produce an empty tuple in
+metadata and an explicit message in text output. Legacy single citations remain
+available with their roles and recommendations left unspecified. This API uses
+only the selected registry; it performs no bibliographic lookups.

@@ -68,7 +68,11 @@ def bundle(root: Path, release: str | None = None, *, check_only: bool = False) 
     if hashlib.sha256(index).hexdigest() != digest:
         raise ValueError("local index digest does not match selector")
     record = json.loads(index)
-    if record.get("release") != release or record.get("schema_version") != 1:
+    if (
+        record.get("release") != release
+        or type(record.get("schema_version")) is not int
+        or record.get("schema_version") not in (1, 2)
+    ):
         raise ValueError("index release or schema does not match selector")
 
     outputs = {directory / "index.json": index for directory in BUNDLE_DIRECTORIES}

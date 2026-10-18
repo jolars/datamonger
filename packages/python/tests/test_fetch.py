@@ -775,7 +775,7 @@ def test_unsupported_registry_schema_is_rejected(
     local_server: tuple[str, ServerState], tmp_path: Path
 ) -> None:
     base_url, state = local_server
-    registry = make_registry(base_url, state, schema_version=2)
+    registry = make_registry(base_url, state, schema_version=3)
 
     with pytest.raises(UnsupportedRegistryError, match="schema"):
         fetch_data(
@@ -1694,3 +1694,57 @@ def test_artifact_only_opt_out_skips_all_decoded_expectations(
     assert result.info.verification == "artifact"
     assert result.info.canonical_form is None
     assert result.info.canonical_digest is None
+
+
+def test_citations_use_the_fetched_registry_and_need_no_artifact_download(
+    local_server: tuple[str, ServerState],
+    tmp_path: Path,
+) -> None:
+    from datamonger import cache_info, cite_data, data_info
+
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+    index = json.loads(state.bodies["/index.json"])
+    dataset = index["datasets"][0]
+    index["schema_version"] = dataset["schema_version"] = 2
+    dataset["description"] = "Citation test fixture."
+    dataset["license"] = {"status": "unknown"}
+    dataset["provenance"] = {
+        "citations": [
+            {"citation": "Deposit.", "role": "dataset", "recommended": True},
+            {"citation": "Paper.", "role": "paper", "recommended": True},
+            {"citation": "Collection.", "role": "collection", "recommended": False},
+        ],
+        "citation_instructions": "Cite the deposit and paper together.",
+    }
+    body = json.dumps(index).encode()
+    state.bodies["/index.json"] = body
+    registry = Registry(
+        registry.release, hashlib.sha256(body).hexdigest(), registry.index_url
+    )
+    info = data_info("fixture:mixed", registry=registry, cache_dir=tmp_path)
+    assert [path for path, _ in state.requests] == ["/index.json"]
+    state.requests.clear()
+    records = cite_data(
+        "fixture:mixed",
+        registry=registry,
+        cache_dir=tmp_path,
+        offline=True,
+        format="records",
+    )
+    assert len(records) == 2
+    assert state.requests == []
+    result = fetch_data(
+        "fixture:mixed", registry=registry, cache_dir=tmp_path, return_info=True
+    )
+    assert result.info.citations == info.citations
+    assert result.info.citation_instructions == info.citation_instructions
+    assert result.info.registry_index_sha256 == info.registry_index_sha256
+    cached = cache_info(cache_dir=tmp_path)
+    assert any(
+        entry.kind == "registry"
+        and entry.sha256 == registry.index_sha256
+        and entry.registry_release == registry.release
+        for entry in cached.entries
+    )
+    assert [path for path, _ in state.requests] == ["/mixed.csv"]

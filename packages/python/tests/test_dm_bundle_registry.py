@@ -74,10 +74,23 @@ def snapshot(root: Path) -> dict[Path, bytes]:
     }
 
 
+@pytest.mark.parametrize("schema_version", [1, 2])
 def test_updates_all_clients_and_is_idempotent(
-    bundle_root: Path, monkeypatch: pytest.MonkeyPatch
+    bundle_root: Path, monkeypatch: pytest.MonkeyPatch, schema_version: int
 ) -> None:
-    contents = (bundle_root / "registry/releases/1.2.0/index.json").read_bytes()
+    directory = bundle_root / "registry/releases/1.2.0"
+    record = json.loads((directory / "index.json").read_bytes())
+    record["schema_version"] = schema_version
+    if schema_version == 2:
+        record["datasets"][0]["schema_version"] = 2
+        record["datasets"][0]["provenance"]["citations"] = [
+            {"citation": "Dataset deposit.", "role": "dataset", "recommended": True}
+        ]
+    contents = json.dumps(record).encode()
+    (directory / "index.json").write_bytes(contents)
+    selector = json.loads((directory / "selector.json").read_bytes())
+    selector["index_sha256"] = hashlib.sha256(contents).hexdigest()
+    (directory / "selector.json").write_text(json.dumps(selector))
     calls = []
 
     def fetch(url: str) -> bytes:
@@ -152,7 +165,7 @@ def test_failed_validation_does_not_change_files(
         (bundle_root / "packages/r/R/registry.R").write_text("missing declaration\n")
     elif failure in {"schema", "release"}:
         record = json.loads(contents)
-        record["schema_version" if failure == "schema" else "release"] = 2
+        record["schema_version" if failure == "schema" else "release"] = 3
         contents = json.dumps(record).encode()
         (directory / "index.json").write_bytes(contents)
         selector = json.loads((directory / "selector.json").read_bytes())

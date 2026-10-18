@@ -133,3 +133,22 @@ automatic.
 
 The project code is MIT-licensed. Datasets retain their own licenses and terms;
 registry inclusion is not a license grant or a preservation guarantee.
+
+## Dataset citations
+
+`cite_data("uci:wine-quality@1")` returns curated citation text without
+retrieving dataset artifacts. Use `format="records"` for reference records and
+`include_all=true` to include every reference. A reference may have a
+`dataset`, `paper`, or `collection` role, a note, and an upstream recommendation
+flag. Multiple references can be recommended together. Roles do not imply
+recommendations.
+
+By default, references marked as recommended are selected. If no recommendation
+flags are recorded, all references are returned and text output explains that
+the recommendation is unknown. Missing citations produce an empty vector of
+records or an explicit text message. Legacy single citations remain supported.
+
+`data_info(...).citations` and `fetch_data(...; return_info=true).info.citations`
+contain every reference from the selected registry record.
+`citation_instructions` preserves upstream instructions, including requests to
+cite several references together. No bibliographic lookups are performed.

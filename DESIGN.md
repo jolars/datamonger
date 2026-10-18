@@ -976,7 +976,11 @@ authenticated upstream retrieval with the user's own credentials.
 Provenance distinguishes where data originated from where Datamonger currently
 retrieves it. Useful provenance includes the provider, upstream dataset
 identifier, original name, landing page, authors, citation, upstream version,
-and retrieval date.
+and retrieval date. Citation metadata can contain multiple references with
+optional roles, explanatory notes, and upstream recommendations, plus instructions for
+citing references together. Roles do not imply recommendations. The
+[citation extension](spec/citations.md) defines schema versions and client
+behavior, including `cite_data()` and citations in returned metadata.
 
 ---
 

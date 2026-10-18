@@ -53,6 +53,10 @@ class FetchInfo:
     """Canonical-form version used for decoded verification, or ``None`` if skipped."""
     canonical_digest: str | None
     """Verified SHA-256 of the canonical decoded data, or ``None`` if skipped."""
+    citations: tuple[Mapping[str, Any], ...] = ()
+    """All curated references, including optional roles, notes, and recommendations."""
+    citation_instructions: str | None = None
+    """Recorded upstream citation instructions, or ``None`` when unavailable."""
 
 
 @dataclass(frozen=True)
@@ -93,6 +97,10 @@ class DataInfo:
     """Registry links to related datasets, or an empty tuple when none are declared."""
     tasks: tuple[Mapping[str, Any], ...]
     """Registry task descriptions, or an empty tuple when none are declared."""
+    citations: tuple[Mapping[str, Any], ...] = ()
+    """All curated references; an absent ``recommended`` flag means unknown."""
+    citation_instructions: str | None = None
+    """Recorded upstream citation instructions, or ``None`` when unavailable."""
 
 
 @dataclass(frozen=True)

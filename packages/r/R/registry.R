@@ -290,7 +290,8 @@ active_registry <- function(project_dir = getwd()) {
   index <- .parse_json_raw(contents, "verified registry index")
   .require_object(index, "registry index")
 
-  if (!identical(index$schema_version, 1L)) {
+  if (!identical(index$schema_version, 1L) &&
+      !identical(index$schema_version, 2L)) {
     .abort_category(
       "unsupported-registry",
       paste0("unsupported registry schema ", index$schema_version)
@@ -421,7 +422,9 @@ active_registry <- function(project_dir = getwd()) {
 
   dataset <- matches[[1]]
 
-  if (!identical(dataset$schema_version, 1L)) {
+  if (!(identical(dataset$schema_version, 1L) ||
+        (identical(dataset$schema_version, 2L) &&
+          identical(index$schema_version, 2L)))) {
     .abort_category(
       "unsupported-registry",
       paste0("unsupported dataset schema ", dataset$schema_version)

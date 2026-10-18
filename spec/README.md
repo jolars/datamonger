@@ -19,3 +19,7 @@ R, and Julia pass the shared conformance corpus and reproduce every registry
 verification record. Any change that alters logical output or reinterprets
 existing bytes requires a later specification revision and a new decoder,
 canonical-form, schema, or behavioral-contract version as appropriate.
+
+The [citation metadata extension](citations.md) adds manifest and index schema
+version 2 while preserving the frozen revision 1 contracts. It defines multiple
+references, optional semantic roles, and recorded upstream recommendations.

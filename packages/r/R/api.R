@@ -207,6 +207,7 @@ fetch_artifact <- function(
   )
 
   expect <- .require_object(representation$expect, "representation expectation")
+  citation_metadata <- .citation_metadata(dataset)
 
   structure(
     list(
@@ -238,7 +239,9 @@ fetch_artifact <- function(
         "verification records"
       ),
       related = dataset$related %||% list(),
-      tasks = dataset$tasks %||% list()
+      tasks = dataset$tasks %||% list(),
+      citations = citation_metadata$citations,
+      citation_instructions = citation_metadata$citation_instructions
     ),
     class = "datamonger_data_info"
   )
@@ -506,6 +509,7 @@ fetch_data <- function(
   registry <- .selected_registry(registry)
   index <- .load_registry(registry, cache_dir, offline)
   dataset <- .resolve_dataset(index, source, name, version)
+  citation_metadata <- .citation_metadata(dataset)
   setup <- .validate_representation(dataset)
 
   leased <- list()
@@ -585,7 +589,9 @@ fetch_data <- function(
       artifact_digests = artifact_digests,
       verification = verification,
       canonical_form = canonical_form,
-      canonical_digest = canonical_digest
+      canonical_digest = canonical_digest,
+      citations = citation_metadata$citations,
+      citation_instructions = citation_metadata$citation_instructions
     ),
     class = "datamonger_fetch_info"
   )

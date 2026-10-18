@@ -1,23 +1,3 @@
-reseal_index <- function(index, cache_dir) {
-  text <- jsonlite::toJSON(
-    index,
-    auto_unbox = TRUE,
-    null = "null",
-    digits = NA,
-    pretty = FALSE
-  )
-  contents <- charToRaw(text)
-  digest <- digest::digest(contents, algo = "sha256", serialize = FALSE)
-  directory <- file.path(cache_dir, "registries", "sha256")
-  dir.create(directory, recursive = TRUE, showWarnings = FALSE)
-  writeBin(contents, file.path(directory, digest))
-  registry_selector(
-    index$release,
-    digest,
-    "https://example.com/index.json"
-  )
-}
-
 test_that("dataset references select the same data, artifacts, and metadata", {
   cache_dir <- tempfile("datamonger-cache-")
   seeded <- seed_conformance_cache(cache_dir)

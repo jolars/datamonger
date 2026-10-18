@@ -139,7 +139,7 @@ end
     seeded = seed_conformance_cache(cache_dir)
 
     index = deepcopy(seeded.index)
-    index["schema_version"] = 2
+    index["schema_version"] = 3
     unsupported_registry = reseal_index(index, cache_dir)
     @test_throws UnsupportedRegistryError list_data(
         ; registry=unsupported_registry, cache_dir, offline=true,
@@ -232,4 +232,67 @@ end
 @testset "semantic taxonomy is complete" begin
     expected = Set(case["expected"] for case in read_json("conformance", "errors.json")["cases"])
     @test Set(keys(Datamonger.SEMANTIC_ERROR_CATEGORIES)) == expected
+end
+
+@testset "curated citations" begin
+    cache_dir = mktempdir()
+    seeded = seed_conformance_cache(cache_dir)
+    index = seeded.index
+    index["schema_version"] = index["datasets"][1]["schema_version"] = 2
+    records = [
+        Dict{String,Any}("citation" => "Dataset deposit.", "role" => "dataset", "recommended" => true),
+        Dict{String,Any}("citation" => "Collection paper.", "role" => "paper", "recommended" => true,
+            "note" => "Describes the observations."),
+        Dict{String,Any}("citation" => "Benchmark collection.", "role" => "collection", "recommended" => false),
+        Dict{String,Any}("citation" => "Other reference."),
+    ]
+    provenance = index["datasets"][1]["provenance"]
+    provenance["citations"] = records
+    provenance["citation_instructions"] = "Please cite both references."
+    registry = reseal_index(index, cache_dir)
+    options = (; registry, cache_dir, offline=true)
+    info = data_info("conformance:mixed_csv@1"; options...)
+    result = fetch_data("conformance:mixed_csv@1"; options..., return_info=true)
+    @test info.citations == result.info.citations == records
+    @test info.citation_instructions == result.info.citation_instructions == "Please cite both references."
+    @test result.info.registry_index_sha256 == registry.index_sha256
+    @test cite_data("conformance:mixed_csv"; options..., format="records") == records[1:2]
+    @test cite_data("conformance:mixed_csv"; options..., format="records", include_all=true) == records
+    text = cite_data("conformance:mixed_csv"; options...)
+    @test occursin("[dataset] Dataset deposit.", text)
+    @test occursin("Describes the observations.", text)
+    @test !occursin("Benchmark", text)
+    rm(joinpath(cache_dir, "objects"); recursive=true)
+    @test cite_data("conformance:mixed_csv"; options...) == text
+
+    delete!(provenance, "citations")
+    delete!(provenance, "citation_instructions")
+    index["datasets"][1]["schema_version"] = 1
+    provenance["citation"] = "Legacy reference."
+    registry = reseal_index(index, cache_dir)
+    options = (; registry, cache_dir, offline=true)
+    @test cite_data("conformance:mixed_csv"; options..., format="records") ==
+        [Dict("citation" => "Legacy reference.")]
+    @test occursin("No upstream citation recommendation", cite_data("conformance:mixed_csv"; options...))
+    delete!(provenance, "citation")
+    registry = reseal_index(index, cache_dir)
+    @test cite_data("conformance:mixed_csv"; registry, cache_dir, offline=true) ==
+        "No citation metadata is recorded."
+    @test isempty(cite_data("conformance:mixed_csv"; registry, cache_dir, offline=true, format="records"))
+
+    index["datasets"][1]["schema_version"] = 2
+    for record in [
+        Dict("citation" => ""), Dict("citation" => "Text", "role" => "other"),
+        Dict("citation" => "Text", "recommended" => 1),
+        Dict("citation" => "Text", "note" => nothing),
+        Dict("citation" => "Text", "extra" => true),
+    ]
+        provenance["citations"] = [record]
+        registry = reseal_index(index, cache_dir)
+        @test_throws UnsupportedRegistryError cite_data(
+            "conformance:mixed_csv"; registry, cache_dir, offline=true,
+        )
+    end
+    @test_throws ArgumentError cite_data("conformance:mixed_csv"; format="bibtex")
+    @test_throws ArgumentError cite_data("conformance:mixed_csv"; include_all=1)
 end

@@ -31,6 +31,8 @@ struct FetchInfo
     verification::Symbol
     canonical_form::Union{Nothing,Int}
     canonical_digest::Union{Nothing,String}
+    citations::Vector{Dict{String,Any}}
+    citation_instructions::Union{Nothing,String}
 end
 
 """Registry metadata for one resolved dataset version."""
@@ -52,6 +54,8 @@ struct DataInfo
     verification_records::Vector{Dict{String,Any}}
     related::Vector{Dict{String,Any}}
     tasks::Vector{Dict{String,Any}}
+    citations::Vector{Dict{String,Any}}
+    citation_instructions::Union{Nothing,String}
 end
 
 """A read-only row-compressed sparse matrix for exceptionally wide data."""

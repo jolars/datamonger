@@ -13,6 +13,7 @@ from datamonger._cache import (
     verified_download_lease,
 )
 from datamonger._canonical import canonical_sha256
+from datamonger._citations import citation_metadata, citation_text, select_citations
 from datamonger._decode import decode_delimited_text
 from datamonger._decode_libsvm import decode_libsvm, decode_libsvm_split
 from datamonger._errors import (
@@ -283,6 +284,7 @@ def _data_info(
         _object(dataset.get("representation"), "dataset.representation")
     )
     expect = _object(representation.get("expect"), "representation.expect")
+    citations, instructions = citation_metadata(dataset)
     return DataInfo(
         dataset_id=f"{source}:{name}@{version}",
         source=source,
@@ -305,6 +307,8 @@ def _data_info(
         ),
         related=_optional_records(dataset.get("related"), "dataset.related"),
         tasks=_optional_records(dataset.get("tasks"), "dataset.tasks"),
+        citations=citations,
+        citation_instructions=instructions,
     )
 
 
@@ -337,6 +341,75 @@ def data_info(
     index = _load_registry(selected_registry, cache_root, offline=offline)
     dataset = resolve_dataset(index, source=source, name=name, version=version)
     return _data_info(dataset, registry=selected_registry)
+
+
+@overload
+def cite_data(
+    name: str,
+    *,
+    source: str | None = None,
+    version: str | None = None,
+    registry: Registry | None = None,
+    cache_dir: Pathish | None = None,
+    offline: bool = False,
+    include_all: bool = False,
+    format: Literal["text"] = "text",
+) -> str: ...
+
+
+@overload
+def cite_data(
+    name: str,
+    *,
+    source: str | None = None,
+    version: str | None = None,
+    registry: Registry | None = None,
+    cache_dir: Pathish | None = None,
+    offline: bool = False,
+    include_all: bool = False,
+    format: Literal["records"],
+) -> tuple[Mapping[str, Any], ...]: ...
+
+
+def cite_data(
+    name: str,
+    *,
+    source: str | None = None,
+    version: str | None = None,
+    registry: Registry | None = None,
+    cache_dir: Pathish | None = None,
+    offline: bool = False,
+    include_all: bool = False,
+    format: Literal["text", "records"] = "text",
+) -> str | tuple[Mapping[str, Any], ...]:
+    """Return curated citations without retrieving dataset artifacts.
+
+    Select references explicitly marked as recommended by upstream. If no
+    recommendation flags are recorded, return all references and state that
+    the recommendation is unknown in text output. ``include_all=True`` returns
+    every reference. ``format="records"`` preserves roles, notes, and optional
+    recommendation flags. Full metadata and upstream instructions are also
+    available through ``data_info()`` and fetch results with ``return_info=True``.
+
+    Registry selection, dataset references, and offline behavior match
+    ``data_info()``. Formatting uses only curated text; it performs no DOI lookup.
+    """
+    if format not in {"text", "records"}:
+        raise ValueError("format must be 'text' or 'records'")
+    if not isinstance(include_all, bool):
+        raise ValueError("include_all must be a boolean")
+    info = data_info(
+        name,
+        source=source,
+        version=version,
+        registry=registry,
+        cache_dir=cache_dir,
+        offline=offline,
+    )
+    selected = select_citations(info.citations, include_all=include_all)
+    if format == "records":
+        return selected
+    return citation_text(info.citations, selected, info.citation_instructions)
 
 
 def list_data(
@@ -509,6 +582,7 @@ def fetch_data(
     index = _load_registry(selected_registry, cache_root, offline=offline)
     dataset = resolve_dataset(index, source=source, name=name, version=version)
     resolved_version = _string(dataset.get("version"), "dataset.version")
+    citations, instructions = citation_metadata(dataset)
     representation = _object(dataset.get("representation"), "dataset.representation")
     decoder = representation.get("decoder")
     decoder_version = representation.get("decoder_version")
@@ -611,6 +685,8 @@ def fetch_data(
         verification=verification,
         canonical_form=canonical_form,
         canonical_digest=canonical_digest,
+        citations=citations,
+        citation_instructions=instructions,
     )
     if return_info:
         return FetchResult(data=decoded.data, info=info)

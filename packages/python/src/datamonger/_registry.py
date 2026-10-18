@@ -271,7 +271,7 @@ def load_registry(
     if (
         isinstance(index_schema, bool)
         or not isinstance(index_schema, int)
-        or index_schema != 1
+        or index_schema not in (1, 2)
     ):
         raise UnsupportedRegistryError(
             f"unsupported registry schema {parsed.get('schema_version')!r}"
@@ -345,14 +345,13 @@ def resolve_dataset(
             and raw_dataset.get("name") == name
             and raw_dataset.get("version") == resolved_version
         ):
-            # Records carry their own schema version; a future record schema
-            # inside a supported index envelope must fail loudly rather than
-            # be reinterpreted under version 1 assumptions.
+            # Version 1 indexes cannot carry the citation extension.
             dataset_schema = raw_dataset.get("schema_version")
             if (
                 isinstance(dataset_schema, bool)
                 or not isinstance(dataset_schema, int)
-                or dataset_schema != 1
+                or dataset_schema not in (1, 2)
+                or (dataset_schema == 2 and index.get("schema_version") != 2)
             ):
                 raise UnsupportedRegistryError(
                     f"unsupported dataset schema {raw_dataset.get('schema_version')!r}"

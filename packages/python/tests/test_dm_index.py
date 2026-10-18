@@ -345,7 +345,7 @@ def test_two_default_versions_for_one_dataset_are_rejected(tmp_path: Path) -> No
     [
         (make_manifest(source="UCI"), "does not match"),
         (make_manifest(sha256="A" * 64), "does not match"),
-        (make_manifest(schema_version=2), "schema_version"),
+        (make_manifest(schema_version=3), "schema_version"),
         (make_manifest() | {"surprise": True}, "Additional properties"),
     ],
 )
@@ -848,3 +848,81 @@ def test_checked_in_release_bytes_are_immutable(
     assert index_bytes == (release.parent / "index.json").read_bytes()
     assert selector_bytes == (release.parent / "selector.json").read_bytes()
     assert __import__("hashlib").sha256(index_bytes).hexdigest() == expected_digest
+
+
+def test_citation_schema_generates_a_version_2_index(tmp_path: Path) -> None:
+    prepare_root(tmp_path)
+    dataset = make_manifest(schema_version=2)
+    dataset["provenance"]["citations"] = [
+        {"citation": "Dataset deposit.", "role": "dataset", "recommended": True},
+        {
+            "citation": "Associated paper.",
+            "role": "paper",
+            "recommended": True,
+            "note": "Describes data collection.",
+        },
+        {"citation": "Collection reference.", "role": "collection"},
+    ]
+    dataset["provenance"]["citation_instructions"] = "Cite both recommended references."
+    release = make_release(
+        tmp_path, [dataset, make_manifest(name="other")], [default()]
+    )
+    index_bytes, selector_bytes = dm_index.build(release, root=tmp_path)
+    index = json.loads(index_bytes)
+    assert index["schema_version"] == 2
+    assert [d["schema_version"] for d in index["datasets"]] == [2, 1]
+    assert index["datasets"][0]["provenance"] == dataset["provenance"]
+    assert json.loads(selector_bytes)["schema_version"] == 1
+    assert dm_index.build(release, root=tmp_path)[0] == index_bytes
+
+
+@pytest.mark.parametrize(
+    "provenance",
+    [
+        {"citations": [{"citation": "", "role": "dataset"}]},
+        {"citations": [{"citation": "Text", "role": "other"}]},
+        {"citations": [{"citation": "Text", "recommended": "yes"}]},
+        {"citations": [{"citation": "Text", "unexpected": True}]},
+        {"citations": [], "citation": "Ambiguous legacy reference."},
+        {"citation_instructions": ""},
+    ],
+)
+def test_citation_schema_rejects_invalid_metadata(provenance: dict[str, Any]) -> None:
+    dataset = make_manifest(schema_version=2)
+    dataset["provenance"].update(provenance)
+    with pytest.raises(ValueError):
+        dm_index.validate_manifest(dataset)
+
+
+def test_version_1_manifest_remains_closed_to_multiple_citations() -> None:
+    dataset = make_manifest()
+    dataset["provenance"]["citations"] = []
+    with pytest.raises(ValueError, match="Additional properties"):
+        dm_index.validate_manifest(dataset)
+
+
+def test_citation_corrections_preserve_dataset_identity_across_version_2_releases(
+    tmp_path: Path,
+) -> None:
+    prepare_root(tmp_path)
+    first_root = tmp_path / "registry/releases/first"
+    second_root = tmp_path / "registry/releases/second"
+    first_root.mkdir(parents=True)
+    second_root.mkdir()
+    dataset = make_manifest(schema_version=2)
+    dataset["provenance"]["citations"] = [{"citation": "Initial reference."}]
+    first = make_release(tmp_path, [dataset], [default()], release="first", sequence=0)
+    first = first.replace(first_root / "release.yaml")
+    write_release_outputs(first, tmp_path)
+    initial = json.loads((first_root / "index.json").read_bytes())
+    dataset["provenance"]["citations"] = [
+        {"citation": "Corrected reference.", "role": "dataset", "recommended": True},
+        {"citation": "Paper.", "role": "paper", "recommended": True},
+    ]
+    second = make_release(
+        tmp_path, [dataset], [default()], release="second", sequence=1
+    )
+    second = second.replace(second_root / "release.yaml")
+    updated = json.loads(dm_index.build(second, root=tmp_path)[0])
+    assert initial["datasets"][0]["version"] == updated["datasets"][0]["version"] == "1"
+    assert len(updated["datasets"][0]["provenance"]["citations"]) == 2

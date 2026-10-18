@@ -158,9 +158,10 @@ def _selector(
     base_url: str,
     state: ServerState,
     datasets: list[dict[str, Any]],
+    schema_version: int = 1,
 ) -> Path:
     index = {
-        "schema_version": 1,
+        "schema_version": schema_version,
         "release": "test-0001",
         "defaults": [],
         "datasets": datasets,
@@ -181,19 +182,21 @@ def _selector(
     return path
 
 
+@pytest.mark.parametrize("schema_version", [1, 2])
 def test_check_fetches_every_location_and_verifies_decoded_data(
-    tmp_path: Path, local_server: tuple[str, ServerState]
+    tmp_path: Path, local_server: tuple[str, ServerState], schema_version: int
 ) -> None:
     base_url, state = local_server
     contents = FIXTURE.read_bytes()
     state.responses["/first.csv"] = Response(contents)
     state.responses["/second.csv"] = Response(contents)
-    selector = _selector(
-        tmp_path,
-        base_url,
-        state,
-        [_dataset(base_url, contents, ["/first.csv", "/second.csv"])],
-    )
+    dataset = _dataset(base_url, contents, ["/first.csv", "/second.csv"])
+    dataset["schema_version"] = schema_version
+    if schema_version == 2:
+        dataset["provenance"]["citations"] = [
+            {"citation": "Dataset deposit.", "role": "dataset", "recommended": True}
+        ]
+    selector = _selector(tmp_path, base_url, state, [dataset], schema_version)
 
     result = dm_canary.check(selector, root=ROOT)
 

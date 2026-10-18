@@ -18,6 +18,7 @@ include("decode.jl")
 include("cache.jl")
 include("registry.jl")
 include("api.jl")
+include("citations.jl")
 
 export ArtifactIntegrityError,
     ArtifactSelectionError,
@@ -51,6 +52,7 @@ export ArtifactIntegrityError,
     active_registry,
     cache_clean,
     cache_info,
+    cite_data,
     data_info,
     datamonger_cache_dir,
     default_cache_dir,

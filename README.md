@@ -81,9 +81,17 @@ from datamonger import data_info
 info = data_info("iris", source="uci", version="1")
 print(info.dataset_id)
 print(info.provenance)
+print(info.citations)
 print(info.license)
 print([artifact["distribution"] for artifact in info.artifacts])
 ```
+
+Use `cite_data("uci:wine-quality@1")` for curated citation text without
+retrieving artifacts. Citations support multiple references, optional roles and
+notes, and upstream recommendations. `format="records"` preserves those fields;
+`include_all=True` includes every reference. Fetch results requested with
+`return_info=True` also expose `result.info.citations` and
+`result.info.citation_instructions`. See the [citation contract](spec/citations.md).
 
 An unknown license remains unknown—registry inclusion is not legal advice or a
 license grant. An `upstream-only` artifact is available only while an upstream

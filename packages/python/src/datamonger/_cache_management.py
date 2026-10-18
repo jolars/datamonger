@@ -105,7 +105,11 @@ def _registry_metadata(contents: bytes) -> tuple[str | None, dict[str, set[str]]
         value = json.loads(contents)
     except (UnicodeDecodeError, json.JSONDecodeError):
         return None, {}
-    if not isinstance(value, Mapping) or value.get("schema_version") != 1:
+    if (
+        not isinstance(value, Mapping)
+        or type(value.get("schema_version")) is not int
+        or value.get("schema_version") not in (1, 2)
+    ):
         return None, {}
 
     release = value.get("release")

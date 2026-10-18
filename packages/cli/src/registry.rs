@@ -12,7 +12,15 @@ use crate::error::{Error, Result};
 
 pub const BUNDLED_INDEX: &[u8] = include_bytes!("../assets/index.json");
 const BUNDLED_SELECTOR: &[u8] = include_bytes!("../assets/selector.json");
-const SCHEMAS: [(&str, &str); 5] = [
+const SCHEMAS: [(&str, &str); 7] = [
+    (
+        "https://datamonger.dev/spec/schema/index-v2.schema.json",
+        include_str!("../assets/index-v2.schema.json"),
+    ),
+    (
+        "https://datamonger.dev/spec/schema/manifest-v2.schema.json",
+        include_str!("../assets/manifest-v2.schema.json"),
+    ),
     (
         "https://datamonger.dev/spec/schema/index-v1.schema.json",
         include_str!("../assets/index-v1.schema.json"),
@@ -71,8 +79,9 @@ fn validate_schema(value: &Value, schema_name: &str) -> Result<()> {
     let registry = registry
         .prepare()
         .map_err(|error| Error::new("unsupported-registry", error.to_string()))?;
+    let version = value["schema_version"].as_u64().unwrap_or(0);
     let schema = serde_json::json!({
-        "$ref": format!("https://datamonger.dev/spec/schema/{schema_name}-v1.schema.json")
+        "$ref": format!("https://datamonger.dev/spec/schema/{schema_name}-v{version}.schema.json")
     });
     let validator = jsonschema::options()
         .with_registry(&registry)
@@ -320,5 +329,57 @@ impl Index {
                     && entry["version"] == selected_version
             })
             .ok_or_else(|| Error::new("unknown-dataset", format!("unknown dataset {id}")))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn citation_index() -> Value {
+        let mut index: Value = serde_json::from_slice(BUNDLED_INDEX).unwrap();
+        index["schema_version"] = json!(2);
+        index["datasets"][0]["schema_version"] = json!(2);
+        let provenance = index["datasets"][0]["provenance"].as_object_mut().unwrap();
+        provenance.remove("citation");
+        provenance.insert(
+            "citations".into(),
+            json!([
+                {"citation": "Deposit.", "role": "dataset", "recommended": true},
+                {"citation": "Paper.", "role": "paper", "recommended": true},
+                {"citation": "Collection.", "role": "collection", "note": "Distribution source."}
+            ]),
+        );
+        index
+    }
+
+    #[test]
+    fn citation_indexes_accept_mixed_manifest_versions() {
+        let index = citation_index();
+        let bytes = serde_json::to_vec(&index).unwrap();
+        let mut selector = bundled_selector().unwrap();
+        selector.index_sha256 = sha256(&bytes);
+        let parsed = parse_index(&bytes, selector).unwrap();
+        assert_eq!(
+            parsed.document["datasets"][0]["provenance"]["citations"]
+                .as_array()
+                .unwrap()
+                .len(),
+            3
+        );
+    }
+
+    #[test]
+    fn citation_schemas_reject_ambiguous_or_invalid_records() {
+        let mut index = citation_index();
+        index["schema_version"] = json!(1);
+        assert!(validate_schema(&index, "index").is_err());
+        index["schema_version"] = json!(2);
+        index["datasets"][0]["provenance"]["citations"][0]["recommended"] = json!(1);
+        assert!(validate_schema(&index, "index").is_err());
+        index["datasets"][0]["provenance"]["citations"][0]["recommended"] = json!(true);
+        index["datasets"][0]["provenance"]["citation"] = json!("Ambiguous legacy citation.");
+        assert!(validate_schema(&index, "index").is_err());
     }
 }

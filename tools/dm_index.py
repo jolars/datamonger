@@ -382,13 +382,20 @@ def _validate_dataset(dataset: Mapping[str, Any]) -> None:
                     raise ValueError(f"task refers to unknown component {name!r}")
 
 
+def _versioned_schema(record: Mapping[str, Any], name: str) -> str:
+    version = record.get("schema_version")
+    if type(version) is not int or version not in (1, 2):
+        raise ValueError(f"unsupported {name} schema_version {version!r}")
+    return f"{name}-v{version}.schema.json"
+
+
 def validate_manifest(dataset: Mapping[str, Any], *, root: Path | None = None) -> None:
     """Validate one complete manifest against its schema and semantic rules."""
 
     source_root = (root or ROOT).resolve()
     _validate_schema(
         dataset,
-        "manifest-v1.schema.json",
+        _versioned_schema(dataset, "manifest"),
         source_root / "spec" / "schema",
         "manifest",
     )
@@ -693,7 +700,7 @@ def build(release_path: Path, *, root: Path | None = None) -> tuple[bytes, bytes
     for history in histories:
         _validate_schema(
             history,
-            "index-v1.schema.json",
+            _versioned_schema(history, "index"),
             schema_directory,
             "historical index",
         )
@@ -729,14 +736,16 @@ def build(release_path: Path, *, root: Path | None = None) -> tuple[bytes, bytes
                 )
 
     index: dict[str, object] = {
-        "schema_version": 1,
+        "schema_version": 2 if any(d["schema_version"] == 2 for d in datasets) else 1,
         "release": release,
         "defaults": sorted(defaults, key=lambda value: _identity(value, "default")),
         "datasets": sorted(datasets, key=lambda value: _identity(value, "dataset")),
     }
     if errata:
         index["errata"] = list(errata)
-    _validate_schema(index, "index-v1.schema.json", schema_directory, "generated index")
+    _validate_schema(
+        index, _versioned_schema(index, "index"), schema_directory, "generated index"
+    )
 
     index_bytes = _json_bytes(index)
     selector = {

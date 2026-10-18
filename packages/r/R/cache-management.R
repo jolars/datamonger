@@ -20,7 +20,8 @@
   if (
     is.null(parsed) ||
       !.is_object(parsed) ||
-      !identical(parsed$schema_version, 1L)
+      !(identical(parsed$schema_version, 1L) ||
+        identical(parsed$schema_version, 2L))
   ) {
     return(list(release = NULL, references = list()))
   }

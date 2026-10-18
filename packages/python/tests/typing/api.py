@@ -1,7 +1,8 @@
 """Compile-time checks for the public return-type contract."""
 
+from collections.abc import Mapping
 from pathlib import Path
-from typing import assert_type
+from typing import Any, assert_type
 
 from datamonger import (
     DataInfo,
@@ -10,6 +11,7 @@ from datamonger import (
     Registry,
     SparseDataset,
     SparseDatasetSplit,
+    cite_data,
     data_info,
     fetch_artifact,
     fetch_data,
@@ -60,3 +62,11 @@ def check_metadata_return_types(registry: Registry) -> None:
     assert_type(fetch_artifact("fixture:example@1", registry=registry), Path)
     assert_type(data_info("example", source="fixture", registry=registry), DataInfo)
     assert_type(list_data(registry=registry), tuple[DataInfo, ...])
+
+
+def check_citation_return_types(registry: Registry) -> None:
+    assert_type(cite_data("fixture:example", registry=registry), str)
+    assert_type(
+        cite_data("fixture:example", registry=registry, format="records"),
+        tuple[Mapping[str, Any], ...],
+    )
