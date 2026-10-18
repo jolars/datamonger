@@ -9,7 +9,7 @@ Build with `cargo build --release --locked` from this directory, then install
 archives and SHA-256 checksums for x64 Linux (static musl), x64 and ARM macOS,
 and x64 Windows in [GitHub Releases](https://github.com/jolars/datamonger/releases).
 
-The CLI bundles the stable `1.1.0` registry index. Listing and inspecting
+The CLI bundles a stable registry index. Listing and inspecting
 that registry work offline:
 
 ```console

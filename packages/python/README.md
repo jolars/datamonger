@@ -24,7 +24,7 @@ relying on registry license, distribution, or preservation metadata.
 
 ## Quick start
 
-The client bundles the immutable `1.1.0` registry snapshot and verifies it
+The client bundles the immutable stable registry snapshot and verifies it
 against a trusted digest shipped in the package. It is the default registry, so
 the index remains available without network access:
 

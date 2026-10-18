@@ -71,6 +71,8 @@ jobs:
     if: needs.release.outputs.registry_tag != ''
     permissions:
       contents: write
+      pull-requests: write
     uses: ./.github/workflows/publish-registry.yml
+    secrets: inherit
     with:
       tag: ${{ needs.release.outputs.registry_tag }}

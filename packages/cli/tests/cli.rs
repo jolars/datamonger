@@ -125,7 +125,9 @@ fn bundled_registry_works_offline() {
         String::from_utf8_lossy(&output.stderr)
     );
     let value: Value = serde_json::from_slice(&output.stdout).unwrap();
-    assert_eq!(value["registry"]["release"], "1.1.0");
+    let selector: Value =
+        serde_json::from_slice(include_bytes!("../assets/selector.json")).unwrap();
+    assert_eq!(value["registry"], selector);
     assert!(
         value["datasets"]
             .as_array()

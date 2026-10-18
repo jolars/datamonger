@@ -10,7 +10,7 @@ cargo build --release --locked --manifest-path packages/cli/Cargo.toml
 ```
 
 Use the binary at `packages/cli/target/release/datamonger`, or install it on your
-`PATH`. The bundled `1.1.0` registry supports offline listing and inspection:
+`PATH`. The bundled stable registry supports offline listing and inspection:
 
 ```console
 datamonger list --source uci

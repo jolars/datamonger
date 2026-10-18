@@ -7,6 +7,10 @@ on:
         description: Registry tag already created by Versionary
         required: true
         type: string
+    secrets:
+      RELEASE_TOKEN:
+        description: Token that can open PRs and trigger their CI
+        required: true
   workflow_dispatch:
     inputs:
       tag:
@@ -124,3 +128,66 @@ jobs:
       - name: Publish canary summary
         if: always() && steps.canary.outcome != 'skipped'
         run: cat "$RUNNER_TEMP/dm-canary.md" >> "$GITHUB_STEP_SUMMARY"
+
+  bundle:
+    name: Propose client registry update
+    needs: publish
+    runs-on: ubuntu-latest
+    concurrency:
+      group: bundle-registry
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+      RELEASE_TAG: ${{ inputs.tag }}
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      UV_PYTHON: "3.11"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+
+      - name: Open or update the client bundle PR
+        run: |
+          version="${RELEASE_TAG#registry-v}"
+          if [[ "$(jq -r .release registry/latest.json)" != "$version" ]]; then
+            echo "A newer registry is already selected; skipping this release."
+            exit 0
+          fi
+          uv run --project packages/python python tools/dm_bundle_registry.py "$version"
+          uv run --project packages/python python tools/dm_bundle_registry.py --check
+          git add packages README.md
+          if git diff --cached --quiet; then
+            echo "Client bundles already match this registry."
+            exit 0
+          fi
+          branch="automation/bundle-registry"
+          previous="$(git rev-parse -q --verify "refs/remotes/origin/$branch" || true)"
+          title="feat: bundle registry $version"
+          git -c user.name='github-actions[bot]' \
+            -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m "$title"
+          git push --force-with-lease="refs/heads/$branch:$previous" \
+            origin "HEAD:refs/heads/$branch"
+          body_file="$RUNNER_TEMP/bundle-registry-pr.md"
+          cat > "$body_file" <<EOF
+          Bundle registry $version in the Python, R, Julia, and CLI clients so its datasets become available by default in their next releases.
+
+          The published index was downloaded and matched byte-for-byte against the checked-in snapshot and its SHA-256 selector. Normal PR checks validate the clients and bundle consistency. Merging this PR lets Versionary prepare the independent client releases.
+
+          @jolars, this registry update is ready for review.
+          EOF
+          number="$(gh pr list --head "$branch" --base "$DEFAULT_BRANCH" \
+            --state open --json number --jq '.[0].number // empty')"
+          if [[ -n "$number" ]]; then
+            gh pr edit "$number" --title "$title" --body-file "$body_file"
+          else
+            gh pr create --base "$DEFAULT_BRANCH" --head "$branch" \
+              --title "$title" --body-file "$body_file"
+          fi

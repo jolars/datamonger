@@ -74,7 +74,7 @@ def test_bundled_registry_loads_without_network(
     index = _registry.load_registry(BUNDLED_REGISTRY, tmp_path)
 
     assert index["release"] == BUNDLED_REGISTRY.release
-    assert {dataset["name"] for dataset in index["datasets"]} == {
+    assert {dataset["name"] for dataset in index["datasets"]} >= {
         "cadata",
         "colon-cancer",
         "dna_scale",

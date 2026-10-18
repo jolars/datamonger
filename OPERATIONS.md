@@ -111,6 +111,37 @@ selector must refer to an already published registry asset. Coordinated stable
 client releases must eventually bundle the same stable selector, even though
 their PyPI, CRAN, and General publication steps complete at different times.
 
+After the publisher verifies the public registry asset and completes its canary,
+it opens or updates one client bundle PR on `automation/bundle-registry`. The PR
+mentions `@jolars` for notification. The job uses `RELEASE_TOKEN` so its commits
+and PR can trigger CI. A retry updates the same PR; publication of an older
+registry cannot replace a newer selection. Review and merge the bundle PR to
+let Versionary prepare the independent client releases. Package publication
+still follows the ecosystem-specific steps above, so CRAN updates can be batched.
+
+To prepare the same changes locally, run this from the devenv shell:
+
+```console
+dm-bundle-registry 1.2.0
+```
+
+The underlying command is
+`uv run --project packages/python python tools/dm_bundle_registry.py 1.2.0`.
+It checks the published asset against the local snapshot and selector before
+changing any files, refuses downgrades, and is safe to rerun. Run
+`dm-bundle-registry --check` for an offline consistency check of the currently
+bundled release. Both CI and `devenv test` run that check. The generated paragraph
+in the root README uses `bundled-registry` markers; keep those markers when editing.
+To bootstrap this automation for an already published registry, dispatch the
+updated workflow from the default branch with its existing tag:
+
+```console
+gh workflow run publish-registry.yml --ref main -f tag=registry-v1.2.0
+```
+
+Dispatch it after these changes reach the default branch; rerunning an old
+workflow run uses that run's original workflow definition.
+
 For a CLI release, merge the Versionary `packages/cli` release PR after CI
 passes. Versionary creates `datamonger-cli-v<version>` and a draft GitHub
 Release. Then dispatch the `Release` workflow with that tag:

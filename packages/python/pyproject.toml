@@ -63,6 +63,7 @@ files = [
   "../../tools/dm_canary.py",
   "../../tools/dm_index.py",
   "../../tools/dm_registry_release.py",
+  "../../tools/dm_bundle_registry.py",
 ]
 
 [tool.uv]

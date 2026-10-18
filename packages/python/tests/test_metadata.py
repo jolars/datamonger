@@ -73,7 +73,7 @@ def test_list_data_enumerates_the_selected_release(
 
     assert isinstance(infos, tuple)
     assert all(isinstance(info, DataInfo) for info in infos)
-    assert {info.dataset_id for info in infos} == {
+    assert {info.dataset_id for info in infos} >= {
         "libsvm:cadata@1",
         "libsvm:colon-cancer@1",
         "libsvm:dna_scale@1",
@@ -86,7 +86,7 @@ def test_list_data_enumerates_the_selected_release(
         "uci:wholesale-customers@1",
         "uci:wine-quality@1",
     }
-    assert {info.representation["decoder"] for info in infos} == {
+    assert {info.representation["decoder"] for info in infos} >= {
         "delimited-text",
         "libsvm",
         "libsvm-split",

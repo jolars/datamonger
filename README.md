@@ -9,8 +9,8 @@ records used by an analysis.
 Specification revision 1 is frozen as `spec-v1`, paired with the first stable
 registry, `2026.09`. The Python reference client and the independent R and Julia
 clients pass the shared conformance suite and reproduce all ten registry
-canonical verification records. All dataset artifacts remain upstream-only. The
-standalone Rust CLI bundles `1.1.0` for verified artifact downloads.
+canonical verification records. Those ten datasets remain upstream-only. The
+standalone Rust CLI supports verified artifact downloads.
 Publishing the coordinated language client releases is the next milestone.
 
 ## What Datamonger verifies
@@ -37,7 +37,7 @@ Install the Python client from a checkout with Python 3.11 or newer:
 python -m pip install ./packages/python
 ```
 
-The bundled `1.1.0` registry works as an offline trust root for its index.
+The bundled registry works as an offline trust root for its index.
 Dataset artifacts are downloaded on first use and then kept in a verified,
 content-addressed cache:
 
@@ -173,10 +173,11 @@ The first stable registry, `2026.09`, contains ten reviewed UCI and LIBSVM
 datasets spanning regression, binary and multiclass classification, unsupervised
 data, dense and sparse data, and a train/test split. Its selector is
 [`registry/releases/2026.09/selector.json`](registry/releases/2026.09/selector.json).
-All four clients bundle the stable `1.1.0` snapshot, which adds the LIBSVM
-Colon Cancer dataset. Its selector is
+<!-- bundled-registry:start -->
+All four clients bundle the stable `1.1.0` snapshot. Its selector is
 [`registry/releases/1.1.0/selector.json`](registry/releases/1.1.0/selector.json).
-Select it explicitly with the Python client:
+<!-- bundled-registry:end -->
+Select a registry explicitly with the Python client:
 
 ```python
 from datamonger import fetch_data, resolve_registry

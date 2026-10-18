@@ -44,7 +44,7 @@ end
 
 @testset "bundled registry" begin
     listed = list_data(; cache_dir=mktempdir(), offline=true)
-    @test Set(info.dataset_id for info in listed) ==
+    @test Set(info.dataset_id for info in listed) ⊇
           Set([
               "libsvm:cadata@1",
               "libsvm:colon-cancer@1",

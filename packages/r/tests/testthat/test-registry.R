@@ -67,8 +67,7 @@ test_that("the nearest project selector is used after the session setting", {
 test_that("the bundled registry is a verified offline trust root", {
   listed <- list_data(cache_dir = tempfile("datamonger-cache-"), offline = TRUE)
 
-  expect_setequal(
-    vapply(listed, `[[`, character(1), "dataset_id"),
+  expect_true(all(
     c(
       "libsvm:cadata@1",
       "libsvm:colon-cancer@1",
@@ -81,6 +80,6 @@ test_that("the bundled registry is a verified offline trust root", {
       "uci:iris@1",
       "uci:wholesale-customers@1",
       "uci:wine-quality@1"
-    )
-  )
+    ) %in% vapply(listed, `[[`, character(1), "dataset_id")
+  ))
 })

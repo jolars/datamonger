@@ -42,7 +42,7 @@ content-addressed entry. Datamonger performs no telemetry.
 
 ## Use
 
-The bundled `1.1.0` index is the default trust root. Its artifacts are
+The bundled stable index is the default trust root. Its artifacts are
 retrieved on first use:
 
 ```julia

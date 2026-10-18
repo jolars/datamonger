@@ -48,6 +48,13 @@
     );
   };
 
+  scripts.dm-bundle-registry = {
+    description = "Bundle a published registry release in all clients";
+    exec = ''
+      uv run --project "$DEVENV_ROOT/packages/python" python "$DEVENV_ROOT/tools/dm_bundle_registry.py" "$@"
+    '';
+  };
+
   enterTest = ''
     dm_repo_root="$PWD"
     cd packages/python
@@ -63,11 +70,7 @@
       tests/registry/releases/test-0002/release.yaml
     uv build
     cd "$dm_repo_root"
-    diff registry/releases/1.1.0/index.json packages/cli/assets/index.json
-    diff registry/releases/1.1.0/index.json packages/python/src/datamonger/_data/index.json
-    diff registry/releases/1.1.0/index.json packages/r/inst/extdata/index.json
-    diff registry/releases/1.1.0/index.json packages/julia/src/data/index.json
-    diff registry/releases/1.1.0/selector.json packages/cli/assets/selector.json
+    uv run --project packages/python python tools/dm_bundle_registry.py --check
     for schema in index manifest erratum selector catalog; do
       diff "spec/schema/''${schema}-v1.schema.json" \
         "packages/cli/assets/''${schema}-v1.schema.json"

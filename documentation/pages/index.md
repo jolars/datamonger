@@ -15,7 +15,7 @@ canonical digest of decoded values. Record the dataset version and the strong
 registry selector with your analysis. A bare registry release name is a
 lookup, not a cryptographic pin.
 
-All clients bundle the stable `1.1.0` registry snapshot.
+All clients bundle the same stable registry snapshot.
 A bundled index works offline, but an uncached artifact requires access to its
 upstream source. Dataset artifacts are not bundled.
 
