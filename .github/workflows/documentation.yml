@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: jolars/diplodocus
-          ref: 8c79eeae24abf2fceea15886cc66c22a0d4d1d6d
+          ref: 4f6efd87895e0f586e90589cd7d3c6c0d8cb0734
           path: .build/diplodocus
           persist-credentials: false
       - name: Install Diplodocus Rust toolchain

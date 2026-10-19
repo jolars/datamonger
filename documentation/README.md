@@ -8,7 +8,7 @@ See [the dogfooding assessment](assessment.md) for coverage and known limits.
 ## Local preview
 
 With Datamonger and Diplodocus checked out beside each other, build the pinned
-Diplodocus revision `8c79eeae24abf2fceea15886cc66c22a0d4d1d6d` in its devenv shell:
+Diplodocus revision `4f6efd87895e0f586e90589cd7d3c6c0d8cb0734` in its devenv shell:
 
 ```console
 cd ../diplodocus

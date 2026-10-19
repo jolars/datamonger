@@ -16,7 +16,7 @@ by `@define_error`; that result does not describe the complete build's coverage.
 |:-------|:-------------------|:-----------------|
 | Python | All 20 root `__all__` exports resolve. The snapshot contains 98 items, including 49 fields and the `DatasetData` type alias. | Public reexport names appear in headings, navigation, and search. `fetch_data` has one page containing all three overload signatures and its implementation prose. |
 | R | All 11 NAMESPACE exports, eight registered S3 methods, and one package topic have documentation. | Shared Rd topics retain usages, arguments, and return descriptions. All eight methods share three maintained help topics. The package also has an overview, authors, citation, license, community page, and executable vignette. |
-| Julia | All 42 exported bindings resolve. The snapshot contains 126 items, including the 15 generated exception types. | Runtime completion verifies the supplied checkout and records its observations separately from static source facts. Function overviews include method prose, and each method retains its own page. |
+| Julia | All 42 exported bindings resolve. The snapshot contains 126 items, including the 15 generated exception types. | Runtime completion verifies the supplied checkout and records its observations separately from static source facts. Function pages combine the overview and method documentation. |
 | Rust CLI | No API extraction. | The authored guide covers building, listing, inspection, and artifact export and links to the complete package README. |
 
 These counts describe extraction, not independent documentation quality. Some
@@ -64,7 +64,7 @@ The executable API examples use explicit doctest syntax instead.
 
 ## Validation
 
-An isolated build in Datamonger's prepared environment produces 263 HTML pages.
+An isolated build in Datamonger's prepared environment produces 211 HTML pages.
 The generated site has no missing local links, assets, or heading anchors. Browser
 checks at widths of 1440 and 390 pixels verify successful responses, one title,
 no viewport overflow, and no JavaScript errors. Search returns one Python
