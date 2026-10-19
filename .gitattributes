@@ -1,4 +1,5 @@
 packages/cli/assets/index.json text eol=lf
+packages/julia/src/data/index.json text eol=lf
 registry/releases/*/index.json text eol=lf
 tests/registry/releases/*/index.json text eol=lf
 tests/conformance/** text eol=lf
@@ -13,4 +14,4 @@ packages/r/inst/COPYRIGHTS text eol=lf
 # These files participate in byte-level conformance and artifact checks.
 packages/r/tests/testthat/fixtures/** text eol=lf
 packages/r/inst/extdata/** text eol=lf
-packages/julia/test/fixtures/conformance/** text eol=lf
+packages/julia/test/fixtures/** text eol=lf
