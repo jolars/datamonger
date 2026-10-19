@@ -111,3 +111,9 @@ rsconnect/
 config.log
 config.status
 configure
+!packages/r/configure
+packages/r/src/Makevars
+packages/r/src/Makevars.win
+packages/r/src/.cargo/
+packages/r/src/vendor/
+packages/r/src/rust/vendor/

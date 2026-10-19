@@ -4,7 +4,8 @@
 
 The Python reference client lives in `packages/python`; the R and Julia clients
 live in `packages/r` and `packages/julia`; the standalone Rust CLI lives in
-`packages/cli`. Python library code is under
+`packages/cli`. The reusable Rust decoder lives in `crates/datamonger-core`;
+the R package bundles a generated copy and uses extendr bindings. Python library code is under
 `packages/python/src/datamonger`; hermetic tests are beside each client, and
 network-dependent smoke tests are isolated in each client's `tests_live`
 directory.
@@ -28,6 +29,9 @@ devenv test
 See [CONTRIBUTING.md](CONTRIBUTING.md#development-environment) for focused
 commands and live-source checks. Run live checks only when network access and
 upstream availability are expected.
+
+Run `dm-vendor-r` after Rust dependency changes and `dm-document-r` after R
+binding changes. See `CONTRIBUTING.md` for source synchronization and MSRV checks.
 
 The CLI bundles stable registry assets in `packages/cli/assets`; `devenv test`
 checks them against their selected registry release and `spec/schema`.

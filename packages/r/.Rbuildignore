@@ -5,3 +5,10 @@
 ^revdep$
 ^tests_live$
 ^src/.*\.(o|so|dll)$
+^src/\.cargo$
+^src/vendor$
+^src/rust/target$
+^src/rust/vendor$
+^src/rust/rust-toolchain.toml$
+^src/Makevars$
+^src/Makevars.win$

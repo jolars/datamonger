@@ -536,15 +536,17 @@ fetch_data <- function(
     `delimited-text` = .decode_delimited(
       paths[[1]],
       setup$options,
-      setup$compressions[[1]]
+      setup$compressions[[1]], hash = verify_decoded
     ),
-    libsvm = .decode_libsvm(paths[[1]], setup$options, setup$compressions[[1]]),
+    libsvm = .decode_libsvm(
+      paths[[1]], setup$options, setup$compressions[[1]], hash = verify_decoded
+    ),
     `libsvm-split` = .decode_libsvm_split(
       paths[[1]],
       paths[[2]],
       setup$options,
       setup$compressions[[1]],
-      setup$compressions[[2]]
+      setup$compressions[[2]], hash = verify_decoded
     )
   )
 
@@ -562,7 +564,7 @@ fetch_data <- function(
     record <- .verification_record(index, dataset, expect)
     canonical_form <- record$canonical_form
     expected_digest <- .require_string(record$digest, "canonical digest")
-    canonical_digest <- .canonical_sha256(decoded$components)
+    canonical_digest <- decoded$canonical_digest
 
     if (!identical(canonical_digest, expected_digest)) {
       .abort_category(

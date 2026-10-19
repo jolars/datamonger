@@ -1,3 +1,5 @@
+`%||%` <- function(left, right) if (is.null(left)) right else left
+
 .sha256_pattern <- "^[0-9a-f]{64}$"
 .identifier_pattern <- "^[a-z0-9][a-z0-9._-]*$"
 .version_pattern <- "^[A-Za-z0-9][A-Za-z0-9._+-]*$"

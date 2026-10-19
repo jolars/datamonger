@@ -1,12 +1,17 @@
-{ pkgs, ... }:
+{ pkgs, inputs, ... }:
 
+let
+  corePkgs = pkgs.extend (import inputs.rust-overlay);
+  coreRust = corePkgs.rust-bin.fromRustupToolchainFile ./crates/datamonger-core/rust-toolchain.toml;
+in
 {
   packages = [
     pkgs.jq
     pkgs.julia
     pkgs.pandoc
     pkgs.ruff
-    pkgs.zlib
+    pkgs.cargo-msrv
+    pkgs.xz
   ];
 
   languages.python = {
@@ -43,9 +48,41 @@
           rmarkdown
           testthat
           devtools
+          rextendr
         ];
       }
     );
+  };
+
+  env.DM_CORE_CARGO = "${coreRust}/bin/cargo";
+  env.DM_CORE_RUSTC = "${coreRust}/bin/rustc";
+
+  scripts.dm-core-cargo = {
+    description = "Run Cargo with the core library's minimum Rust toolchain";
+    exec = ''
+      export PATH="${coreRust}/bin:$PATH"
+      export RUSTC="${coreRust}/bin/rustc"
+      export RUSTDOC="${coreRust}/bin/rustdoc"
+      exec "${coreRust}/bin/cargo" "$@"
+    '';
+  };
+
+  scripts.dm-vendor-r = {
+    description = "Synchronize and vendor the R package's Rust sources";
+    exec = ''
+      cd "$DEVENV_ROOT"
+      python "$DEVENV_ROOT/tools/dm_rust_sources.py"
+      Rscript -e 'rextendr::vendor_crates("packages/r", overwrite = TRUE, clean = TRUE)'
+      python "$DEVENV_ROOT/tools/dm_rust_sources.py" --archive-vendor
+    '';
+  };
+
+  scripts.dm-document-r = {
+    description = "Regenerate private R wrappers from extendr metadata";
+    exec = ''
+      cd "$DEVENV_ROOT/packages/r"
+      Rscript tools/document.R
+    '';
   };
 
   scripts.dm-bundle-registry = {
@@ -70,6 +107,14 @@
       tests/registry/releases/test-0002/release.yaml
     uv build
     cd "$dm_repo_root"
+    python tools/dm_rust_sources.py --check
+    dm-core-cargo fmt --manifest-path crates/datamonger-core/Cargo.toml --check
+    dm-core-cargo clippy --manifest-path crates/datamonger-core/Cargo.toml \
+      --locked --all-targets -- -D warnings
+    dm-core-cargo test --manifest-path crates/datamonger-core/Cargo.toml --locked
+    dm-core-cargo fmt --manifest-path packages/r/src/rust/Cargo.toml --check
+    dm-core-cargo clippy --manifest-path packages/r/src/rust/Cargo.toml \
+      --locked --all-targets -- -D warnings
     uv run --project packages/python python tools/dm_bundle_registry.py --check
     for schema in index manifest erratum selector catalog; do
       diff "spec/schema/''${schema}-v1.schema.json" \

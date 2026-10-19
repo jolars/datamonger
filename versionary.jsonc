@@ -9,6 +9,11 @@
   "release-draft": false,
   "release-reference-comments": "best-effort",
   "packages": {
+    "crates/datamonger-core": {
+      "release-type": "rust",
+      "package-name": "datamonger-core",
+      "release-draft": true
+    },
     "registry": {
       "release-type": "simple",
       "package-name": "registry",

@@ -1,0 +1,22 @@
+TARGET_DIR = rust/target
+STATLIB = $(TARGET_DIR)/@LIBDIR@/libdatamonger_r.a
+PKG_LIBS = $(STATLIB) @NATIVE_LIBS@
+
+all: $(SHLIB) rust_clean
+
+$(SHLIB): $(STATLIB)
+
+.PHONY: $(STATLIB)
+$(STATLIB):
+	if test -f rust/vendor.tar.xz; then \
+		tar xf rust/vendor.tar.xz; \
+		mkdir -p .cargo; \
+		cp rust/vendor-config.toml .cargo/config.toml; \
+	fi
+	CARGO_HOME="$(CURDIR)/.cargo" RUSTC=@RUSTC@ @CARGO@ build --manifest-path rust/Cargo.toml --target-dir $(TARGET_DIR) --lib --locked @OFFLINE@ -j 2 @PROFILE@
+
+rust_clean: $(SHLIB)
+	rm -rf .cargo vendor @CLEAN_TARGET@
+
+clean:
+	rm -rf $(SHLIB) $(OBJECTS) $(TARGET_DIR) .cargo vendor

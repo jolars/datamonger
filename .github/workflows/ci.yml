@@ -9,6 +9,39 @@ permissions:
   contents: read
 
 jobs:
+  core-quality:
+    runs-on: ${{ matrix.os }}
+    env:
+      RUSTUP_TOOLCHAIN: ${{ matrix.rust }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        rust: ["1.82.0", stable]
+    defaults:
+      run:
+        working-directory: crates/datamonger-core
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: crates/datamonger-core
+      - name: Check bundled sources and fixtures
+        working-directory: .
+        run: python tools/dm_rust_sources.py --check
+      - run: cargo fmt --check
+      - run: cargo clippy --locked --all-targets -- -D warnings
+      - run: cargo test --locked
+      - run: cargo doc --locked --no-deps
+        env:
+          RUSTDOCFLAGS: -D warnings
+      - name: Verify standalone crate package
+        run: cargo package --locked
+
   cli-quality:
     strategy:
       fail-fast: false
@@ -83,15 +116,25 @@ jobs:
         run: uv build
 
   r-quality:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
     defaults:
       run:
         working-directory: packages/r
     env:
       R_KEEP_PKG_SOURCE: "yes"
       _R_CHECK_CRAN_INCOMING_REMOTE_: "false"
+      CARGO_NET_OFFLINE: "true"
+      RUSTUP_TOOLCHAIN: "1.82.0"
     steps:
       - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.82.0"
+          targets: ${{ runner.os == 'Windows' && 'x86_64-pc-windows-gnu' || '' }}
       - name: Set up R
         uses: r-lib/actions/setup-r@v2
         with:
@@ -102,10 +145,15 @@ jobs:
           working-directory: packages/r
       - name: Check shared fixture copies
         run: diff -r ../../tests/conformance tests/testthat/fixtures/conformance
+        shell: bash
+      - name: Check bundled Rust sources
+        working-directory: .
+        run: python tools/dm_rust_sources.py --check
       - name: Build R package
         run: R CMD build .
       - name: Check R package
         run: R CMD check --no-manual --as-cran datamonger_*.tar.gz
+        shell: bash
 
   julia-quality:
     runs-on: ubuntu-latest

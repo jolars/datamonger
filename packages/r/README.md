@@ -12,6 +12,17 @@ repository root:
 install.packages("packages/r", repos = NULL, type = "source")
 ```
 
+Source installation requires Cargo and Rust 1.82 or newer, plus xz. The package
+includes the Rust core and vendored dependencies, and compiles offline. Gzip and bzip2
+use Rust backends; no system zlib or libbz2 installation is required.
+Windows source builds also require Rtools and the `x86_64-pc-windows-gnu` Rust
+target, which can be installed with `rustup target add x86_64-pc-windows-gnu`.
+
+The standalone `datamonger-core` library implements strict decoding and
+canonical hashing. The R adapter constructs the documented R objects and keeps
+registry selection, retrieval, caching, and metadata in R. Parsing reads input
+incrementally, and verification hashes canonical bytes in bounded chunks.
+
 ## Cache
 
 Datamonger uses the platform cache returned by `tools::R_user_dir()` by default.
@@ -75,8 +86,8 @@ Delimited data are returned as a data frame. Exact `int64` columns use the
 represents the full signed 64-bit range without conflating its minimum value
 with missing data. LIBSVM data return a `datamonger_sparse_dataset` containing
 a row-compressed `Matrix` feature matrix and an exact response vector. When a
-declared dimension exceeds the `Matrix` package's integer limit, the feature
-matrix is an exact `datamonger_csr_matrix` instead. Split representations keep
+dimension or stored-value count exceeds the `Matrix` package's integer limit,
+the feature matrix is an exact `datamonger_csr_matrix` instead. Split representations keep
 `train` and `test` datasets separate.
 
 `data_info()` and `list_data()` inspect provenance, license, distribution, and

@@ -22,6 +22,8 @@ jobs:
       RELEASE_TAG: ${{ inputs.release_tag }}
       R_KEEP_PKG_SOURCE: "yes"
       _R_CHECK_CRAN_INCOMING_REMOTE_: "false"
+      CARGO_NET_OFFLINE: "true"
+      RUSTUP_TOOLCHAIN: "1.82.0"
     steps:
       - name: Validate draft release
         run: |
@@ -37,6 +39,13 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.release_tag }}
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.82.0"
+
+      - name: Check bundled Rust sources
+        run: python tools/dm_rust_sources.py --check
 
       - uses: r-lib/actions/setup-r@v2
         with:

@@ -1,0 +1,18 @@
+[package]
+name = "datamonger-r"
+version = "0.0.0"
+edition = "2021"
+rust-version = "1.82"
+publish = false
+
+[lib]
+name = "datamonger_r"
+crate-type = ["staticlib"]
+
+[dependencies]
+datamonger-core = { version = "0.1.0", path = "datamonger-core" }
+extendr-api = "0.9.0"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

@@ -206,29 +206,29 @@ Losing the "three languages on day one" story for a few months is worth a
 specification that has survived contact with reality before being paid for
 three times.
 
-### Independent implementations, for now
+### Shared native decoding with independent validation
 
-There is no shared native implementation initially. Cross-language consistency
-is defined by the specification and the conformance suite, not by shared
-implementation code.
+The R client uses the standalone `datamonger-core` Rust library for revision 1
+CSV, TSV, LIBSVM, split LIBSVM, compression, and canonical verification. Its
+extendr adapter converts typed buffers into R objects. Registry resolution,
+retrieval, caching, and metadata remain in the R client. Python and Julia keep
+independent implementations, providing separate checks against the normative
+specification and shared conformance corpus.
 
-This decision deserves periodic re-examination rather than being treated as
-settled. A Rust core exposed through extendr, PyO3, and a Julia binding would
-collapse the conformance problem precisely where it is hardest, which is
-decoding. The fetch, hash, and cache layer is easy to write three times.
-LIBSVM and delimited-text edge cases are not, and they are where silent
-divergence actually occurs.
+The native core addresses the cost of interpreted parsing and per-element
+serialization on large sparse datasets. It reads input incrementally and hashes
+canonical bytes from typed buffers in bounded chunks, without retaining a
+second complete serialized result. The Rust library has no dependency on a
+language runtime, networking, or registry services. Its MSRV is 1.82, separate
+from the CLI's newer toolchain, and its metadata supports future crates.io
+publication.
 
-The arguments for staying independent are packaging weight, simpler
-contribution for language specialists, CRAN and Julia binary distribution
-friction, and the fact that pure-language clients install anywhere. The
-arguments against are the recurring cost of triplicated decoder work and the
-permanent risk of drift.
-
-The concrete decision rule: if the conformance suite repeatedly catches decoder
-divergence that is expensive to fix in three places, migrate decoding to a
-shared native core while keeping registry resolution, caching, and result
-construction idiomatic per language.
+The R source package includes a generated copy of the authoritative core and
+vendored dependencies so it can compile offline before the crate is published.
+The quality gate checks source and fixture synchronization. A general C ABI is
+deferred until a second client adopts the core. Sharing an implementation does
+not provide independent validation: future bindings must still be checked
+against an independent implementation and the conformance corpus.
 
 ---
 

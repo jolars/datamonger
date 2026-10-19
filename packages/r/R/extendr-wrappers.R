@@ -1,0 +1,14 @@
+# Generated from extendr metadata. Do not edit.
+#' Decode verified artifact paths and optionally hash before converting buffers.
+dm_decode <- function(decoder, paths, compressions, options, hash) .Call(wrap__dm_decode, decoder, paths, compressions, options, hash)
+
+#' Encode or hash supplied logical components for conformance and diagnostics.
+dm_canonical <- function(components, hash) .Call(wrap__dm_canonical, components, hash)
+
+#' Remove a single HTTP gzip content coding.
+dm_http_gzip <- function(bytes) .Call(wrap__dm_http_gzip, bytes)
+
+#' Parse a decimal for the R client's rounding regression checks.
+dm_parse_binary64 <- function(value) .Call(wrap__dm_parse_binary64, value)
+
+

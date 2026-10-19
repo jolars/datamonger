@@ -66,6 +66,37 @@ R CMD build .
 R CMD check --as-cran datamonger_*.tar.gz
 ```
 
+The Rust core has MSRV 1.82 and its own toolchain, separate from the CLI. From
+the repository root, use the pinned compiler through devenv:
+
+```console
+dm-core-cargo test --locked --manifest-path crates/datamonger-core/Cargo.toml
+dm-core-cargo clippy --locked --manifest-path crates/datamonger-core/Cargo.toml --all-targets -- -D warnings
+dm-core-cargo doc --locked --manifest-path crates/datamonger-core/Cargo.toml --no-deps
+```
+
+Edit core code only under `crates/datamonger-core`. Run
+`python tools/dm_rust_sources.py` after core or shared conformance changes; this
+updates the generated core bundled in the R package and the core's fixture copy.
+`python tools/dm_rust_sources.py --check` detects drift.
+
+After changing Rust dependencies, refresh the relevant lockfiles with an
+MSRV-aware Cargo resolver, run `dm-vendor-r`, and commit the generated vendor
+archive, configuration, and lockfile stamp. Check changes with Rust 1.82.
+When the core version changes, update the R adapter's path dependency version
+and lockfile too. The R source tarball must build with no checkout or Cargo
+network access. Release builds use at most two Cargo jobs. `DEBUG=1` selects a
+debug build; `NOT_CRAN=1` permits development without the vendor archive.
+
+Run `dm-document-r` after changing extendr function signatures or Rust wrapper
+documentation. It generates the private R wrappers directly from extendr
+metadata without replacing the package's manually maintained Rd files or
+NAMESPACE. Do not edit the generated wrappers or bundled core by hand.
+
+The core has standalone crate metadata and a Versionary release entry. Future
+crates.io publication is separate from R release preparation; no automatic
+crate publication is configured.
+
 The focused Julia command from `packages/julia` is:
 
 ```console

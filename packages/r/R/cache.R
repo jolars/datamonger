@@ -123,7 +123,7 @@
   }
 
   tryCatch(
-    .Call(C_dm_gzip_decompress, contents),
+    .native_result(dm_http_gzip(contents)),
     error = function(error) {
       .dm_abort(
         "datamonger_retrieval_exhausted",
