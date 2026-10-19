@@ -24,7 +24,9 @@ require Rust 1.82 or newer for the build command above; rebuild after native
 edits. The local binding is ignored by Git. Release preparation pins prebuilt
 artifacts for Linux x86-64 and ARM64 (glibc 2.17+), macOS Intel and Apple Silicon,
 and Windows x86-64, so installed releases need no Rust compiler. The library is
-loaded on first decode or canonical operation.
+loaded on first decode or canonical operation. Julia installs release artifacts
+during package instantiation; decoding never downloads executable code, including
+in offline calls.
 
 ## Tutorials
 

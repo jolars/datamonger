@@ -29,7 +29,7 @@ function pack_native(platform_name, library, notices, output, download_base)
     digest = archive_artifact(hash, joinpath(output, name))
     bind_artifact!(joinpath(output, "$platform_name.toml"), "datamonger_core", hash;
         platform, download_info=[(rstrip(download_base, '/') * "/$name", digest)],
-        lazy=true, force=true)
+        lazy=false, force=true)
 end
 
 function validate_manifest(path; complete=true)
@@ -44,7 +44,7 @@ function validate_manifest(path; complete=true)
         name in seen && error("Duplicate artifact platform $name")
         push!(seen, name)
         occursin(r"^[a-f0-9]{40}$", entry["git-tree-sha1"]) || error("Invalid tree hash")
-        entry["lazy"] === true || error("Native artifacts must be lazy")
+        get(entry, "lazy", false) === false || error("Native artifacts must be installed with the package")
         downloads = entry["download"]
         length(downloads) == 1 || error("Expected one immutable archive per platform")
         download = only(downloads)

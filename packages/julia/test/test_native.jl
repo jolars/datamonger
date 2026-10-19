@@ -225,3 +225,26 @@ end
     @test_throws DecodedIntegrityError Datamonger.canonical_bytes([bad_utf8])
     @test_throws ErrorException Datamonger._with_native_result(_ -> error("callback"), C_NULL)
 end
+
+@testset "native loading never installs missing artifacts" begin
+    mktempdir() do directory
+        artifact_toml = joinpath(directory, "Artifacts.toml")
+        write(artifact_toml, "")
+        @test_throws "No Datamonger native artifact" Datamonger._native_library_path(artifact_toml)
+
+        hash = bytes2hex(sha1(codeunits(directory)))
+        @test !Datamonger.artifact_exists(Base.SHA1(hash))
+        write(artifact_toml, """
+            [datamonger_core]
+            git-tree-sha1 = "$hash"
+            [[datamonger_core.download]]
+            url = "file:///this-native-library-must-not-be-downloaded"
+            sha256 = "$("0"^64)"
+            """)
+        # A regressed installer can only try the local, nonexistent file.
+        withenv("JULIA_PKG_SERVER" => "") do
+            @test_throws "native artifact is not installed" Datamonger._native_library_path(artifact_toml)
+        end
+        @test !Datamonger.artifact_exists(Base.SHA1(hash))
+    end
+end

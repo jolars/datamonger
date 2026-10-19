@@ -7,7 +7,7 @@ using FileWatching
 using HTTP
 using JSON3
 using Libdl
-using Pkg.Artifacts: artifact_hash, artifact_path, ensure_artifact_installed
+using Pkg.Artifacts: artifact_exists, artifact_hash, artifact_path
 using SHA
 using SparseArrays
 using TranscodingStreams

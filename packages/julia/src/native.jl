@@ -52,6 +52,21 @@ const _NATIVE_TYPES = Dict("float64" => UInt32(1), "int64" => UInt32(2),
 const _NATIVE_LIBRARY = Ref{Ptr{Cvoid}}(C_NULL)
 const _NATIVE_LOCK = ReentrantLock()
 
+function _native_library_path(artifact_toml)
+    hash = artifact_hash("datamonger_core", artifact_toml)
+    hash === nothing && error(
+        "No Datamonger native artifact for this platform. " *
+        "For a source checkout, run tools/dm_julia_core.jl with Julia.",
+    )
+    # Package installation owns executable downloads, including when the first
+    # decode is offline. Runtime calls must never initiate that installation.
+    artifact_exists(hash) || error(
+        "Datamonger native artifact is not installed. Run Pkg.instantiate() " *
+        "before fetching data, or rebuild the local artifact in a source checkout.",
+    )
+    return joinpath(artifact_path(hash), "lib", "datamonger_ffi.$(Libdl.dlext)")
+end
+
 function _native_symbol(name)
     lock(_NATIVE_LOCK) do
         if _NATIVE_LIBRARY[] == C_NULL
@@ -59,13 +74,7 @@ function _native_symbol(name)
             if isempty(path)
                 local_toml = joinpath(@__DIR__, "..", "deps", "Artifacts.toml")
                 artifact_toml = isfile(local_toml) ? local_toml : joinpath(@__DIR__, "..", "Artifacts.toml")
-                hash = artifact_hash("datamonger_core", artifact_toml)
-                hash === nothing && error(
-                    "No Datamonger native artifact for this platform. " *
-                    "For a source checkout, run tools/dm_julia_core.jl with Julia.",
-                )
-                ensure_artifact_installed("datamonger_core", artifact_toml)
-                path = joinpath(artifact_path(hash), "lib", "datamonger_ffi.$(Libdl.dlext)")
+                path = _native_library_path(artifact_toml)
             end
             handle = Libdl.dlopen(path)
             version = try
