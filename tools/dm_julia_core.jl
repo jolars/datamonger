@@ -16,6 +16,8 @@ hash = create_artifact() do directory
     mkpath(joinpath(directory, "lib"))
     cp(library, joinpath(directory, "lib", "datamonger_ffi.$(Libdl.dlext)"))
 end
-bind_artifact!(joinpath(root, "packages", "julia", "deps", "Artifacts.toml"),
-               "datamonger_core", hash; platform=Base.BinaryPlatforms.HostPlatform(), force=true)
+artifact_toml = joinpath(root, "packages", "julia", "deps", "Artifacts.toml")
+mkpath(dirname(artifact_toml))
+bind_artifact!(artifact_toml, "datamonger_core", hash;
+               platform=Base.BinaryPlatforms.HostPlatform(), force=true)
 println("Installed local native artifact: $hash")
