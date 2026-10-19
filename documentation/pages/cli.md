@@ -27,6 +27,8 @@ datamonger fetch uci:iris --output-dir ./data
 The CLI preserves registered compression and refuses to overwrite an existing
 export. Uncached artifacts require network access.
 
+The [command-line reference](cli-reference.md) documents every command and option.
+
 See the [complete CLI guide](https://github.com/jolars/datamonger/blob/main/packages/cli/README.md)
 for artifact selection, JSON output, registry pinning, and cache management.
 Return to the [Datamonger overview](index.md).

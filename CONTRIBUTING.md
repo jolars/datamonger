@@ -189,7 +189,13 @@ Focused CLI commands from `packages/cli` are:
 cargo fmt --check
 cargo clippy --locked --all-targets -- -D warnings
 cargo test --locked
+cargo run --locked --example generate_cli_docs -- --check
 ```
+
+The CLI reference is generated from `packages/cli/src/cli.rs` with clapdown.
+After changing commands or help text, run
+`cargo run --locked --example generate_cli_docs` from `packages/cli` and commit
+`documentation/pages/cli-reference.md`. CI and `devenv test` check that it is current.
 
 From `packages/python`, run the live proof-registry test separately:
 

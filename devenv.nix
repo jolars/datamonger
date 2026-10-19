@@ -168,6 +168,7 @@ in
     cargo fmt --check
     cargo clippy --locked --all-targets -- -D warnings
     cargo test --locked
+    cargo run --locked --example generate_cli_docs -- --check
     cd "$dm_repo_root"
     ${pkgs.diffutils}/bin/diff -r \
       tests/conformance packages/r/tests/testthat/fixtures/conformance

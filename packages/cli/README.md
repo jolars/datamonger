@@ -48,3 +48,8 @@ datamonger --selector .datamonger/selector.json list
 A selector fixes an index by SHA-256. Treat a selector obtained through an
 untrusted channel as untrusted; the checksum alone does not authenticate its
 publisher. See [TRUST.md](../../TRUST.md).
+
+See the [command-line reference](../../documentation/pages/cli-reference.md)
+for every command and option. It is generated from the clap definitions with
+clapdown; see [CONTRIBUTING.md](../../CONTRIBUTING.md#development-environment)
+for the regeneration command.

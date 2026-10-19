@@ -71,6 +71,8 @@ jobs:
         run: cargo clippy --locked --all-targets -- -D warnings
       - name: Run hermetic tests
         run: cargo test --locked
+      - name: Check CLI reference
+        run: cargo run --locked --example generate_cli_docs -- --check
       - name: Check embedded schemas
         if: runner.os == 'Linux'
         working-directory: .

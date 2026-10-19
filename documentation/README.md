@@ -5,6 +5,11 @@ Python, R, and Julia API sources, and R package documents. Nine concepts connect
 equivalent operations across all three language clients.
 See [the dogfooding assessment](assessment.md) for coverage and known limits.
 
+The [CLI reference](pages/cli-reference.md) is generated from the CLI's clap
+definitions with clapdown and committed with the authored guides. Regenerate it
+with `cargo run --locked --manifest-path packages/cli/Cargo.toml --example generate_cli_docs`
+after changing commands or help text. CI checks that the reference is current.
+
 ## Local preview
 
 With Datamonger and Diplodocus checked out beside each other, build the pinned

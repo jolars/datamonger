@@ -1,4 +1,5 @@
 mod cache;
+mod cli;
 mod error;
 mod http;
 mod registry;
@@ -8,85 +9,15 @@ use std::fs;
 use std::io::{Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 
-use clap::{Parser, Subcommand};
+use clap::Parser;
 use serde_json::{Value, json};
 use tempfile::NamedTempFile;
 
 use crate::cache::{CachedFile, default_root};
+use crate::cli::{CacheCommand, Cli, Command, RegistryCommand};
 use crate::error::{Error, Result};
 use crate::http::HttpClient;
 use crate::registry::{Index, Selector, active_selector, dataset_id, parse_catalog, parse_index};
-
-const CATALOG_URL: &str =
-    "https://raw.githubusercontent.com/jolars/datamonger/main/registry/catalog.json";
-
-#[derive(Parser)]
-#[command(
-    name = "datamonger",
-    version,
-    about = "Verified research dataset artifacts"
-)]
-struct Cli {
-    #[arg(long, global = true)]
-    selector: Option<PathBuf>,
-    #[arg(long, global = true)]
-    cache_dir: Option<PathBuf>,
-    #[arg(long, global = true)]
-    offline: bool,
-    #[arg(long, global = true)]
-    json: bool,
-    #[command(subcommand)]
-    command: Command,
-}
-
-#[derive(Subcommand)]
-enum Command {
-    List {
-        #[arg(long)]
-        source: Option<String>,
-    },
-    Info {
-        dataset: String,
-    },
-    Fetch {
-        dataset: String,
-        #[arg(long)]
-        artifact: Option<String>,
-        #[arg(long)]
-        output_dir: Option<PathBuf>,
-    },
-    Registry {
-        #[command(subcommand)]
-        action: RegistryCommand,
-    },
-    Cache {
-        #[command(subcommand)]
-        action: CacheCommand,
-    },
-}
-
-#[derive(Subcommand)]
-enum RegistryCommand {
-    Show,
-    Resolve {
-        release: String,
-        #[arg(long, default_value = CATALOG_URL)]
-        catalog_url: String,
-        #[arg(long)]
-        output: Option<PathBuf>,
-    },
-}
-
-#[derive(Subcommand)]
-enum CacheCommand {
-    List,
-    Clean {
-        #[arg(long, conflicts_with = "all")]
-        dataset: Option<String>,
-        #[arg(long)]
-        all: bool,
-    },
-}
 
 pub fn run() -> i32 {
     let cli = Cli::parse();
