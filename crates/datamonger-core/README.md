@@ -23,8 +23,8 @@ serialized copy. `write_canonical()` also accepts an ordinary `std::io::Write`
 sink. Functions ending in `_with_control` accept cancellation checkpoints.
 
 The minimum supported Rust version is 1.82. The crate uses Rust compression
-backends and follows the repository's MIT license. It is prepared for future
-crates.io publication; no release has been published yet.
+backends and follows the repository's MIT license. Its releases are independent
+of the R, Python, and Julia clients.
 
 The versioned contracts under `spec/` in the Datamonger repository are
 authoritative. Tests carry a synchronized copy of the shared conformance corpus

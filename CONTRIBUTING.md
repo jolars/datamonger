@@ -75,27 +75,50 @@ dm-core-cargo clippy --locked --manifest-path crates/datamonger-core/Cargo.toml 
 dm-core-cargo doc --locked --manifest-path crates/datamonger-core/Cargo.toml --no-deps
 ```
 
-Edit core code only under `crates/datamonger-core`. Run
-`python tools/dm_rust_sources.py` after core or shared conformance changes; this
-updates the generated core bundled in the R package and the core's fixture copy.
-`python tools/dm_rust_sources.py --check` detects drift.
+The R adapter depends on a published `datamonger-core` version from crates.io.
+Use `dm-test-r` to test it against unpublished core edits. For other development
+scripts, use `dm-local-r` in place of `Rscript`; it sets `DM_R_CORE_PATH` and
+enables a local Cargo patch. These commands preserve the release lockfile.
+For example, from `packages/r`, run:
 
-After changing Rust dependencies, refresh the relevant lockfiles with an
-MSRV-aware Cargo resolver, run `dm-vendor-r`, and commit the generated vendor
-archive, configuration, and lockfile stamp. Check changes with Rust 1.82.
-When the core version changes, update the R adapter's path dependency version
-and lockfile too. The R source tarball must build with no checkout or Cargo
-network access. Release builds use at most two Cargo jobs. `DEBUG=1` selects a
+```console
+dm-local-r -e 'pkgload::load_all(".")'
+```
+
+Normal source builds use the published version and compile offline with a locked
+dependency graph. Local builds use Cargo's usual cache and may download new
+dependencies. Release builds use at most two Cargo jobs. `DEBUG=1` selects a
 debug build; `NOT_CRAN=1` permits development without the vendor archive.
+
+Publish core changes before preparing an R release that needs them. Update the
+R adapter's version requirement when needed, then run `dm-vendor-r`. That command
+resolves the published core, runs `rextendr::vendor_crates()`, and records license
+notices and the lockfile digest. Commit the lockfile, vendor archive, vendor
+configuration, digest, and notices. The core receives the same vendoring treatment
+as every other registry dependency. The R tarball must build with no checkout or
+Cargo network access.
+
+Run `python tools/dm_rust_sources.py` after shared conformance changes to update
+the core's fixture copy. `python tools/dm_rust_sources.py --check` checks fixtures,
+vendor metadata, and license notices. Check changes with Rust 1.82.
 
 Run `dm-document-r` after changing extendr function signatures or Rust wrapper
 documentation. It generates the private R wrappers directly from extendr
 metadata without replacing the package's manually maintained Rd files or
-NAMESPACE. Do not edit the generated wrappers or bundled core by hand.
+NAMESPACE. Do not edit the generated wrappers by hand.
 
-The core has standalone crate metadata and a Versionary release entry. Future
-crates.io publication is separate from R release preparation; no automatic
-crate publication is configured.
+The core has standalone crate metadata and a Versionary release entry. Prepare
+its release independently, verify the package, and publish before refreshing the
+R vendor archive:
+
+```console
+dm-core-cargo publish --manifest-path crates/datamonger-core/Cargo.toml --locked --dry-run
+dm-core-cargo publish --manifest-path crates/datamonger-core/Cargo.toml --locked
+dm-vendor-r
+```
+
+Run publication commands from a clean release checkout. Crate publication is
+manual; no workflow publishes it automatically.
 
 The focused Julia command from `packages/julia` is:
 

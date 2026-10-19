@@ -30,7 +30,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: crates/datamonger-core
-      - name: Check bundled sources and fixtures
+      - name: Check vendored Rust sources and fixtures
         working-directory: .
         run: python tools/dm_rust_sources.py --check
       - run: cargo fmt --check
@@ -146,7 +146,7 @@ jobs:
       - name: Check shared fixture copies
         run: diff -r ../../tests/conformance tests/testthat/fixtures/conformance
         shell: bash
-      - name: Check bundled Rust sources
+      - name: Check vendored Rust sources
         working-directory: .
         run: python tools/dm_rust_sources.py --check
       - name: Build R package
@@ -154,6 +154,12 @@ jobs:
       - name: Check R package
         run: R CMD check --no-manual --as-cran datamonger_*.tar.gz
         shell: bash
+      - name: Test R adapter against local core
+        env:
+          DM_R_CORE_PATH: ${{ github.workspace }}/crates/datamonger-core
+          CARGO_NET_OFFLINE: "false"
+          DEBUG: "1"
+        run: Rscript -e 'pkgbuild::compile_dll(".", debug = TRUE, force = TRUE); testthat::test_local(".")'
 
   julia-quality:
     runs-on: ubuntu-latest

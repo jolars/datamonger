@@ -9,14 +9,14 @@ $(SHLIB): $(STATLIB)
 
 .PHONY: $(STATLIB)
 $(STATLIB):
-	if test -f rust/vendor.tar.xz; then \
+	if test "@VENDORED@" = true; then \
 		tar xf rust/vendor.tar.xz; \
 		mkdir -p .cargo; \
 		cp rust/vendor-config.toml .cargo/config.toml; \
 	fi
 	mkdir -p .cargo/libgcc_mock
 	$(AR) cr .cargo/libgcc_mock/libgcc_eh.a
-	CARGO_HOME="$(CURDIR)/.cargo" LIBRARY_PATH="$(LIBRARY_PATH);$(CURDIR)/.cargo/libgcc_mock" RUSTC=@RUSTC@ @CARGO@ build --manifest-path rust/Cargo.toml --target-dir $(TARGET_DIR) --target $(TARGET) --lib --locked @OFFLINE@ -j 2 @PROFILE@
+	@CARGO_HOME@ LIBRARY_PATH="$(LIBRARY_PATH);$(CURDIR)/.cargo/libgcc_mock" RUSTC=@RUSTC@ @CARGO@ @CORE_PATCH@ build --manifest-path rust/Cargo.toml --target-dir $(TARGET_DIR) --target $(TARGET) --lib @LOCKED@ @OFFLINE@ -j 2 @PROFILE@
 
 rust_clean: $(SHLIB)
 	rm -rf .cargo vendor @CLEAN_TARGET@

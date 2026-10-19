@@ -20,8 +20,21 @@ if (utils::compareVersion(version, "1.82.0") < 0) {
 }
 message(rust_version, "\n", cargo_version)
 debug <- nzchar(Sys.getenv("DEBUG"))
-vendored <- file.exists("src/rust/vendor.tar.xz")
-if (!vendored && !nzchar(Sys.getenv("NOT_CRAN"))) {
+core <- Sys.getenv("DM_R_CORE_PATH")
+local_core <- nzchar(core)
+patch <- ""
+if (local_core) {
+  core <- normalizePath(core, winslash = "/", mustWork = TRUE)
+  if (!file.exists(file.path(core, "Cargo.toml"))) {
+    stop("DM_R_CORE_PATH must point to the datamonger-core crate.")
+  }
+  patch <- paste("--config", shQuote(paste0(
+    "patch.crates-io.datamonger-core.path=", encodeString(core, quote = '"')
+  )))
+  unlink("src/.cargo/config.toml")
+}
+vendored <- !local_core && file.exists("src/rust/vendor.tar.xz")
+if (!vendored && !local_core && !nzchar(Sys.getenv("NOT_CRAN"))) {
   stop("Missing vendored Rust sources. Run dm-vendor-r before building.")
 }
 template <- if (.Platform$OS.type == "windows") "src/Makevars.win.in" else "src/Makevars.in"
@@ -29,6 +42,10 @@ text <- readLines(template)
 replacements <- list(
   "@CARGO@" = shQuote(cargo),
   "@RUSTC@" = shQuote(rustc),
+  "@CORE_PATCH@" = patch,
+  "@LOCKED@" = if (local_core) "" else "--locked",
+  "@VENDORED@" = if (vendored) "true" else "false",
+  "@CARGO_HOME@" = if (local_core) "" else 'CARGO_HOME="$(CURDIR)/.cargo"',
   "@NATIVE_LIBS@" = if (grepl("darwin", R.version$os)) "" else "-ldl -lpthread -lm",
   "@PROFILE@" = if (debug) "" else "--release",
   "@LIBDIR@" = if (debug) "debug" else "release",

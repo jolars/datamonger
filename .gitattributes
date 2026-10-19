@@ -8,7 +8,6 @@ packages/r/configure* text eol=lf
 packages/r/cleanup* text eol=lf
 packages/r/src/Makevars* text eol=lf
 crates/datamonger-core/** text eol=lf
-packages/r/src/rust/datamonger-core/** text eol=lf
 packages/r/inst/COPYRIGHTS text eol=lf
 
 # These files participate in byte-level conformance and artifact checks.

@@ -68,12 +68,33 @@ in
   };
 
   scripts.dm-vendor-r = {
-    description = "Synchronize and vendor the R package's Rust sources";
+    description = "Vendor the R package's published Rust dependencies";
     exec = ''
       cd "$DEVENV_ROOT"
-      python "$DEVENV_ROOT/tools/dm_rust_sources.py"
+      dm-core-cargo update --manifest-path packages/r/src/rust/Cargo.toml -p datamonger-core
       Rscript -e 'rextendr::vendor_crates("packages/r", overwrite = TRUE, clean = TRUE)'
-      python "$DEVENV_ROOT/tools/dm_rust_sources.py" --archive-vendor
+      python "$DEVENV_ROOT/tools/dm_rust_sources.py" --record-vendor
+    '';
+  };
+
+  scripts.dm-local-r = {
+    description = "Run Rscript against the local Rust core";
+    exec = ''
+      dm_r_lock="$DEVENV_ROOT/packages/r/src/rust/Cargo.lock"
+      dm_r_saved_lock="$(mktemp)"
+      cp "$dm_r_lock" "$dm_r_saved_lock"
+      trap 'cp "$dm_r_saved_lock" "$dm_r_lock"; rm -f "$dm_r_saved_lock"' EXIT
+      export DM_R_CORE_PATH="$DEVENV_ROOT/crates/datamonger-core"
+      export DEBUG=1
+      Rscript "$@"
+    '';
+  };
+
+  scripts.dm-test-r = {
+    description = "Test the R adapter against the local Rust core";
+    exec = ''
+      cd "$DEVENV_ROOT"
+      dm-local-r -e 'pkgbuild::compile_dll("packages/r", debug = TRUE, force = TRUE); testthat::test_local("packages/r")'
     '';
   };
 
@@ -81,7 +102,7 @@ in
     description = "Regenerate private R wrappers from extendr metadata";
     exec = ''
       cd "$DEVENV_ROOT/packages/r"
-      Rscript tools/document.R
+      dm-local-r tools/document.R
     '';
   };
 
@@ -141,5 +162,7 @@ in
     R CMD build "$dm_repo_root/packages/r"
     _R_CHECK_CRAN_INCOMING_REMOTE_=false \
       R CMD check --no-manual --as-cran datamonger_*.tar.gz
+    cd "$dm_repo_root"
+    dm-test-r
   '';
 }

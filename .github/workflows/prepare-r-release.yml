@@ -44,7 +44,7 @@ jobs:
         with:
           toolchain: "1.82.0"
 
-      - name: Check bundled Rust sources
+      - name: Check vendored Rust sources
         run: python tools/dm_rust_sources.py --check
 
       - uses: r-lib/actions/setup-r@v2

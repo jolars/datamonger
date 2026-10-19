@@ -10,7 +10,7 @@ name = "datamonger_r"
 crate-type = ["staticlib"]
 
 [dependencies]
-datamonger-core = { version = "0.1.0", path = "datamonger-core" }
+datamonger-core = "0.1"
 extendr-api = "0.9.0"
 
 [profile.release]

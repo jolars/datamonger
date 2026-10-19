@@ -223,12 +223,15 @@ language runtime, networking, or registry services. Its MSRV is 1.82, separate
 from the CLI's newer toolchain, and its metadata supports future crates.io
 publication.
 
-The R source package includes a generated copy of the authoritative core and
-vendored dependencies so it can compile offline before the crate is published.
-The quality gate checks source and fixture synchronization. A general C ABI is
-deferred until a second client adopts the core. Sharing an implementation does
-not provide independent validation: future bindings must still be checked
-against an independent implementation and the conformance corpus.
+The R adapter depends on a published crates.io version of the core. Its vendor
+archive comes from `rextendr::vendor_crates()`, allowing standalone R source
+packages to compile offline. Core changes needed by an R release must be
+published first. Development commands apply an explicit local Cargo patch and
+preserve the release lockfile. CI tests both the published dependency and local
+core edits. The quality gate checks vendor metadata and fixture synchronization.
+A general C ABI is deferred until a second client adopts the core. Sharing an
+implementation does not provide independent validation: future bindings must
+still be checked against an independent implementation and the conformance corpus.
 
 ---
 

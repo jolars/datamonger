@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Synchronize the Rust core bundled in the R source package and test fixtures."""
+"""Check vendored Rust metadata and synchronize core test fixtures."""
 
 from __future__ import annotations
 
@@ -12,7 +12,6 @@ from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parent.parent
 CORE = ROOT / "crates/datamonger-core"
-BUNDLE = ROOT / "packages/r/src/rust/datamonger-core"
 
 
 def license_notices(archive_path: Path) -> bytes:
@@ -21,12 +20,7 @@ def license_notices(archive_path: Path) -> bytes:
         "The R package includes datamonger-core and the following vendored crates.",
         "Crate metadata and complete bundled license notices follow.\n",
     ]
-    packages = {
-        "datamonger-core": (
-            tomllib.loads((CORE / "Cargo.toml").read_text(encoding="utf-8")),
-            {"LICENSE": (CORE / "LICENSE").read_bytes()},
-        )
-    }
+    packages = {}
     with tarfile.open(archive_path, "r:xz") as archive:
         members = {m.name: m for m in archive.getmembers() if m.isfile()}
         for name in sorted(members):
@@ -61,12 +55,6 @@ def license_notices(archive_path: Path) -> bytes:
         for filename, contents in sorted(licenses.items()):
             notices.extend([f"\n--- {filename} ---\n", contents.decode("utf-8")])
     return ("\n".join(notices) + "\n").replace("\r\n", "\n").encode("utf-8")
-
-
-def expected_sources() -> dict[Path, bytes]:
-    files = [CORE / name for name in ("Cargo.toml", "README.md", "LICENSE")]
-    files.extend(sorted((CORE / "src").rglob("*.rs")))
-    return {path.relative_to(CORE): path.read_bytes() for path in files}
 
 
 def synchronize(source: Path, destination: Path, *, check: bool) -> bool:
@@ -104,9 +92,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--check", action="store_true")
-    mode.add_argument("--archive-vendor", action="store_true")
+    mode.add_argument("--record-vendor", action="store_true")
     args = parser.parse_args()
-    bundled = synchronize_bytes(expected_sources(), BUNDLE, check=args.check)
     fixtures = synchronize(
         ROOT / "tests/conformance",
         CORE / "tests/fixtures/conformance",
@@ -116,27 +103,23 @@ def main() -> int:
     stamp = rust / "vendor-lock.sha256"
     lockfile = (rust / "Cargo.lock").read_text(encoding="utf-8").encode("utf-8")
     expected_stamp = hashlib.sha256(lockfile).hexdigest()
-    if args.archive_vendor:
-        if not (rust / "vendor").is_dir():
-            parser.error("run rextendr::vendor_crates() before archiving")
-        with tarfile.open(rust / "vendor.tar.xz", "w:xz", preset=6) as archive:
-            for path in sorted((rust / "vendor").rglob("*")):
-                if not path.is_file():
-                    continue
-                info = archive.gettarinfo(str(path), str(path.relative_to(rust)))
-                info.uid = info.gid = info.mtime = 0
-                info.uname = info.gname = ""
-                info.mode = 0o755 if path.stat().st_mode & 0o111 else 0o644
-                with path.open("rb") as stream:
-                    archive.addfile(info, stream)
+    registry_core = any(
+        package["name"] == "datamonger-core"
+        and package.get("source", "").startswith("registry+")
+        for package in tomllib.loads(lockfile.decode("utf-8"))["package"]
+    )
+    if args.record_vendor:
+        if not registry_core or not (rust / "vendor.tar.xz").is_file():
+            parser.error("vendor the published datamonger-core with dm-vendor-r first")
         stamp.write_text(expected_stamp + "\n")
     vendor = (
         (rust / "vendor.tar.xz").is_file()
         and stamp.is_file()
         and stamp.read_text().strip() == expected_stamp
+        and registry_core
     )
     if args.check and not vendor:
-        print("Stale vendored dependencies: run dm-vendor-r")
+        print("Stale vendored Rust sources: run dm-vendor-r")
     notices_match = True
     if (rust / "vendor.tar.xz").is_file():
         expected_notices = license_notices(rust / "vendor.tar.xz")
@@ -146,7 +129,7 @@ def main() -> int:
             print("Stale Rust license notices: run python tools/dm_rust_sources.py")
         elif not args.check:
             notices.write_bytes(expected_notices)
-    valid = bundled and fixtures and notices_match and vendor
+    valid = fixtures and notices_match and vendor
     return 0 if valid or not args.check else 1
 
 

@@ -8,12 +8,12 @@ $(SHLIB): $(STATLIB)
 
 .PHONY: $(STATLIB)
 $(STATLIB):
-	if test -f rust/vendor.tar.xz; then \
+	if test "@VENDORED@" = true; then \
 		tar xf rust/vendor.tar.xz; \
 		mkdir -p .cargo; \
 		cp rust/vendor-config.toml .cargo/config.toml; \
 	fi
-	CARGO_HOME="$(CURDIR)/.cargo" RUSTC=@RUSTC@ @CARGO@ build --manifest-path rust/Cargo.toml --target-dir $(TARGET_DIR) --lib --locked @OFFLINE@ -j 2 @PROFILE@
+	@CARGO_HOME@ RUSTC=@RUSTC@ @CARGO@ @CORE_PATCH@ build --manifest-path rust/Cargo.toml --target-dir $(TARGET_DIR) --lib @LOCKED@ @OFFLINE@ -j 2 @PROFILE@
 
 rust_clean: $(SHLIB)
 	rm -rf .cargo vendor @CLEAN_TARGET@
