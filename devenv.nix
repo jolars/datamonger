@@ -137,6 +137,19 @@ in
     dm-core-cargo clippy --manifest-path crates/datamonger-core/Cargo.toml \
       --locked --all-targets -- -D warnings
     dm-core-cargo test --manifest-path crates/datamonger-core/Cargo.toml --locked
+    dm-core-cargo fmt --manifest-path crates/datamonger-ffi/Cargo.toml --check
+    dm-core-cargo clippy --manifest-path crates/datamonger-ffi/Cargo.toml \
+      --locked --all-targets -- -D warnings
+    dm-core-cargo test --manifest-path crates/datamonger-ffi/Cargo.toml --locked
+    julia tools/dm_julia_core.jl
+    dm_abi_binary="$(mktemp)"
+    cc -Wall -Wextra -Werror -I crates/datamonger-ffi/include \
+      crates/datamonger-ffi/tests/abi.c \
+      -L crates/datamonger-ffi/target/release -ldatamonger_ffi \
+      -Wl,-rpath,"$dm_repo_root/crates/datamonger-ffi/target/release" \
+      -o "$dm_abi_binary"
+    "$dm_abi_binary" tests/conformance/artifacts/small.libsvm
+    rm "$dm_abi_binary"
     dm-core-cargo fmt --manifest-path packages/r/src/rust/Cargo.toml --check
     dm-core-cargo clippy --manifest-path packages/r/src/rust/Cargo.toml \
       --locked --all-targets -- -D warnings

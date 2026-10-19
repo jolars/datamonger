@@ -1337,12 +1337,14 @@ they will attach to.
 ## Cross-language behavior
 
 R, Python, and Julia implement the same registry semantics while remaining
-idiomatic within their ecosystems. The R and Python adapters use
+idiomatic within their ecosystems. The R, Python, and Julia adapters use
 `datamonger-core` for decoding, artifact decompression, and canonical
 verification. Each client owns registry resolution, retrieval, caching, host
 return types, error classes, and metadata. Python retains its original decoder
 and canonical encoder under `packages/python/tests/reference` as an independent
-test oracle alongside the language-neutral conformance corpus.
+test oracle alongside the language-neutral conformance corpus. Julia retains
+its independent decoder and encoder under `packages/julia/test/reference` and
+loads the core through the versioned C ABI in `crates/datamonger-ffi`.
 
 Cross-language consistency is defined relative to the same registry release and
 supported specification versions. Explicit dataset identifiers must resolve to

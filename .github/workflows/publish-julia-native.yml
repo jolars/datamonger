@@ -1,0 +1,55 @@
+name: Publish Julia native
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing datamonger-ffi-v<version> tag to build and publish
+        required: true
+        type: string
+
+concurrency:
+  group: publish-julia-native-${{ inputs.tag || github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: startsWith(inputs.tag || github.event.release.tag_name, 'datamonger-ffi-v')
+    uses: ./.github/workflows/julia-native.yml
+    with:
+      ref: ${{ inputs.tag || github.event.release.tag_name }}
+      native-tag: ${{ inputs.tag || github.event.release.tag_name }}
+    permissions:
+      contents: read
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      NATIVE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag || github.event.release.tag_name }}
+          persist-credentials: false
+      - name: Match native crate and tag versions
+        run: |
+          python - <<'PY'
+          import os
+          import tomllib
+          from pathlib import Path
+          package = tomllib.loads(Path("crates/datamonger-ffi/Cargo.toml").read_text())["package"]
+          if os.environ["NATIVE_TAG"] != f"{package['name']}-v{package['version']}":
+              raise SystemExit("Native tag does not match crate version")
+          PY
+      - uses: actions/download-artifact@v8
+        with:
+          name: julia-native-distribution
+          path: native-artifacts
+      - name: Attach tested archives and manifest
+        run: gh release upload "$NATIVE_TAG" native-artifacts/*.tar.gz native-artifacts/Artifacts.toml

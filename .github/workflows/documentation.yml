@@ -44,6 +44,8 @@ jobs:
       - uses: julia-actions/setup-julia@v3
         with:
           version: "1.12"
+      - name: Build the Julia native library
+        run: julia tools/dm_julia_core.jl
       - name: Prepare the Julia client
         run: julia --project=packages/julia -e 'using Pkg; Pkg.instantiate()'
       - uses: r-lib/actions/setup-r@v2

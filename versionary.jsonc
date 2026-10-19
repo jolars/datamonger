@@ -14,6 +14,11 @@
       "package-name": "datamonger-core",
       "release-draft": false
     },
+    "crates/datamonger-ffi": {
+      "release-type": "rust",
+      "package-name": "datamonger-ffi",
+      "release-draft": false
+    },
     "registry": {
       "release-type": "simple",
       "package-name": "registry",

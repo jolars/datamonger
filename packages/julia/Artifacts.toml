@@ -1,0 +1,2 @@
+# Release preparation installs the tested manifest from Publish Julia native.
+# Source checkouts use tools/dm_julia_core.jl to build a local artifact.

@@ -1,117 +1,3 @@
-const _FLOAT_PATTERN = r"^-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$"
-const _SVM_FLOAT_PATTERN = r"^[+-]?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$"
-const _INT_PATTERN = r"^-?(0|[1-9][0-9]*)$"
-const _SVM_INT_PATTERN = r"^[+-]?(0|[1-9][0-9]*)$"
-const _INDEX_PATTERN = r"^(0|[1-9][0-9]*)$"
-
-function _decompressed_bytes(path, compression)
-    compression in ("none", "gzip", "bzip2") ||
-        throw(UnsupportedDecoderError("unsupported artifact compression '$compression'"))
-    bytes = try
-        read(path)
-    catch error
-        throw(DecodeError("cannot read artifact: $(sprint(showerror, error))"))
-    end
-    compression == "none" && return bytes
-    stream = try
-        if compression == "gzip"
-            GzipDecompressorStream(IOBuffer(bytes); gziponly=true)
-        elseif compression == "bzip2"
-            Bzip2DecompressorStream(IOBuffer(bytes))
-        end
-    catch error
-        error isa DatamongerError && rethrow()
-        throw(DecodeError("cannot initialize artifact decompression: $(sprint(showerror, error))"))
-    end
-    try
-        return read(stream)
-    catch error
-        throw(DecodeError("malformed compressed artifact: $(sprint(showerror, error))"))
-    finally
-        try
-            close(stream)
-        catch
-        end
-    end
-end
-
-function _validated_text(bytes)
-    length(bytes) >= 3 && bytes[1:3] == UInt8[0xef, 0xbb, 0xbf] &&
-        throw(DecodeError("UTF-8 byte-order marks are invalid"))
-    isvalid(String, bytes) || throw(DecodeError("artifact is not valid UTF-8"))
-    return nothing
-end
-
-function _physical_records(bytes; empty_allowed)
-    isempty(bytes) && return empty_allowed ? Vector{Vector{UInt8}}() :
-                             throw(DecodeError("empty delimited artifact"))
-    records = Vector{Vector{UInt8}}()
-    start = 1
-    for index in eachindex(bytes)
-        byte = bytes[index]
-        if byte == 0x0d
-            index < length(bytes) && bytes[index + 1] == 0x0a ||
-                throw(DecodeError("bare carriage return is invalid"))
-        elseif byte == 0x0a
-            stop = index > start && bytes[index - 1] == 0x0d ? index - 2 : index - 1
-            push!(records, stop >= start ? bytes[start:stop] : UInt8[])
-            start = index + 1
-        end
-    end
-    start <= length(bytes) && push!(records, bytes[start:end])
-    return records
-end
-
-function _parse_fields(record::Vector{UInt8}, delimiter::UInt8)
-    fields = Vector{Vector{UInt8}}()
-    position = 1
-    while true
-        if position > length(record)
-            push!(fields, UInt8[])
-            break
-        elseif record[position] == 0x22
-            position += 1
-            field = UInt8[]
-            closed = false
-            while position <= length(record)
-                if record[position] == 0x22
-                    if position < length(record) && record[position + 1] == 0x22
-                        push!(field, 0x22)
-                        position += 2
-                    else
-                        closed = true
-                        position += 1
-                        break
-                    end
-                else
-                    push!(field, record[position])
-                    position += 1
-                end
-            end
-            closed || throw(DecodeError("unterminated quoted field"))
-            if position <= length(record) && record[position] != delimiter
-                throw(DecodeError("closing quote must precede a delimiter or record end"))
-            end
-            push!(fields, field)
-        else
-            start = position
-            while position <= length(record) && record[position] != delimiter
-                record[position] == 0x22 &&
-                    throw(DecodeError("quote in an unquoted field"))
-                position += 1
-            end
-            push!(fields, record[start:(position - 1)])
-        end
-        position > length(record) && break
-        position += 1
-        if position > length(record)
-            push!(fields, UInt8[])
-            break
-        end
-    end
-    return fields
-end
-
 function _validate_delimited_options(options::AbstractDict)
     required = Set(["encoding", "delimiter", "header", "quote", "escape", "row_order", "columns"])
     allowed = union(required, Set(["missing_values"]))
@@ -152,74 +38,6 @@ function _validate_delimited_options(options::AbstractDict)
     return (UInt8(delimiter_string == "," ? ',' : '\t'), names, types, Set(String.(missing_values)))
 end
 
-function _parse_delimited_value(value::String, logical_type::String)
-    if logical_type == "float64"
-        occursin(_FLOAT_PATTERN, value) || throw(DecodeError("invalid float64 value '$value'"))
-        parsed = tryparse(Float64, value)
-        parsed !== nothing && isfinite(parsed) || throw(DecodeError("invalid float64 value '$value'"))
-        return parsed
-    elseif logical_type == "int64"
-        occursin(_INT_PATTERN, value) || throw(DecodeError("invalid int64 value '$value'"))
-        parsed = tryparse(Int64, value)
-        parsed !== nothing || throw(DecodeError("int64 value is out of range"))
-        return parsed
-    elseif logical_type == "bool"
-        value == "true" && return true
-        value == "false" && return false
-        throw(DecodeError("invalid bool value '$value'"))
-    end
-    return value
-end
-
-function decode_delimited(path, options::AbstractDict; compression="none")
-    delimiter, names, types, missing_values = _validate_delimited_options(options)
-    bytes = _decompressed_bytes(path, compression)
-    _validated_text(bytes)
-    records = _physical_records(bytes; empty_allowed=false)
-    header = String.(_parse_fields(first(records), delimiter))
-    header == names || throw(DecodeError("artifact header does not match the recipe"))
-    logical_values = [Any[] for _ in names]
-    valid = [BitVector() for _ in names]
-    native = [Any[] for _ in names]
-    for record in @view records[2:end]
-        fields = _parse_fields(record, delimiter)
-        length(fields) == length(names) || throw(DecodeError("record has the wrong field count"))
-        for index in eachindex(fields)
-            value = String(fields[index])
-            if value in missing_values
-                zero_value = types[index] == "float64" ? 0.0 :
-                             types[index] == "int64" ? Int64(0) :
-                             types[index] == "bool" ? false : ""
-                push!(logical_values[index], zero_value)
-                push!(native[index], missing)
-                push!(valid[index], false)
-            else
-                parsed = _parse_delimited_value(value, types[index])
-                push!(logical_values[index], parsed)
-                push!(native[index], parsed)
-                push!(valid[index], true)
-            end
-        end
-    end
-    typed_logical = AbstractVector[]
-    typed_native = AbstractVector[]
-    for index in eachindex(names)
-        T = types[index] == "float64" ? Float64 :
-            types[index] == "int64" ? Int64 :
-            types[index] == "bool" ? Bool : String
-        push!(typed_logical, T.(logical_values[index]))
-        converted = Vector{Union{Missing,T}}(undef, length(native[index]))
-        converted .= native[index]
-        push!(typed_native, converted)
-    end
-    components = Tuple(
-        LogicalVector(names[index], types[index], typed_logical[index], valid[index]) for
-        index in eachindex(names)
-    )
-    data = DataFrame([Symbol(names[index]) => typed_native[index] for index in eachindex(names)])
-    return Decoded(data, components)
-end
-
 function _validate_libsvm_options(options::AbstractDict)
     expected = Set([
         "index_base",
@@ -247,93 +65,70 @@ function _validate_libsvm_options(options::AbstractDict)
     return (Int(feature_count), String(label_type), target_name)
 end
 
-function _parse_svm_number(value::AbstractString, logical_type::String)
-    pattern = logical_type == "int64" ? _SVM_INT_PATTERN : _SVM_FLOAT_PATTERN
-    occursin(pattern, value) || throw(DecodeError("invalid $logical_type value '$value'"))
-    parsed = logical_type == "int64" ? tryparse(Int64, value) : tryparse(Float64, value)
-    parsed !== nothing || throw(DecodeError("$logical_type value is out of range"))
-    parsed isa Float64 && !isfinite(parsed) && throw(DecodeError("float64 value is not finite"))
-    return parsed
+function decode_delimited(path, options::AbstractDict; compression="none")
+    delimiter, names, types, missing_values = _validate_delimited_options(options)
+    path = String(path)
+    missing_strings = collect(missing_values)
+    missing_views = _NativeBytes.(missing_strings)
+    columns = [_NativeColumn(_NativeBytes(name), _NATIVE_TYPES[type]) for (name, type) in zip(names, types)]
+    artifact = _native_artifact(path, compression)
+    GC.@preserve path names missing_strings missing_views columns begin
+        recipe = _NativeDelimitedOptions(delimiter, pointer(columns), length(columns),
+                                         pointer(missing_views), length(missing_views))
+        result = ccall(_native_symbol(:dm_decode_delimited), Ptr{Cvoid},
+                       (_NativeArtifact, _NativeDelimitedOptions), artifact, recipe)
+        components = _with_native_result(_native_components, result)
+        native = map(components) do component
+            T = eltype(component.values)
+            values = Vector{Union{Missing,T}}(undef, length(component.values))
+            for index in eachindex(values)
+                values[index] = component.valid[index] ? component.values[index] : missing
+            end
+            Symbol(component.name) => values
+        end
+        return Decoded(DataFrame(collect(native)), components)
+    end
+end
+
+function _sparse_dataset(features, response)
+    matrix = if features.columns <= 10_000_000
+        rows = Int[]
+        for row in 1:features.rows
+            append!(rows, fill(row, features.row_offsets[row + 1] - features.row_offsets[row]))
+        end
+        sparse(rows, features.column_indices .+ 1, features.values, features.rows, features.columns)
+    else
+        CSRMatrix(features.rows, features.columns, features.row_offsets,
+                  features.column_indices, features.values)
+    end
+    return SparseDataset(matrix, response.values)
 end
 
 function decode_libsvm(path, options::AbstractDict; compression="none", prefix="")
     feature_count, label_type, target_name = _validate_libsvm_options(options)
-    bytes = _decompressed_bytes(path, compression)
-    _validated_text(bytes)
-    records = _physical_records(bytes; empty_allowed=true)
-    rows = Int[]
-    columns = Int[]
-    values = Float64[]
-    labels_int = Int64[]
-    labels_float = Float64[]
-    row_offsets = Int[0]
-    canonical_columns = Int[]
-    for (row, record) in enumerate(records)
-        isempty(record) && throw(DecodeError("blank LIBSVM records are invalid"))
-        first(record) in (0x20, 0x09) && throw(DecodeError("leading whitespace is invalid"))
-        line = String(record)
-        line = rstrip(character -> character == ' ' || character == '\t', line)
-        tokens = split(line, r"[ \t]+"; keepempty=false)
-        isempty(tokens) && throw(DecodeError("LIBSVM record has no label"))
-        label = _parse_svm_number(tokens[1], label_type)
-        label_type == "int64" ? push!(labels_int, label) : push!(labels_float, label)
-        previous = 0
-        for token in @view tokens[2:end]
-            parts = split(token, ':'; keepempty=true)
-            length(parts) == 2 || throw(DecodeError("invalid LIBSVM feature token"))
-            occursin(_INDEX_PATTERN, parts[1]) || throw(DecodeError("invalid feature index"))
-            column = tryparse(Int, parts[1])
-            column !== nothing && 1 <= column <= feature_count ||
-                throw(DecodeError("feature index is out of range"))
-            column > previous || throw(DecodeError("feature indices must strictly increase"))
-            value = _parse_svm_number(parts[2], "float64")
-            value != 0.0 || throw(DecodeError("stored sparse zero is invalid"))
-            push!(rows, row)
-            push!(columns, column)
-            push!(canonical_columns, column - 1)
-            push!(values, value)
-            previous = column
-        end
-        push!(row_offsets, length(values))
+    path, prefix = String(path), String(prefix)
+    artifact = _native_artifact(path, compression)
+    GC.@preserve path prefix target_name begin
+        recipe = _NativeLibsvmOptions(feature_count, _NATIVE_TYPES[label_type], _NativeBytes(target_name))
+        result = ccall(_native_symbol(:dm_decode_libsvm), Ptr{Cvoid},
+            (_NativeArtifact, _NativeLibsvmOptions, _NativeBytes), artifact, recipe, _NativeBytes(prefix))
+        components = _with_native_result(_native_components, result)
+        return Decoded(_sparse_dataset(components...), components)
     end
-    response = label_type == "int64" ? labels_int : labels_float
-    features = if feature_count <= 10_000_000
-        sparse(rows, columns, values, length(records), feature_count)
-    else
-        CSRMatrix(
-            length(records),
-            feature_count,
-            row_offsets,
-            canonical_columns,
-            values,
-        )
-    end
-    feature_component = LogicalSparseMatrix(
-        prefix * "features",
-        length(records),
-        feature_count,
-        row_offsets,
-        canonical_columns,
-        values,
-    )
-    response_component = LogicalVector(
-        prefix * target_name,
-        label_type,
-        response,
-        trues(length(response)),
-    )
-    return Decoded(SparseDataset(features, response), (feature_component, response_component))
 end
 
-function decode_libsvm_split(
-    train_path,
-    test_path,
-    options::AbstractDict;
-    train_compression="none",
-    test_compression="none",
-)
-    train = decode_libsvm(train_path, options; compression=train_compression, prefix="train_")
-    test = decode_libsvm(test_path, options; compression=test_compression, prefix="test_")
-    data = SparseDatasetSplit(train.data, test.data)
-    return Decoded(data, (train.components..., test.components...))
+function decode_libsvm_split(train_path, test_path, options::AbstractDict;
+                             train_compression="none", test_compression="none")
+    feature_count, label_type, target_name = _validate_libsvm_options(options)
+    train_path, test_path = String(train_path), String(test_path)
+    train = _native_artifact(train_path, train_compression)
+    test = _native_artifact(test_path, test_compression)
+    GC.@preserve train_path test_path target_name begin
+        recipe = _NativeLibsvmOptions(feature_count, _NATIVE_TYPES[label_type], _NativeBytes(target_name))
+        result = ccall(_native_symbol(:dm_decode_libsvm_split), Ptr{Cvoid},
+            (_NativeArtifact, _NativeArtifact, _NativeLibsvmOptions), train, test, recipe)
+        components = _with_native_result(_native_components, result)
+        data = SparseDatasetSplit(_sparse_dataset(components[1:2]...), _sparse_dataset(components[3:4]...))
+        return Decoded(data, components)
+    end
 end
