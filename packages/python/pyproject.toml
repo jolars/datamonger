@@ -1,6 +1,6 @@
 [build-system]
-requires = ["hatchling>=1.27"]
-build-backend = "hatchling.build"
+requires = ["maturin>=1.9,<2"]
+build-backend = "maturin"
 
 [project]
 name = "datamonger"
@@ -37,8 +37,11 @@ dev = [
   "types-jsonschema>=4",
 ]
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/datamonger"]
+[tool.maturin]
+module-name = "datamonger._native"
+python-source = "src"
+locked = true
+include = [{ path = "Cargo.lock", format = "sdist" }]
 
 [tool.pytest.ini_options]
 addopts = "-ra --strict-markers"

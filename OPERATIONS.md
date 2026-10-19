@@ -84,9 +84,12 @@ The Python release is fully automated:
 
 1. Merge the `datamonger-python` Versionary release PR.
 2. Versionary creates a non-draft GitHub Release.
-3. The `Publish Python` workflow checks out that tag, builds and verifies the
-   wheel and source distribution, and publishes them to PyPI through trusted
-   publishing.
+3. `Publish Python` calls `Python distributions` at that tag. It builds stable
+   ABI wheels for Linux and macOS on x86_64 and ARM64 and Windows on x86_64,
+   tests the installed wheels on Python 3.11, 3.14, and 3.15, and verifies that
+   the source distribution builds outside the checkout with its bundled core.
+4. After every build and test succeeds, it publishes the wheels and source
+   distribution to PyPI through trusted publishing.
 
 The publishing job deliberately receives only the downloaded distributions and
 an OpenID Connect token. Package building runs in a separate, unprivileged job.

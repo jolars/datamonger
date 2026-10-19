@@ -58,6 +58,33 @@ uv run python ../../tools/dm_index.py check
 uv build
 ```
 
+Python uses Maturin to build the private PyO3 extension. `uv sync` builds it
+against the local `crates/datamonger-core` path dependency, and `uv build` bundles
+that core in the source distribution and builds a wheel from it. After editing
+Rust code, run `uv sync --reinstall-package datamonger` before Python tests to
+rebuild the extension. The binding uses the repository's stable Rust toolchain;
+the core and R adapter retain their separate MSRV checks. Python source
+releases include the local core, so they do not require an earlier crates.io
+publication. When changing the core's version, update the Python binding's
+Cargo requirement and lockfile in the same change.
+
+From `packages/python`, check the bindings and compare them with the independent
+Python implementation retained under `tests/reference`:
+
+```console
+cargo fmt --check
+cargo clippy --locked --all-targets -- -D warnings
+uv run pytest tests/test_native.py
+```
+
+The Python oracle is test-only. Keep its parsing and canonical encoding
+independent of the native backend. The differential tests compare native and
+Python results against the shared conformance corpus, compressed inputs,
+malformed artifacts, and generated inputs before a backend change can ship.
+CI also builds portable wheels for all supported platforms, installs them into
+fresh environments, and tests those installed distributions. The release
+workflow reuses the same build and test workflow.
+
 Focused commands from `packages/r` are:
 
 ```console

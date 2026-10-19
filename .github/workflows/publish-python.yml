@@ -11,29 +11,11 @@ concurrency:
 jobs:
   build:
     if: startsWith(github.event.release.tag_name, 'datamonger-python-v')
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/python-wheels.yml
+    with:
+      ref: ${{ github.event.release.tag_name }}
     permissions:
       contents: read
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.release.tag_name }}
-
-      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
-
-      - name: Build distributions
-        working-directory: packages/python
-        run: uv build
-
-      - name: Check distribution metadata
-        working-directory: packages/python
-        run: uvx twine check dist/*
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: python-distributions
-          path: packages/python/dist/
-          if-no-files-found: error
 
   publish:
     needs: build
@@ -46,7 +28,8 @@ jobs:
     steps:
       - uses: actions/download-artifact@v8
         with:
-          name: python-distributions
+          pattern: python-*
+          merge-multiple: true
           path: dist/
 
       - name: Publish distributions

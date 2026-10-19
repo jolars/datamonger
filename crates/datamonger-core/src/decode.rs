@@ -192,7 +192,7 @@ fn fields(record: &str, delimiter: u8) -> Result<Vec<String>> {
             let start = i;
             while i < bytes.len() && bytes[i] != delimiter {
                 if bytes[i] == b'"' {
-                    return Err(decode_error("unquoted field contains a quote"));
+                    return Err(decode_error("quote inside unquoted field"));
                 }
                 i += 1;
             }
@@ -346,7 +346,8 @@ pub fn decode_libsvm_with_control<R: BufRead>(
         let label = fields
             .next()
             .ok_or_else(|| decode_error("missing LIBSVM label"))?;
-        push_value(&mut labels, label, true, true)?;
+        push_value(&mut labels, label, true, true)
+            .map_err(|e| decode_error(format!("invalid LIBSVM label: {e}")))?;
         let mut previous = 0;
         for field in fields {
             let (index, value) = field
@@ -358,10 +359,17 @@ pub fn decode_libsvm_with_control<R: BufRead>(
             let index: u64 = index
                 .parse()
                 .map_err(|_| decode_error("feature index is out of range"))?;
-            if index <= previous || index > options.feature_count {
-                return Err(decode_error("feature indices are invalid or unordered"));
+            if index == 0 || index > options.feature_count {
+                return Err(decode_error("feature index is out of range"));
             }
-            let value = parse_binary64(value, true)?;
+            if index == previous {
+                return Err(decode_error("duplicate feature index"));
+            }
+            if index < previous {
+                return Err(decode_error("feature indices must be strictly increasing"));
+            }
+            let value = parse_binary64(value, true)
+                .map_err(|e| decode_error(format!("invalid feature value: {e}")))?;
             if value == 0.0 {
                 return Err(decode_error("stored sparse zero is invalid"));
             }

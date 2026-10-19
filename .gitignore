@@ -19,6 +19,8 @@ __pycache__/
 .venv/
 dist/
 build/
+packages/python/src/datamonger/_native*.so
+packages/python/src/datamonger/_native*.pyd
 
 # Rust
 target/

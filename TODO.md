@@ -1,6 +1,6 @@
 # Datamonger TODO
 
-- [ ] Migrate Python decoding, decompression, and canonical verification to
+- [x] Migrate Python decoding, decompression, and canonical verification to
   `datamonger-core`, introduced in
   [510c863](https://github.com/jolars/datamonger/commit/510c8631bd8c063454d933d3998fe8f878a02dc1).
   Add native bindings and wheel builds while preserving public return types,

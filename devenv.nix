@@ -129,6 +129,8 @@ in
     uv run python ../../tools/dm_index.py check \
       tests/registry/releases/test-0002/release.yaml
     uv build
+    cargo fmt --check
+    cargo clippy --locked --all-targets -- -D warnings
     cd "$dm_repo_root"
     python tools/dm_rust_sources.py --check
     dm-core-cargo fmt --manifest-path crates/datamonger-core/Cargo.toml --check

@@ -27,7 +27,10 @@ pub use canonical::{
     canonical_sha256, canonical_sha256_with_control, write_canonical, write_canonical_with_control,
     EMIT_BYTES,
 };
-pub use compression::{artifact_reader, decode_gzip_single_member, Compression};
+pub use compression::{
+    artifact_reader, artifact_reader_with_options, decode_gzip_single_member,
+    ArtifactReaderOptions, Compression,
+};
 pub use decode::{
     decode_delimited, decode_delimited_with_control, decode_libsvm, decode_libsvm_split,
     decode_libsvm_split_with_control, decode_libsvm_with_control, parse_binary64, Column,

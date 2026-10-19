@@ -1,12 +1,18 @@
 # Datamonger Python client
 
-This package is the Python reference client for Datamonger's stable
-specification revision 1.
+This package is the Python client for Datamonger's stable specification
+revision 1. It uses `datamonger-core` for decoding, artifact decompression, and
+canonical verification. Registry selection, retrieval, caching, metadata, and
+pandas and SciPy return types belong to the Python client.
 
 ## Installation and status
 
-The package requires Python 3.11 or newer and has not yet been published to
-PyPI. Install it from the repository root with:
+The package requires Python 3.11 or newer. Release builds provide stable ABI
+wheels for CPython on Linux (glibc 2.17 or newer) and macOS, on x86_64 and ARM64,
+and Windows on x86_64. Installing a wheel requires no Rust compiler.
+
+Source builds require a stable Rust toolchain and a C linker. Install from the
+repository root with:
 
 ```console
 python -m pip install ./packages/python

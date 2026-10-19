@@ -1,0 +1,21 @@
+[package]
+name = "datamonger-python"
+version = "0.2.0"
+edition = "2021"
+publish = false
+license = "MIT"
+description = "Python bindings for Datamonger decoding and verification"
+repository = "https://github.com/jolars/datamonger"
+
+[lib]
+name = "_native"
+path = "rust/lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+datamonger-core = { version = "0.1.0", path = "../../crates/datamonger-core" }
+numpy = "0.30"
+pyo3 = { version = "0.30", features = ["abi3-py311"] }
+
+[lints.rust]
+unsafe_code = "forbid"

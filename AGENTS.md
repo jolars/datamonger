@@ -2,10 +2,11 @@
 
 ## Project Structure & Module Organization
 
-The Python reference client lives in `packages/python`; the R and Julia clients
+The Python client lives in `packages/python`; the R and Julia clients
 live in `packages/r` and `packages/julia`; the standalone Rust CLI lives in
 `packages/cli`. The reusable Rust decoder lives in `crates/datamonger-core`;
-the R adapter vendors its published crates.io release and uses extendr bindings.
+Python binds it through PyO3 and Maturin, and the R adapter vendors its published
+crates.io release and uses extendr bindings.
 Python library code is under `packages/python/src/datamonger`; hermetic tests are
 beside each client, and network-dependent smoke tests are isolated in each
 client's `tests_live` directory.

@@ -33,6 +33,7 @@ jobs:
           key: documentation
       - name: Build Diplodocus
         run: cargo +1.98.0 build --locked --manifest-path .build/diplodocus/Cargo.toml --bin diplodocus
+      - uses: dtolnay/rust-toolchain@stable
       - name: Install uv
         uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
