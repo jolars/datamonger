@@ -65,8 +65,8 @@ Rust code, run `uv sync --reinstall-package datamonger` before Python tests to
 rebuild the extension. The binding uses the repository's stable Rust toolchain;
 the core and R adapter retain their separate MSRV checks. Python source
 releases include the local core, so they do not require an earlier crates.io
-publication. When changing the core's version, update the Python binding's
-Cargo requirement and lockfile in the same change.
+publication. When changing the core's version, update the Python and C ABI
+bindings' Cargo requirements and lockfiles in the same change.
 
 From `packages/python`, check the bindings and compare them with the independent
 Python implementation retained under `tests/reference`:
