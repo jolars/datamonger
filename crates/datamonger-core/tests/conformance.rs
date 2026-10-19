@@ -470,3 +470,34 @@ fn canonical_validation_rejects_invalid_shapes_and_sparse_values() {
     };
     assert!(canonical_sha256(&[dense]).is_err());
 }
+
+#[test]
+fn julia_float_underflow_compatibility_is_explicit() {
+    use datamonger_core::{decode_delimited_with_options, DecodeOptions};
+    let options = datamonger_core::DelimitedOptions {
+        delimiter: b',',
+        columns: vec![datamonger_core::Column {
+            name: "x".into(),
+            data_type: datamonger_core::DataType::Float64,
+        }],
+        missing_values: vec![],
+    };
+    let julia = DecodeOptions {
+        reject_float_underflow: true,
+    };
+    for text in ["x\n1e-999\n", "x\n-1e-999\n"] {
+        assert!(datamonger_core::decode_delimited(text.as_bytes(), &options).is_ok());
+        assert_eq!(
+            decode_delimited_with_options(text.as_bytes(), &options, julia)
+                .unwrap_err()
+                .kind,
+            datamonger_core::ErrorKind::Decode
+        );
+    }
+    for text in ["x\n-0e-999\n", "x\n5e-324\n", "x\n0.0e999\n"] {
+        assert_eq!(
+            decode_delimited_with_options(text.as_bytes(), &options, julia).unwrap(),
+            datamonger_core::decode_delimited(text.as_bytes(), &options).unwrap()
+        );
+    }
+}

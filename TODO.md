@@ -7,7 +7,7 @@
   errors, and client-side registry resolution, retrieval, caching, and metadata.
   Validate against the independent Python implementation and shared conformance
   corpus before replacing the current backend.
-- [ ] Migrate Julia decoding, decompression, and canonical verification to
+- [x] Migrate Julia decoding, decompression, and canonical verification to
   `datamonger-core`. Define the C ABI and Julia bindings, package native artifacts
   for supported platforms, and preserve public return types, errors, and
   client-side registry resolution, retrieval, caching, and metadata. Validate

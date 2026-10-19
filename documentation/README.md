@@ -23,6 +23,7 @@ its dependencies or C code:
 
 ```console
 mkdir -p /tmp/datamonger-docs-library
+julia tools/dm_julia_core.jl
 julia --project=packages/julia -e 'using Pkg; Pkg.instantiate()'
 R CMD INSTALL --library=/tmp/datamonger-docs-library packages/r
 ../diplodocus/target/debug/diplodocus serve --config documentation/diplodocus.toml --output documentation/site --port 8001 --live-reload

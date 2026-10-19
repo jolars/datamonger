@@ -109,7 +109,30 @@ The R release remains a reviewed CRAN handoff:
 
 ### Julia
 
-The Julia release uses General's Registrator handoff:
+Julia native libraries have an independent `datamonger-ffi-v<version>` release.
+Publish native changes before preparing a Julia client release that adopts them:
+
+1. Merge the native Versionary release PR. `Publish Julia native` builds all
+   five supported platforms, tests the installed artifacts on Julia 1.10 and
+   current stable Julia, and attaches the archives and a combined
+   `Artifacts.toml` to the native GitHub Release. A failed build or test prevents
+   artifact publication. A manual dispatch can retry an existing native tag.
+   Assets are immutable; retries do not overwrite existing assets.
+2. Download that release's `Artifacts.toml` into `packages/julia/Artifacts.toml`
+   and commit it in the Julia client change. Check it before merging:
+
+   ```console
+   julia tools/dm_julia_artifacts.jl check packages/julia/Artifacts.toml
+   ```
+
+   The manifest must contain every supported platform and its archive SHA-256
+   and unpacked tree hash. Each URL must name the immutable native release.
+   Never commit a local artifact binding from `packages/julia/deps`.
+3. Confirm the Julia client CI passes with those bindings before registering
+   the Julia release. The committed manifest must be complete before tagging;
+   General installs the tagged source tree, not a modified release attachment.
+
+The Julia release then uses General's Registrator handoff:
 
 1. Merge the `datamonger-julia` Versionary release PR. Versionary creates its
    tag and a draft GitHub Release.

@@ -65,8 +65,8 @@ Rust code, run `uv sync --reinstall-package datamonger` before Python tests to
 rebuild the extension. The binding uses the repository's stable Rust toolchain;
 the core and R adapter retain their separate MSRV checks. Python source
 releases include the local core, so they do not require an earlier crates.io
-publication. When changing the core's version, update the Python binding's
-Cargo requirement and lockfile in the same change.
+publication. When changing the core's version, update the Python and C ABI
+bindings' Cargo requirements and lockfiles in the same change.
 
 From `packages/python`, check the bindings and compare them with the independent
 Python implementation retained under `tests/reference`:
@@ -151,11 +151,37 @@ dm-vendor-r
 The R release continues to use its committed dependency version until this
 refresh is reviewed and merged.
 
+Julia uses the C ABI in `crates/datamonger-ffi`, with Rust 1.82 or newer. Build
+and install a local native artifact from the repository root before testing:
+
+```console
+julia tools/dm_julia_core.jl
+```
+
+The build uses the pinned core compiler in devenv. It writes an ignored local
+artifact binding under `packages/julia/deps`, leaving the release manifest
+unchanged. Rebuild after editing the core or C ABI. `DM_JULIA_CORE_LIBRARY` can
+instead select an absolute shared-library path for development. Julia checks its
+ABI version on first use. Registry and metadata operations do not load it.
+
 The focused Julia command from `packages/julia` is:
 
 ```console
 julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.test()'
 ```
+
+The original Julia decoder and canonical encoder live under
+`packages/julia/test/reference` and are test-only. Keep them independent of the
+native implementation. `test_native.jl` compares typed values, missingness,
+return types, canonical bytes, errors, compression behavior, and generated edge
+cases. The shared corpus remains the normative source for golden values. HTTP
+content decoding remains Julia's responsibility, separate from native artifact
+decompression.
+
+CI packages native libraries for Linux x86-64 and ARM64 with glibc 2.17 or newer,
+macOS Intel and Apple Silicon, and Windows x86-64. It tests each installed
+artifact with Julia 1.10 and the current stable Julia, outside the checkout,
+without building Rust. See `OPERATIONS.md` for native release ordering.
 
 Focused CLI commands from `packages/cli` are:
 

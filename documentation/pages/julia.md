@@ -6,6 +6,7 @@ Install the client from the Datamonger checkout, starting at the repository root
 using Pkg
 Pkg.activate("packages/julia")
 Pkg.instantiate()
+include("tools/dm_julia_core.jl")
 ```
 
 Inspect dataset metadata before fetching data:

@@ -43,6 +43,7 @@ Activate and instantiate the package environment:
 using Pkg
 Pkg.activate("packages/julia")
 Pkg.instantiate()
+include("tools/dm_julia_core.jl")
 ```
 
 ### CLI

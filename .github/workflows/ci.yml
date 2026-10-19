@@ -39,6 +39,12 @@ jobs:
       - run: cargo fmt --check
       - run: cargo clippy --locked --all-targets -- -D warnings
       - run: cargo test --locked
+      - name: Check C ABI crate
+        working-directory: crates/datamonger-ffi
+        run: |
+          cargo fmt --check
+          cargo clippy --locked --all-targets -- -D warnings
+          cargo test --locked
       - run: cargo doc --locked --no-deps
         env:
           RUSTDOCFLAGS: -D warnings
@@ -179,20 +185,5 @@ jobs:
           DEBUG: "1"
         run: Rscript -e 'pkgbuild::compile_dll(".", debug = TRUE, force = TRUE); testthat::test_local(".")'
 
-  julia-quality:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        julia-version: ["1.10", "1"]
-    defaults:
-      run:
-        working-directory: packages/julia
-    steps:
-      - uses: actions/checkout@v7
-      - uses: julia-actions/setup-julia@v3
-        with:
-          version: ${{ matrix.julia-version }}
-      - name: Check shared fixture copies
-        run: diff -r ../../tests/conformance test/fixtures/conformance
-      - name: Run hermetic tests
-        run: julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.test()'
+  julia-distributions:
+    uses: ./.github/workflows/julia-native.yml

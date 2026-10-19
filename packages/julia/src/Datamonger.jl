@@ -1,18 +1,20 @@
 module Datamonger
 
-using CodecBzip2
 using CodecZlib
 using DataFrames
 using Dates
 using FileWatching
 using HTTP
 using JSON3
+using Libdl
+using Pkg.Artifacts: artifact_exists, artifact_hash, artifact_path
 using SHA
 using SparseArrays
 using TranscodingStreams
 
 include("errors.jl")
 include("models.jl")
+include("native.jl")
 include("canonical.jl")
 include("decode.jl")
 include("cache.jl")

@@ -12,9 +12,21 @@ From a repository checkout:
 using Pkg
 Pkg.activate("packages/julia")
 Pkg.instantiate()
+include("tools/dm_julia_core.jl")
 
 using Datamonger
 ```
+
+Decoding, artifact decompression, and canonical hashing use the Rust
+`datamonger-core` library through C ABI 1. Registry resolution, retrieval,
+caching, metadata, and public return types remain in Julia. Source checkouts
+require Rust 1.82 or newer for the build command above; rebuild after native
+edits. The local binding is ignored by Git. Release preparation pins prebuilt
+artifacts for Linux x86-64 and ARM64 (glibc 2.17+), macOS Intel and Apple Silicon,
+and Windows x86-64, so installed releases need no Rust compiler. The library is
+loaded on first decode or canonical operation. Julia installs release artifacts
+during package instantiation; decoding never downloads executable code, including
+in offline calls.
 
 ## Tutorials
 
@@ -35,7 +47,8 @@ temporary_cache = mktempdir()
 iris = fetch_data("iris"; source="uci", cache_dir=temporary_cache)
 ```
 
-The package writes no persistent files at installation or startup. Cache growth
+Julia manages native libraries in its artifact depot. Datamonger creates its
+dataset cache only when requested. Dataset cache growth
 is limited to explicitly requested registry and artifact retrievals, eviction is
 manual through `cache_clean()`, and `cache_info()` reports every
 content-addressed entry. Datamonger performs no telemetry.

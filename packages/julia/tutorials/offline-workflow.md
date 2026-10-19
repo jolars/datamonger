@@ -18,6 +18,7 @@ From the repository root, activate and prepare the Julia package:
 using Pkg
 Pkg.activate("packages/julia")
 Pkg.instantiate()
+include("tools/dm_julia_core.jl")
 ```
 
 The remaining code blocks through the offline cache-miss example can be run in

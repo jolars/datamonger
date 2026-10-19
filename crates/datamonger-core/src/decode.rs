@@ -45,6 +45,14 @@ pub struct LibsvmOptions {
     pub target_name: String,
 }
 
+/// Numeric compatibility choices for existing language clients.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct DecodeOptions {
+    /// Reject a nonzero decimal that rounds to zero, as Julia's tryparse does.
+    /// Subnormal values that remain nonzero are still accepted.
+    pub reject_float_underflow: bool,
+}
+
 fn decode_error(message: impl Into<String>) -> Error {
     Error::new(ErrorKind::Decode, message)
 }
@@ -77,6 +85,14 @@ fn integer(value: &str, allow_plus: bool) -> Result<i64> {
 /// Parse the strict revision 1 decimal grammar with correctly rounded binary64
 /// conversion. LIBSVM permits a leading plus; delimited text does not.
 pub fn parse_binary64(value: &str, allow_plus: bool) -> Result<f64> {
+    parse_binary64_with_options(value, allow_plus, DecodeOptions::default())
+}
+
+fn parse_binary64_with_options(
+    value: &str,
+    allow_plus: bool,
+    compatibility: DecodeOptions,
+) -> Result<f64> {
     let bytes = value.as_bytes();
     let mut i = match bytes.first() {
         Some(b'-') => 1,
@@ -115,6 +131,17 @@ pub fn parse_binary64(value: &str, allow_plus: bool) -> Result<f64> {
         .map_err(|_| decode_error("invalid float64 value"))?;
     if !parsed.is_finite() {
         return Err(decode_error(format!("non-finite float64 value '{value}'")));
+    }
+    if compatibility.reject_float_underflow
+        && parsed == 0.0
+        && value
+            .split(['e', 'E'])
+            .next()
+            .unwrap_or("")
+            .bytes()
+            .any(|b| matches!(b, b'1'..=b'9'))
+    {
+        return Err(decode_error("float64 value underflows to zero"));
     }
     Ok(parsed)
 }
@@ -207,10 +234,16 @@ fn fields(record: &str, delimiter: u8) -> Result<Vec<String>> {
     Ok(fields)
 }
 
-fn push_value(values: &mut Values, text: &str, valid: bool, allow_plus: bool) -> Result<()> {
+fn push_value(
+    values: &mut Values,
+    text: &str,
+    valid: bool,
+    allow_plus: bool,
+    compatibility: DecodeOptions,
+) -> Result<()> {
     match values {
         Values::Float64(v) => v.push(if valid {
-            parse_binary64(text, allow_plus)?
+            parse_binary64_with_options(text, allow_plus, compatibility)?
         } else {
             0.0
         }),
@@ -241,6 +274,24 @@ pub fn decode_delimited<R: BufRead>(
 pub fn decode_delimited_with_control<R: BufRead>(
     reader: R,
     options: &DelimitedOptions,
+    control: &mut impl Control,
+) -> Result<Vec<Component>> {
+    decode_delimited_impl(reader, options, DecodeOptions::default(), control)
+}
+
+/// Decode with explicit numeric compatibility for an existing client.
+pub fn decode_delimited_with_options<R: BufRead>(
+    reader: R,
+    options: &DelimitedOptions,
+    compatibility: DecodeOptions,
+) -> Result<Vec<Component>> {
+    decode_delimited_impl(reader, options, compatibility, &mut || Ok(()))
+}
+
+fn decode_delimited_impl<R: BufRead>(
+    reader: R,
+    options: &DelimitedOptions,
+    compatibility: DecodeOptions,
     control: &mut impl Control,
 ) -> Result<Vec<Component>> {
     control.checkpoint()?;
@@ -291,13 +342,15 @@ pub fn decode_delimited_with_control<R: BufRead>(
         }
         for (component, value) in components.iter_mut().zip(values) {
             let valid = !missing.contains(value.as_str());
-            push_value(&mut component.values, &value, valid, false).map_err(|e| {
-                decode_error(format!(
-                    "{e} at row {}, column '{}'",
-                    row + 1,
-                    component.name
-                ))
-            })?;
+            push_value(&mut component.values, &value, valid, false, compatibility).map_err(
+                |e| {
+                    decode_error(format!(
+                        "{e} at row {}, column '{}'",
+                        row + 1,
+                        component.name
+                    ))
+                },
+            )?;
             component.valid.push(valid);
         }
         row += 1;
@@ -318,6 +371,24 @@ pub fn decode_libsvm<R: BufRead>(reader: R, options: &LibsvmOptions) -> Result<V
 pub fn decode_libsvm_with_control<R: BufRead>(
     reader: R,
     options: &LibsvmOptions,
+    control: &mut impl Control,
+) -> Result<Vec<Component>> {
+    decode_libsvm_impl(reader, options, DecodeOptions::default(), control)
+}
+
+/// Decode with explicit numeric compatibility for an existing client.
+pub fn decode_libsvm_with_options<R: BufRead>(
+    reader: R,
+    options: &LibsvmOptions,
+    compatibility: DecodeOptions,
+) -> Result<Vec<Component>> {
+    decode_libsvm_impl(reader, options, compatibility, &mut || Ok(()))
+}
+
+fn decode_libsvm_impl<R: BufRead>(
+    reader: R,
+    options: &LibsvmOptions,
+    compatibility: DecodeOptions,
     control: &mut impl Control,
 ) -> Result<Vec<Component>> {
     control.checkpoint()?;
@@ -346,7 +417,7 @@ pub fn decode_libsvm_with_control<R: BufRead>(
         let label = fields
             .next()
             .ok_or_else(|| decode_error("missing LIBSVM label"))?;
-        push_value(&mut labels, label, true, true)
+        push_value(&mut labels, label, true, true, compatibility)
             .map_err(|e| decode_error(format!("invalid LIBSVM label: {e}")))?;
         let mut previous = 0;
         for field in fields {
@@ -368,7 +439,7 @@ pub fn decode_libsvm_with_control<R: BufRead>(
             if index < previous {
                 return Err(decode_error("feature indices must be strictly increasing"));
             }
-            let value = parse_binary64(value, true)
+            let value = parse_binary64_with_options(value, true, compatibility)
                 .map_err(|e| decode_error(format!("invalid feature value: {e}")))?;
             if value == 0.0 {
                 return Err(decode_error("stored sparse zero is invalid"));
@@ -421,11 +492,31 @@ pub fn decode_libsvm_split_with_control<R: BufRead, S: BufRead>(
     options: &LibsvmOptions,
     control: &mut impl Control,
 ) -> Result<Vec<Component>> {
-    let mut components = decode_libsvm_with_control(train, options, control)?;
+    decode_libsvm_split_impl(train, test, options, DecodeOptions::default(), control)
+}
+
+/// Decode a split with explicit numeric compatibility for an existing client.
+pub fn decode_libsvm_split_with_options<R: BufRead, S: BufRead>(
+    train: R,
+    test: S,
+    options: &LibsvmOptions,
+    compatibility: DecodeOptions,
+) -> Result<Vec<Component>> {
+    decode_libsvm_split_impl(train, test, options, compatibility, &mut || Ok(()))
+}
+
+fn decode_libsvm_split_impl<R: BufRead, S: BufRead>(
+    train: R,
+    test: S,
+    options: &LibsvmOptions,
+    compatibility: DecodeOptions,
+    control: &mut impl Control,
+) -> Result<Vec<Component>> {
+    let mut components = decode_libsvm_impl(train, options, compatibility, control)?;
     for component in &mut components {
         component.name = format!("train_{}", component.name);
     }
-    let mut test = decode_libsvm_with_control(test, options, control)?;
+    let mut test = decode_libsvm_impl(test, options, compatibility, control)?;
     for component in &mut test {
         component.name = format!("test_{}", component.name);
     }

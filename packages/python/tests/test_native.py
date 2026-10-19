@@ -373,15 +373,15 @@ def test_unicode_and_csv_quoting_agree(values: list[str], tmp_path: Path) -> Non
 def test_native_decode_releases_gil_and_preserves_signal_exception(
     tmp_path: Path,
 ) -> None:
-    artifact = tmp_path / "large.libsvm"
-    artifact.write_bytes(b"+1 1:2 2:3 4:5\n" * 500_000)
+    artifact = tmp_path / "stream.libsvm"
+    os.mkfifo(artifact)
     script = """
+import errno
 import os
 from pathlib import Path
 import signal
 import sys
 import threading
-import time
 from datamonger._decode_libsvm import decode_libsvm
 
 class Canceled(Exception):
@@ -390,9 +390,15 @@ class Canceled(Exception):
 def interrupt(signum, frame):
     raise Canceled("canceled from Python")
 
+path = Path(sys.argv[1])
+
 def send_signal():
-    time.sleep(0.01)
-    os.kill(os.getpid(), signal.SIGUSR1)
+    # The write exceeds the pipe buffer, so decoding must drain it first.
+    # Keeping the writer open prevents decoding from finishing early.
+    with path.open("wb") as stream:
+        stream.write(b"+1 1:2 2:3 4:5\\n" * 500_000)
+        # Queue the signal before closing the writer permits EOF.
+        signal.raise_signal(signal.SIGUSR1)
 
 options = {
     "index_base": 1, "feature_count": 4, "duplicate_features": "error",
@@ -402,7 +408,7 @@ signal.signal(signal.SIGUSR1, interrupt)
 worker = threading.Thread(target=send_signal)
 worker.start()
 try:
-    decode_libsvm(Path(sys.argv[1]), options)
+    decode_libsvm(path, options)
 except Canceled as error:
     assert str(error) == "canceled from Python"
 else:
@@ -411,8 +417,15 @@ finally:
     worker.join()
     signal.signal(signal.SIGUSR1, signal.SIG_IGN)
 
-# Cancellation must release the reader and leave the extension usable.
-path = Path(sys.argv[1])
+# Cancellation must release the pipe reader and leave the extension usable.
+try:
+    descriptor = os.open(path, os.O_WRONLY | os.O_NONBLOCK)
+except OSError as error:
+    assert error.errno == errno.ENXIO, error
+else:
+    os.close(descriptor)
+    raise AssertionError("cancellation left the native reader open")
+path.unlink()
 path.write_bytes(b"+1 1:2\\n")
 assert decode_libsvm(path, options).data.response.tolist() == [1]
 """
@@ -427,8 +440,11 @@ assert decode_libsvm(path, options).data.response.tolist() == [1]
 
 
 @pytest.mark.parametrize("compression", ["gzip", "bzip2"])
+# Pytest exports case names in an environment variable, which Windows limits.
 @pytest.mark.parametrize(
-    "suffix", [b"", b"\0", b"\0" * 8193, b"junk", b"B", b"BZ", b"BZh9"]
+    "suffix",
+    [b"", b"\0", b"\0" * 8193, b"junk", b"B", b"BZ", b"BZh9"],
+    ids=["empty", "zero", "zero-padding", "junk", "b", "bz", "bzip2-header"],
 )
 def test_compressed_trailing_bytes_preserve_python_behavior(
     compression: str, suffix: bytes, tmp_path: Path

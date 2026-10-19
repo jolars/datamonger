@@ -11,6 +11,32 @@ include("helpers.jl")
     end
 end
 
+@testset "canonical masked numeric storage" begin
+    for (logical_type, value, zero) in (("float64", 1.5, 0.0),
+                                       ("int64", Int64(42), Int64(0)),
+                                       ("bool", true, false))
+        for make_component in (
+            (values, valid) -> Datamonger.LogicalVector("x", logical_type, values, valid),
+            (values, valid) -> Datamonger.LogicalDenseMatrix(
+                "x", logical_type, 1, length(values), values, valid,
+            ),
+        )
+            for (values, normalized, valid) in (
+                ([missing], [zero], [false]),
+                ([value, missing, zero, missing], [value, zero, zero, zero],
+                 [true, false, true, false]),
+            )
+                original_values = copy(values)
+                component = make_component(values, valid)
+                expected = Datamonger.canonical_bytes([make_component(normalized, valid)])
+                @test Datamonger.canonical_bytes([component]) == expected
+                @test Datamonger.canonical_sha256([component]) == bytes2hex(sha256(expected))
+                @test isequal(component.values, original_values)
+            end
+        end
+    end
+end
+
 @testset "canonical sparse validation" begin
     nan_component = Datamonger.LogicalSparseMatrix(
         "x",
