@@ -157,6 +157,7 @@ jobs:
         run: python tools/dm_rust_sources.py --check
       - name: Build R package
         run: R CMD build .
+        shell: bash
       - name: Check R package
         run: R CMD check --no-manual --as-cran datamonger_*.tar.gz
         shell: bash
