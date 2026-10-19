@@ -12,7 +12,15 @@ use crate::error::{Error, Result};
 
 pub const BUNDLED_INDEX: &[u8] = include_bytes!("../assets/index.json");
 const BUNDLED_SELECTOR: &[u8] = include_bytes!("../assets/selector.json");
-const SCHEMAS: [(&str, &str); 7] = [
+const SCHEMAS: [(&str, &str); 9] = [
+    (
+        "https://datamonger.dev/spec/schema/index-v3.schema.json",
+        include_str!("../assets/index-v3.schema.json"),
+    ),
+    (
+        "https://datamonger.dev/spec/schema/manifest-v3.schema.json",
+        include_str!("../assets/manifest-v3.schema.json"),
+    ),
     (
         "https://datamonger.dev/spec/schema/index-v2.schema.json",
         include_str!("../assets/index-v2.schema.json"),
@@ -380,6 +388,37 @@ mod tests {
         assert!(validate_schema(&index, "index").is_err());
         index["datasets"][0]["provenance"]["citations"][0]["recommended"] = json!(true);
         index["datasets"][0]["provenance"]["citation"] = json!("Ambiguous legacy citation.");
+        assert!(validate_schema(&index, "index").is_err());
+    }
+
+    #[test]
+    fn preprocessing_metadata_is_preserved_and_requires_version_3() {
+        let mut index = citation_index();
+        index["schema_version"] = json!(3);
+        index["datasets"][0]["schema_version"] = json!(3);
+        let metadata = json!({
+            "upstream": {"status": "unknown"},
+            "datamonger": {
+                "status": "documented",
+                "evidence": ["Fixture preparation."],
+                "steps": [{
+                    "kind": "response-dichotomization",
+                    "description": "Prepare a binary response.",
+                    "parameters": {"threshold": "7"}
+                }]
+            }
+        });
+        index["datasets"][0]["preprocessing"] = metadata.clone();
+        let bytes = serde_json::to_vec(&index).unwrap();
+        let mut selector = bundled_selector().unwrap();
+        selector.index_sha256 = sha256(&bytes);
+        let parsed = parse_index(&bytes, selector).unwrap();
+        assert_eq!(parsed.document["datasets"][0]["preprocessing"], metadata);
+        index["schema_version"] = json!(2);
+        assert!(validate_schema(&index, "index").is_err());
+        index["schema_version"] = json!(3);
+        index["datasets"][0]["preprocessing"]["datamonger"]["steps"][0]["parameters"]["threshold"] =
+            json!(7);
         assert!(validate_schema(&index, "index").is_err());
     }
 }

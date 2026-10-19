@@ -75,7 +75,7 @@ def _outputs(root: Path, version: str) -> dict[Path, bytes]:
         release_path = staging / release_directory / "release.yaml"
         release_path.parent.mkdir(parents=True, exist_ok=True)
         release_path.write_bytes(source_bytes)
-        index, selector = dm_index.build(release_path, root=staging)
+        index, selector = dm_index.build(release_path, root=staging, use_snapshot=False)
         (release_path.parent / "index.json").write_bytes(index)
         (release_path.parent / "selector.json").write_bytes(selector)
         catalog = dm_index.build_catalog(root=staging)

@@ -179,10 +179,15 @@ reviewed mirror locations and the digests of the bytes served there.
    new dataset version.
 
 2. Draft a YAML manifest from
-   [`spec/schema/manifest-v1.schema.json`](spec/schema/manifest-v1.schema.json).
+   [`spec/schema/manifest-v3.schema.json`](spec/schema/manifest-v3.schema.json).
    Supply descriptive, provenance, license, artifact, location, decoder, and
    task metadata. Do not guess a license—use `status: unknown` when the evidence
    is insufficient.
+
+   Record [preprocessing](spec/preprocessing.md) separately for upstream and
+   Datamonger preparation. Supply known steps, parameters, and evidence. Use
+   `unknown` when the history is not established; reserve `none` for an absence
+   of preprocessing supported by evidence.
 
 3. Let `dm-add` retrieve every location, verify that they serve identical bytes,
    decode the data, and derive retrieval facts and candidate expectations:

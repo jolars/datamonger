@@ -81,6 +81,7 @@ from datamonger import data_info
 info = data_info("iris", source="uci", version="1")
 print(info.dataset_id)
 print(info.provenance)
+print(info.preprocessing)
 print(info.citations)
 print(info.license)
 print([artifact["distribution"] for artifact in info.artifacts])
@@ -92,6 +93,12 @@ notes, and upstream recommendations. `format="records"` preserves those fields;
 `include_all=True` includes every reference. Fetch results requested with
 `return_info=True` also expose `result.info.citations` and
 `result.info.citation_instructions`. See the [citation contract](spec/citations.md).
+
+Registries using schema version 3 also expose `info.preprocessing` and
+`result.info.preprocessing`. This records upstream and Datamonger processing
+separately, with known steps, parameters, and evidence. Stage status distinguishes
+`unknown`, `none`, and `documented`; older snapshots without recorded history
+return `None`. See the [preprocessing contract](spec/preprocessing.md).
 
 An unknown license remains unknown—registry inclusion is not legal advice or a
 license grant. An `upstream-only` artifact is available only while an upstream

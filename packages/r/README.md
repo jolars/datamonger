@@ -95,6 +95,13 @@ task metadata without retrieving artifacts. `fetch_artifact()` retrieves only
 verified artifact bytes. `offline = TRUE` forbids network access and requires
 the selected index and artifacts to be bundled or already cached.
 
+`data_info(...)$preprocessing` and fetch results requested with
+`return_info = TRUE` expose upstream and Datamonger processing in version 3
+registries. Each stage distinguishes `unknown`, `none`, and `documented` and
+preserves known steps, string parameters, and evidence references. Missing
+metadata is `NULL`, including in older bundled snapshots. Fetching does not apply
+the described transformations. See the [preprocessing contract](../../spec/preprocessing.md).
+
 The [offline conformance example](vignettes/offline-conformance.Rmd) retrieves
 the shared mixed CSV fixture from a temporary cache, verifies its decoded
 digest, and renders its values and a plot. The package includes its inputs, so

@@ -1,4 +1,4 @@
-schema_version: 1
+schema_version: 3
 source: datamonger
 name: brca1
 version: '1'
@@ -11,6 +11,39 @@ description: Prepared directly from official TCGA Agilent Level 3 measurements h
   The public sample_id is metadata excluded from model features. Iowa's added gene annotations
   are omitted.
 modality: tabular
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - curation/brca1/1/DATASET.md
+    - https://gdc.cancer.gov/about-data/publications/brca_2012
+    steps:
+    - kind: normalization
+      description: The official TCGA Level 3 measurements are log2 lowess-normalized Cy5/Cy3
+        ratios collapsed by gene symbol.
+      parameters:
+        method: lowess
+        scale: log2
+        aggregation: gene symbol
+  datamonger:
+    status: documented
+    evidence:
+    - curation/brca1/1/DATASET.md
+    - curation/brca1/1/read_source.R
+    - curation/brca1/1/prepare.py
+    steps:
+    - kind: sample-selection
+      description: Consolidate one identical duplicate sample and retain primary and metastatic
+        tumors, excluding 63 normal and seven control samples.
+      parameters:
+        sample_types: 01, 06
+    - kind: missing-value-removal
+      description: Exclude 491 genes with any missing measurement in the selected tumor cohort;
+        retain 17,322 predictors and BRCA1 as the response.
+      parameters:
+        axis: columns
+        predicate: any missing measurement in the selected cohort
+    notes: No additional logarithm, scaling, centering, or imputation is applied.
 provenance:
   provider: Datamonger; derived from official TCGA data at the NCI GDC
   upstream_name: TCGA BRCA Agilent G4502A-07-3 Level 3

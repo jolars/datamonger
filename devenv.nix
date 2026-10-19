@@ -143,9 +143,11 @@ in
       diff "spec/schema/''${schema}-v1.schema.json" \
         "packages/cli/assets/''${schema}-v1.schema.json"
     done
-    for schema in index manifest; do
-      diff "spec/schema/''${schema}-v2.schema.json" \
-        "packages/cli/assets/''${schema}-v2.schema.json"
+    for version in 2 3; do
+      for schema in index manifest; do
+        diff "spec/schema/''${schema}-v''${version}.schema.json" \
+          "packages/cli/assets/''${schema}-v''${version}.schema.json"
+      done
     done
     cd packages/cli
     cargo fmt --check

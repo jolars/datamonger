@@ -160,7 +160,7 @@ def prepare(output: Path, source_path: Path | None = None) -> None:
         "reviewed_at": "2026-10-16",
     }
     manifest = {
-        "schema_version": 1,
+        "schema_version": 3,
         "source": "datamonger",
         "name": "scheetz2006",
         "version": "1",
@@ -179,6 +179,9 @@ def prepare(output: Path, source_path: Path | None = None) -> None:
             "annotations and experimental controls are omitted."
         ),
         "modality": "tabular",
+        "preprocessing": dm_index.load_yaml(
+            ROOT / "registry/datasets/datamonger/scheetz2006-1.yaml"
+        )["preprocessing"],
         "provenance": {
             "provider": "Datamonger; derived from Scheetz et al. at NCBI GEO",
             "upstream_name": "Expression data for an eQTL experiment in rat eye",

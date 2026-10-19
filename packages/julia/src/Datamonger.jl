@@ -19,6 +19,7 @@ include("cache.jl")
 include("registry.jl")
 include("api.jl")
 include("citations.jl")
+include("preprocessing.jl")
 
 export ArtifactIntegrityError,
     ArtifactSelectionError,

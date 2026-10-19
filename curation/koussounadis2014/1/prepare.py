@@ -183,7 +183,7 @@ def prepare(output: Path, source_directory: Path | None = None) -> None:
         "reviewed_at": "2026-10-19",
     }
     manifest = {
-        "schema_version": 1,
+        "schema_version": 3,
         "source": "datamonger",
         "name": "koussounadis2014",
         "version": "1",
@@ -200,6 +200,9 @@ def prepare(output: Path, source_directory: Path | None = None) -> None:
             "imputation, or repair of historical gene labels is applied."
         ),
         "modality": "tabular",
+        "preprocessing": dm_index.load_yaml(
+            ROOT / "registry/datasets/datamonger/koussounadis2014-1.yaml"
+        )["preprocessing"],
         "provenance": {
             "provider": "Datamonger; derived from Koussounadis et al. at NCBI GEO",
             "upstream_name": "Chemotherapy induced dynamic gene expression changes "

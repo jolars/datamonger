@@ -1,4 +1,4 @@
-schema_version: 1
+schema_version: 3
 source: datamonger
 name: koussounadis2014
 version: '1'
@@ -11,6 +11,40 @@ description: Prepared from the authors' GSE49577 processed expression matrix and
   RTV as metadata excluded from model features. No additional normalization, filtering, imputation,
   or repair of historical gene labels is applied.
 modality: tabular
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - curation/koussounadis2014/1/DATASET.md
+    - https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE49577
+    steps:
+    - kind: normalization
+      description: The submitted expression values include background correction, variance
+        stabilization, and robust spline normalization with Bioconductor lumi.
+      parameters:
+        method: lumi robust spline normalization
+  datamonger:
+    status: documented
+    evidence:
+    - curation/koussounadis2014/1/DATASET.md
+    - curation/koussounadis2014/1/read_source.R
+    steps:
+    - kind: aggregation
+      description: For each sample, average probes sharing the GPL10558 ILMN_Gene label using
+        the arithmetic mean, producing 34,694 features.
+      parameters:
+        method: R arithmetic mean
+        group_by: GPL10558 ILMN_Gene
+    - kind: response-transformation
+      description: Compute the response y as log2 of relative tumor volume from the original
+        phenodata.
+      parameters:
+        input: RTV
+        output: y
+        method: R log2
+        base: '2'
+    notes: No additional expression normalization, probe filtering, standardization, or gene-label
+      repair is applied.
 provenance:
   provider: Datamonger; derived from Koussounadis et al. at NCBI GEO
   upstream_name: Chemotherapy induced dynamic gene expression changes in vivo are prognostic

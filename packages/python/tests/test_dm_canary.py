@@ -182,7 +182,7 @@ def _selector(
     return path
 
 
-@pytest.mark.parametrize("schema_version", [1, 2])
+@pytest.mark.parametrize("schema_version", [1, 2, 3])
 def test_check_fetches_every_location_and_verifies_decoded_data(
     tmp_path: Path, local_server: tuple[str, ServerState], schema_version: int
 ) -> None:
@@ -192,10 +192,15 @@ def test_check_fetches_every_location_and_verifies_decoded_data(
     state.responses["/second.csv"] = Response(contents)
     dataset = _dataset(base_url, contents, ["/first.csv", "/second.csv"])
     dataset["schema_version"] = schema_version
-    if schema_version == 2:
+    if schema_version >= 2:
         dataset["provenance"]["citations"] = [
             {"citation": "Dataset deposit.", "role": "dataset", "recommended": True}
         ]
+    if schema_version == 3:
+        dataset["preprocessing"] = {
+            "upstream": {"status": "unknown"},
+            "datamonger": {"status": "unknown"},
+        }
     selector = _selector(tmp_path, base_url, state, [dataset], schema_version)
 
     result = dm_canary.check(selector, root=ROOT)

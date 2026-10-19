@@ -41,6 +41,7 @@ from datamonger._models import (
     Pathish,
     Registry,
 )
+from datamonger._preprocessing import preprocessing_metadata
 from datamonger._registry import (
     load_registry,
     parse_dataset_reference,
@@ -309,6 +310,7 @@ def _data_info(
         tasks=_optional_records(dataset.get("tasks"), "dataset.tasks"),
         citations=citations,
         citation_instructions=instructions,
+        preprocessing=preprocessing_metadata(dataset),
     )
 
 
@@ -583,6 +585,7 @@ def fetch_data(
     dataset = resolve_dataset(index, source=source, name=name, version=version)
     resolved_version = _string(dataset.get("version"), "dataset.version")
     citations, instructions = citation_metadata(dataset)
+    preprocessing = preprocessing_metadata(dataset)
     representation = _object(dataset.get("representation"), "dataset.representation")
     decoder = representation.get("decoder")
     decoder_version = representation.get("decoder_version")
@@ -687,6 +690,7 @@ def fetch_data(
         canonical_digest=canonical_digest,
         citations=citations,
         citation_instructions=instructions,
+        preprocessing=preprocessing,
     )
     if return_info:
         return FetchResult(data=decoded.data, info=info)

@@ -189,7 +189,7 @@ function _load_registry(registry::Registry, cache_dir; offline=false)
     end
     index = _parse_json_object(bytes, "registry index", UnsupportedRegistryError)
     schema = get(index, "schema_version", nothing)
-    schema isa Integer && !(schema isa Bool) && schema in (1, 2) ||
+    schema isa Integer && !(schema isa Bool) && schema in (1, 2, 3) ||
         throw(UnsupportedRegistryError("unsupported registry schema"))
     get(index, "release", nothing) == registry.release ||
         throw(RegistryReleaseError("selected and embedded registry releases disagree"))
@@ -248,7 +248,7 @@ function _resolve_dataset(index::AbstractDict, source, name, version)
     dataset = only(matches)
     schema = get(dataset, "schema_version", nothing)
     schema isa Integer && !(schema isa Bool) &&
-        (schema == 1 || schema == 2 && index["schema_version"] == 2) ||
+        schema in (1, 2, 3) && schema <= index["schema_version"] ||
         throw(UnsupportedRegistryError("unsupported dataset schema"))
     return dataset
 end

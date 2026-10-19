@@ -1,4 +1,4 @@
-schema_version: 1
+schema_version: 3
 source: libsvm
 name: rcv1-binary
 version: '1'
@@ -8,6 +8,29 @@ description: LIBSVM's binary classification variant of Reuters Corpus Volume 1, 
   and ECAT, and negative labels combine GCAT and MCAT. Documents assigned to both groups are
   removed. The provider's feature values, labels, splits, and row order are preserved.
 modality: tabular
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#rcv1.binary
+    steps:
+    - kind: response-dichotomization
+      description: Combine CCAT and ECAT into the positive class and GCAT and MCAT into the
+        negative class.
+      parameters:
+        positive_classes: CCAT, ECAT
+        negative_classes: GCAT, MCAT
+    - kind: sample-selection
+      description: Remove documents assigned to both the positive and negative groups.
+      parameters:
+        predicate: retain documents assigned to only one label group
+    notes: The provider feature values, labels, splits, and row order are preserved. Earlier
+      text feature preparation is not described here.
+  datamonger:
+    status: none
+    evidence:
+    - spec/decoders/libsvm-v1.md
+    notes: Datamonger decodes the provider artifacts without additional statistical preprocessing.
 provenance:
   provider: LIBSVM
   upstream_name: rcv1.binary

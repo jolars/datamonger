@@ -95,6 +95,13 @@ and requires the selected index and artifacts to be bundled or already cached.
 Decoded verification is enabled by default; `verify_decoded=false` disables
 only shape and canonical verification, never artifact verification.
 
+`data_info(...).preprocessing` and fetch results requested with `return_info=true`
+expose upstream and Datamonger processing in version 3 registries. Each stage
+distinguishes `unknown`, `none`, and `documented` and preserves known steps,
+string parameters, and evidence references. Missing metadata is `nothing`,
+including in older bundled snapshots. Fetching does not apply the described
+transformations. See the [preprocessing contract](../../spec/preprocessing.md).
+
 ## Registry selection
 
 An explicit strong selector fixes a release and exact index bytes:

@@ -1,4 +1,4 @@
-schema_version: 1
+schema_version: 3
 source: uci
 name: breast-cancer-wisconsin-diagnostic
 version: '1'
@@ -6,6 +6,21 @@ title: Breast Cancer Wisconsin (Diagnostic)
 description: Diagnostic breast-mass features computed from digitized fine-needle aspirate
   images and distributed by the UCI Machine Learning Repository.
 modality: tabular
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - https://archive.ics.uci.edu/dataset/17/breast+cancer+wisconsin+diagnostic
+    steps:
+    - kind: feature-extraction
+      description: Diagnostic features are computed from digitized images of fine-needle aspirates
+        of breast masses.
+    notes: The complete feature extraction history has not been recorded.
+  datamonger:
+    status: none
+    evidence:
+    - spec/decoders/delimited-text-v1.md
+    notes: Datamonger decodes the provider artifacts without additional statistical preprocessing.
 provenance:
   provider: UCI Machine Learning Repository
   upstream_name: Breast Cancer Wisconsin (Diagnostic)

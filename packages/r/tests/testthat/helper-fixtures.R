@@ -67,7 +67,7 @@ seed_conformance_cache <- function(cache_dir) {
   )
 }
 
-reseal_index <- function(index, cache_dir) {
+reseal_index <- function(index, cache_dir, transform = identity) {
   text <- jsonlite::toJSON(
     index,
     auto_unbox = TRUE,
@@ -75,7 +75,7 @@ reseal_index <- function(index, cache_dir) {
     digits = NA,
     pretty = FALSE
   )
-  contents <- charToRaw(text)
+  contents <- charToRaw(transform(text))
   digest <- digest::digest(contents, algo = "sha256", serialize = FALSE)
   directory <- file.path(cache_dir, "registries", "sha256")
   dir.create(directory, recursive = TRUE, showWarnings = FALSE)

@@ -1,10 +1,19 @@
-schema_version: 1
+schema_version: 3
 source: libsvm
 name: cadata
 version: '1'
 title: California Housing
 description: California housing regression data distributed through the LIBSVM dataset collection.
 modality: tabular
+preprocessing:
+  upstream:
+    status: unknown
+    notes: The preprocessing history has not been established for this representation.
+  datamonger:
+    status: none
+    evidence:
+    - spec/decoders/libsvm-v1.md
+    notes: Datamonger decodes the provider artifacts without additional statistical preprocessing.
 provenance:
   provider: LIBSVM
   upstream_name: cadata

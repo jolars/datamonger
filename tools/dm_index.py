@@ -384,7 +384,7 @@ def _validate_dataset(dataset: Mapping[str, Any]) -> None:
 
 def _versioned_schema(record: Mapping[str, Any], name: str) -> str:
     version = record.get("schema_version")
-    if type(version) is not int or version not in (1, 2):
+    if type(version) is not int or version not in (1, 2, 3):
         raise ValueError(f"unsupported {name} schema_version {version!r}")
     return f"{name}-v{version}.schema.json"
 
@@ -648,7 +648,9 @@ def _json_bytes(value: object) -> bytes:
     return encoded.encode("utf-8") + b"\n"
 
 
-def build(release_path: Path, *, root: Path | None = None) -> tuple[bytes, bytes]:
+def build(
+    release_path: Path, *, root: Path | None = None, use_snapshot: bool = True
+) -> tuple[bytes, bytes]:
     """Return a validated release's deterministic index and selector bytes."""
 
     source_root = (root or ROOT).resolve()
@@ -675,6 +677,38 @@ def build(release_path: Path, *, root: Path | None = None) -> tuple[bytes, bytes
     identities = [_identity(dataset, "dataset") for dataset in datasets]
     if len(identities) != len(set(identities)):
         raise ValueError("dataset identifiers must be unique")
+    snapshot_path = release_path.parent / "index.json"
+    snapshot_schema: int | None = None
+    if use_snapshot and snapshot_path.is_file():
+        snapshot = _load_json(snapshot_path)
+        _validate_schema(
+            snapshot,
+            _versioned_schema(snapshot, "index"),
+            schema_directory,
+            "release snapshot",
+        )
+        if snapshot["release"] != release:
+            raise ValueError("release snapshot identifier does not match its source")
+        recorded = [
+            _mapping(raw, "snapshot dataset")
+            for raw in _sequence(snapshot["datasets"], "snapshot datasets")
+        ]
+        recorded_by_id = {_identity(record, "dataset"): record for record in recorded}
+        if len(recorded_by_id) != len(recorded) or set(recorded_by_id) != set(
+            identities
+        ):
+            raise ValueError("release source changes the published dataset set")
+        for dataset, identity in zip(datasets, identities, strict=True):
+            if _identity_projection(dataset) != _identity_projection(
+                recorded_by_id[identity]
+            ):
+                raise ValueError(f"{identity} changes identity-bearing fields")
+        # Authoring metadata can evolve while a published release keeps its own record.
+        datasets = recorded
+        identities = [_identity(dataset, "dataset") for dataset in datasets]
+        snapshot_schema = cast(int, snapshot["schema_version"])
+        for dataset in datasets:
+            _validate_dataset(dataset)
     dataset_by_identity = dict(zip(identities, datasets, strict=True))
 
     defaults = [
@@ -736,7 +770,8 @@ def build(release_path: Path, *, root: Path | None = None) -> tuple[bytes, bytes
                 )
 
     index: dict[str, object] = {
-        "schema_version": 2 if any(d["schema_version"] == 2 for d in datasets) else 1,
+        "schema_version": snapshot_schema
+        or max((d["schema_version"] for d in datasets), default=1),
         "release": release,
         "defaults": sorted(defaults, key=lambda value: _identity(value, "default")),
         "datasets": sorted(datasets, key=lambda value: _identity(value, "dataset")),

@@ -1,4 +1,4 @@
-schema_version: 1
+schema_version: 3
 source: uci
 name: wine-quality
 version: '1'
@@ -6,6 +6,15 @@ title: Wine Quality
 description: Physicochemical and sensory-quality measurements for red and white vinho verde
   wines distributed by the UCI Machine Learning Repository.
 modality: tabular
+preprocessing:
+  upstream:
+    status: unknown
+    notes: The preprocessing history has not been established for this representation.
+  datamonger:
+    status: none
+    evidence:
+    - spec/decoders/delimited-text-v1.md
+    notes: Datamonger decodes the provider artifacts without additional statistical preprocessing.
 provenance:
   provider: UCI Machine Learning Repository
   upstream_name: Wine Quality

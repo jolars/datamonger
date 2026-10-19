@@ -57,6 +57,8 @@ class FetchInfo:
     """All curated references, including optional roles, notes, and recommendations."""
     citation_instructions: str | None = None
     """Recorded upstream citation instructions, or ``None`` when unavailable."""
+    preprocessing: Mapping[str, Any] | None = None
+    """Upstream and Datamonger processing history, or ``None`` when unrecorded."""
 
 
 @dataclass(frozen=True)
@@ -101,6 +103,8 @@ class DataInfo:
     """All curated references; an absent ``recommended`` flag means unknown."""
     citation_instructions: str | None = None
     """Recorded upstream citation instructions, or ``None`` when unavailable."""
+    preprocessing: Mapping[str, Any] | None = None
+    """Upstream and Datamonger processing history, or ``None`` when unrecorded."""
 
 
 @dataclass(frozen=True)

@@ -33,6 +33,7 @@ struct FetchInfo
     canonical_digest::Union{Nothing,String}
     citations::Vector{Dict{String,Any}}
     citation_instructions::Union{Nothing,String}
+    preprocessing::Union{Nothing,Dict{String,Any}}
 end
 
 """Registry metadata for one resolved dataset version."""
@@ -56,6 +57,7 @@ struct DataInfo
     tasks::Vector{Dict{String,Any}}
     citations::Vector{Dict{String,Any}}
     citation_instructions::Union{Nothing,String}
+    preprocessing::Union{Nothing,Dict{String,Any}}
 end
 
 """A read-only row-compressed sparse matrix for exceptionally wide data."""

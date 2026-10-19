@@ -23,3 +23,7 @@ canonical-form, schema, or behavioral-contract version as appropriate.
 The [citation metadata extension](citations.md) adds manifest and index schema
 version 2 while preserving the frozen revision 1 contracts. It defines multiple
 references, optional semantic roles, and recorded upstream recommendations.
+
+The [preprocessing metadata extension](preprocessing.md) adds manifest and index
+schema version 3. It records upstream and Datamonger preparation separately,
+including known steps, parameters, evidence, and explicit unknown history.

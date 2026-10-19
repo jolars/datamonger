@@ -44,3 +44,11 @@ with \code{return_info = TRUE}, it returns a \code{datamonger_fetch_result}.
 a list of \code{datamonger_data_info} records. Sparse features use a
 row-compressed \code{Matrix}, or an exact \code{datamonger_csr_matrix} when a
 declared dimension exceeds the \code{Matrix} integer limit.}
+\details{
+Metadata records expose \code{preprocessing} when recorded in a version 3
+registry. Upstream processing and Datamonger preparation have separate stages,
+with status \code{unknown}, \code{none}, or \code{documented}. Known steps retain
+their order, string parameters, and evidence references. Missing history is
+\code{NULL}. These records describe the registered artifacts; fetching does
+not apply the transformations.
+}

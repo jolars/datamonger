@@ -775,7 +775,7 @@ def test_unsupported_registry_schema_is_rejected(
     local_server: tuple[str, ServerState], tmp_path: Path
 ) -> None:
     base_url, state = local_server
-    registry = make_registry(base_url, state, schema_version=3)
+    registry = make_registry(base_url, state, schema_version=4)
 
     with pytest.raises(UnsupportedRegistryError, match="schema"):
         fetch_data(
@@ -1748,3 +1748,49 @@ def test_citations_use_the_fetched_registry_and_need_no_artifact_download(
         for entry in cached.entries
     )
     assert [path for path, _ in state.requests] == ["/mixed.csv"]
+
+
+def test_preprocessing_metadata_uses_the_fetched_registry_without_transforming_data(
+    local_server: tuple[str, ServerState], tmp_path: Path
+) -> None:
+    from datamonger import cache_info, data_info
+
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+    index = json.loads(state.bodies["/index.json"])
+    dataset = index["datasets"][0]
+    index["schema_version"] = dataset["schema_version"] = 3
+    dataset["description"] = "A fixture with descriptive processing history."
+    dataset["provenance"] = {}
+    dataset["license"] = {"status": "unknown"}
+    dataset["preprocessing"] = {
+        "upstream": {"status": "unknown"},
+        "datamonger": {
+            "status": "documented",
+            "evidence": ["Fixture preparation."],
+            "steps": [
+                {
+                    "kind": "response-dichotomization",
+                    "description": "The fixture was prepared with a binary response.",
+                    "parameters": {"threshold": "7"},
+                }
+            ],
+        },
+    }
+    registry = _reseal_index(base_url, state, index)
+    info = data_info("fixture:mixed", registry=registry, cache_dir=tmp_path)
+    assert [path for path, _ in state.requests] == ["/index.json"]
+    result = fetch_data(
+        "fixture:mixed", registry=registry, cache_dir=tmp_path, return_info=True
+    )
+    assert result.info.preprocessing == info.preprocessing == dataset["preprocessing"]
+    assert result.info.registry_index_sha256 == registry.index_sha256
+    assert result.info.canonical_digest == EXPECTED_DIGEST
+    assert len(result.data) == 5
+    assert [path for path, _ in state.requests] == ["/index.json", "/mixed.csv"]
+    cached = cache_info(cache_dir=tmp_path)
+    assert any(
+        entry.sha256 == registry.index_sha256
+        and entry.registry_release == registry.release
+        for entry in cached.entries
+    )

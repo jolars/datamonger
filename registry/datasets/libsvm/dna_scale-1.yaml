@@ -1,4 +1,4 @@
-schema_version: 1
+schema_version: 3
 source: libsvm
 name: dna_scale
 version: '1'
@@ -6,6 +6,23 @@ title: DNA Scale
 description: Scaled Statlog DNA multiclass classification data with predefined training and
   test artifacts, distributed through the LIBSVM dataset collection.
 modality: tabular
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass.html#dna
+    - registry/releases/2026.09/index.json
+    steps:
+    - kind: scaling
+      description: The provider distributes the scaled feature representation selected by
+        this entry.
+    notes: The exact scaling method, fitted parameters, and fitting population have not been
+      established.
+  datamonger:
+    status: none
+    evidence:
+    - spec/decoders/libsvm-v1.md
+    notes: Datamonger decodes the provider artifacts without additional statistical preprocessing.
 provenance:
   provider: LIBSVM
   upstream_name: dna.scale

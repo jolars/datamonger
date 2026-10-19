@@ -1,0 +1,660 @@
+{
+  "schema_version": 1,
+  "manifest_schema_version": 3,
+  "cases": [
+    {
+      "id": "unrecorded-v1",
+      "manifest_schema_version": 1,
+      "expected": "valid"
+    },
+    {
+      "id": "unrecorded-v2",
+      "manifest_schema_version": 2,
+      "expected": "valid"
+    },
+    {
+      "id": "unrecorded-v3",
+      "manifest_schema_version": 3,
+      "expected": "valid"
+    },
+    {
+      "id": "explicit-unknown",
+      "manifest_schema_version": 3,
+      "expected": "valid",
+      "preprocessing": {
+        "upstream": {
+          "status": "unknown"
+        },
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "explicit-none",
+      "manifest_schema_version": 3,
+      "expected": "valid",
+      "preprocessing": {
+        "upstream": {
+          "status": "unknown"
+        },
+        "datamonger": {
+          "status": "none",
+          "evidence": [
+            "The fixture preserves the supplied values."
+          ]
+        }
+      }
+    },
+    {
+      "id": "documented-steps",
+      "manifest_schema_version": 3,
+      "expected": "valid",
+      "preprocessing": {
+        "upstream": {
+          "status": "documented",
+          "evidence": [
+            "https://example.invalid/preparation",
+            "curation/example/1/prepare.py"
+          ],
+          "notes": "Only the documented operations are known.",
+          "steps": [
+            {
+              "kind": "missing-value-removal",
+              "description": "Exclude rows with missing responses.",
+              "parameters": {
+                "axis": "rows",
+                "column": "outcome"
+              }
+            },
+            {
+              "kind": "response-dichotomization",
+              "description": "Encode an outcome of at least seven as one.",
+              "parameters": {
+                "threshold": "7",
+                "predicate": "outcome >= threshold"
+              }
+            }
+          ]
+        },
+        "datamonger": {
+          "status": "none",
+          "evidence": [
+            "The fixture preserves the supplied values."
+          ]
+        }
+      }
+    },
+    {
+      "id": "custom-kind",
+      "manifest_schema_version": 3,
+      "expected": "valid",
+      "preprocessing": {
+        "upstream": {
+          "status": "documented",
+          "evidence": [
+            "https://example.invalid/preparation",
+            "curation/example/1/prepare.py"
+          ],
+          "notes": "Only the documented operations are known.",
+          "steps": [
+            {
+              "kind": "study-specific-filter",
+              "description": "Retain the documented cohort."
+            }
+          ]
+        },
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "legacy-v1-rejects-history",
+      "manifest_schema_version": 1,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": {
+          "status": "unknown"
+        },
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "legacy-v2-rejects-history",
+      "manifest_schema_version": 2,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": {
+          "status": "unknown"
+        },
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "unsupported-status",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": {
+          "status": "inferred"
+        },
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "missing-status",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": {
+          "notes": "No status."
+        },
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "none-without-evidence",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": {
+          "status": "none"
+        },
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "unknown-with-steps",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": {
+          "status": "unknown",
+          "steps": []
+        },
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "none-with-steps",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": {
+          "status": "none",
+          "evidence": [
+            "The fixture preserves the supplied values."
+          ],
+          "steps": [
+            {
+              "kind": "missing-value-removal",
+              "description": "Exclude rows with missing responses.",
+              "parameters": {
+                "axis": "rows",
+                "column": "outcome"
+              }
+            },
+            {
+              "kind": "response-dichotomization",
+              "description": "Encode an outcome of at least seven as one.",
+              "parameters": {
+                "threshold": "7",
+                "predicate": "outcome >= threshold"
+              }
+            }
+          ]
+        },
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "documented-without-steps",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": {
+          "status": "documented",
+          "evidence": [
+            "Source."
+          ]
+        },
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "empty-steps",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": {
+          "status": "documented",
+          "evidence": [
+            "https://example.invalid/preparation",
+            "curation/example/1/prepare.py"
+          ],
+          "notes": "Only the documented operations are known.",
+          "steps": []
+        },
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "documented-without-evidence",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": {
+          "status": "documented",
+          "steps": [
+            {
+              "kind": "missing-value-removal",
+              "description": "Exclude rows with missing responses.",
+              "parameters": {
+                "axis": "rows",
+                "column": "outcome"
+              }
+            },
+            {
+              "kind": "response-dichotomization",
+              "description": "Encode an outcome of at least seven as one.",
+              "parameters": {
+                "threshold": "7",
+                "predicate": "outcome >= threshold"
+              }
+            }
+          ]
+        },
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "empty-evidence",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": {
+          "status": "documented",
+          "evidence": [],
+          "notes": "Only the documented operations are known.",
+          "steps": [
+            {
+              "kind": "missing-value-removal",
+              "description": "Exclude rows with missing responses.",
+              "parameters": {
+                "axis": "rows",
+                "column": "outcome"
+              }
+            },
+            {
+              "kind": "response-dichotomization",
+              "description": "Encode an outcome of at least seven as one.",
+              "parameters": {
+                "threshold": "7",
+                "predicate": "outcome >= threshold"
+              }
+            }
+          ]
+        },
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "invalid-reference",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": {
+          "status": "documented",
+          "evidence": [
+            null
+          ],
+          "notes": "Only the documented operations are known.",
+          "steps": [
+            {
+              "kind": "missing-value-removal",
+              "description": "Exclude rows with missing responses.",
+              "parameters": {
+                "axis": "rows",
+                "column": "outcome"
+              }
+            },
+            {
+              "kind": "response-dichotomization",
+              "description": "Encode an outcome of at least seven as one.",
+              "parameters": {
+                "threshold": "7",
+                "predicate": "outcome >= threshold"
+              }
+            }
+          ]
+        },
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "empty-note",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": {
+          "status": "unknown",
+          "notes": ""
+        },
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "unknown-stage-field",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": {
+          "status": "unknown",
+          "extra": true
+        },
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "invalid-stage",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": [],
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "missing-kind",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": {
+          "status": "documented",
+          "evidence": [
+            "https://example.invalid/preparation",
+            "curation/example/1/prepare.py"
+          ],
+          "notes": "Only the documented operations are known.",
+          "steps": [
+            {
+              "description": "A step."
+            }
+          ]
+        },
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "invalid-kind",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": {
+          "status": "documented",
+          "evidence": [
+            "https://example.invalid/preparation",
+            "curation/example/1/prepare.py"
+          ],
+          "notes": "Only the documented operations are known.",
+          "steps": [
+            {
+              "kind": "Not a kind",
+              "description": "A step."
+            }
+          ]
+        },
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "empty-description",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": {
+          "status": "documented",
+          "evidence": [
+            "https://example.invalid/preparation",
+            "curation/example/1/prepare.py"
+          ],
+          "notes": "Only the documented operations are known.",
+          "steps": [
+            {
+              "kind": "scaling",
+              "description": ""
+            }
+          ]
+        },
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "unknown-step-field",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": {
+          "status": "documented",
+          "evidence": [
+            "https://example.invalid/preparation",
+            "curation/example/1/prepare.py"
+          ],
+          "notes": "Only the documented operations are known.",
+          "steps": [
+            {
+              "kind": "scaling",
+              "description": "A step.",
+              "extra": true
+            }
+          ]
+        },
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "numeric-parameter",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": {
+          "status": "documented",
+          "evidence": [
+            "https://example.invalid/preparation",
+            "curation/example/1/prepare.py"
+          ],
+          "notes": "Only the documented operations are known.",
+          "steps": [
+            {
+              "kind": "scaling",
+              "description": "A step.",
+              "parameters": {
+                "threshold": 7
+              }
+            }
+          ]
+        },
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "empty-parameter-name",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": {
+          "status": "documented",
+          "evidence": [
+            "https://example.invalid/preparation",
+            "curation/example/1/prepare.py"
+          ],
+          "notes": "Only the documented operations are known.",
+          "steps": [
+            {
+              "kind": "scaling",
+              "description": "A step.",
+              "parameters": {
+                "": "value"
+              }
+            }
+          ]
+        },
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "null-parameter",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": {
+          "status": "documented",
+          "evidence": [
+            "https://example.invalid/preparation",
+            "curation/example/1/prepare.py"
+          ],
+          "notes": "Only the documented operations are known.",
+          "steps": [
+            {
+              "kind": "scaling",
+              "description": "A step.",
+              "parameters": {
+                "method": null
+              }
+            }
+          ]
+        },
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "invalid-parameters",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": {
+          "status": "documented",
+          "evidence": [
+            "https://example.invalid/preparation",
+            "curation/example/1/prepare.py"
+          ],
+          "notes": "Only the documented operations are known.",
+          "steps": [
+            {
+              "kind": "scaling",
+              "description": "A step.",
+              "parameters": []
+            }
+          ]
+        },
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "invalid-step",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": {
+          "status": "documented",
+          "evidence": [
+            "https://example.invalid/preparation",
+            "curation/example/1/prepare.py"
+          ],
+          "notes": "Only the documented operations are known.",
+          "steps": [
+            []
+          ]
+        },
+        "datamonger": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "null-history",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": null
+    },
+    {
+      "id": "array-history",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": []
+    },
+    {
+      "id": "missing-stage",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": {
+          "status": "unknown"
+        }
+      }
+    },
+    {
+      "id": "unknown-stage-name",
+      "manifest_schema_version": 3,
+      "expected": "invalid",
+      "preprocessing": {
+        "upstream": {
+          "status": "unknown"
+        },
+        "datamonger": {
+          "status": "unknown"
+        },
+        "other": {
+          "status": "unknown"
+        }
+      }
+    }
+  ]
+}

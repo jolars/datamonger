@@ -71,7 +71,7 @@ def bundle(root: Path, release: str | None = None, *, check_only: bool = False) 
     if (
         record.get("release") != release
         or type(record.get("schema_version")) is not int
-        or record.get("schema_version") not in (1, 2)
+        or record.get("schema_version") not in (1, 2, 3)
     ):
         raise ValueError("index release or schema does not match selector")
 

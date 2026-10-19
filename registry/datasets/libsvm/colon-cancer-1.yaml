@@ -1,4 +1,4 @@
-schema_version: 1
+schema_version: 3
 source: libsvm
 name: colon-cancer
 version: '1'
@@ -6,6 +6,29 @@ title: Colon Cancer
 description: Normalized colon-cancer gene-expression classification data distributed through
   the LIBSVM dataset collection.
 modality: tabular
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#colon-cancer
+    steps:
+    - kind: normalization
+      description: Normalize each observation to mean zero and variance one.
+      parameters:
+        axis: rows
+        mean: '0'
+        variance: '1'
+    - kind: normalization
+      description: Then normalize each feature to mean zero and variance one.
+      parameters:
+        axis: columns
+        mean: '0'
+        variance: '1'
+  datamonger:
+    status: none
+    evidence:
+    - spec/decoders/libsvm-v1.md
+    notes: Datamonger decodes the provider artifacts without additional statistical preprocessing.
 provenance:
   provider: LIBSVM
   upstream_name: colon-cancer

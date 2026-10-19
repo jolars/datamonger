@@ -200,7 +200,7 @@ def prepare(output: Path, source_path: Path | None = None) -> None:
         "reviewed_at": REVIEWED_AT,
     }
     manifest = {
-        "schema_version": 1,
+        "schema_version": 3,
         "source": "datamonger",
         "name": "brca1",
         "version": "1",
@@ -217,6 +217,9 @@ def prepare(output: Path, source_path: Path | None = None) -> None:
             "gene annotations are omitted."
         ),
         "modality": "tabular",
+        "preprocessing": dm_index.load_yaml(
+            ROOT / "registry/datasets/datamonger/brca1-1.yaml"
+        )["preprocessing"],
         "provenance": {
             "provider": "Datamonger; derived from official TCGA data at the NCI GDC",
             "upstream_name": "TCGA BRCA Agilent G4502A-07-3 Level 3",

@@ -1,10 +1,19 @@
-schema_version: 1
+schema_version: 3
 source: uci
 name: abalone
 version: '1'
 title: Abalone
 description: Physical measurements of abalone distributed by the UCI Machine Learning Repository.
 modality: tabular
+preprocessing:
+  upstream:
+    status: unknown
+    notes: The preprocessing history has not been established for this representation.
+  datamonger:
+    status: none
+    evidence:
+    - spec/decoders/delimited-text-v1.md
+    notes: Datamonger decodes the provider artifacts without additional statistical preprocessing.
 provenance:
   provider: UCI Machine Learning Repository
   upstream_name: Abalone

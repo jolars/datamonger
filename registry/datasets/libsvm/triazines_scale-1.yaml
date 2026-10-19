@@ -1,4 +1,4 @@
-schema_version: 1
+schema_version: 3
 source: libsvm
 name: triazines_scale
 version: '1'
@@ -6,6 +6,23 @@ title: Triazines
 description: Triazines quantitative structure-activity regression data distributed through
   the LIBSVM dataset collection, with features scaled to [-1, 1] by the provider.
 modality: tabular
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/regression.html#triazines
+    steps:
+    - kind: scaling
+      description: The provider scales features to the interval [-1, 1].
+      parameters:
+        lower: '-1'
+        upper: '1'
+    notes: The fitted scaling parameters and fitting population have not been recorded.
+  datamonger:
+    status: none
+    evidence:
+    - spec/decoders/libsvm-v1.md
+    notes: Datamonger decodes the provider artifacts without additional statistical preprocessing.
 provenance:
   provider: LIBSVM
   upstream_name: triazines_scale

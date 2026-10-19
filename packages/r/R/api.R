@@ -241,7 +241,8 @@ fetch_artifact <- function(
       related = dataset$related %||% list(),
       tasks = dataset$tasks %||% list(),
       citations = citation_metadata$citations,
-      citation_instructions = citation_metadata$citation_instructions
+      citation_instructions = citation_metadata$citation_instructions,
+      preprocessing = .preprocessing_metadata(dataset)
     ),
     class = "datamonger_data_info"
   )
@@ -252,7 +253,9 @@ fetch_artifact <- function(
 #' @inheritParams fetch_artifact
 #' @return
 #' A `datamonger_data_info` record with identity, provenance, license,
-#' representation, task, and verification metadata.
+#' representation, task, verification, and preprocessing metadata. Preprocessing
+#' separates upstream processing from Datamonger preparation and is `NULL` when
+#' unrecorded. Fetching does not apply the described transformations.
 #' @export
 data_info <- function(
   name,
@@ -510,6 +513,7 @@ fetch_data <- function(
   index <- .load_registry(registry, cache_dir, offline)
   dataset <- .resolve_dataset(index, source, name, version)
   citation_metadata <- .citation_metadata(dataset)
+  preprocessing <- .preprocessing_metadata(dataset)
   setup <- .validate_representation(dataset)
 
   leased <- list()
@@ -593,7 +597,8 @@ fetch_data <- function(
       canonical_form = canonical_form,
       canonical_digest = canonical_digest,
       citations = citation_metadata$citations,
-      citation_instructions = citation_metadata$citation_instructions
+      citation_instructions = citation_metadata$citation_instructions,
+      preprocessing = preprocessing
     ),
     class = "datamonger_fetch_info"
   )

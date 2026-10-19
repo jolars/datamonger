@@ -172,7 +172,7 @@ def _read_index(path: Path, registry: Registry, root: Path) -> Mapping[str, Any]
         )
     if type(index.get("schema_version")) is not int or index.get(
         "schema_version"
-    ) not in (1, 2):
+    ) not in (1, 2, 3):
         raise UnsupportedRegistryError(
             f"unsupported registry schema {index.get('schema_version')!r}"
         )
@@ -186,8 +186,15 @@ def _read_index(path: Path, registry: Registry, root: Path) -> Mapping[str, Any]
     identities: set[tuple[str, str, str]] = set()
     for raw_dataset in _sequence(index.get("datasets"), "registry datasets"):
         dataset = _mapping(raw_dataset, "registry dataset")
-        if dataset.get("schema_version") == 2 and index["schema_version"] != 2:
-            raise UnsupportedRegistryError("manifest schema 2 requires index schema 2")
+        schema = dataset.get("schema_version")
+        if (
+            type(schema) is not int
+            or schema not in (1, 2, 3)
+            or schema > index["schema_version"]
+        ):
+            raise UnsupportedRegistryError(
+                "manifest schema is incompatible with the index"
+            )
         dm_index.validate_manifest(dataset, root=root)
         identity = _identity(dataset)
         if identity in identities:

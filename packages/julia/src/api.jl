@@ -166,6 +166,7 @@ function _data_info(dataset, registry)
         _optional_records(get(dataset, "tasks", nothing), "tasks"),
         citations,
         instructions,
+        _preprocessing_metadata(dataset),
     )
 end
 
@@ -322,6 +323,7 @@ function fetch_data(
     index = _load_registry(selected, cache_dir; offline)
     dataset = _resolve_dataset(index, source, name, version)
     citations, instructions = _citation_metadata(dataset)
+    preprocessing = _preprocessing_metadata(dataset)
     setup = _validate_representation(dataset)
     objects = CachedObject[]
     try
@@ -378,6 +380,7 @@ function fetch_data(
             canonical_digest,
             citations,
             instructions,
+            preprocessing,
         )
         return return_info ? FetchResult(decoded.data, info) : decoded.data
     finally

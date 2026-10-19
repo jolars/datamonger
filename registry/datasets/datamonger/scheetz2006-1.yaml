@@ -1,4 +1,4 @@
-schema_version: 1
+schema_version: 3
 source: datamonger
 name: scheetz2006
 version: '1'
@@ -12,6 +12,39 @@ description: Prepared from the authors' GSE5680 processed RMA expression matrix.
   This retains 10 predictors beyond Iowa's rounded export. sample_id is metadata excluded
   from model features. Added gene annotations and experimental controls are omitted.
 modality: tabular
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - curation/scheetz2006/1/DATASET.md
+    - https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE5680
+    steps:
+    - kind: normalization
+      description: GEO supplies RMA summary expression values on a log2 scale.
+      parameters:
+        method: RMA
+        scale: log2
+  datamonger:
+    status: documented
+    evidence:
+    - curation/scheetz2006/1/DATASET.md
+    - curation/scheetz2006/1/read_source.R
+    steps:
+    - kind: feature-selection
+      description: Exclude 57 AFFX control probes before calculating the expression threshold.
+      parameters:
+        predicate: probe identifier does not start with AFFX
+    - kind: feature-selection
+      description: Retain probes whose maximum exceeds the global first quartile and whose
+        log2 expression range is at least one; select Trim32 probe 1389163_at as the response.
+      parameters:
+        quantile: '0.25'
+        quantile_method: R type 7
+        threshold: '4.2818075363880554'
+        predicate: max > threshold and max - min >= 1
+        fit_population: all expression values from all 120 samples and 31,042 noncontrol probes
+    notes: Filtering uses the source precision. No additional normalization, logarithm, or
+      imputation is applied.
 provenance:
   provider: Datamonger; derived from Scheetz et al. at NCBI GEO
   upstream_name: Expression data for an eQTL experiment in rat eye

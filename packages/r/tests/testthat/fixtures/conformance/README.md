@@ -20,3 +20,9 @@ exercise the same golden through their public registry API. Implementations may
 use different native containers, exception types, and messages, but must agree
 on logical values, canonical bytes, success or failure, and semantic failure
 categories.
+
+`preprocessing.json` exercises the manifest version 3 metadata extension,
+including older manifests with no history, explicit unknown and absent
+processing, ordered steps and parameters, and malformed records. Each case
+declares its manifest schema version and expected validity. Implementations
+must preserve valid metadata without changing decoded values or verification.

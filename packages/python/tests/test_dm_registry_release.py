@@ -24,14 +24,32 @@ SPEC.loader.exec_module(dm_registry_release)
 @pytest.fixture
 def registry_root(tmp_path: Path) -> Path:
     # Release PRs already contain their pending snapshot, so use a fixed baseline.
+    # Small provider manifests avoid repeatedly parsing wide curated gene tables.
     for directory in (
-        "registry/datasets",
+        "registry/datasets/libsvm",
+        "registry/datasets/uci",
         "registry/releases/2026.09",
         "spec/schema",
     ):
         shutil.copytree(ROOT / directory, tmp_path / directory)
-    shutil.copyfile(
-        ROOT / "registry/collection.yaml", tmp_path / "registry/collection.yaml"
+    collection = dict(
+        dm_registry_release.dm_index.load_yaml(ROOT / "registry/collection.yaml")
+    )
+    collection["manifests"] = [
+        path for path in collection["manifests"] if (tmp_path / path).exists()
+    ]
+    identities = {
+        (record["source"], record["name"], record["version"])
+        for path in collection["manifests"]
+        for record in [dm_registry_release.dm_index.load_yaml(tmp_path / path)]
+    }
+    collection["defaults"] = [
+        record
+        for record in collection["defaults"]
+        if (record["source"], record["name"], record["version"]) in identities
+    ]
+    (tmp_path / "registry/collection.yaml").write_text(
+        yaml.safe_dump(collection, sort_keys=False)
     )
     (tmp_path / "registry/version.txt").write_text("1.0.0\n")
     state_directory = tmp_path / ".versionary-manifest.json.d"
@@ -109,7 +127,10 @@ def test_prepare_is_deterministic_and_preserves_historical_releases(
     collection = yaml.safe_load(
         (registry_root / "registry/collection.yaml").read_text()
     )
-    assert index["schema_version"] == previous["schema_version"]
+    assert previous["schema_version"] == 1
+    assert index["schema_version"] == max(
+        record["schema_version"] for record in index["datasets"]
+    )
     assert index["release"] == "1.1.0"
     for key, records in (
         ("defaults", collection["defaults"]),

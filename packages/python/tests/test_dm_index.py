@@ -19,8 +19,9 @@ SPEC.loader.exec_module(dm_index)
 
 
 def manifest_template() -> dict[str, Any]:
-    return yaml.safe_load(
-        (ROOT / "registry/datasets/uci/iris-1.yaml").read_text(encoding="utf-8")
+    index = json.loads((ROOT / "registry/releases/2026.09/index.json").read_bytes())
+    return next(
+        d for d in index["datasets"] if d["source"] == "uci" and d["name"] == "iris"
     )
 
 
@@ -345,7 +346,7 @@ def test_two_default_versions_for_one_dataset_are_rejected(tmp_path: Path) -> No
     [
         (make_manifest(source="UCI"), "does not match"),
         (make_manifest(sha256="A" * 64), "does not match"),
-        (make_manifest(schema_version=3), "schema_version"),
+        (make_manifest(schema_version=4), "schema_version"),
         (make_manifest() | {"surprise": True}, "Additional properties"),
     ],
 )
@@ -926,3 +927,69 @@ def test_citation_corrections_preserve_dataset_identity_across_version_2_release
     updated = json.loads(dm_index.build(second, root=tmp_path)[0])
     assert initial["datasets"][0]["version"] == updated["datasets"][0]["version"] == "1"
     assert len(updated["datasets"][0]["provenance"]["citations"]) == 2
+
+
+def test_preprocessing_updates_leave_published_snapshots_unchanged(
+    tmp_path: Path,
+) -> None:
+    prepare_root(tmp_path)
+    first_root = tmp_path / "registry/releases/first"
+    second_root = tmp_path / "registry/releases/second"
+    first_root.mkdir(parents=True)
+    second_root.mkdir()
+    dataset = make_manifest()
+    first = make_release(tmp_path, [dataset], [default()], release="first", sequence=0)
+    first = first.replace(first_root / "release.yaml")
+    write_release_outputs(first, tmp_path)
+    original = dm_index.build(first, root=tmp_path)
+    dataset["schema_version"] = 3
+    dataset["preprocessing"] = {
+        "upstream": {"status": "unknown"},
+        "datamonger": {"status": "none", "evidence": ["The fixture decoder."]},
+    }
+    second = make_release(
+        tmp_path,
+        [dataset, make_manifest(name="other", schema_version=2)],
+        [default()],
+        release="second",
+        sequence=1,
+    )
+    second = second.replace(second_root / "release.yaml")
+    assert dm_index.build(first, root=tmp_path) == original
+    generated, selector = dm_index.build(second, root=tmp_path)
+    updated = json.loads(generated)
+    assert updated["schema_version"] == 3
+    assert [record["schema_version"] for record in updated["datasets"]] == [3, 2]
+    assert updated["datasets"][0]["preprocessing"] == dataset["preprocessing"]
+    assert json.loads(selector)["schema_version"] == 1
+    write_release_outputs(second, tmp_path)
+    dataset["preprocessing"]["upstream"]["notes"] = "History is still unknown."
+    manifest_path = tmp_path / "manifests/manifest-0.yaml"
+    manifest_path.write_text(yaml.safe_dump(dataset, sort_keys=False), encoding="utf-8")
+    assert dm_index.build(second, root=tmp_path)[0] == generated
+    assert dm_index.build(second, root=tmp_path, use_snapshot=False)[0] != generated
+    dataset["representation"]["options"]["missing_values"] = ["NA"]
+    manifest_path.write_text(yaml.safe_dump(dataset, sort_keys=False), encoding="utf-8")
+    with pytest.raises(ValueError, match="identity-bearing"):
+        dm_index.build(first, root=tmp_path)
+
+
+def test_collection_preprocessing_covers_both_stages_without_changing_identity() -> (
+    None
+):
+    snapshots: dict[tuple[str, str, str], dict[str, Any]] = {}
+    for path in (ROOT / "registry/releases").glob("*/index.json"):
+        for dataset in json.loads(path.read_bytes())["datasets"]:
+            snapshots[(dataset["source"], dataset["name"], dataset["version"])] = (
+                dataset
+            )
+    collection = dm_index.load_yaml(ROOT / "registry/collection.yaml")
+    for path in collection["manifests"]:
+        dataset = dm_index.load_yaml(ROOT / path)
+        assert dataset["schema_version"] == 3
+        assert set(dataset["preprocessing"]) == {"upstream", "datamonger"}
+        identity = dataset["source"], dataset["name"], dataset["version"]
+        if identity in snapshots:
+            assert dm_index._identity_projection(
+                dataset
+            ) == dm_index._identity_projection(snapshots[identity])

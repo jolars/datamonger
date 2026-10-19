@@ -182,6 +182,14 @@ preservation records, the full representation, `expected_components`,
 `verification_records`, related datasets, and task metadata. Pass
 `offline=True` to require a bundled or already cached registry index.
 
+`info.preprocessing` and `fetch_data(..., return_info=True).info.preprocessing`
+expose the upstream and Datamonger processing recorded by a version 3 registry.
+Each stage distinguishes `unknown`, `none`, and `documented`. Documented stages
+preserve ordered steps, string parameters, and evidence references. Missing
+metadata is `None`, including in older bundled snapshots. These records describe
+the artifacts; fetching does not apply their transformations. See the
+[preprocessing contract](../../spec/preprocessing.md).
+
 To retrieve verified artifact bytes without decoding them, use
 `fetch_artifact()`:
 

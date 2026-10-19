@@ -32,3 +32,9 @@ semantic identifiers such as `1.1.0` and tags such as `registry-v1.1.0`.
 
 Clients continue to select a registry by its release identifier and index
 SHA-256. A new registry release does not automatically release client packages.
+
+Current manifests use [preprocessing metadata](../spec/preprocessing.md) to
+distinguish upstream processing from Datamonger preparation. Unknown history is
+explicit. Editing descriptive metadata updates the authoring record for the
+next release; existing release checks retain each snapshot's recorded metadata
+and schema version while still checking artifact and representation identity.
