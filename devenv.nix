@@ -70,8 +70,9 @@ in
   scripts.dm-vendor-r = {
     description = "Vendor the R package's published Rust dependencies";
     exec = ''
+      set -euo pipefail
       cd "$DEVENV_ROOT"
-      dm-core-cargo update --manifest-path packages/r/src/rust/Cargo.toml -p datamonger-core
+      dm-core-cargo metadata --manifest-path packages/r/src/rust/Cargo.toml --format-version 1 > /dev/null
       Rscript -e 'rextendr::vendor_crates("packages/r", overwrite = TRUE, clean = TRUE)'
       python "$DEVENV_ROOT/tools/dm_rust_sources.py" --record-vendor
     '';
@@ -80,6 +81,7 @@ in
   scripts.dm-local-r = {
     description = "Run Rscript against the local Rust core";
     exec = ''
+      set -euo pipefail
       dm_r_lock="$DEVENV_ROOT/packages/r/src/rust/Cargo.lock"
       dm_r_saved_lock="$(mktemp)"
       cp "$dm_r_lock" "$dm_r_saved_lock"

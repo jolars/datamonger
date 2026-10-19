@@ -63,6 +63,8 @@ dependencies = [
 [[package]]
 name = "datamonger-core"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cc6c7e8966e28320f1d5cf1fb9f4e3c7a583bbfefb457cc1e421d7471bee95c5"
 dependencies = [
  "bzip2",
  "flate2",

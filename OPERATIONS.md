@@ -23,7 +23,7 @@ how maintainers apply them.
 
 ## Configure release automation
 
-Versionary manages the registry and the R, Python, and Julia package versions,
+Versionary manages the registry, Rust core, and language client versions,
 changelogs, tags, and GitHub Releases. Specification releases remain separately
 tagged. Before enabling
 [`.github/workflows/versionary.yml`](.github/workflows/versionary.yml),
@@ -32,8 +32,8 @@ configure the repository as follows:
 1. Add a `RELEASE_TOKEN` secret containing a fine-grained personal access token
    with Contents, Pull requests, and Issues read/write access to this
    repository. The token must be able to trigger downstream workflows; the
-   built-in `GITHUB_TOKEN` cannot trigger the Python publication workflow from a
-   Versionary-created release.
+   built-in `GITHUB_TOKEN` cannot trigger the Python or Rust publication
+   workflows from a Versionary-created release.
 2. Configure a PyPI trusted publisher for project `datamonger`, repository
    `jolars/datamonger`, workflow `publish-python.yml`, and environment `pypi`.
    Use a pending publisher before the first PyPI release if the project does not
@@ -41,10 +41,16 @@ configure the repository as follows:
 3. Install the Julia Registrator GitHub App for the repository. Do not install
    TagBot for this release path—Versionary owns the package tags and GitHub
    Releases.
+4. Configure a crates.io trusted publisher for `datamonger-core`, repository
+   `jolars/datamonger`, workflow `publish-core.yml`, and GitHub environment
+   `release`. The workflow exchanges a GitHub OpenID Connect token for a
+   temporary crates.io token; no Cargo API token secret is required. Configure the
+   publisher in the crate's settings using the
+   [crates.io trusted publishing instructions](https://crates.io/docs/trusted-publishing).
 
 The explicit Versionary package names produce distinct tag namespaces:
-`datamonger-python-vX.Y.Z`, `datamonger-r-vX.Y.Z`, and
-`datamonger-julia-vX.Y.Z`. The ecosystems otherwise use the same package name,
+`datamonger-core-vX.Y.Z`, `datamonger-python-vX.Y.Z`, `datamonger-r-vX.Y.Z`, and
+`datamonger-julia-vX.Y.Z`. The language clients otherwise use the same package name,
 so the prefixes prevent Git tag collisions. The registry uses `registry-vX.Y.Z`
 and the `simple` strategy with `registry/version.txt`. It creates drafts that
 the registry publisher completes after validating and attaching the index.
@@ -55,6 +61,22 @@ After CI succeeds on `main`, Versionary opens or updates one release PR for each
 releasable client. A commit belongs to a client when it changes files under that
 client's package directory. Merging one release PR does not merge or publish
 either of the others.
+
+### Rust core
+
+The core has an independent release PR and publishes automatically after merge:
+
+1. Merge the `datamonger-core` Versionary release PR after CI passes.
+2. Versionary creates the tag and a non-draft GitHub Release.
+3. `Publish Rust core` checks out that tag, verifies it matches `Cargo.toml`,
+   runs the tests and a publication dry run with Rust 1.82, and publishes the
+   crate through trusted publishing.
+4. Update the R adapter's version requirement if needed, run the Cargo update
+   and `dm-vendor-r` commands in `CONTRIBUTING.md`, and review the dependency
+   refresh before preparing an R release.
+
+The R release lockfile and vendor archive stay pinned until that separate
+refresh. Publishing a core release does not automatically change an R release.
 
 ### Python
 

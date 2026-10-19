@@ -107,18 +107,22 @@ documentation. It generates the private R wrappers directly from extendr
 metadata without replacing the package's manually maintained Rd files or
 NAMESPACE. Do not edit the generated wrappers by hand.
 
-The core has standalone crate metadata and a Versionary release entry. Prepare
-its release independently, verify the package, and publish before refreshing the
-R vendor archive:
+Versionary manages core releases independently of the language clients. Merge
+its release PR after CI passes. Versionary creates a published GitHub Release
+with a `datamonger-core-v<version>` tag, which triggers `Publish Rust core`.
+That workflow verifies the tag and crate versions, tests and packages the crate
+with Rust 1.82, and publishes to crates.io through trusted publishing. See
+`OPERATIONS.md` for the publisher configuration.
+
+After the crate is published, update the R lockfile and vendor archive:
 
 ```console
-dm-core-cargo publish --manifest-path crates/datamonger-core/Cargo.toml --locked --dry-run
-dm-core-cargo publish --manifest-path crates/datamonger-core/Cargo.toml --locked
+dm-core-cargo update --manifest-path packages/r/src/rust/Cargo.toml -p datamonger-core
 dm-vendor-r
 ```
 
-Run publication commands from a clean release checkout. Crate publication is
-manual; no workflow publishes it automatically.
+The R release continues to use its committed dependency version until this
+refresh is reviewed and merged.
 
 The focused Julia command from `packages/julia` is:
 
