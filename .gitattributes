@@ -1,7 +1,7 @@
 packages/cli/assets/index.json text eol=lf
 registry/releases/*/index.json text eol=lf
 tests/registry/releases/*/index.json text eol=lf
-tests/conformance/artifacts/* text eol=lf
+tests/conformance/** text eol=lf
 
 # Shell build hooks must also run from Windows checkouts.
 packages/r/configure* text eol=lf
@@ -13,3 +13,4 @@ packages/r/inst/COPYRIGHTS text eol=lf
 # These files participate in byte-level conformance and artifact checks.
 packages/r/tests/testthat/fixtures/** text eol=lf
 packages/r/inst/extdata/** text eol=lf
+packages/julia/test/fixtures/conformance/** text eol=lf
