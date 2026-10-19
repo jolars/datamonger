@@ -1,6 +1,7 @@
 # Datamonger <img src="https://raw.githubusercontent.com/jolars/datamonger/refs/heads/main/assets/logo.png" align="right" width="139" alt="A datamonger carrying a box of data" />
 
 [![CI](https://github.com/jolars/datamonger/actions/workflows/ci.yml/badge.svg)](https://github.com/jolars/datamonger/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/datamonger.svg?logo=python)](https://pypi.org/project/datamonger/)
 
 Datamonger retrieves public research datasets in Python, R, and Julia. It
 downloads and caches dataset files, returns native data frames and sparse
