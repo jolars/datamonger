@@ -2,6 +2,7 @@ schema_version: 1
 repository: jolars/datamonger
 manifests:
 - registry/datasets/datamonger/brca1-1.yaml
+- registry/datasets/datamonger/koussounadis2014-1.yaml
 - registry/datasets/datamonger/scheetz2006-1.yaml
 - registry/datasets/libsvm/cadata-1.yaml
 - registry/datasets/libsvm/colon-cancer-1.yaml
@@ -17,6 +18,9 @@ manifests:
 defaults:
 - source: datamonger
   name: brca1
+  version: '1'
+- source: datamonger
+  name: koussounadis2014
   version: '1'
 - source: datamonger
   name: scheetz2006

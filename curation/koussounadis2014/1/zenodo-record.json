@@ -1,0 +1,57 @@
+{
+  "dataset_id": "datamonger:koussounadis2014@1",
+  "id": "23468640",
+  "state": "published",
+  "url": "https://zenodo.org/records/23468640",
+  "draft_url": "https://zenodo.org/uploads/23468640",
+  "doi": "10.5281/zenodo.23468640",
+  "rights_review": "Source terms reviewed in curation/koussounadis2014/1/RIGHTS.md.",
+  "publication_authorization": "User approved public publication and registration on 2026-10-19.",
+  "access": {
+    "record": "public",
+    "files": "public",
+    "embargo": {
+      "active": false,
+      "reason": null
+    },
+    "status": "open"
+  },
+  "rights": [
+    {
+      "title": {
+        "en": "GEO source-data use and distribution terms"
+      },
+      "description": {
+        "en": "The numeric data and source identifiers are redistributed under GEO source terms. NCBI places no restrictions on use or distribution of GEO data, while warning that submitters may retain intellectual property rights. No additional data-specific restriction was found in the reviewed GSE49577, GSM1202097, or GPL10558 records. Retain source attribution and preparation details. This source-policy assessment does not assert a standard SPDX license or public-domain dedication. The MIT license applies only to scripts and documentation; see README.md."
+      },
+      "link": "https://www.ncbi.nlm.nih.gov/geo/info/disclaimer.html"
+    },
+    {
+      "id": "mit",
+      "title": {
+        "en": "MIT License"
+      },
+      "description": {
+        "en": "A short and simple permissive license with conditions only requiring preservation of copyright and license notices. Licensed works, modifications, and larger works may be distributed under different terms and without source code."
+      },
+      "props": {
+        "url": "https://opensource.org/licenses/MIT",
+        "scheme": "spdx"
+      }
+    }
+  ],
+  "files_sha256": {
+    "data.csv.gz": "d532f3aeb8159a7c44ab8e2fc4e4104f923c436a1001eb0c7c2e8abaa02f9c56",
+    "README.md": "31b257ccf74f0def61c6992bcbadb10cbfb018a5985526c0c69d044b2af0a1bc",
+    "prepare.py": "422cb53f0f7d316595b49d36cb5aebbdc569a16eda068320066b58c6a6b37ac7",
+    "read_source.R": "dbe579b03d4a58186138e270df21ada05b6c572ff4f372cc1eb389fc2550402b",
+    "convert.R": "3fc2d4ad1381c20160f32d93b907e6e91c1e888d39a9e47f9f36aad9d647400d",
+    "verify.R": "c8013e6494e421d3764300ba893ec0f55aecfee3422e310abc34bc0f396a12ca",
+    "provenance.json": "a1f48086702ae55cab1ab078330221c088f8e2ed292a6569ca33fad4f3e1faed",
+    "LICENSE": "bfc2dd3b099506cc71e65e8af09e3f9b3860d8fddf59801b30313c5d21caac36"
+  },
+  "download_verification": "anonymous-public",
+  "data_url": "https://zenodo.org/api/records/23468640/files/data.csv.gz/content",
+  "verified_by": "Codex (automated download verification)",
+  "verified_at": "2026-10-19"
+}
