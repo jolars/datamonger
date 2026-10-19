@@ -1,155 +1,105 @@
 # Datamonger <img src="https://raw.githubusercontent.com/jolars/datamonger/refs/heads/main/assets/logo.png" align="right" width="139" alt="A datamonger carrying a box of data" />
 
-Datamonger is a cross-language registry and artifact system for retrieving,
-verifying, and identically decoding public research datasets. A registry record
-fixes the source bytes, the decoding recipe, the expected shape, and a digest of
-the decoded logical values. A strong registry selector fixes the complete set of
-records used by an analysis.
+[![CI](https://github.com/jolars/datamonger/actions/workflows/ci.yml/badge.svg)](https://github.com/jolars/datamonger/actions/workflows/ci.yml)
 
-Specification revision 1 is frozen as `spec-v1`, paired with the first stable
-registry, `2026.09`. The Python reference client and the independent R and Julia
-clients pass the shared conformance suite and reproduce all ten registry
-canonical verification records. Those ten datasets remain upstream-only. The
-standalone Rust CLI supports verified artifact downloads.
-Publishing the coordinated language client releases is the next milestone.
+Datamonger retrieves public research datasets in Python, R, and Julia. It
+downloads and caches dataset files, returns native data frames and sparse
+matrices, and verifies that each client decodes the same values. A standalone
+CLI provides verified downloads for use with other tools.
 
-## What Datamonger verifies
+Each dataset has a versioned record describing its source, format, provenance,
+license, and citations. You can pin the registry and dataset version to keep an
+analysis reproducible.
 
-Datamonger keeps several distinct claims separate:
+## Installation
 
-- A strong selector identifies exact registry-index bytes.
-- Each registry record identifies exact artifact bytes by size and SHA-256.
-- A versioned canonical digest checks the decoded logical values and their
-  structure.
-- Provenance, license, distribution, and preservation fields describe where the
-  data came from and what the registry is permitted and able to provide.
+From a repository checkout, install the client for your language.
 
-A digest provides integrity relative to the channel that supplied it. It does
-not authenticate a selector obtained from an untrusted source, grant permission
-to use a dataset, or preserve an upstream-only artifact. See
-[TRUST.md](TRUST.md) for the trust model and its limits.
+### Python
 
-## Try the Python client
-
-Install the Python client from a checkout with Python 3.11 or newer:
+Requires Python 3.11 or newer:
 
 ```console
 python -m pip install ./packages/python
 ```
 
-The bundled registry works as an offline trust root for its index.
-Dataset artifacts are downloaded on first use and then kept in a verified,
-content-addressed cache:
+### R
 
-```python
-from datamonger import fetch_data
-
-iris = fetch_data("uci:iris")
-heart = fetch_data("heart_scale", source="libsvm")
-```
-
-All three packages accept `"source:name"` and `"source:name@version"` references
-in `fetch_data()`, `data_info()`, and `fetch_artifact()`, matching CLI dataset
-selectors. Bare names require `source`. Omit `source` for qualified references
-and omit `version` when the reference embeds it; duplicate arguments are errors
-even when the values agree. Without a version, resolution uses the registry's
-declared default.
-
-Use an explicit version and request reproducibility metadata for an analysis:
-
-```python
-from datamonger import fetch_data
-
-result = fetch_data("iris", source="uci", version="1", return_info=True)
-print(result.info.dataset_id)
-print(result.info.registry_release, result.info.registry_index_sha256)
-print(result.info.artifact_digests)
-print(result.info.canonical_form, result.info.canonical_digest)
-```
-
-Record the canonical dataset identifier, registry release, and index digest. For
-a project that uses a registry other than the bundled snapshot, also check the
-complete strong selector into `.datamonger/selector.json`. A bare release name
-is only a TLS-trusted discovery mechanism; the returned selector becomes a
-reproducible pin when it is recorded and reused.
-
-Before using a dataset, inspect its provenance and license status:
-
-```python
-from datamonger import data_info
-
-info = data_info("iris", source="uci", version="1")
-print(info.dataset_id)
-print(info.provenance)
-print(info.preprocessing)
-print(info.citations)
-print(info.license)
-print([artifact["distribution"] for artifact in info.artifacts])
-```
-
-Use `cite_data("uci:wine-quality@1")` for curated citation text without
-retrieving artifacts. Citations support multiple references, optional roles and
-notes, and upstream recommendations. `format="records"` preserves those fields;
-`include_all=True` includes every reference. Fetch results requested with
-`return_info=True` also expose `result.info.citations` and
-`result.info.citation_instructions`. See the [citation contract](spec/citations.md).
-
-Registries using schema version 3 also expose `info.preprocessing` and
-`result.info.preprocessing`. This records upstream and Datamonger processing
-separately, with known steps, parameters, and evidence. Stage status distinguishes
-`unknown`, `none`, and `documented`; older snapshots without recorded history
-return `None`. See the [preprocessing contract](spec/preprocessing.md).
-
-An unknown license remains unknown—registry inclusion is not legal advice or a
-license grant. An `upstream-only` artifact is available only while an upstream
-location or a local cache copy remains available.
-
-The [Python package guide](packages/python/README.md) documents registry
-selection, return types, metadata, verified artifact access, offline operation,
-errors, and cache management.
-
-## Try the R client
-
-The R package is also pre-release and is not yet on CRAN. Install it from a
-checkout, then load a dataset:
+Install the source package from R:
 
 ```r
 install.packages("packages/r", repos = NULL, type = "source")
-library(datamonger)
-
-iris <- fetch_data("uci:iris")
 ```
 
-The R client uses its standard platform cache by default. Its registry
-selection, verification, offline, metadata, artifact, and cache management
-operations follow the same revision 1 contracts as the Python client. See the [R
-package guide](packages/r/README.md) for R return types and the complete public
-API.
+Source installation requires Cargo, Rust 1.82 or newer, and xz. See the [R
+package guide](packages/r/README.md) for platform requirements.
 
-## Try the Julia client
+### Julia
 
-Instantiate the pre-release Julia package from a checkout, then load it:
+Activate and instantiate the package environment:
 
 ```julia
 using Pkg
 Pkg.activate("packages/julia")
 Pkg.instantiate()
-
-using Datamonger
-iris = fetch_data("uci:iris")
-heart = fetch_data("heart_scale"; source="libsvm")
 ```
 
-The Julia client uses its standard platform cache by default. Pass an explicit
-`cache_dir` to any public operation to use another location. See the [Julia
-package guide](packages/julia/README.md) for native return types and the
-complete public API.
+### CLI
 
-## Try the CLI
+Download a prebuilt binary from [GitHub
+releases](https://github.com/jolars/datamonger/releases), or install from the
+checkout with Rust 1.89 or newer:
 
-Build the single-binary Rust client from `packages/cli` with
-`cargo build --release --locked`, or install an archive from a CLI GitHub
-release. The binary works with the bundled stable registry offline:
+```console
+cargo install --locked --path packages/cli
+```
+
+## Usage
+
+Load a dataset by its `source:name` reference:
+
+```python
+from datamonger import fetch_data
+
+iris = fetch_data("uci:iris")
+heart = fetch_data("libsvm:heart_scale")
+```
+
+The same calls work in R:
+
+```r
+library(datamonger)
+
+iris <- fetch_data("uci:iris")
+heart <- fetch_data("libsvm:heart_scale")
+```
+
+And in Julia:
+
+```julia
+using Datamonger
+
+iris = fetch_data("uci:iris")
+heart = fetch_data("libsvm:heart_scale")
+```
+
+Delimited datasets return data frames. LIBSVM datasets return sparse features
+and a response vector; datasets with train/test splits keep the two parts
+separate. Files are downloaded on first use and kept in a verified local cache.
+Offline mode lets you reuse cached datasets without network access.
+
+Use `list_data()` to browse the registry, `data_info()` to inspect a dataset's
+metadata, and `cite_data()` to retrieve its citations without downloading data:
+
+```python
+from datamonger import cite_data, data_info, list_data
+
+datasets = list_data()
+info = data_info("uci:iris")
+print(cite_data("uci:iris"))
+```
+
+For raw files, use the CLI:
 
 ```console
 datamonger list --source uci
@@ -157,68 +107,53 @@ datamonger info uci:iris
 datamonger fetch uci:iris --output-dir ./data
 ```
 
-`fetch` verifies artifact size and SHA-256 and keeps the registered raw bytes.
-It does not decode datasets. See the [CLI guide](packages/cli/README.md) for
-artifact selection, JSON output, cache management, and registry pinning.
+The CLI verifies file sizes and SHA-256 hashes. It keeps the registered file
+format and compression without decoding the data.
 
-## Documentation
+## Reproducibility
 
-- [Documentation website](https://datamonger.dev/)—guides, Python and R API
-  references, and shared concepts.
-- [Python package guide](packages/python/README.md)—installation and public API
-  behavior.
-- [R package guide](packages/r/README.md)—installation, cache management, and
-  public API behavior.
-- [Julia package guide](packages/julia/README.md)—installation, native return
-  types, cache management, and public API behavior.
-- [CLI guide](packages/cli/README.md)—single-binary installation, commands,
-  verified downloads, and registry selection.
-- [Normative specification](spec/README.md)—the frozen revision 1 contracts for
-  independent implementations.
-- [Trust model](TRUST.md)—trust roots, guarantees, and non-guarantees.
-- [Contributor guide](CONTRIBUTING.md)—code, specification, and dataset changes.
-- [Operations runbook](OPERATIONS.md)—registry publication, canaries, and
-  incident response.
-- [Architecture](DESIGN.md)—design rationale and project scope.
-- [Roadmap](TODO.md)—milestones and release status.
+Select an explicit dataset version and retain the verification metadata with
+your analysis:
 
-## Current registries
+```python
+result = fetch_data("uci:iris@1", return_info=True)
+print(result.info.dataset_id)
+print(result.info.registry_release, result.info.registry_index_sha256)
+```
 
-The first stable registry, `2026.09`, contains ten reviewed UCI and LIBSVM
-datasets spanning regression, binary and multiclass classification, unsupervised
-data, dense and sparse data, and a train/test split. Its selector is
-[`registry/releases/2026.09/selector.json`](registry/releases/2026.09/selector.json).
+Pin a project's registry by checking its selector into
+`.datamonger/selector.json`. The selector records the registry release, index
+digest, and retrieval URL. See the package guides for registry selection and
+offline workflows, and the [trust model](TRUST.md) for the verification
+guarantees and their limits.
+
 <!-- bundled-registry:start -->
 All four clients bundle the stable `1.2.0` snapshot. Its selector is
 [`registry/releases/1.2.0/selector.json`](registry/releases/1.2.0/selector.json).
 <!-- bundled-registry:end -->
-Select a registry explicitly with the Python client:
 
-```python
-from datamonger import fetch_data, resolve_registry
+Only the registry index is bundled; dataset files are downloaded separately.
 
-registry = resolve_registry("1.1.0")
-iris = fetch_data("iris", source="uci", registry=registry)
-```
+## Documentation
 
-Record and reuse the resolved strong selector for reproducibility. See the
-[certification record](registry/releases/2026.09/README.md) for the publication
-checks and upstream availability limitations. Earlier proof and candidate
-releases remain available under their original selectors.
+- [Documentation website](https://datamonger.dev/)—guides and API references.
+- [Python](packages/python/README.md), [R](packages/r/README.md), and
+  [Julia](packages/julia/README.md) package guides—return types, metadata,
+  registry selection, and cache management.
+- [CLI guide](packages/cli/README.md)—commands and verified file downloads.
+- [Specification](spec/README.md) and [architecture](DESIGN.md)—contracts and
+  design rationale.
 
-The immutable releases under [`tests/registry`](tests/registry) and the
-language-neutral corpus under [`tests/conformance`](tests/conformance) are for
-implementation conformance, not end-user data analysis.
+## Contributing
 
-## Development
-
-Enter the repository's devenv shell and run the same hermetic quality gate as
-CI:
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and how to add or
+revise datasets. Enter the repository's devenv shell and run the checks with:
 
 ```console
 devenv test
 ```
 
-Network-dependent upstream verification is deliberately separate from this gate.
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development workflows and
-[OPERATIONS.md](OPERATIONS.md) for live verification and release procedures.
+## License
+
+Datamonger is licensed under the [MIT license](LICENSE). Datasets retain their
+own licenses and terms, recorded in their registry metadata.
