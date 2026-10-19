@@ -185,10 +185,14 @@ function _native_canonical(components, emit_bytes)
             valid = UInt8.(component.valid)
         end
         string_values = String[]
-        values = if tag == 1
+        values = if component isa LogicalSparseMatrix
             Float64.(component.values)
+        elseif tag == 1
+            Float64[present ? Float64(value) : 0.0
+                    for (value, present) in zip(component.values, component.valid)]
         elseif tag == 2
-            Int64.(component.values)
+            Int64[present ? Int64(value) : Int64(0)
+                  for (value, present) in zip(component.values, component.valid)]
         elseif tag == 3
             for (value, present) in zip(component.values, component.valid)
                 text = present ? String(value) : ""
@@ -197,7 +201,8 @@ function _native_canonical(components, emit_bytes)
             end
             _NativeBytes.(string_values)
         else
-            UInt8.(component.values)
+            UInt8[present ? UInt8(value) : 0x00
+                  for (value, present) in zip(component.values, component.valid)]
         end
         append!(roots, (name, values, string_values, valid, offsets, indices))
         push!(views, _NativeComponent(
