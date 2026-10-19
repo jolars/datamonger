@@ -427,8 +427,11 @@ assert decode_libsvm(path, options).data.response.tolist() == [1]
 
 
 @pytest.mark.parametrize("compression", ["gzip", "bzip2"])
+# Pytest exports case names in an environment variable, which Windows limits.
 @pytest.mark.parametrize(
-    "suffix", [b"", b"\0", b"\0" * 8193, b"junk", b"B", b"BZ", b"BZh9"]
+    "suffix",
+    [b"", b"\0", b"\0" * 8193, b"junk", b"B", b"BZ", b"BZh9"],
+    ids=["empty", "zero", "zero-padding", "junk", "b", "bz", "bzip2-header"],
 )
 def test_compressed_trailing_bytes_preserve_python_behavior(
     compression: str, suffix: bytes, tmp_path: Path
