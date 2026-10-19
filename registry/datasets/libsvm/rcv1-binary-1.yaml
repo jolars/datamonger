@@ -1,0 +1,96 @@
+schema_version: 1
+source: libsvm
+name: rcv1-binary
+version: '1'
+title: RCV1 Binary
+description: LIBSVM's binary classification variant of Reuters Corpus Volume 1, with 47,236
+  sparse text features and predefined training and test sets. Positive labels combine CCAT
+  and ECAT, and negative labels combine GCAT and MCAT. Documents assigned to both groups are
+  removed. The provider's feature values, labels, splits, and row order are preserved.
+modality: tabular
+provenance:
+  provider: LIBSVM
+  upstream_name: rcv1.binary
+  landing_page: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#rcv1.binary
+  authors:
+  - David D. Lewis
+  - Yiming Yang
+  - Tony G. Rose
+  - Fan Li
+  citation: 'David D. Lewis, Yiming Yang, Tony G. Rose, and Fan Li. RCV1: A New Benchmark
+    Collection for Text Categorization Research. Journal of Machine Learning Research, 5:361-397,
+    2004. https://www.jmlr.org/papers/v5/lewis04a.html'
+  retrieved_at: '2026-10-19'
+license:
+  status: unknown
+  url: https://trec.nist.gov/data/reuters/reuters.html
+  evidence: The LIBSVM dataset page documents the source and binary label mapping but provides
+    no license terms for these artifacts. NIST identifies Reuters copyright and organizational
+    and individual agreements for the source corpus. No license or redistribution grant has
+    been established for the LIBSVM transformation.
+artifacts:
+- name: train
+  format: libsvm
+  compression: bzip2
+  size: 13730096
+  sha256: dda0c6381811484e284e70dd0641335917debce50948346416fde7fb32fad2e2
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/rcv1_train.binary.bz2
+- name: test
+  format: libsvm
+  compression: bzip2
+  size: 453311155
+  sha256: 975ab6c4fd8ea2a88b82e7ba2659ef21bf980ac61b3d8f13d6991739ec0f7aa7
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/rcv1_test.binary.bz2
+representation:
+  decoder: libsvm-split
+  decoder_version: 1
+  inputs:
+    train: train
+    test: test
+  options:
+    index_base: 1
+    feature_count: 47236
+    duplicate_features: error
+    label_type: int64
+    row_order: source
+    target_name: response
+  expect:
+    components:
+    - name: train_features
+      kind: sparse_matrix
+      type: float64
+      rows: 20242
+      columns: 47236
+    - name: train_response
+      kind: vector
+      type: int64
+      length: 20242
+    - name: test_features
+      kind: sparse_matrix
+      type: float64
+      rows: 677399
+      columns: 47236
+    - name: test_response
+      kind: vector
+      type: int64
+      length: 677399
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: 7bffc1f359c7bc2cc7d2c2eb54965f24f3f6e67998566a4efa792fc6c6629934
+tasks:
+- name: default
+  type: classification
+  splits:
+    train:
+      features: train_features
+      target: train_response
+    test:
+      features: test_features
+      target: test_response

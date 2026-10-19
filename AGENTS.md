@@ -42,6 +42,10 @@ For R, use two-space indentation and `snake_case`; keep exported interfaces and
 S3 return classes documented. For Julia, follow idiomatic four-space formatting,
 use `snake_case` for functions and variables, and use `PascalCase` for types.
 
+Prefer lowercase names with hyphens between words and variant suffixes for new
+datasets (for example, `rcv1-binary`). Preserve the provider's spelling in
+`provenance.upstream_name`.
+
 ## Testing Guidelines
 
 Use pytest for Python, testthat for R, and `Test` for Julia. Add regression tests
