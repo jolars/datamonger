@@ -14,7 +14,7 @@ belong in `curation/<name>/<version>/`; shared tooling belongs in `tools/`.
 Keep maintainer instructions in `README.md` and deposited dataset documentation
 in `DATASET.md`. Store source and generated data outside the working tree.
 Use `tools/dm_index.py` to validate generated registry data.
-Consult `DESIGN.md` for architecture and `TODO.md` for the active roadmap.
+Consult `DESIGN.md` for architecture.
 
 ## Build, Test, and Development Commands
 
@@ -25,38 +25,12 @@ matches CI:
 devenv test
 ```
 
-From `packages/python`, focused commands are:
+See [CONTRIBUTING.md](CONTRIBUTING.md#development-environment) for focused
+commands and live-source checks. Run live checks only when network access and
+upstream availability are expected.
 
-- `uv run pytest`—run the hermetic unit suite.
-- `uv run pytest tests/test_decoder.py`—run one test module.
-- `ruff format . ../../tools ../../curation`—format Python sources and tooling.
-- `ruff check . ../../tools ../../curation`—run lint checks.
-- `uv run mypy`—type-check the package and registry builder in strict mode.
-- `uv run python ../../tools/dm_index.py check`—verify checked-in production
-  release indexes.
-- `uv build`—build the Python distribution.
-
-From `packages/r`, focused commands are:
-
-- `Rscript -e 'testthat::test_local(".")'`—run hermetic R tests.
-- `R CMD build .`—build the R source package.
-- `R CMD check --as-cran datamonger_*.tar.gz`—run CRAN-style checks.
-
-From `packages/julia`, focused commands are:
-
-- `julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.test()'`—run the
-  hermetic Julia suite.
-- `julia --project=. tests_live/test_candidate_registry.jl`—audit the published
-  candidate when network access is expected.
-
-From `packages/cli`, run `cargo fmt --check`,
-`cargo clippy --locked --all-targets -- -D warnings`, and `cargo test --locked`.
 The CLI bundles stable registry assets in `packages/cli/assets`; `devenv test`
 checks them against their selected registry release and `spec/schema`.
-
-Run `uv run pytest tests_live/test_proof_registry.py` only when network access
-and upstream availability are expected. The R and Julia candidate audits are
-the corresponding `tests_live/test_candidate_registry.*` scripts.
 
 ## Coding Style & Naming Conventions
 

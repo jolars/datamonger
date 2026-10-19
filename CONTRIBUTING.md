@@ -80,9 +80,16 @@ cargo clippy --locked --all-targets -- -D warnings
 cargo test --locked
 ```
 
-Run the R and Julia `tests_live/test_candidate_registry.*` scripts separately to
-retrieve and verify every record in the published candidate registry. Pass
-`2026.09` as the first argument to audit the stable registry instead.
+From `packages/python`, run the live proof-registry test separately:
+
+```console
+uv run pytest tests_live/test_proof_registry.py
+```
+
+Run the R and Julia `tests_live/test_candidate_registry.*` scripts separately
+from `packages/r` and `packages/julia`, respectively, to retrieve and verify
+every record in the published candidate registry. Pass `2026.09` as the first
+argument to audit the stable registry instead.
 
 Live-source tests and canaries require network access and healthy upstreams.
 They are not substitutes for deterministic tests and are not part of the routine
