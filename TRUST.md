@@ -38,23 +38,23 @@ because revision 1 has no signed or authenticated forward link between them.
 
 ## Guarantees and non-guarantees
 
-| Mechanism | What it establishes | What it does not establish |
-| --- | --- | --- |
-| Strong registry selector | Exact index bytes and embedded release, relative to a trusted selector | Who authored the selector, or whether its metadata is true |
-| Artifact size and SHA-256 | Exact retrieved or cached artifact bytes relative to the index | License, safety, availability, or preservation |
-| Decoder recipe and component expectations | The intended versioned interpretation and shape | Scientific suitability or freedom from upstream errors |
-| Canonical SHA-256 | Exact decoded logical values under a named canonical-form version | Independent attestation when computed only by the authoring implementation |
-| HTTPS catalog lookup | Authentication and confidentiality of that lookup under the Web PKI | A permanent pin or protection after the catalog later changes |
-| Scheduled canary | Recent upstream availability and agreement with registered bytes | Future availability or preservation |
+  | Mechanism                                 | What it establishes                                                    | What it does not establish                                                 |
+  | ----------------------------------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+  | Strong registry selector                  | Exact index bytes and embedded release, relative to a trusted selector | Who authored the selector, or whether its metadata is true                 |
+  | Artifact size and SHA-256                 | Exact retrieved or cached artifact bytes relative to the index         | License, safety, availability, or preservation                             |
+  | Decoder recipe and component expectations | The intended versioned interpretation and shape                        | Scientific suitability or freedom from upstream errors                     |
+  | Canonical SHA-256                         | Exact decoded logical values under a named canonical-form version      | Independent attestation when computed only by the authoring implementation |
+  | HTTPS catalog lookup                      | Authentication and confidentiality of that lookup under the Web PKI    | A permanent pin or protection after the catalog later changes              |
+  | Scheduled canary                          | Recent upstream availability and agreement with registered bytes       | Future availability or preservation                                        |
 
-Cryptographic hashes are integrity mechanisms, not signatures. Registry
-signing is outside revision 1.
+Cryptographic hashes are integrity mechanisms, not signatures. Registry signing
+is outside revision 1.
 
 ## Retrieval and cache boundary
 
 Clients verify a registry index before parsing it and verify every artifact
-before decoding it. Invalid downloads are discarded rather than published to
-the cache. Cache paths are content-addressed, but path names are not trusted;
+before decoding it. Invalid downloads are discarded rather than published to the
+cache. Cache paths are content-addressed, but path names are not trusted;
 clients rehash cached content before use.
 
 Publication uses temporary files, validation, and atomic replacement. Per-object
@@ -81,9 +81,8 @@ Distribution policy and preservation status are independent of integrity:
 
 The stable `2026.09` registry and the earlier proof and candidate artifacts are
 upstream-only. Their digests can detect upstream drift, but they cannot recover
-bytes that disappear.
-A user's verified local cache may permit offline reuse, but it is not a project
-preservation service.
+bytes that disappear. A user's verified local cache may permit offline reuse,
+but it is not a project preservation service.
 
 The canary checks each registered location without using the artifact cache and
 then decodes one verified copy. A failure may reveal downtime, changed bytes,
@@ -121,11 +120,12 @@ selector and hashes alone cannot reconstruct missing data.
 ## Reporting a trust problem
 
 Report incorrect metadata, unexpected drift, or unavailable upstream content in
-the repository's [GitHub issue tracker](https://github.com/jolars/datamonger/issues).
-Avoid publicly attaching restricted dataset bytes. If a report contains an
-exploitable client vulnerability or sensitive information, submit a
-[private vulnerability report](https://github.com/jolars/datamonger/security/advisories/new)
-instead of a public issue.
+the repository's [GitHub issue
+tracker](https://github.com/jolars/datamonger/issues). Avoid publicly attaching
+restricted dataset bytes. If a report contains an exploitable client
+vulnerability or sensitive information, submit a [private vulnerability
+report](https://github.com/jolars/datamonger/security/advisories/new) instead of
+a public issue.
 
 Published indexes, selectors, tags, and release assets are immutable. A
 confirmed problem is documented and corrected in a later release under the

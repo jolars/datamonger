@@ -18,26 +18,26 @@ how maintainers apply them.
   selector's authenticity.
 - Canary failures are expected operational signals. Hermetic CI must not depend
   on live upstream availability.
-- A verification record remains provisional until an independent
-  implementation reproduces it.
+- A verification record remains provisional until an independent implementation
+  reproduces it.
 
 ## Configure release automation
 
 Versionary manages the registry and the R, Python, and Julia package versions,
 changelogs, tags, and GitHub Releases. Specification releases remain separately
-tagged.
-Before enabling [`.github/workflows/versionary.yml`](.github/workflows/versionary.yml),
+tagged. Before enabling
+[`.github/workflows/versionary.yml`](.github/workflows/versionary.yml),
 configure the repository as follows:
 
 1. Add a `RELEASE_TOKEN` secret containing a fine-grained personal access token
    with Contents, Pull requests, and Issues read/write access to this
    repository. The token must be able to trigger downstream workflows; the
-   built-in `GITHUB_TOKEN` cannot trigger the Python publication workflow from
-   a Versionary-created release.
+   built-in `GITHUB_TOKEN` cannot trigger the Python publication workflow from a
+   Versionary-created release.
 2. Configure a PyPI trusted publisher for project `datamonger`, repository
    `jolars/datamonger`, workflow `publish-python.yml`, and environment `pypi`.
-   Use a pending publisher before the first PyPI release if the project does
-   not yet exist.
+   Use a pending publisher before the first PyPI release if the project does not
+   yet exist.
 3. Install the Julia Registrator GitHub App for the repository. Do not install
    TagBot for this release path—Versionary owns the package tags and GitHub
    Releases.
@@ -52,9 +52,9 @@ the registry publisher completes after validating and attaching the index.
 ## Release client packages
 
 After CI succeeds on `main`, Versionary opens or updates one release PR for each
-releasable client. A commit belongs to a client when it changes files under
-that client's package directory. Merging one release PR does not merge or
-publish either of the others.
+releasable client. A commit belongs to a client when it changes files under that
+client's package directory. Merging one release PR does not merge or publish
+either of the others.
 
 ### Python
 
@@ -88,6 +88,7 @@ The Julia release uses General's Registrator handoff:
 
 1. Merge the `datamonger-julia` Versionary release PR. Versionary creates its
    tag and a draft GitHub Release.
+
 2. Open the tagged release commit on GitHub and add this commit comment:
 
    ```text
@@ -95,6 +96,7 @@ The Julia release uses General's Registrator handoff:
    ```
 
 3. Review the Registrator pull request and wait for it to merge into General.
+
 4. Publish the existing GitHub draft. Versionary has already created the tag,
    and Julia's package manager does not require TagBot to create another one.
 
@@ -115,9 +117,9 @@ After the publisher verifies the public registry asset and completes its canary,
 it opens or updates one client bundle PR on `automation/bundle-registry`. The PR
 mentions `@jolars` for notification. The job uses `RELEASE_TOKEN` so its commits
 and PR can trigger CI. A retry updates the same PR; publication of an older
-registry cannot replace a newer selection. Review and merge the bundle PR to
-let Versionary prepare the independent client releases. Package publication
-still follows the ecosystem-specific steps above, so CRAN updates can be batched.
+registry cannot replace a newer selection. Review and merge the bundle PR to let
+Versionary prepare the independent client releases. Package publication still
+follows the ecosystem-specific steps above, so CRAN updates can be batched.
 
 To prepare the same changes locally, run this from the devenv shell:
 
@@ -126,14 +128,14 @@ dm-bundle-registry 1.2.0
 ```
 
 The underlying command is
-`uv run --project packages/python python tools/dm_bundle_registry.py 1.2.0`.
-It checks the published asset against the local snapshot and selector before
+`uv run --project packages/python python tools/dm_bundle_registry.py 1.2.0`. It
+checks the published asset against the local snapshot and selector before
 changing any files, refuses downgrades, and is safe to rerun. Run
 `dm-bundle-registry --check` for an offline consistency check of the currently
-bundled release. Both CI and `devenv test` run that check. The generated paragraph
-in the root README uses `bundled-registry` markers; keep those markers when editing.
-To bootstrap this automation for an already published registry, dispatch the
-updated workflow from the default branch with its existing tag:
+bundled release. Both CI and `devenv test` run that check. The generated
+paragraph in the root README uses `bundled-registry` markers; keep those markers
+when editing. To bootstrap this automation for an already published registry,
+dispatch the updated workflow from the default branch with its existing tag:
 
 ```console
 gh workflow run publish-registry.yml --ref main -f tag=registry-v1.2.0
@@ -151,9 +153,9 @@ gh workflow run release.yml --ref datamonger-cli-v<version> \
   -f tag=datamonger-cli-v<version>
 ```
 
-`dist` builds archives for x64 Linux (musl), x64 and ARM macOS, and x64
-Windows from that tag, uploads SHA-256 checksums to the existing draft, and publishes it.
-The workflow's pull request run only plans the release. Check the draft tag,
+`dist` builds archives for x64 Linux (musl), x64 and ARM macOS, and x64 Windows
+from that tag, uploads SHA-256 checksums to the existing draft, and publishes
+it. The workflow's pull request run only plans the release. Check the draft tag,
 release, and artifact checksums before dispatching a live release.
 
 ## Prepare a registry release
@@ -163,17 +165,20 @@ release, and artifact checksums before dispatching a live release.
    distribution, preservation, decoded shapes, representative values, and task
    roles. Update `registry/collection.yaml` to select the manifests, defaults,
    and approved errata for the next release.
+
 2. Commit release-worthy registry changes with Conventional Commits. After CI
    passes on `main`, Versionary opens a separate registry release PR that bumps
    `registry/version.txt`, updates `registry/CHANGELOG.md`, and records its
    release target. Registry versions are independent of client and contract
    versions.
-3. The same workflow runs `dm_registry_release.py prepare` on that PR branch.
-   It creates `registry/releases/<version>/release.yaml` with the Versionary
-   tag and the next sequence number, then uses `dm-index` to generate the index
-   and selector. It also updates `registry/catalog.json` and `registry/latest.json`.
+
+3. The same workflow runs `dm_registry_release.py prepare` on that PR branch. It
+   creates `registry/releases/<version>/release.yaml` with the Versionary tag
+   and the next sequence number, then uses `dm-index` to generate the index and
+   selector. It also updates `registry/catalog.json` and `registry/latest.json`.
    The complete snapshot is committed to the release PR for review. CI requires
    these files to match the Versionary target and collection inputs.
+
 4. Inspect the release PR, including the dataset diff and generated selector.
    Run the full hermetic gate and the pending-snapshot check from its checkout:
 
@@ -191,8 +196,8 @@ release, and artifact checksums before dispatching a live release.
    ```
 
 Keep the human review record in the release PR. Record who reviewed licensing
-and preservation evidence and which independent implementations reproduced
-new verification records. Automation does not replace this review. Merge the
+and preservation evidence and which independent implementations reproduced new
+verification records. Automation does not replace this review. Merge the
 Versionary registry PR only after its snapshot is complete and CI passes.
 
 Do not hand-edit generated snapshots or bump `registry/version.txt` outside the
@@ -206,9 +211,9 @@ existing immutable file with different bytes.
 After the registry release PR merges and CI passes:
 
 1. Versionary creates `registry-v<version>` and its draft GitHub Release.
-2. The Versionary workflow passes the registry tag from `release_targets` to
-   the reusable `Publish registry` workflow. This explicit handoff works for
-   draft releases, which do not emit a `release.published` event.
+2. The Versionary workflow passes the registry tag from `release_targets` to the
+   reusable `Publish registry` workflow. This explicit handoff works for draft
+   releases, which do not emit a `release.published` event.
 3. The publisher checks out that exact tag, verifies the Versionary target,
    generated snapshot, and selector URL, and re-fetches every manifest through
    `dm-add` using Python 3.11. A failure leaves the release as a draft.
@@ -216,8 +221,8 @@ After the registry release PR merges and CI passes:
    and publishes the verified draft. It then runs `dm-canary` against the public
    selector without using the artifact cache.
 5. Inspect the canary summary and confirm that catalog resolution returns the
-   checked-in selector. Run independent client audits for the new release.
-   The scheduled canary automatically follows `registry/latest.json`.
+   checked-in selector. Run independent client audits for the new release. The
+   scheduled canary automatically follows `registry/latest.json`.
 
 The publisher never creates tags or releases; Versionary owns them. It never
 replaces an existing asset. To finish a failed publication or verify an existing
@@ -316,9 +321,9 @@ First preserve the complete report and classify the failing layer:
   the named decoder version, and the conformance suite. Separate malformed new
   upstream bytes from an implementation regression.
 - **Implementation-only failure:** Compare the same strong selector and
-  canonical record across all released clients. An implementation regression
-  is fixed in that client; a contract ambiguity requires a corrected
-  specification revision and affected contract versions.
+  canonical record across all released clients. An implementation regression is
+  fixed in that client; a contract ambiguity requires a corrected specification
+  revision and affected contract versions.
 
 Record timestamps, affected selectors and dataset IDs, attempted locations,
 expected and observed digests, client versions, and whether cached copies remain
@@ -329,15 +334,15 @@ usable. Do not attach data whose license or sensitivity forbids redistribution.
 Every correction is published in a new registry release. The required identity
 and contract treatment depends on the change:
 
-| Change | Required action |
-| --- | --- |
-| Add, remove, or reorder retrieval locations; clarify provenance, license, distribution, or preservation metadata | New registry release; retain the dataset version only if all release-evolution rules pass |
-| Change artifact name, size, SHA-256, format, compression, or representation recipe | New dataset version and new registry release |
-| Change task metadata or component expectations | Follow the append-only and erratum rules in `spec/identity.md`; publish a new registry release |
-| Replace an incorrect verification record | Approved verification erratum that revokes the original and appends a replacement in a new registry release |
-| Change decoded logical output | New decoder version, new dataset version, conformance updates, and a later specification revision |
-| Change canonical bytes or error semantics | New affected contract version, conformance updates, and a later specification revision |
-| Editorial clarification with no semantic effect | Review and publish with the existing contract version; document why it is non-semantic |
+  | Change                                                                                                           | Required action                                                                                             |
+  | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+  | Add, remove, or reorder retrieval locations; clarify provenance, license, distribution, or preservation metadata | New registry release; retain the dataset version only if all release-evolution rules pass                   |
+  | Change artifact name, size, SHA-256, format, compression, or representation recipe                               | New dataset version and new registry release                                                                |
+  | Change task metadata or component expectations                                                                   | Follow the append-only and erratum rules in `spec/identity.md`; publish a new registry release              |
+  | Replace an incorrect verification record                                                                         | Approved verification erratum that revokes the original and appends a replacement in a new registry release |
+  | Change decoded logical output                                                                                    | New decoder version, new dataset version, conformance updates, and a later specification revision           |
+  | Change canonical bytes or error semantics                                                                        | New affected contract version, conformance updates, and a later specification revision                      |
+  | Editorial clarification with no semantic effect                                                                  | Review and publish with the existing contract version; document why it is non-semantic                      |
 
 An erratum must conform to
 [`spec/schema/erratum-v1.schema.json`](spec/schema/erratum-v1.schema.json), name
@@ -358,10 +363,10 @@ publishing a later corrected release, updating the catalog, and moving the
 scheduled canary target. Keep old selectors and release assets available so
 published analyses remain auditable.
 
-Client caches evict nothing automatically. Users can inspect and clean them
-with `cache_info()` and `cache_clean()`; active objects are skipped. Operators
-must not treat user caches as mirrors or backups. Durable preservation requires
-an explicit reviewed deposit and corresponding registry metadata.
+Client caches evict nothing automatically. Users can inspect and clean them with
+`cache_info()` and `cache_clean()`; active objects are skipped. Operators must
+not treat user caches as mirrors or backups. Durable preservation requires an
+explicit reviewed deposit and corresponding registry metadata.
 
 ## Stable release gate
 
@@ -390,5 +395,5 @@ julia --project=packages/julia packages/julia/tests_live/test_candidate_registry
 
 Substitute the new release identifier for later audits. Run Python live checks
 with 3.11, matching the publication and scheduled canaries, and record failures
-observed on other supported runtimes. Coordinated client releases must adopt
-the same already published stable snapshot through their own Versionary PRs.
+observed on other supported runtimes. Coordinated client releases must adopt the
+same already published stable snapshot through their own Versionary PRs.
