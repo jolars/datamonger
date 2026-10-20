@@ -1,0 +1,1109 @@
+schema_version: 3
+source: datamonger
+name: godlewski2023
+version: '1'
+title: Brain tumor plasma metabolomics (Godlewski et al., 2023)
+description: 'Lossless CSV conversion of complete Supplementary Table S2: 235 plasma samples,
+  138 metabolite measurements, Sample Name identifiers, and the original six Sample type labels
+  (glioma grades 1-4, meningioma, and healthy control). Preserves every source value, column
+  name, and row and column order. Identifiers are excluded from model features. Contains 94
+  glioma samples although the paper reports 95. No SLOPE sample selection or binary label
+  mapping is applied. The study authors normalized, filtered, and imputed the measurements
+  before publishing the table.'
+modality: tabular
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - https://pmc.ncbi.nlm.nih.gov/articles/PMC10329700/
+    - https://www.nature.com/articles/s41598-023-38243-1
+    steps:
+    - kind: normalization
+      description: Authors processed, quantified, and normalized the spectra in MetIDQ according
+        to the Biocrates kit manual.
+      parameters:
+        software: MetIDQ Oxygen DB110-3005
+    - kind: missing-value-removal
+      description: Authors retained metabolites present in at least 80% of samples, yielding
+        138 of 188 measured metabolites.
+      parameters:
+        axis: columns
+        minimum_presence: 80%
+    - kind: imputation
+      description: Authors substituted missing measurements with half the metabolite's limit
+        of detection in each batch.
+      parameters:
+        method: half limit of detection per batch
+    notes: The table is processed metabolomics data, not raw spectra. The paper describes
+      further model-specific processing for its experiments; those operations are not reproduced
+      here.
+  datamonger:
+    status: none
+    evidence:
+    - curation/godlewski2023/1/prepare.py
+    - curation/godlewski2023/1/DATASET.md
+    notes: Only lossless XLSX-to-CSV conversion and gzip compression. Retains all samples,
+      original labels, identifiers, measurements, names, and ordering; no statistical transformations
+      are applied.
+provenance:
+  provider: Datamonger; derived from Godlewski et al., Scientific Reports
+  upstream_name: Supplementary Table S2
+  upstream_id: 10.1038/s41598-023-38243-1; Table S2
+  upstream_version: sha256:8b532fe953400725c5e5e13541adf984652954ff7ee8c71618381eddd9ada717
+  landing_page: https://www.nature.com/articles/s41598-023-38243-1
+  retrieved_at: '2026-10-20'
+  authors:
+  - Adrian Godlewski
+  - Marcin Czajkowski
+  - Patrycja Mojsak
+  - Tomasz Pienkowski
+  - Wioleta Gosk
+  - Tomasz Lyson
+  - Zenon Mariak
+  - Joanna Reszec
+  - Marcin Kondraciuk
+  - Karol Kaminski
+  - Marek Kretowski
+  - Marcin Moniuszko
+  - Adam Kretowski
+  - Michal Ciborowski
+  citation: 'Godlewski A et al. (2023). A comparison of different machine-learning techniques
+    for the selection of a panel of metabolites allowing early detection of brain tumors.
+    Scientific Reports 13:11044. doi:10.1038/s41598-023-38243-1. Supplementary Table S2. Datamonger
+    portable representation, version 1: doi:10.5281/zenodo.23498714.'
+license:
+  status: known
+  identifier: CC-BY-4.0
+  url: https://creativecommons.org/licenses/by/4.0/
+  evidence: The article licenses its material under CC BY 4.0, subject to separately credited
+    third-party material. Its data-availability statement identifies the supplements as part
+    of the work. No separate restriction or third-party credit appears in Table S2. This automated
+    source review applies the article license to that table and its lossless CSV conversion,
+    retaining attribution and documenting the format change. See curation/godlewski2023/1/RIGHTS.md.
+  reviewed_by: Codex (automated source review)
+  reviewed_at: '2026-10-20'
+artifacts:
+- name: data
+  format: csv
+  compression: gzip
+  size: 78841
+  sha256: 1e65240b2b258bf32f85eac48518bea57e6579ebce3911daec783e07c38ecfcb
+  distribution: mirror
+  downloads:
+  - kind: mirror
+    url: https://zenodo.org/api/records/23498714/files/data.csv.gz/content
+  preservation:
+    status: durable
+    deposit: https://doi.org/10.5281/zenodo.23498714
+    evidence: Published version-specific Zenodo dataset deposit with public record and file
+      access. All seven files were downloaded anonymously and matched their prepared SHA-256
+      digests on 2026-10-20. The artifact, three preparation and verification scripts, source
+      provenance, public README, and scoped MIT license are deposited. CC BY 4.0 source review
+      is recorded in curation/godlewski2023/1/RIGHTS.md; publication and download verification
+      are recorded in curation/godlewski2023/1/zenodo-record.json. This automated deposit
+      review is not an independent release attestation.
+    reviewed_by: Codex (automated deposit verification)
+    reviewed_at: '2026-10-20'
+representation:
+  decoder: delimited-text
+  decoder_version: 1
+  inputs:
+    data: data
+  options:
+    encoding: utf-8
+    delimiter: ','
+    header: true
+    quote: '"'
+    escape: double
+    row_order: source
+    missing_values: []
+    columns:
+    - name: Sample Name
+      type: int64
+    - name: Sample type
+      type: string
+    - name: Carnitine
+      type: float64
+    - name: Acetylcarnitine
+      type: float64
+    - name: Propionylcarnitine
+      type: float64
+    - name: Butyrylcarnitine
+      type: float64
+    - name: Valerylcarnitine
+      type: float64
+    - name: Decanoylcarnitine
+      type: float64
+    - name: Tetradecenoylcarnitine
+      type: float64
+    - name: Hexadecanoylcarnitine
+      type: float64
+    - name: Octadecanoylcarnitine
+      type: float64
+    - name: Octadecenoylcarnitine
+      type: float64
+    - name: Octadecadienylcarnitine
+      type: float64
+    - name: Alanine
+      type: float64
+    - name: Arginine
+      type: float64
+    - name: Asparagine
+      type: float64
+    - name: Aspartate
+      type: float64
+    - name: Citrulline
+      type: float64
+    - name: Glutamine
+      type: float64
+    - name: Glutamate
+      type: float64
+    - name: Glycine
+      type: float64
+    - name: Histidine
+      type: float64
+    - name: Isoleucine
+      type: float64
+    - name: Leucine
+      type: float64
+    - name: Lysine
+      type: float64
+    - name: Methionine
+      type: float64
+    - name: Ornithine
+      type: float64
+    - name: Phenylalanine
+      type: float64
+    - name: Proline
+      type: float64
+    - name: Serine
+      type: float64
+    - name: Threonine
+      type: float64
+    - name: Tryptophan
+      type: float64
+    - name: Tyrosine
+      type: float64
+    - name: Valine
+      type: float64
+    - name: Asymmetric dimethylarginine
+      type: float64
+    - name: alpha-Aminoadipic acid
+      type: float64
+    - name: Creatinine
+      type: float64
+    - name: Kynurenine
+      type: float64
+    - name: Methionine sulfoxide
+      type: float64
+    - name: Putrescine
+      type: float64
+    - name: Sarcosine
+      type: float64
+    - name: Symmetric dimethylarginine
+      type: float64
+    - name: Serotonin
+      type: float64
+    - name: trans-4-Hydroxyproline
+      type: float64
+    - name: Taurine
+      type: float64
+    - name: lysoPC a C14:0
+      type: float64
+    - name: lysoPC a C16:0
+      type: float64
+    - name: lysoPC a C16:1
+      type: float64
+    - name: lysoPC a C17:0
+      type: float64
+    - name: lysoPC a C18:0
+      type: float64
+    - name: lysoPC a C18:1
+      type: float64
+    - name: lysoPC a C18:2
+      type: float64
+    - name: lysoPC a C20:3
+      type: float64
+    - name: lysoPC a C20:4
+      type: float64
+    - name: lysoPC a C24:0
+      type: float64
+    - name: lysoPC a C28:1
+      type: float64
+    - name: PC aa C28:1
+      type: float64
+    - name: PC aa C30:0
+      type: float64
+    - name: PC aa C32:0
+      type: float64
+    - name: PC aa C32:1
+      type: float64
+    - name: PC aa C32:2
+      type: float64
+    - name: PC aa C32:3
+      type: float64
+    - name: PC aa C34:1
+      type: float64
+    - name: PC aa C34:2
+      type: float64
+    - name: PC aa C34:3
+      type: float64
+    - name: PC aa C34:4
+      type: float64
+    - name: PC aa C36:0
+      type: float64
+    - name: PC aa C36:1
+      type: float64
+    - name: PC aa C36:2
+      type: float64
+    - name: PC aa C36:3
+      type: float64
+    - name: PC aa C36:4
+      type: float64
+    - name: PC aa C36:5
+      type: float64
+    - name: PC aa C36:6
+      type: float64
+    - name: PC aa C38:0
+      type: float64
+    - name: PC aa C38:1
+      type: float64
+    - name: PC aa C38:3
+      type: float64
+    - name: PC aa C38:4
+      type: float64
+    - name: PC aa C38:5
+      type: float64
+    - name: PC aa C38:6
+      type: float64
+    - name: PC aa C40:2
+      type: float64
+    - name: PC aa C40:3
+      type: float64
+    - name: PC aa C40:4
+      type: float64
+    - name: PC aa C40:5
+      type: float64
+    - name: PC aa C40:6
+      type: float64
+    - name: PC aa C42:0
+      type: float64
+    - name: PC aa C42:1
+      type: float64
+    - name: PC aa C42:2
+      type: float64
+    - name: PC aa C42:4
+      type: float64
+    - name: PC aa C42:5
+      type: float64
+    - name: PC aa C42:6
+      type: float64
+    - name: PC ae C30:0
+      type: float64
+    - name: PC ae C30:2
+      type: float64
+    - name: PC ae C32:1
+      type: float64
+    - name: PC ae C32:2
+      type: float64
+    - name: PC ae C34:0
+      type: float64
+    - name: PC ae C34:1
+      type: float64
+    - name: PC ae C34:2
+      type: float64
+    - name: PC ae C34:3
+      type: float64
+    - name: PC ae C36:0
+      type: float64
+    - name: PC ae C36:1
+      type: float64
+    - name: PC ae C36:2
+      type: float64
+    - name: PC ae C36:3
+      type: float64
+    - name: PC ae C36:4
+      type: float64
+    - name: PC ae C36:5
+      type: float64
+    - name: PC ae C38:0
+      type: float64
+    - name: PC ae C38:2
+      type: float64
+    - name: PC ae C38:3
+      type: float64
+    - name: PC ae C38:4
+      type: float64
+    - name: PC ae C38:5
+      type: float64
+    - name: PC ae C38:6
+      type: float64
+    - name: PC ae C40:1
+      type: float64
+    - name: PC ae C40:2
+      type: float64
+    - name: PC ae C40:3
+      type: float64
+    - name: PC ae C40:4
+      type: float64
+    - name: PC ae C40:5
+      type: float64
+    - name: PC ae C40:6
+      type: float64
+    - name: PC ae C42:1
+      type: float64
+    - name: PC ae C42:2
+      type: float64
+    - name: PC ae C42:3
+      type: float64
+    - name: PC ae C42:4
+      type: float64
+    - name: PC ae C42:5
+      type: float64
+    - name: PC ae C44:3
+      type: float64
+    - name: PC ae C44:4
+      type: float64
+    - name: PC ae C44:5
+      type: float64
+    - name: PC ae C44:6
+      type: float64
+    - name: SM (OH) C14:1
+      type: float64
+    - name: SM (OH) C16:1
+      type: float64
+    - name: SM (OH) C22:1
+      type: float64
+    - name: SM (OH) C22:2
+      type: float64
+    - name: SM (OH) C24:1
+      type: float64
+    - name: SM C16:0
+      type: float64
+    - name: SM C16:1
+      type: float64
+    - name: SM C18:0
+      type: float64
+    - name: SM C18:1
+      type: float64
+    - name: SM C20:2
+      type: float64
+    - name: SM C24:0
+      type: float64
+    - name: SM C24:1
+      type: float64
+    - name: SM C26:0
+      type: float64
+    - name: SM C26:1
+      type: float64
+    - name: Hexoses
+      type: float64
+  expect:
+    components:
+    - name: Sample Name
+      kind: vector
+      type: int64
+      length: 235
+    - name: Sample type
+      kind: vector
+      type: string
+      length: 235
+    - name: Carnitine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Acetylcarnitine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Propionylcarnitine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Butyrylcarnitine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Valerylcarnitine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Decanoylcarnitine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Tetradecenoylcarnitine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Hexadecanoylcarnitine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Octadecanoylcarnitine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Octadecenoylcarnitine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Octadecadienylcarnitine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Alanine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Arginine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Asparagine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Aspartate
+      kind: vector
+      type: float64
+      length: 235
+    - name: Citrulline
+      kind: vector
+      type: float64
+      length: 235
+    - name: Glutamine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Glutamate
+      kind: vector
+      type: float64
+      length: 235
+    - name: Glycine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Histidine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Isoleucine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Leucine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Lysine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Methionine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Ornithine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Phenylalanine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Proline
+      kind: vector
+      type: float64
+      length: 235
+    - name: Serine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Threonine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Tryptophan
+      kind: vector
+      type: float64
+      length: 235
+    - name: Tyrosine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Valine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Asymmetric dimethylarginine
+      kind: vector
+      type: float64
+      length: 235
+    - name: alpha-Aminoadipic acid
+      kind: vector
+      type: float64
+      length: 235
+    - name: Creatinine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Kynurenine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Methionine sulfoxide
+      kind: vector
+      type: float64
+      length: 235
+    - name: Putrescine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Sarcosine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Symmetric dimethylarginine
+      kind: vector
+      type: float64
+      length: 235
+    - name: Serotonin
+      kind: vector
+      type: float64
+      length: 235
+    - name: trans-4-Hydroxyproline
+      kind: vector
+      type: float64
+      length: 235
+    - name: Taurine
+      kind: vector
+      type: float64
+      length: 235
+    - name: lysoPC a C14:0
+      kind: vector
+      type: float64
+      length: 235
+    - name: lysoPC a C16:0
+      kind: vector
+      type: float64
+      length: 235
+    - name: lysoPC a C16:1
+      kind: vector
+      type: float64
+      length: 235
+    - name: lysoPC a C17:0
+      kind: vector
+      type: float64
+      length: 235
+    - name: lysoPC a C18:0
+      kind: vector
+      type: float64
+      length: 235
+    - name: lysoPC a C18:1
+      kind: vector
+      type: float64
+      length: 235
+    - name: lysoPC a C18:2
+      kind: vector
+      type: float64
+      length: 235
+    - name: lysoPC a C20:3
+      kind: vector
+      type: float64
+      length: 235
+    - name: lysoPC a C20:4
+      kind: vector
+      type: float64
+      length: 235
+    - name: lysoPC a C24:0
+      kind: vector
+      type: float64
+      length: 235
+    - name: lysoPC a C28:1
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C28:1
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C30:0
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C32:0
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C32:1
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C32:2
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C32:3
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C34:1
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C34:2
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C34:3
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C34:4
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C36:0
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C36:1
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C36:2
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C36:3
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C36:4
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C36:5
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C36:6
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C38:0
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C38:1
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C38:3
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C38:4
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C38:5
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C38:6
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C40:2
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C40:3
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C40:4
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C40:5
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C40:6
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C42:0
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C42:1
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C42:2
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C42:4
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C42:5
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC aa C42:6
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C30:0
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C30:2
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C32:1
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C32:2
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C34:0
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C34:1
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C34:2
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C34:3
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C36:0
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C36:1
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C36:2
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C36:3
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C36:4
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C36:5
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C38:0
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C38:2
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C38:3
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C38:4
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C38:5
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C38:6
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C40:1
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C40:2
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C40:3
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C40:4
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C40:5
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C40:6
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C42:1
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C42:2
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C42:3
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C42:4
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C42:5
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C44:3
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C44:4
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C44:5
+      kind: vector
+      type: float64
+      length: 235
+    - name: PC ae C44:6
+      kind: vector
+      type: float64
+      length: 235
+    - name: SM (OH) C14:1
+      kind: vector
+      type: float64
+      length: 235
+    - name: SM (OH) C16:1
+      kind: vector
+      type: float64
+      length: 235
+    - name: SM (OH) C22:1
+      kind: vector
+      type: float64
+      length: 235
+    - name: SM (OH) C22:2
+      kind: vector
+      type: float64
+      length: 235
+    - name: SM (OH) C24:1
+      kind: vector
+      type: float64
+      length: 235
+    - name: SM C16:0
+      kind: vector
+      type: float64
+      length: 235
+    - name: SM C16:1
+      kind: vector
+      type: float64
+      length: 235
+    - name: SM C18:0
+      kind: vector
+      type: float64
+      length: 235
+    - name: SM C18:1
+      kind: vector
+      type: float64
+      length: 235
+    - name: SM C20:2
+      kind: vector
+      type: float64
+      length: 235
+    - name: SM C24:0
+      kind: vector
+      type: float64
+      length: 235
+    - name: SM C24:1
+      kind: vector
+      type: float64
+      length: 235
+    - name: SM C26:0
+      kind: vector
+      type: float64
+      length: 235
+    - name: SM C26:1
+      kind: vector
+      type: float64
+      length: 235
+    - name: Hexoses
+      kind: vector
+      type: float64
+      length: 235
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: f487f2465c157a250795bdcea53ac3bb935e4b8a41d93a8f3fd7d5286294f287
+tasks:
+- name: default
+  type: classification
+  features:
+  - Carnitine
+  - Acetylcarnitine
+  - Propionylcarnitine
+  - Butyrylcarnitine
+  - Valerylcarnitine
+  - Decanoylcarnitine
+  - Tetradecenoylcarnitine
+  - Hexadecanoylcarnitine
+  - Octadecanoylcarnitine
+  - Octadecenoylcarnitine
+  - Octadecadienylcarnitine
+  - Alanine
+  - Arginine
+  - Asparagine
+  - Aspartate
+  - Citrulline
+  - Glutamine
+  - Glutamate
+  - Glycine
+  - Histidine
+  - Isoleucine
+  - Leucine
+  - Lysine
+  - Methionine
+  - Ornithine
+  - Phenylalanine
+  - Proline
+  - Serine
+  - Threonine
+  - Tryptophan
+  - Tyrosine
+  - Valine
+  - Asymmetric dimethylarginine
+  - alpha-Aminoadipic acid
+  - Creatinine
+  - Kynurenine
+  - Methionine sulfoxide
+  - Putrescine
+  - Sarcosine
+  - Symmetric dimethylarginine
+  - Serotonin
+  - trans-4-Hydroxyproline
+  - Taurine
+  - lysoPC a C14:0
+  - lysoPC a C16:0
+  - lysoPC a C16:1
+  - lysoPC a C17:0
+  - lysoPC a C18:0
+  - lysoPC a C18:1
+  - lysoPC a C18:2
+  - lysoPC a C20:3
+  - lysoPC a C20:4
+  - lysoPC a C24:0
+  - lysoPC a C28:1
+  - PC aa C28:1
+  - PC aa C30:0
+  - PC aa C32:0
+  - PC aa C32:1
+  - PC aa C32:2
+  - PC aa C32:3
+  - PC aa C34:1
+  - PC aa C34:2
+  - PC aa C34:3
+  - PC aa C34:4
+  - PC aa C36:0
+  - PC aa C36:1
+  - PC aa C36:2
+  - PC aa C36:3
+  - PC aa C36:4
+  - PC aa C36:5
+  - PC aa C36:6
+  - PC aa C38:0
+  - PC aa C38:1
+  - PC aa C38:3
+  - PC aa C38:4
+  - PC aa C38:5
+  - PC aa C38:6
+  - PC aa C40:2
+  - PC aa C40:3
+  - PC aa C40:4
+  - PC aa C40:5
+  - PC aa C40:6
+  - PC aa C42:0
+  - PC aa C42:1
+  - PC aa C42:2
+  - PC aa C42:4
+  - PC aa C42:5
+  - PC aa C42:6
+  - PC ae C30:0
+  - PC ae C30:2
+  - PC ae C32:1
+  - PC ae C32:2
+  - PC ae C34:0
+  - PC ae C34:1
+  - PC ae C34:2
+  - PC ae C34:3
+  - PC ae C36:0
+  - PC ae C36:1
+  - PC ae C36:2
+  - PC ae C36:3
+  - PC ae C36:4
+  - PC ae C36:5
+  - PC ae C38:0
+  - PC ae C38:2
+  - PC ae C38:3
+  - PC ae C38:4
+  - PC ae C38:5
+  - PC ae C38:6
+  - PC ae C40:1
+  - PC ae C40:2
+  - PC ae C40:3
+  - PC ae C40:4
+  - PC ae C40:5
+  - PC ae C40:6
+  - PC ae C42:1
+  - PC ae C42:2
+  - PC ae C42:3
+  - PC ae C42:4
+  - PC ae C42:5
+  - PC ae C44:3
+  - PC ae C44:4
+  - PC ae C44:5
+  - PC ae C44:6
+  - SM (OH) C14:1
+  - SM (OH) C16:1
+  - SM (OH) C22:1
+  - SM (OH) C22:2
+  - SM (OH) C24:1
+  - SM C16:0
+  - SM C16:1
+  - SM C18:0
+  - SM C18:1
+  - SM C20:2
+  - SM C24:0
+  - SM C24:1
+  - SM C26:0
+  - SM C26:1
+  - Hexoses
+  target: Sample type

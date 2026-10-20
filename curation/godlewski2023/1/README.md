@@ -1,6 +1,6 @@
 # Preparing the Godlewski2023 metabolomics table
 
-The intended identity is `datamonger:godlewski2023@1`. Preparation uses the original
+The dataset identity is `datamonger:godlewski2023@1`. Preparation uses the original
 Supplementary Table S2 from Godlewski et al. (2023), not SLOPE's binary example.
 `DATASET.md` is the public documentation, uploaded as `README.md`.
 `RIGHTS.md` records the CC BY 4.0 source review.
@@ -33,22 +33,21 @@ review required by `OPERATIONS.md`.
 The R command clears Python's manylinux library path so Nix's R helpers use
 their own libraries.
 
-## Deposit and register
+## Published deposit and registry entry
 
-The seven public files are listed in `DATASET.md`. Upload only those files;
-keep this maintainer README, rights assessment, source workbook, and local
-manifest outside the deposit. Record the original authors as creators, the
-paper DOI as the source, version 1, open file access, and CC BY 4.0 for the
-data. Distinguish the preparation code's MIT license in the public description.
+Version 1 was published on October 20, 2026, at
+[Zenodo](https://doi.org/10.5281/zenodo.23498714), following the user's
+authorization. `zenodo-record.json` records publication, open record and file
+access, rights, and SHA-256 verification of anonymous downloads of all seven
+files listed in `DATASET.md`. The record credits the original authors as
+creators and Datamonger as data curator. Its description and public README
+scope CC BY 4.0 to the data and MIT to preparation code and documentation.
+This maintainer README, rights assessment, source workbook, and local
+manifest are not deposited.
 
-Public publication and registration were authorized by the user on
-October 20, 2026. Resume any existing deposit from `zenodo-record.json` instead
-of creating a duplicate. Record its ID promptly. After publication, verify
-the DOI, rights, record and file access, and anonymously downloaded hashes
-for all seven files.
-
-Only then author `registry/datasets/datamonger/godlewski2023-1.yaml` with `dm-add`
-against the public, version-specific CSV URL, record the preservation review,
-and select the manifest and default in `registry/collection.yaml`. Validate
-the updated collection in a temporary release after historical sequences.
-Dataset publication does not authorize a registry release.
+`registry/datasets/datamonger/godlewski2023-1.yaml` uses the public,
+version-specific CSV URL and records the preservation review. Recheck it
+with `dm-add` when auditing the deposit. The manifest and default are selected
+in `registry/collection.yaml`; validate collection changes in a temporary
+release after historical sequences. A registry release still requires the
+independent review and publication workflow in `OPERATIONS.md`.

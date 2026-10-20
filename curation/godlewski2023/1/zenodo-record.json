@@ -1,0 +1,123 @@
+{
+  "dataset_id": "datamonger:godlewski2023@1",
+  "id": "23498714",
+  "state": "published",
+  "url": "https://zenodo.org/records/23498714",
+  "draft_url": "https://zenodo.org/uploads/23498714",
+  "publication_authorization": "User requested public Zenodo publication and completion of this curation branch on 2026-10-20.",
+  "rights_review": "CC BY 4.0 source review in curation/godlewski2023/1/RIGHTS.md; MIT applies to preparation code and documentation.",
+  "doi": "10.5281/zenodo.23498714",
+  "access": {
+    "record": "public",
+    "files": "public",
+    "embargo": {
+      "active": false,
+      "reason": null
+    },
+    "status": "open"
+  },
+  "rights": [
+    {
+      "id": "cc-by-4.0",
+      "title": {
+        "en": "Creative Commons Attribution 4.0 International"
+      },
+      "description": {
+        "en": "The Creative Commons Attribution license allows re-distribution and re-use of a licensed work on the condition that the creator is appropriately credited."
+      },
+      "icon": "cc-by-icon",
+      "props": {
+        "url": "https://creativecommons.org/licenses/by/4.0/legalcode",
+        "scheme": "spdx"
+      }
+    },
+    {
+      "id": "mit",
+      "title": {
+        "en": "MIT License"
+      },
+      "description": {
+        "en": "A short and simple permissive license with conditions only requiring preservation of copyright and license notices. Licensed works, modifications, and larger works may be distributed under different terms and without source code."
+      },
+      "props": {
+        "url": "https://opensource.org/licenses/MIT",
+        "scheme": "spdx"
+      }
+    }
+  ],
+  "files_sha256": {
+    "data.csv.gz": "1e65240b2b258bf32f85eac48518bea57e6579ebce3911daec783e07c38ecfcb",
+    "README.md": "e987d8a649b240174cdbb07adaf6df4e6bf17f115a9b0ee0526e78fa2bbee103",
+    "prepare.py": "e39eb68fb56abbb4f995fcca091bafce5fd1283321fe650ba14a67d87c1dab45",
+    "verify.py": "a5c7431e3e42df95333631c3c469701a0ca28819f070b7aaaf11912da34cad98",
+    "verify.R": "71e86f2027ff8088ec53500b6f19c113358d114521181c8b32e1aaadc1adb32f",
+    "provenance.json": "3c2bd9cfcd55e95074a856c57d61108f39a778a410de54e1bbc26ea82547bdbd",
+    "LICENSE": "bfc2dd3b099506cc71e65e8af09e3f9b3860d8fddf59801b30313c5d21caac36"
+  },
+  "rights_scope": "CC BY 4.0 applies to data; MIT applies only to preparation code and documentation. Zenodo supplies standard vocabulary descriptions for license IDs; the public record description and README state these scopes.",
+  "draft_download_verification": "All seven uploaded files downloaded with authentication and matched prepared SHA-256 digests on 2026-10-20.",
+  "prepublication_checks": {
+    "reviewed_by": "Codex (automated curation review)",
+    "reviewed_at": "2026-10-20",
+    "source_size_and_sha256": "matched freshly downloaded publisher workbook",
+    "workbook_comparison": "all 32,900 data cells and 140 headers matched independently with openpyxl 3.1.5, including binary64 numeric equality",
+    "repeatability": "two preparation runs produced identical data.csv.gz bytes",
+    "canonical_verification": "R and Python decoder SHA-256 digests matched",
+    "canonical_form_1_sha256": "f487f2465c157a250795bdcea53ac3bb935e4b8a41d93a8f3fd7d5286294f287",
+    "documentation_and_metadata": "Reviewed title, description, README, seven-file inventory, original author attribution, source relationships, version, scoped CC BY 4.0 data and MIT code/documentation rights, and public record/file access.",
+    "limitations": "Automated curation checks are not an independent registry-release attestation. The table has 94 glioma rows; the paper reports 95.",
+    "repository_quality_gate": "devenv test passed on 2026-10-20",
+    "candidate_collection": "Manifest schema and temporary next-sequence collection evolution validation passed before publication."
+  },
+  "submitted": true,
+  "download_verification": "anonymous-public",
+  "data_url": "https://zenodo.org/api/records/23498714/files/data.csv.gz/content",
+  "verified_by": "Codex (automated download verification)",
+  "verified_at": "2026-10-20",
+  "verified_files": {
+    "README.md": {
+      "url": "https://zenodo.org/api/records/23498714/files/README.md/content",
+      "size": 6117,
+      "sha256": "e987d8a649b240174cdbb07adaf6df4e6bf17f115a9b0ee0526e78fa2bbee103"
+    },
+    "LICENSE": {
+      "url": "https://zenodo.org/api/records/23498714/files/LICENSE/content",
+      "size": 1080,
+      "sha256": "bfc2dd3b099506cc71e65e8af09e3f9b3860d8fddf59801b30313c5d21caac36"
+    },
+    "verify.R": {
+      "url": "https://zenodo.org/api/records/23498714/files/verify.R/content",
+      "size": 1057,
+      "sha256": "71e86f2027ff8088ec53500b6f19c113358d114521181c8b32e1aaadc1adb32f"
+    },
+    "provenance.json": {
+      "url": "https://zenodo.org/api/records/23498714/files/provenance.json/content",
+      "size": 2767,
+      "sha256": "3c2bd9cfcd55e95074a856c57d61108f39a778a410de54e1bbc26ea82547bdbd"
+    },
+    "prepare.py": {
+      "url": "https://zenodo.org/api/records/23498714/files/prepare.py/content",
+      "size": 14923,
+      "sha256": "e39eb68fb56abbb4f995fcca091bafce5fd1283321fe650ba14a67d87c1dab45"
+    },
+    "data.csv.gz": {
+      "url": "https://zenodo.org/api/records/23498714/files/data.csv.gz/content",
+      "size": 78841,
+      "sha256": "1e65240b2b258bf32f85eac48518bea57e6579ebce3911daec783e07c38ecfcb"
+    },
+    "verify.py": {
+      "url": "https://zenodo.org/api/records/23498714/files/verify.py/content",
+      "size": 2127,
+      "sha256": "a5c7431e3e42df95333631c3c469701a0ca28819f070b7aaaf11912da34cad98"
+    }
+  },
+  "postpublication_checks": {
+    "reviewed_by": "Codex (automated publication verification)",
+    "reviewed_at": "2026-10-20",
+    "doi_resolution": "Version-specific DOI resolved anonymously to https://zenodo.org/records/23498714 with HTTP 200.",
+    "manifest_authoring": "dm-add re-fetched the public version-specific artifact and verified its size, SHA-256, gzip compression, all 140 decoded components, and canonical digest.",
+    "collection_validation": "Final collection passed dm-index build in temporary staging at a sequence after all historical releases.",
+    "repository_consistency": "Committed public documentation and script bytes match published SHA-256 digests; manifest artifact and canonical digests match the receipt.",
+    "live_checks": "Fresh publisher workbook retrieval and all seven public Zenodo downloads verified. Unrelated client live-source smoke suites were not run."
+  }
+}

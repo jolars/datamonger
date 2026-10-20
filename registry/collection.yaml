@@ -2,6 +2,7 @@ schema_version: 1
 repository: jolars/datamonger
 manifests:
 - registry/datasets/datamonger/brca1-1.yaml
+- registry/datasets/datamonger/godlewski2023-1.yaml
 - registry/datasets/datamonger/koussounadis2014-1.yaml
 - registry/datasets/datamonger/scheetz2006-1.yaml
 - registry/datasets/libsvm/cadata-1.yaml
@@ -19,6 +20,9 @@ manifests:
 defaults:
 - source: datamonger
   name: brca1
+  version: '1'
+- source: datamonger
+  name: godlewski2023
   version: '1'
 - source: datamonger
   name: koussounadis2014
