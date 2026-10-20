@@ -1,9 +1,8 @@
 # Preparing unscaled Gisette
 
-The proposed dataset identity is `datamonger:guyon2004-gisette@1`, following
+The dataset identity is `datamonger:guyon2004-gisette@1`, following
 the first author and year in the official NIPS 2004 proceedings. The suffix
-distinguishes Gisette from the other datasets in that paper. No matching
-identity exists in the registry or curation directories.
+distinguishes Gisette from the other datasets in that paper.
 
 This preparation preserves the original UCI challenge feature values. It
 does not use LIBSVM's scaled Gisette artifacts. `DATASET.md` contains the
@@ -54,8 +53,26 @@ assembly or unlabeled LIBSVM input in the existing decoder contracts. Review
 how to expose this artifact before registering the full dataset.
 
 The local manifest uses `metadata-only` artifacts without download locations.
-Do not select it in `registry/collection.yaml`. No files have been deposited
-or published. A later authorized deposit needs a deliberate public file set,
-consistent metadata and attribution, and anonymous download verification.
-Production registration still requires real version-specific artifact URLs,
-`dm-add`, collection validation, and the normal release review.
+Do not select it in `registry/collection.yaml`. General split support remains
+tracked in [TODO.md](../../../TODO.md). Production registration still requires
+real version-specific artifact URLs, `dm-add`, collection validation, and the
+normal release review.
+
+## Published deposit
+
+Version 1 was published on October 20, 2026, at
+[doi:10.5281/zenodo.23508592](https://doi.org/10.5281/zenodo.23508592), following
+the user's authorization. `zenodo-record.json` records publication, public
+record and file visibility, scoped CC BY 4.0 data and MIT code/documentation
+rights, and anonymous download verification of all nine files listed in
+`DATASET.md`. Every file matched its prepared size and SHA-256, and the DOI
+resolved anonymously to the published record.
+
+The deposited scripts match the committed preparation recipes. The public
+README adds the complete file inventory and reproduction instructions, and
+the deposited provenance records its updated hash. `preparation.json` retains
+the earlier local review receipt; `zenodo-record.json` records the final
+published file hashes. The source ZIP, local decoding recipes, maintainer
+README, source rights assessment, and repository receipts are not deposited.
+The dataset has not been added to the production collection, and no registry
+release was published.

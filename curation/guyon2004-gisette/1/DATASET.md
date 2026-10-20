@@ -15,6 +15,11 @@ before LIBSVM's additional feature scaling.
 | `validation.libsvm.gz` | 1,000 | 5,000 | 500 each of `-1` and `+1` |
 | `test-features.csv.gz` | 6,500 | 5,000 | Unavailable |
 
+The other six files are `README.md` (this document), `prepare.py` and
+`verify.py` (reproduction and verification scripts), `provenance.json`
+(source, artifact, and environment records), `verification.json` (conversion
+check results), and `LICENSE` (the MIT license for code and documentation).
+
 Every feature value is an integer from 0 through 999. There are no missing
 feature values. Feature positions, example order, original split membership,
 and available labels are preserved. The digit associated with each label
@@ -62,7 +67,18 @@ label with an independent NumPy read of the source, checks decoded canonical
 digests, and compares Rust and Python canonical encoders. Reproduction requires
 the [Datamonger repository](https://github.com/jolars/datamonger), including
 its `tools/` and `packages/python/tests/reference/` modules, and its Python
-development environment. `provenance.json` records hashes and environment
+development environment. The deposited scripts match the
+[committed preparation recipes](https://github.com/jolars/datamonger/tree/377466862d1fdc3d7f36a4cb514898196487055c/curation/guyon2004-gisette/1).
+Run the recipes from their location in that checkout, using a new output
+directory outside the repository:
+
+```console
+uv run --project packages/python python curation/guyon2004-gisette/1/prepare.py /tmp/gisette-reproduction
+uv run --project packages/python python curation/guyon2004-gisette/1/verify.py /tmp/gisette-reproduction
+```
+
+The preparation downloads the pinned source and creates the local decoding
+recipes needed by the verifier. `provenance.json` records hashes and environment
 versions, and `verification.json` records successful conversion verification.
 
 ## Citation and reuse

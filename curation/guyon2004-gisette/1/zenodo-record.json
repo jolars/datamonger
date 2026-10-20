@@ -1,0 +1,355 @@
+{
+  "dataset_id": "datamonger:guyon2004-gisette@1",
+  "id": "23508592",
+  "state": "published",
+  "url": "https://zenodo.org/records/23508592",
+  "draft_url": "https://zenodo.org/uploads/23508592",
+  "publication_authorization": "User explicitly requested publication of the prepared data on 2026-10-20.",
+  "created_at": "2026-10-20T18:12:06.716856+00:00",
+  "intended_files": {
+    "train.libsvm.gz": {
+      "size": 13629246,
+      "sha256": "efa1e30eb422958d38696f6e7ac8683f17d2153402a78a4a43a512191a9c2816"
+    },
+    "validation.libsvm.gz": {
+      "size": 2305127,
+      "sha256": "5b68b03f81f1ecb5d13822337d66a603633dde7d32b53c40ef110fd7d7fbb357"
+    },
+    "test-features.csv.gz": {
+      "size": 10723231,
+      "sha256": "7b1de06c6b8af4cd1fe02c305e115db65381b8c0fb4219d2e97637095a4dbe4a"
+    },
+    "README.md": {
+      "size": 5539,
+      "sha256": "7432fe8f99d9c38267abec5a626dd4497a488ca937ae747e6a129c7584160cf9"
+    },
+    "prepare.py": {
+      "size": 14248,
+      "sha256": "9c8693224a0b963388b33339821d58bfc49393f190d04ad009bbbcbdbcb7b8a5"
+    },
+    "verify.py": {
+      "size": 5446,
+      "sha256": "f72225dec1b8996f3515c786c04cb7d6d11c4feecb96cfbf21b6cb827d0bae2e"
+    },
+    "provenance.json": {
+      "size": 3987,
+      "sha256": "25a4c6582ec60cb5a7528dbc259ecb25f902b43ac62988a38c2502b0bd2fa8f2"
+    },
+    "verification.json": {
+      "size": 357,
+      "sha256": "91fdf07ecb057088fe96145fb3f511b4e4c7ec4c983df52132dfac8125fff5ee"
+    },
+    "LICENSE": {
+      "size": 1080,
+      "sha256": "bfc2dd3b099506cc71e65e8af09e3f9b3860d8fddf59801b30313c5d21caac36"
+    }
+  },
+  "rights_scope": "CC BY 4.0 applies to data; MIT applies only to code and documentation.",
+  "doi": "10.5281/zenodo.23508592",
+  "access": {
+    "record": "public",
+    "files": "public",
+    "embargo": {
+      "active": false,
+      "reason": null
+    },
+    "status": "open"
+  },
+  "rights": [
+    {
+      "id": "cc-by-4.0",
+      "title": {
+        "en": "Creative Commons Attribution 4.0 International"
+      },
+      "description": {
+        "en": "The Creative Commons Attribution license allows re-distribution and re-use of a licensed work on the condition that the creator is appropriately credited."
+      },
+      "icon": "cc-by-icon",
+      "props": {
+        "url": "https://creativecommons.org/licenses/by/4.0/legalcode",
+        "scheme": "spdx"
+      }
+    },
+    {
+      "id": "mit",
+      "title": {
+        "en": "MIT License"
+      },
+      "description": {
+        "en": "A short and simple permissive license with conditions only requiring preservation of copyright and license notices. Licensed works, modifications, and larger works may be distributed under different terms and without source code."
+      },
+      "props": {
+        "url": "https://opensource.org/licenses/MIT",
+        "scheme": "spdx"
+      }
+    }
+  ],
+  "uploaded_files": {
+    "train.libsvm.gz": {
+      "size": 13629246,
+      "sha256": "efa1e30eb422958d38696f6e7ac8683f17d2153402a78a4a43a512191a9c2816"
+    },
+    "validation.libsvm.gz": {
+      "size": 2305127,
+      "sha256": "5b68b03f81f1ecb5d13822337d66a603633dde7d32b53c40ef110fd7d7fbb357"
+    },
+    "test-features.csv.gz": {
+      "size": 10723231,
+      "sha256": "7b1de06c6b8af4cd1fe02c305e115db65381b8c0fb4219d2e97637095a4dbe4a"
+    },
+    "README.md": {
+      "size": 5539,
+      "sha256": "7432fe8f99d9c38267abec5a626dd4497a488ca937ae747e6a129c7584160cf9"
+    },
+    "prepare.py": {
+      "size": 14248,
+      "sha256": "9c8693224a0b963388b33339821d58bfc49393f190d04ad009bbbcbdbcb7b8a5"
+    },
+    "verify.py": {
+      "size": 5446,
+      "sha256": "f72225dec1b8996f3515c786c04cb7d6d11c4feecb96cfbf21b6cb827d0bae2e"
+    },
+    "provenance.json": {
+      "size": 3987,
+      "sha256": "25a4c6582ec60cb5a7528dbc259ecb25f902b43ac62988a38c2502b0bd2fa8f2"
+    },
+    "verification.json": {
+      "size": 357,
+      "sha256": "91fdf07ecb057088fe96145fb3f511b4e4c7ec4c983df52132dfac8125fff5ee"
+    },
+    "LICENSE": {
+      "size": 1080,
+      "sha256": "bfc2dd3b099506cc71e65e8af09e3f9b3860d8fddf59801b30313c5d21caac36"
+    }
+  },
+  "draft_download_verification": {
+    "validation.libsvm.gz": {
+      "size": 2305127,
+      "sha256": "5b68b03f81f1ecb5d13822337d66a603633dde7d32b53c40ef110fd7d7fbb357"
+    },
+    "README.md": {
+      "size": 5539,
+      "sha256": "7432fe8f99d9c38267abec5a626dd4497a488ca937ae747e6a129c7584160cf9"
+    },
+    "prepare.py": {
+      "size": 14248,
+      "sha256": "9c8693224a0b963388b33339821d58bfc49393f190d04ad009bbbcbdbcb7b8a5"
+    },
+    "verify.py": {
+      "size": 5446,
+      "sha256": "f72225dec1b8996f3515c786c04cb7d6d11c4feecb96cfbf21b6cb827d0bae2e"
+    },
+    "provenance.json": {
+      "size": 3987,
+      "sha256": "25a4c6582ec60cb5a7528dbc259ecb25f902b43ac62988a38c2502b0bd2fa8f2"
+    },
+    "verification.json": {
+      "size": 357,
+      "sha256": "91fdf07ecb057088fe96145fb3f511b4e4c7ec4c983df52132dfac8125fff5ee"
+    },
+    "LICENSE": {
+      "size": 1080,
+      "sha256": "bfc2dd3b099506cc71e65e8af09e3f9b3860d8fddf59801b30313c5d21caac36"
+    },
+    "test-features.csv.gz": {
+      "size": 10723231,
+      "sha256": "7b1de06c6b8af4cd1fe02c305e115db65381b8c0fb4219d2e97637095a4dbe4a"
+    },
+    "train.libsvm.gz": {
+      "size": 13629246,
+      "sha256": "efa1e30eb422958d38696f6e7ac8683f17d2153402a78a4a43a512191a9c2816"
+    }
+  },
+  "prepublication_checks": {
+    "reviewed_by": "Codex (automated curation review)",
+    "reviewed_at": "2026-10-20T18:14:22.835450+00:00",
+    "source_values": "All 67,500,000 feature values and 7,000 labels matched the pinned UCI source again before upload.",
+    "repeatability": "Two independent preparation runs produced identical hashes for all three data artifacts.",
+    "canonical_encoders": "Native Rust and independent Python encoders agree for the labeled splits and unlabeled test representation.",
+    "documentation_and_metadata": "Reviewed title, description, nine-file inventory, original creators, Datamonger organizational curator, source relationships, version, scoped rights, and public record/file visibility without embargo.",
+    "file_integrity": "Every uploaded file downloaded with authentication and matched its prepared size and SHA-256.",
+    "public_recipe": "Pinned GitHub prepare.py is publicly retrievable and matches the deposited script SHA-256.",
+    "quality_checks": "Existing devenv test pass retained; focused Ruff format and lint checks passed for the unchanged recipes and updated documentation.",
+    "limitations": "Automated conversion checks are not an independent registry-release attestation. General three-split returns and unlabeled targets remain a TODO; the original test data is a separate CSV."
+  },
+  "submitted": true,
+  "published_at": "2026-10-20T18:15:32.916542+00:00",
+  "metadata": {
+    "title": "Gisette: original challenge feature values (Datamonger representation, version 1)",
+    "description": "<p>Lossless portable representation of the original Gisette feature values and splits supplied by the UCI Machine Learning Repository for the NIPS 2003 feature selection challenge. The task distinguishes handwritten digits 4 and 9 using 5,000 prepared features, including distractor probes. The challenge producers had already normalized and centered digit images, constructed pixel-based features, and randomized examples and features. Datamonger adds no scaling, centering, imputation, feature selection, sample exclusion, or label remapping.</p><p>The training set has 6,000 rows, the validation set has 1,000 rows, and the original unlabeled test set has 6,500 rows. All features retain their original integer values from 0 through 999. Training and validation retain the original -1/+1 labels and are distributed as gzip-compressed LIBSVM files with a declared dimension of 5,000. Test features are a gzip-compressed CSV with positional columns x1 through x5000 and no invented labels. The original test labels remain withheld by the source.</p><p>Nine files are included: train.libsvm.gz, validation.libsvm.gz, test-features.csv.gz, README.md, prepare.py, verify.py, provenance.json, verification.json, and LICENSE. The scripts require the Datamonger repository and its Python development environment. Preparation pins source bytes and checks dimensions, label counts, and source checksums. Verification compares all 67,500,000 feature values and 7,000 labels with an independent source read, and native Rust and independent Python canonical encoders agree. Two preparations produced identical data artifact hashes. These automated conversion checks are not an independent registry-release attestation.</p><p><strong>Reuse terms:</strong> CC BY 4.0 applies to the data, following UCI's explicit license statement. Credit Isabelle Guyon, Steve Gunn, Asa Ben-Hur, Gideon Dror, and UCI, link CC BY 4.0, and identify this lossless format conversion and compression. MIT applies only to the preparation code and accompanying documentation.</p><p>The current Datamonger split decoder exposes the original validation artifact through its fixed test field; task metadata calls it validation. The original unlabeled test CSV is a separate artifact and is not included in that decoder return value.</p>",
+    "publication_date": "2026-10-20",
+    "publisher": "Zenodo",
+    "version": "1",
+    "creators": [
+      {
+        "person_or_org": {
+          "type": "personal",
+          "name": "Guyon, Isabelle",
+          "given_name": "Isabelle",
+          "family_name": "Guyon"
+        }
+      },
+      {
+        "person_or_org": {
+          "type": "personal",
+          "name": "Gunn, Steve",
+          "given_name": "Steve",
+          "family_name": "Gunn"
+        }
+      },
+      {
+        "person_or_org": {
+          "type": "personal",
+          "name": "Ben-Hur, Asa",
+          "given_name": "Asa",
+          "family_name": "Ben-Hur"
+        }
+      },
+      {
+        "person_or_org": {
+          "type": "personal",
+          "name": "Dror, Gideon",
+          "given_name": "Gideon",
+          "family_name": "Dror"
+        }
+      }
+    ],
+    "contributors": [
+      {
+        "person_or_org": {
+          "type": "organizational",
+          "name": "Datamonger"
+        },
+        "role": {
+          "id": "datacurator",
+          "title": {
+            "de": "DatenkuratorIn",
+            "en": "Data curator"
+          }
+        }
+      }
+    ],
+    "resource_type": {
+      "id": "dataset",
+      "title": {
+        "de": "Datensatz",
+        "en": "Dataset"
+      }
+    },
+    "related_identifiers": [
+      {
+        "identifier": "10.24432/C5HP5B",
+        "scheme": "doi",
+        "relation_type": {
+          "id": "isderivedfrom",
+          "title": {
+            "de": "Wird abgeleitet von",
+            "en": "Is derived from"
+          }
+        },
+        "resource_type": {
+          "id": "dataset",
+          "title": {
+            "de": "Datensatz",
+            "en": "Dataset"
+          }
+        }
+      },
+      {
+        "identifier": "https://proceedings.neurips.cc/paper_files/paper/2004/hash/5e751896e527c862bf67251a474b3819-Abstract.html",
+        "scheme": "url",
+        "relation_type": {
+          "id": "isdocumentedby",
+          "title": {
+            "de": "Wird dokumentiert von",
+            "en": "Is documented by"
+          }
+        }
+      },
+      {
+        "identifier": "https://github.com/jolars/datamonger/tree/377466862d1fdc3d7f36a4cb514898196487055c/curation/guyon2004-gisette/1",
+        "scheme": "url",
+        "relation_type": {
+          "id": "isdocumentedby",
+          "title": {
+            "de": "Wird dokumentiert von",
+            "en": "Is documented by"
+          }
+        }
+      },
+      {
+        "identifier": "https://github.com/jolars/datamonger",
+        "scheme": "url",
+        "relation_type": {
+          "id": "requires",
+          "title": {
+            "de": "Setzt voraus",
+            "en": "Requires"
+          }
+        }
+      }
+    ]
+  },
+  "verified_files": {
+    "train.libsvm.gz": {
+      "url": "https://zenodo.org/api/records/23508592/files/train.libsvm.gz/content",
+      "size": 13629246,
+      "sha256": "efa1e30eb422958d38696f6e7ac8683f17d2153402a78a4a43a512191a9c2816"
+    },
+    "validation.libsvm.gz": {
+      "url": "https://zenodo.org/api/records/23508592/files/validation.libsvm.gz/content",
+      "size": 2305127,
+      "sha256": "5b68b03f81f1ecb5d13822337d66a603633dde7d32b53c40ef110fd7d7fbb357"
+    },
+    "test-features.csv.gz": {
+      "url": "https://zenodo.org/api/records/23508592/files/test-features.csv.gz/content",
+      "size": 10723231,
+      "sha256": "7b1de06c6b8af4cd1fe02c305e115db65381b8c0fb4219d2e97637095a4dbe4a"
+    },
+    "README.md": {
+      "url": "https://zenodo.org/api/records/23508592/files/README.md/content",
+      "size": 5539,
+      "sha256": "7432fe8f99d9c38267abec5a626dd4497a488ca937ae747e6a129c7584160cf9"
+    },
+    "prepare.py": {
+      "url": "https://zenodo.org/api/records/23508592/files/prepare.py/content",
+      "size": 14248,
+      "sha256": "9c8693224a0b963388b33339821d58bfc49393f190d04ad009bbbcbdbcb7b8a5"
+    },
+    "verify.py": {
+      "url": "https://zenodo.org/api/records/23508592/files/verify.py/content",
+      "size": 5446,
+      "sha256": "f72225dec1b8996f3515c786c04cb7d6d11c4feecb96cfbf21b6cb827d0bae2e"
+    },
+    "provenance.json": {
+      "url": "https://zenodo.org/api/records/23508592/files/provenance.json/content",
+      "size": 3987,
+      "sha256": "25a4c6582ec60cb5a7528dbc259ecb25f902b43ac62988a38c2502b0bd2fa8f2"
+    },
+    "verification.json": {
+      "url": "https://zenodo.org/api/records/23508592/files/verification.json/content",
+      "size": 357,
+      "sha256": "91fdf07ecb057088fe96145fb3f511b4e4c7ec4c983df52132dfac8125fff5ee"
+    },
+    "LICENSE": {
+      "url": "https://zenodo.org/api/records/23508592/files/LICENSE/content",
+      "size": 1080,
+      "sha256": "bfc2dd3b099506cc71e65e8af09e3f9b3860d8fddf59801b30313c5d21caac36"
+    }
+  },
+  "download_verification": "anonymous-public",
+  "verified_at": "2026-10-20T18:17:10.270062+00:00",
+  "verified_by": "Codex (automated publication and download verification)",
+  "postpublication_checks": {
+    "record": "Published record and file inventory retrieved without credentials.",
+    "file_access": "All nine files downloaded without credentials with HTTP 200 and matched prepared sizes and SHA-256 digests.",
+    "rights": "Published CC BY 4.0 and MIT rights persisted; public description and README distinguish data from code and documentation.",
+    "registry": "Dataset files published only; no registry release or collection change is part of this publication.",
+    "live_checks": "All nine public Zenodo files verified. Unrelated published-registry live audits were not run.",
+    "doi_resolution": {
+      "status": 200,
+      "url": "https://zenodo.org/records/23508592"
+    },
+    "repository_consistency": "Repository DATASET.md, prepare.py, verify.py, and LICENSE match the published file sizes and SHA-256 digests. Data artifact hashes match the local preparation receipt."
+  }
+}

@@ -22,5 +22,6 @@ artifact or LIBSVM software license supplies the input values or rights basis.
 
 Review performed by Codex (automated source review) on October 20, 2026.
 This is a recorded source assessment, not an independent registry-release
-attestation. The user authorized local preparation for review. No deposit,
-publication, durable-preservation review, or download verification is claimed.
+attestation. The user authorized public publication on October 20, 2026.
+`zenodo-record.json` records the publication state, file visibility, and
+download verification separately from this source rights assessment.
