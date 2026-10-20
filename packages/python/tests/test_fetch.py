@@ -775,7 +775,7 @@ def test_unsupported_registry_schema_is_rejected(
     local_server: tuple[str, ServerState], tmp_path: Path
 ) -> None:
     base_url, state = local_server
-    registry = make_registry(base_url, state, schema_version=4)
+    registry = make_registry(base_url, state, schema_version=99)
 
     with pytest.raises(UnsupportedRegistryError, match="schema"):
         fetch_data(

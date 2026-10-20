@@ -258,7 +258,9 @@ def _validate_dataset(dataset: Mapping[str, Any]) -> None:
                 f"{artifact_name!r}"
             )
 
-    if decoder == "delimited-text":
+    if decoder == "named-splits":
+        _validate_named_splits(dataset)
+    elif decoder == "delimited-text":
         artifact = artifact_by_name[cast(str, inputs["data"])]
         expected_delimiter = "," if artifact.get("format") == "csv" else "\t"
         if artifact.get("format") not in {"csv", "tsv"}:
@@ -382,9 +384,71 @@ def _validate_dataset(dataset: Mapping[str, Any]) -> None:
                     raise ValueError(f"task refers to unknown component {name!r}")
 
 
+def _split_component_name(split: str, component: str) -> str:
+    return "/".join(s.replace("~", "~0").replace("/", "~1") for s in (split, component))
+
+
+def _validate_named_splits(dataset: Mapping[str, Any]) -> None:
+    representation = dataset["representation"]
+    inputs = representation["inputs"]
+    splits = representation["options"]["splits"]
+    names = [split["name"] for split in splits]
+    if len(names) != len(set(names)) or set(names) != set(inputs):
+        raise ValueError("input names must match unique declared split names")
+    components = representation["expect"]["components"]
+    expected_order = []
+    split_components = {}
+    for split in splits:
+        prefix = _split_component_name(split["name"], "")
+        child_components = [
+            {
+                **component,
+                "name": component["name"][len(prefix) :]
+                .replace("~1", "/")
+                .replace("~0", "~"),
+            }
+            for component in components
+            if component["name"].startswith(prefix)
+        ]
+        child = {
+            **dataset,
+            "tasks": [],
+            "representation": {
+                "decoder": split["decoder"],
+                "decoder_version": split["decoder_version"],
+                "inputs": {"data": inputs[split["name"]]},
+                "options": split["options"],
+                "expect": {
+                    "components": child_components,
+                    "verification": representation["expect"]["verification"],
+                },
+            },
+        }
+        _validate_dataset(child)
+        qualified = [
+            _split_component_name(split["name"], c["name"]) for c in child_components
+        ]
+        expected_order.extend(qualified)
+        split_components[split["name"]] = set(qualified)
+    if [c["name"] for c in components] != expected_order:
+        raise ValueError("named-splits components have the wrong names or order")
+    for task in dataset.get("tasks", []):
+        if "splits" not in task:
+            raise ValueError("named-splits tasks must declare split roles")
+        for name, roles in task["splits"].items():
+            if name not in split_components:
+                raise ValueError("task refers to an unknown split")
+            features = roles.get("features", [])
+            refs = [features] if isinstance(features, str) else list(features)
+            if "target" in roles:
+                refs.append(roles["target"])
+            if not set(refs) <= split_components[name]:
+                raise ValueError("task split refers to another split's components")
+
+
 def _versioned_schema(record: Mapping[str, Any], name: str) -> str:
     version = record.get("schema_version")
-    if type(version) is not int or version not in (1, 2, 3):
+    if type(version) is not int or version not in (1, 2, 3, 4):
         raise ValueError(f"unsupported {name} schema_version {version!r}")
     return f"{name}-v{version}.schema.json"
 

@@ -214,6 +214,22 @@ end
 function _validate_representation(dataset)
     representation = _require_object(get(dataset, "representation", nothing), "representation")
     decoder = get(representation, "decoder", nothing)
+    if decoder == "named-splits"
+        get(dataset, "schema_version", nothing) == 4 ||
+            throw(UnsupportedDecoderError("named-splits requires manifest schema 4"))
+        recipes = _split_recipes(representation)
+        children = map(recipes) do recipe
+            child = copy(dataset)
+            child["representation"] = Dict(
+                "decoder" => recipe["decoder"], "decoder_version" => recipe["decoder_version"],
+                "inputs" => Dict("data" => representation["inputs"][recipe["name"]]),
+                "options" => recipe["options"],
+            )
+            _validate_representation(child)
+        end
+        return (representation=representation, decoder=decoder, options=representation["options"],
+                children=children, artifacts=vcat([child.artifacts for child in children]...))
+    end
     decoder_version = get(representation, "decoder_version", nothing)
     decoder_version isa Integer && !(decoder_version isa Bool) && decoder_version == 1 &&
         decoder in ("delimited-text", "libsvm", "libsvm-split") ||
@@ -331,19 +347,7 @@ function fetch_data(
             push!(objects, _retrieve_artifact(artifact, cache_dir, offline))
         end
         paths = [object.path for object in objects]
-        decoded = if setup.decoder == "delimited-text"
-            decode_delimited(paths[1], setup.options; compression=setup.compressions[1])
-        elseif setup.decoder == "libsvm"
-            decode_libsvm(paths[1], setup.options; compression=setup.compressions[1])
-        else
-            decode_libsvm_split(
-                paths[1],
-                paths[2],
-                setup.options;
-                train_compression=setup.compressions[1],
-                test_compression=setup.compressions[2],
-            )
-        end
+        decoded = _decode_setup(setup, paths)
 
         verification = :artifact
         canonical_form = nothing

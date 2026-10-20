@@ -13,8 +13,8 @@ from datamonger._validate import require_array, require_mapping, require_string
 def preprocessing_metadata(dataset: Mapping[str, Any]) -> Mapping[str, Any] | None:
     if "preprocessing" not in dataset:
         return None
-    if dataset.get("schema_version") != 3:
-        raise UnsupportedRegistryError("preprocessing requires manifest schema 3")
+    if dataset.get("schema_version") not in (3, 4):
+        raise UnsupportedRegistryError("preprocessing requires manifest schema 3 or 4")
 
     def nonempty(value: object, field: str) -> str:
         text = require_string(value, field, UnsupportedRegistryError)

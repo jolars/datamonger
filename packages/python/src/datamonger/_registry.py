@@ -271,7 +271,7 @@ def load_registry(
     if (
         isinstance(index_schema, bool)
         or not isinstance(index_schema, int)
-        or index_schema not in (1, 2, 3)
+        or index_schema not in (1, 2, 3, 4)
     ):
         raise UnsupportedRegistryError(
             f"unsupported registry schema {parsed.get('schema_version')!r}"
@@ -350,7 +350,7 @@ def resolve_dataset(
             if (
                 isinstance(dataset_schema, bool)
                 or not isinstance(dataset_schema, int)
-                or dataset_schema not in (1, 2, 3)
+                or dataset_schema not in (1, 2, 3, 4)
                 or dataset_schema > index.get("schema_version", 0)
             ):
                 raise UnsupportedRegistryError(

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from os import PathLike
@@ -127,7 +127,29 @@ class SparseDatasetSplit:
     """Test features and responses using the same feature dimension as training data."""
 
 
-DatasetData: TypeAlias = pd.DataFrame | SparseDataset | SparseDatasetSplit
+@dataclass(frozen=True)
+class DatasetSplits(Mapping[str, pd.DataFrame | SparseDataset]):
+    """Provider-named splits in recipe order, accessed as ``data["validation"]``.
+
+    Each value is a table or sparse dataset. A table may contain only features
+    when the provider does not supply labels for that split.
+    """
+
+    splits: Mapping[str, pd.DataFrame | SparseDataset]
+
+    def __getitem__(self, name: str) -> pd.DataFrame | SparseDataset:
+        return self.splits[name]
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.splits)
+
+    def __len__(self) -> int:
+        return len(self.splits)
+
+
+DatasetData: TypeAlias = (
+    pd.DataFrame | SparseDataset | SparseDatasetSplit | DatasetSplits
+)
 
 
 @dataclass(frozen=True)
@@ -135,7 +157,7 @@ class FetchResult:
     """Decoded data together with its reproducibility metadata."""
 
     data: DatasetData
-    """Decoded pandas table, sparse dataset, or sparse training and test split."""
+    """Decoded table, sparse dataset, or collection of provider splits."""
     info: FetchInfo
     """Registry, artifact, and verification metadata for this completed fetch."""
 
@@ -361,3 +383,11 @@ class DecodedSparseDatasetSplit:
         LogicalSparseMatrix,
         LogicalComponent,
     ]
+
+
+@dataclass(frozen=True)
+class DecodedSplits:
+    """Named native splits with their ordered, qualified logical components."""
+
+    data: DatasetSplits
+    components: tuple[LogicalValueComponent, ...]

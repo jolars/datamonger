@@ -139,7 +139,7 @@ end
     seeded = seed_conformance_cache(cache_dir)
 
     index = deepcopy(seeded.index)
-    index["schema_version"] = 4
+    index["schema_version"] = 99
     unsupported_registry = reseal_index(index, cache_dir)
     @test_throws UnsupportedRegistryError list_data(
         ; registry=unsupported_registry, cache_dir, offline=true,

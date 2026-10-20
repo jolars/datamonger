@@ -239,7 +239,7 @@ reviewed mirror locations and the digests of the bytes served there.
    published record, use a new dataset version.
 
 2. Draft a YAML manifest from
-   [`spec/schema/manifest-v3.schema.json`](spec/schema/manifest-v3.schema.json).
+   [`spec/schema/manifest-v4.schema.json`](spec/schema/manifest-v4.schema.json).
    Supply descriptive, provenance, license, artifact, location, decoder, and
    task metadata. Do not guess a license—use `status: unknown` when the evidence
    is insufficient.

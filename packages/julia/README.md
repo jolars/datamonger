@@ -101,6 +101,12 @@ CSC column-pointer array use the exported, read-only `CSRMatrix` instead.
 `libsvm-split` returns a `SparseDatasetSplit` with separate `train` and `test`
 datasets.
 
+The `named-splits` assembly returns a `DatasetSplits` mapping in recipe order.
+Access provider splits as `data["train"]`, `data["validation"]`, or `data["test"]`.
+Each value is a table or sparse dataset, and feature-only tables omit responses.
+The [named splits contract](../../spec/decoders/named-splits-v1.md) requires
+manifest schema 4 and preserves each split's original name and row membership.
+
 `data_info()` and `list_data()` inspect provenance, license, distribution, task,
 and verification metadata without retrieving artifacts. `fetch_artifact()`
 retrieves only verified artifact bytes. `offline=true` forbids network access

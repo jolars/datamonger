@@ -32,6 +32,7 @@ from datamonger._models import (
     DatasetData,
     DecodedSparseDataset,
     DecodedSparseDatasetSplit,
+    DecodedSplits,
     DecodedTable,
     FetchInfo,
     FetchResult,
@@ -48,6 +49,7 @@ from datamonger._registry import (
     resolve_dataset,
 )
 from datamonger._selection import active_registry
+from datamonger._splits import assemble_splits, split_recipes
 from datamonger._validate import (
     require_array,
     require_integer,
@@ -512,6 +514,74 @@ def _verification_record(
     raise UnsupportedDecoderError("no supported decoded-verification record")
 
 
+def _prepare_representation(
+    dataset: Mapping[str, Any], representation: Mapping[str, Any]
+) -> tuple[str, tuple[Mapping[str, Any], ...], Mapping[str, Any], tuple[str, ...]]:
+    decoder = representation.get("decoder")
+    decoder_version = representation.get("decoder_version")
+    if (
+        type(decoder_version) is not int
+        or decoder_version != 1
+        or decoder
+        not in {
+            "delimited-text",
+            "libsvm",
+            "libsvm-split",
+        }
+    ):
+        raise UnsupportedDecoderError(
+            "the Python client supports delimited-text, LIBSVM, and "
+            "LIBSVM split version 1"
+        )
+
+    roles = ("train", "test") if decoder == "libsvm-split" else ("data",)
+    artifacts = _artifacts_for_representation(dataset, representation, roles)
+    options = _object(representation.get("options"), "representation.options")
+    compressions: tuple[str, ...]
+    if decoder == "delimited-text":
+        artifact = artifacts[0]
+        artifact_format = artifact.get("format")
+        compression = artifact.get("compression")
+        if artifact_format not in {"csv", "tsv"}:
+            raise UnsupportedDecoderError(
+                "delimited-text requires a CSV or TSV artifact"
+            )
+        expected_delimiter = "," if artifact_format == "csv" else "\t"
+        if options.get("delimiter") != expected_delimiter:
+            raise UnsupportedDecoderError("artifact format and delimiter disagree")
+        if not isinstance(compression, str) or compression not in {
+            "none",
+            "gzip",
+            "bzip2",
+        }:
+            raise UnsupportedDecoderError(
+                f"unsupported delimited-text compression: {compression!r}"
+            )
+        compressions = (compression,)
+    else:
+        compressions = tuple(_libsvm_compression(artifact) for artifact in artifacts)
+    return str(decoder), tuple(artifacts), options, compressions
+
+
+def _decode_leaf(
+    decoder: str,
+    paths: Sequence[Path],
+    options: Mapping[str, Any],
+    compressions: Sequence[str],
+) -> DecodedTable | DecodedSparseDataset | DecodedSparseDatasetSplit:
+    if decoder == "delimited-text":
+        return decode_delimited_text(paths[0], options, compression=compressions[0])
+    if decoder == "libsvm":
+        return decode_libsvm(paths[0], options, compression=compressions[0])
+    return decode_libsvm_split(
+        paths[0],
+        paths[1],
+        options,
+        train_compression=compressions[0],
+        test_compression=compressions[1],
+    )
+
+
 @overload
 def fetch_data(
     name: str,
@@ -587,73 +657,51 @@ def fetch_data(
     citations, instructions = citation_metadata(dataset)
     preprocessing = preprocessing_metadata(dataset)
     representation = _object(dataset.get("representation"), "dataset.representation")
-    decoder = representation.get("decoder")
-    decoder_version = representation.get("decoder_version")
-    if (
-        type(decoder_version) is not int
-        or decoder_version != 1
-        or decoder
-        not in {
-            "delimited-text",
-            "libsvm",
-            "libsvm-split",
-        }
-    ):
-        raise UnsupportedDecoderError(
-            "the Python client supports delimited-text, LIBSVM, and "
-            "LIBSVM split version 1"
+    recipes: tuple[Mapping[str, Any], ...] = ()
+    if representation.get("decoder") == "named-splits":
+        if dataset.get("schema_version") != 4:
+            raise UnsupportedDecoderError("named-splits requires manifest schema 4")
+        recipes = split_recipes(representation)
+        inputs = _object(representation.get("inputs"), "representation.inputs")
+        setups = tuple(
+            _prepare_representation(
+                dataset,
+                {
+                    "decoder": recipe["decoder"],
+                    "decoder_version": recipe["decoder_version"],
+                    "options": recipe["options"],
+                    "inputs": {"data": inputs[recipe["name"]]},
+                },
+            )
+            for recipe in recipes
         )
-
-    roles = ("train", "test") if decoder == "libsvm-split" else ("data",)
-    artifacts = _artifacts_for_representation(dataset, representation, roles)
-    options = _object(representation.get("options"), "representation.options")
-    compressions: tuple[str, ...]
-    if decoder == "delimited-text":
-        artifact = artifacts[0]
-        artifact_format = artifact.get("format")
-        compression = artifact.get("compression")
-        if artifact_format not in {"csv", "tsv"}:
-            raise UnsupportedDecoderError(
-                "delimited-text requires a CSV or TSV artifact"
-            )
-        expected_delimiter = "," if artifact_format == "csv" else "\t"
-        if options.get("delimiter") != expected_delimiter:
-            raise UnsupportedDecoderError("artifact format and delimiter disagree")
-        if not isinstance(compression, str) or compression not in {
-            "none",
-            "gzip",
-            "bzip2",
-        }:
-            raise UnsupportedDecoderError(
-                f"unsupported delimited-text compression: {compression!r}"
-            )
-        compressions = (compression,)
     else:
-        compressions = tuple(_libsvm_compression(artifact) for artifact in artifacts)
+        setups = (_prepare_representation(dataset, representation),)
+    artifacts = tuple(artifact for setup in setups for artifact in setup[1])
     with ExitStack() as stack:
-        artifact_paths = tuple(
-            stack.enter_context(
-                _retrieve_artifact_lease(artifact, cache_root, offline=offline)
+        children = []
+        for decoder, child_artifacts, options, compressions in setups:
+            paths = tuple(
+                stack.enter_context(
+                    _retrieve_artifact_lease(artifact, cache_root, offline=offline)
+                )
+                for artifact in child_artifacts
             )
-            for artifact in artifacts
+            children.append(_decode_leaf(decoder, paths, options, compressions))
+        decoded: (
+            DecodedTable
+            | DecodedSparseDataset
+            | DecodedSparseDatasetSplit
+            | DecodedSplits
         )
-        decoded: DecodedTable | DecodedSparseDataset | DecodedSparseDatasetSplit
-        if decoder == "delimited-text":
-            decoded = decode_delimited_text(
-                artifact_paths[0], options, compression=compressions[0]
-            )
-        elif decoder == "libsvm":
-            decoded = decode_libsvm(
-                artifact_paths[0], options, compression=compressions[0]
-            )
+        if recipes:
+            single_children = []
+            for child in children:
+                assert isinstance(child, (DecodedTable, DecodedSparseDataset))
+                single_children.append(child)
+            decoded = assemble_splits(recipes, single_children)
         else:
-            decoded = decode_libsvm_split(
-                artifact_paths[0],
-                artifact_paths[1],
-                options,
-                train_compression=compressions[0],
-                test_compression=compressions[1],
-            )
+            decoded = children[0]
     canonical_form: int | None = None
     canonical_digest: str | None = None
     verification: Literal["artifact", "decoded"] = "artifact"

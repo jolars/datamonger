@@ -22,7 +22,8 @@
       !.is_object(parsed) ||
       !(identical(parsed$schema_version, 1L) ||
         identical(parsed$schema_version, 2L) ||
-        identical(parsed$schema_version, 3L))
+        identical(parsed$schema_version, 3L) ||
+        identical(parsed$schema_version, 4L))
   ) {
     return(list(release = NULL, references = list()))
   }

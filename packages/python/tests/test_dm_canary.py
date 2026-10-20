@@ -387,3 +387,28 @@ def test_upstream_verification_workflow_is_scheduled_and_opens_issues() -> None:
     assert "tools/dm_canary.py" in workflow
     assert "gh issue create" in workflow
     assert "gh issue comment" in workflow
+
+
+def test_canary_verifies_named_splits_from_shared_fixture(
+    tmp_path: Path, local_server: tuple[str, ServerState]
+) -> None:
+    corpus = ROOT / "tests/conformance"
+    case = json.loads((corpus / "named-splits.json").read_bytes())["cases"][0]
+    dataset = case["manifest"]
+    base_url, state = local_server
+    for artifact in dataset["artifacts"]:
+        route = f"/{artifact['name']}"
+        state.responses[route] = Response(
+            (corpus / case["artifact_paths"][artifact["name"]]).read_bytes()
+        )
+        artifact["downloads"] = [{"kind": "upstream", "url": base_url + route}]
+    selector = _selector(tmp_path, base_url, state, [dataset], schema_version=4)
+    result = dm_canary.check(selector, root=ROOT)
+    assert result.ok
+    checks = [check for check in result.checks if check.kind == "dataset"]
+    assert len(checks) == 1
+    assert (
+        checks[0].message
+        == "verified canonical SHA-256 "
+        + dataset["representation"]["expect"]["verification"][0]["digest"]
+    )

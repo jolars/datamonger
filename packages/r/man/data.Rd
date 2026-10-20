@@ -38,13 +38,19 @@ Resolve a dataset within one strongly selected registry. Artifact size and
 SHA-256 verification cannot be disabled. Decoded verification is enabled by
 default and may be disabled only explicitly.
 }
-\value{\code{fetch_data()} returns a data frame or a Datamonger sparse result;
+\value{\code{fetch_data()} returns a data frame, a Datamonger sparse result,
+or a \code{datamonger_dataset_splits} named list in provider split order;
 with \code{return_info = TRUE}, it returns a \code{datamonger_fetch_result}.
 \code{fetch_artifact()} returns a cache path. Metadata functions return one or
 a list of \code{datamonger_data_info} records. Sparse features use a
 row-compressed \code{Matrix}, or an exact \code{datamonger_csr_matrix} when a
 declared dimension exceeds the \code{Matrix} integer limit.}
 \details{
+Named splits use manifest schema 4. Access them with
+\code{data[["validation"]]}. Each value is a table or sparse dataset, and a
+feature-only test table has no response column. Split names and row membership
+are preserved exactly.
+
 Metadata records expose \code{preprocessing} when recorded in a version 3
 registry. Upstream processing and Datamonger preparation have separate stages,
 with status \code{unknown}, \code{none}, or \code{documented}. Known steps retain

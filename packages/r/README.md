@@ -90,6 +90,13 @@ dimension or stored-value count exceeds the `Matrix` package's integer limit,
 the feature matrix is an exact `datamonger_csr_matrix` instead. Split representations keep
 `train` and `test` datasets separate.
 
+The `named-splits` assembly returns a `datamonger_dataset_splits` named list in
+recipe order. Access provider splits as `data[["train"]]`,
+`data[["validation"]]`, or `data[["test"]]`. Each value is a table or sparse
+dataset, and feature-only tables omit responses. The
+[named splits contract](../../spec/decoders/named-splits-v1.md) requires
+manifest schema 4 and preserves each split's original name and row membership.
+
 `data_info()` and `list_data()` inspect provenance, license, distribution, and
 task metadata without retrieving artifacts. `fetch_artifact()` retrieves only
 verified artifact bytes. `offline = TRUE` forbids network access and requires

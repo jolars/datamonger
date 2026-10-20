@@ -346,7 +346,7 @@ def test_two_default_versions_for_one_dataset_are_rejected(tmp_path: Path) -> No
     [
         (make_manifest(source="UCI"), "does not match"),
         (make_manifest(sha256="A" * 64), "does not match"),
-        (make_manifest(schema_version=4), "schema_version"),
+        (make_manifest(schema_version=99), "schema_version"),
         (make_manifest() | {"surprise": True}, "Additional properties"),
     ],
 )

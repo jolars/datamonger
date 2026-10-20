@@ -27,22 +27,26 @@ from datamonger._errors import DatamongerError
 from datamonger._models import (
     DecodedSparseDataset,
     DecodedSparseDatasetSplit,
+    DecodedSplits,
     DecodedTable,
     LogicalComponent,
     LogicalDenseMatrix,
     LogicalSparseMatrix,
     LogicalValueComponent,
 )
+from datamonger._splits import assemble_splits, split_recipes
 
 ROOT = Path(__file__).resolve().parents[1]
 _DERIVED_ARTIFACT_FIELDS = ("size", "sha256")
 _SUPPORTED_COMPRESSIONS = {"none", "gzip", "bzip2"}
-_SUPPORTED_DECODERS = {"delimited-text", "libsvm", "libsvm-split"}
+_SUPPORTED_DECODERS = {"delimited-text", "libsvm", "libsvm-split", "named-splits"}
 _SAMPLE_ROWS = 3
 _SPARSE_SAMPLE_VALUES = 8
 _SCALAR_LIMIT = 80
 
-Decoded = DecodedTable | DecodedSparseDataset | DecodedSparseDatasetSplit
+Decoded = (
+    DecodedTable | DecodedSparseDataset | DecodedSparseDatasetSplit | DecodedSplits
+)
 
 
 class _BinaryReader(Protocol):
@@ -147,10 +151,15 @@ def _prepare_draft(source: Mapping[str, Any], retrieved_at: date) -> dict[str, A
     decoder = _string(representation["decoder"], "representation.decoder")
     if decoder not in _SUPPORTED_DECODERS or representation["decoder_version"] != 1:
         raise ValueError(
-            "dm-add supports delimited-text, libsvm, and libsvm-split version 1"
+            "dm-add supports delimited-text, libsvm, libsvm-split, "
+            "and named-splits version 1"
         )
     inputs = _mapping(representation["inputs"], "representation.inputs")
     roles = {"train", "test"} if decoder == "libsvm-split" else {"data"}
+    if decoder == "named-splits":
+        if manifest["schema_version"] != 4:
+            raise ValueError("named-splits requires manifest schema 4")
+        roles = {split["name"] for split in split_recipes(representation)}
     if set(inputs) != roles:
         raise ValueError(f"representation inputs must be exactly {sorted(roles)}")
     for role, raw_artifact_name in inputs.items():
@@ -297,6 +306,18 @@ def _decode(
         )
         return artifacts[artifact_name].path, compression
 
+    if decoder == "named-splits":
+        recipes = split_recipes(representation)
+        children = []
+        for recipe in recipes:
+            path, compression = selected(recipe["name"])
+            decode = (
+                decode_delimited_text
+                if recipe["decoder"] == "delimited-text"
+                else decode_libsvm
+            )
+            children.append(decode(path, recipe["options"], compression=compression))
+        return assemble_splits(recipes, children)
     if decoder == "delimited-text":
         path, compression = selected("data")
         return decode_delimited_text(path, options, compression=compression)

@@ -489,3 +489,28 @@ def test_cli_force_replaces_output_atomically(
 
     assert dm_add.main() == 0
     assert yaml.safe_load(output_path.read_text(encoding="utf-8"))["name"] == "mixed"
+
+
+def test_author_named_splits_from_shared_fixture(
+    tmp_path: Path, local_server: tuple[str, ServerState]
+) -> None:
+    import json
+
+    corpus = ROOT / "tests/conformance"
+    case = json.loads((corpus / "named-splits.json").read_bytes())["cases"][0]
+    dataset = case["manifest"]
+    expected = copy.deepcopy(dataset["representation"]["expect"])
+    base_url, state = local_server
+    for artifact in dataset["artifacts"]:
+        route = f"/{artifact['name']}"
+        state.bodies[route] = (
+            corpus / case["artifact_paths"][artifact["name"]]
+        ).read_bytes()
+        artifact["downloads"] = [{"kind": "upstream", "url": base_url + route}]
+        artifact.pop("size")
+        artifact.pop("sha256")
+    dataset["representation"].pop("expect")
+    result = dm_add.build(write_draft(tmp_path, dataset))
+    assert result.manifest["representation"]["expect"] == expected
+    assert "test/x1" in result.report
+    assert "validation/features" in result.report

@@ -27,3 +27,7 @@ references, optional semantic roles, and recorded upstream recommendations.
 The [preprocessing metadata extension](preprocessing.md) adds manifest and index
 schema version 3. It records upstream and Datamonger preparation separately,
 including known steps, parameters, evidence, and explicit unknown history.
+
+The [named splits extension](decoders/named-splits-v1.md) adds manifest and index
+schema version 4 and the `named-splits` version 1 assembly. It preserves provider
+split names and membership and supports feature-only splits without labels.

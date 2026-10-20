@@ -12,7 +12,15 @@ use crate::error::{Error, Result};
 
 pub const BUNDLED_INDEX: &[u8] = include_bytes!("../assets/index.json");
 const BUNDLED_SELECTOR: &[u8] = include_bytes!("../assets/selector.json");
-const SCHEMAS: [(&str, &str); 9] = [
+const SCHEMAS: [(&str, &str); 11] = [
+    (
+        "https://datamonger.dev/spec/schema/index-v4.schema.json",
+        include_str!("../assets/index-v4.schema.json"),
+    ),
+    (
+        "https://datamonger.dev/spec/schema/manifest-v4.schema.json",
+        include_str!("../assets/manifest-v4.schema.json"),
+    ),
     (
         "https://datamonger.dev/spec/schema/index-v3.schema.json",
         include_str!("../assets/index-v3.schema.json"),
@@ -388,6 +396,43 @@ mod tests {
         assert!(validate_schema(&index, "index").is_err());
         index["datasets"][0]["provenance"]["citations"][0]["recommended"] = json!(true);
         index["datasets"][0]["provenance"]["citation"] = json!("Ambiguous legacy citation.");
+        assert!(validate_schema(&index, "index").is_err());
+    }
+
+    #[test]
+    fn named_splits_preserve_feature_only_test_data() {
+        let mut index = citation_index();
+        index["schema_version"] = json!(4);
+        let dataset = &mut index["datasets"][0];
+        dataset["schema_version"] = json!(4);
+        let original = dataset["representation"].clone();
+        let artifact = original["inputs"]["data"].clone();
+        dataset["representation"] = json!({
+            "decoder": "named-splits", "decoder_version": 1,
+            "inputs": {"train": artifact, "test": artifact},
+            "options": {"splits": [
+                {"name": "train", "decoder": original["decoder"],
+                 "decoder_version": 1, "options": original["options"]},
+                {"name": "test", "decoder": original["decoder"],
+                 "decoder_version": 1, "options": original["options"]},
+            ]},
+            "expect": original["expect"],
+        });
+        let component = original["expect"]["components"][0]["name"]
+            .as_str()
+            .unwrap();
+        dataset["tasks"] = json!([{
+            "name": "default", "type": "regression", "splits": {
+                "train": {"target": format!("train/{component}")},
+                "test": {"features": format!("test/{component}")},
+            },
+        }]);
+        let bytes = serde_json::to_vec(&index).unwrap();
+        let mut selector = bundled_selector().unwrap();
+        selector.index_sha256 = sha256(&bytes);
+        let parsed = parse_index(&bytes, selector).unwrap();
+        assert_eq!(parsed.document, index);
+        index["schema_version"] = json!(3);
         assert!(validate_schema(&index, "index").is_err());
     }
 

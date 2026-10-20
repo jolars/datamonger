@@ -1,6 +1,6 @@
 # Datamonger TODO
 
-- [ ] Support named training, validation, and test splits in decoder contracts
+- [x] Support named training, validation, and test splits in decoder contracts
   and client return types, including test data without labels. Preserve the
   provider's split names and membership, and add shared conformance cases for
   the clients. Gisette currently exposes validation through the fixed `test`

@@ -94,6 +94,22 @@ struct SparseDatasetSplit{T<:Union{Int64,Float64},M1<:AbstractMatrix{Float64},M2
     test::SparseDataset{T,M2}
 end
 
+"""Provider-named table or sparse splits in recipe order, accessed with `data["validation"]`."""
+struct DatasetSplits <: AbstractDict{String,Union{DataFrame,SparseDataset}}
+    names::Vector{String}
+    splits::Dict{String,Union{DataFrame,SparseDataset}}
+end
+
+Base.length(data::DatasetSplits) = length(data.names)
+Base.getindex(data::DatasetSplits, name) = data.splits[name]
+Base.get(data::DatasetSplits, name, default) = get(data.splits, name, default)
+Base.get(default::Union{Function,Type}, data::DatasetSplits, name) =
+    get(default, data.splits, name)
+Base.keys(data::DatasetSplits) = copy(data.names)
+Base.haskey(data::DatasetSplits, name) = haskey(data.splits, name)
+Base.iterate(data::DatasetSplits, state=1) = state > length(data) ? nothing :
+    (data.names[state] => data[data.names[state]], state + 1)
+
 """Decoded data together with its reproducibility metadata."""
 struct FetchResult{T}
     data::T

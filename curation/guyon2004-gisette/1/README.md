@@ -37,7 +37,7 @@ split statistics, canonical digests, script hashes, and environment versions.
 prepare a second bundle with the same source and compare all three data hashes.
 The source ZIP remains in `sources/` for local provenance.
 
-## Splits and the current decoder limit
+## Split encoding in the deposited preparation
 
 `train.libsvm.gz` and `validation.libsvm.gz` preserve the 6,000 labeled training
 rows and 1,000 labeled validation rows. No rows are concatenated or reassigned.
@@ -48,15 +48,19 @@ the semantic split `validation`; the public return field remains `data.test`.
 `test-features.csv.gz` preserves the 6,500 original test rows without inventing
 labels. `test-representation.local.yaml` describes its separately verified
 CSV representation. The local manifest lists the artifact, but its labeled
-representation does not consume or expose it. There is no general three-split
-assembly or unlabeled LIBSVM input in the existing decoder contracts. Review
-how to expose this artifact before registering the full dataset.
+representation does not consume or expose it.
+
+The [named splits extension](../../../spec/decoders/named-splits-v1.md) now
+supports a complete assembly: declare `train` and `validation` with their
+LIBSVM recipes and `test` with its delimited feature-only recipe. The result
+exposes all three provider names and retains the 6,500 test rows without labels.
+This uses manifest schema 4. A future registered representation must use a new
+dataset version because its recipe and logical output differ from version 1.
 
 The local manifest uses `metadata-only` artifacts without download locations.
-Do not select it in `registry/collection.yaml`. General split support remains
-tracked in [TODO.md](../../../TODO.md). Production registration still requires
-real version-specific artifact URLs, `dm-add`, collection validation, and the
-normal release review.
+Do not select it in `registry/collection.yaml`. Production registration still
+requires real version-specific artifact URLs, `dm-add`, collection validation,
+and the normal release review.
 
 ## Published deposit
 

@@ -139,6 +139,7 @@ The decoded return type is fixed by the representation:
 | `delimited-text` | CSV or TSV | `pandas.DataFrame` |
 | `libsvm` | LIBSVM or SVMLight | `SparseDataset` |
 | `libsvm-split` | LIBSVM or SVMLight | `SparseDatasetSplit` |
+| `named-splits` | Per-split CSV, TSV, LIBSVM, or SVMLight | `DatasetSplits` |
 
 Delimited frames use pandas' nullable `Float64`, `Int64`, `string`, and
 `boolean` dtypes, according to the declared logical column types. A frozen
@@ -146,7 +147,13 @@ Delimited frames use pandas' nullable `Float64`, `Int64`, `string`, and
 int64 or float64 NumPy `response` vector, according to `label_type`. A frozen
 `SparseDatasetSplit` has separate `train` and `test` fields containing those
 same records, so neither input is concatenated or discarded. The public
-`DatasetData` type alias is the union of these three return types.
+`DatasetData` type alias includes these return types and `DatasetSplits`.
+
+`DatasetSplits` is an ordered mapping using the provider's exact split names.
+For example, `data["train"]`, `data["validation"]`, and `data["test"]` select
+separate tables or sparse datasets. Feature-only test tables have no response
+column. The [named splits contract](../../spec/decoders/named-splits-v1.md)
+requires manifest schema 4 and keeps every split's original row membership.
 
 `return_info=True` wraps the same decoded object in `FetchResult.data`; it does
 not change its representation. Pandas, NumPy, and SciPy are required
@@ -320,6 +327,7 @@ The package also exports these public values and immutable result types:
 | `DataInfo` | Provenance, license, artifacts, representation, expectations, relations, and tasks. |
 | `SparseDataset` | A CSR feature matrix and response vector. |
 | `SparseDatasetSplit` | Separate train and test `SparseDataset` records. |
+| `DatasetSplits` | Provider-named table or sparse datasets in recipe order. |
 | `DatasetData` | The union of all decoded return types. |
 | `CacheEntry` | One inspected registry or artifact cache object. |
 | `CacheInfo` | Cache location, total size, and entries. |

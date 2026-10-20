@@ -403,6 +403,26 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
 
   decoder <- representation$decoder
 
+  if (identical(decoder, "named-splits")) {
+    if (!identical(dataset$schema_version, 4L)) {
+      .abort_category("unsupported-decoder", "named-splits requires manifest schema 4")
+    }
+    recipes <- .split_recipes(representation)
+    children <- lapply(recipes, function(recipe) {
+      child <- dataset
+      child$representation <- list(
+        decoder = recipe$decoder, decoder_version = recipe$decoder_version,
+        inputs = list(data = representation$inputs[[recipe$name]]), options = recipe$options
+      )
+      .validate_representation(child)
+    })
+    return(list(
+      representation = representation, decoder = decoder, options = representation$options,
+      children = children,
+      artifacts = unlist(lapply(children, `[[`, "artifacts"), recursive = FALSE)
+    ))
+  }
+
   if (
     !identical(representation$decoder_version, 1L) ||
       !(decoder %in% c("delimited-text", "libsvm", "libsvm-split"))
@@ -483,7 +503,8 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
 #' @param return_info Whether to return reproducibility metadata with the data.
 #' @return
 #' An R data frame, `datamonger_sparse_dataset`, or
-#' `datamonger_sparse_dataset_split`. With `return_info = TRUE`, returns a
+#' `datamonger_sparse_dataset_split`, or a provider-named
+#' `datamonger_dataset_splits` list. With `return_info = TRUE`, returns a
 #' `datamonger_fetch_result` containing `data` and `info`.
 #' @export
 fetch_data <- function(
@@ -535,24 +556,7 @@ fetch_data <- function(
     )
   }
   paths <- vapply(leased, `[[`, character(1), "path")
-  decoded <- switch(
-    setup$decoder,
-    `delimited-text` = .decode_delimited(
-      paths[[1]],
-      setup$options,
-      setup$compressions[[1]], hash = verify_decoded
-    ),
-    libsvm = .decode_libsvm(
-      paths[[1]], setup$options, setup$compressions[[1]], hash = verify_decoded
-    ),
-    `libsvm-split` = .decode_libsvm_split(
-      paths[[1]],
-      paths[[2]],
-      setup$options,
-      setup$compressions[[1]],
-      setup$compressions[[2]], hash = verify_decoded
-    )
-  )
+  decoded <- .decode_setup(setup, paths, verify_decoded)
 
   verification <- "artifact"
   canonical_form <- NULL

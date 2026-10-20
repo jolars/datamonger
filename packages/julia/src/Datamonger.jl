@@ -17,6 +17,7 @@ include("models.jl")
 include("native.jl")
 include("canonical.jl")
 include("decode.jl")
+include("splits.jl")
 include("cache.jl")
 include("registry.jl")
 include("api.jl")
@@ -33,6 +34,7 @@ export ArtifactIntegrityError,
     CacheInfo,
     CSRMatrix,
     DataInfo,
+    DatasetSplits,
     DatamongerError,
     DecodeError,
     DecodedIntegrityError,

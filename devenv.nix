@@ -158,7 +158,7 @@ in
       diff "spec/schema/''${schema}-v1.schema.json" \
         "packages/cli/assets/''${schema}-v1.schema.json"
     done
-    for version in 2 3; do
+    for version in 2 3 4; do
       for schema in index manifest; do
         diff "spec/schema/''${schema}-v''${version}.schema.json" \
           "packages/cli/assets/''${schema}-v''${version}.schema.json"

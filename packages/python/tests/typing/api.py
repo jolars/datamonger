@@ -4,9 +4,12 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, assert_type
 
+import pandas as pd
+
 from datamonger import (
     DataInfo,
     DatasetData,
+    DatasetSplits,
     FetchResult,
     Registry,
     SparseDataset,
@@ -62,6 +65,10 @@ def check_metadata_return_types(registry: Registry) -> None:
     assert_type(fetch_artifact("fixture:example@1", registry=registry), Path)
     assert_type(data_info("example", source="fixture", registry=registry), DataInfo)
     assert_type(list_data(registry=registry), tuple[DataInfo, ...])
+
+
+def check_named_split_structure(data: DatasetSplits) -> None:
+    assert_type(data["validation"], pd.DataFrame | SparseDataset)
 
 
 def check_citation_return_types(registry: Registry) -> None:

@@ -26,3 +26,13 @@ including older manifests with no history, explicit unknown and absent
 processing, ordered steps and parameters, and malformed records. Each case
 declares its manifest schema version and expected validity. Implementations
 must preserve valid metadata without changing decoded values or verification.
+
+`named-splits.json` exercises the `named-splits` version 1 extension and manifest
+schema version 4. It includes complete manifests, artifact paths, expected
+native values, independent canonical-form 1 golden bytes, and invalid recipes.
+Clients must preserve declared split order, names, membership, and absent test
+labels, including empty tables and names containing Unicode and path punctuation.
+These cases extend the corpus without changing the revision 1 implementation
+claim. Golden bytes were produced by the independent Python decoder and
+canonical encoder in `packages/python/tests/reference`, with names qualified
+according to `spec/decoders/named-splits-v1.md`.
