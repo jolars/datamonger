@@ -10,7 +10,9 @@ name = "datamonger_r"
 crate-type = ["staticlib"]
 
 [dependencies]
-datamonger-core = "0.1"
+# Keep Versionary from advancing this dependency before the core is published
+# and the R package's vendor archive is refreshed.
+datamonger_core = { package = "datamonger-core", version = "0.1" }
 extendr-api = "0.9.0"
 
 [profile.release]
