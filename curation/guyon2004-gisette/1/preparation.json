@@ -1,0 +1,140 @@
+{
+  "dataset_id": "datamonger:guyon2004-gisette@1",
+  "stage": "local preparation for review",
+  "prepared_at": "2026-10-20T14:14:16.675455+00:00",
+  "deposit": null,
+  "registered": false,
+  "source": {
+    "url": "https://archive.ics.uci.edu/static/public/170/gisette.zip",
+    "size": 21298687,
+    "sha256": "430bb631b3e494659f13763c117f06f5aa8a269b0d8e13ccf5b71d95303f3808"
+  },
+  "source_members": {
+    "Dataset.pdf": {
+      "size": 453565,
+      "sha256": "9a1752b81c45e1d2924d341269f0856a6530b74742c572353180708dacfa3d0b"
+    },
+    "GISETTE/gisette.param": {
+      "size": 269,
+      "sha256": "77e8bfcf20d9eb772a40c5b31eaa6ba005bcd6ddeba2122223168c891c520490"
+    },
+    "GISETTE/gisette_test.data": {
+      "size": 73448980,
+      "sha256": "163ea0b7717478b3bafc7414925fae889899fec69267486cd7557839be25acdc"
+    },
+    "GISETTE/gisette_train.data": {
+      "size": 67788724,
+      "sha256": "6d4c5e998afe67937b9e77a3334e03c85e545ebc65a6eb1333ffc14125cfc389"
+    },
+    "GISETTE/gisette_train.labels": {
+      "size": 15000,
+      "sha256": "42bd681fe51b161f033df773df14a0116e492676555ab14616c1b72edc054075"
+    },
+    "GISETTE/gisette_valid.data": {
+      "size": 11316914,
+      "sha256": "5cea897956dd172a006132738254a27a8f61ecc1ceb6f5b20639c281d2942254"
+    },
+    "gisette_valid.labels": {
+      "size": 2500,
+      "sha256": "a6b857a0448023f033c4dda2ef848714b4be2ae45ce598d088fb3efb406e08c5"
+    }
+  },
+  "splits": {
+    "train": {
+      "rows": 6000,
+      "features": 5000,
+      "value_min": 0,
+      "value_max": 999,
+      "nonzeros": 3891362,
+      "sum": 3164568508,
+      "labels": {
+        "-1": 3000,
+        "1": 3000
+      }
+    },
+    "validation": {
+      "rows": 1000,
+      "features": 5000,
+      "value_min": 0,
+      "value_max": 999,
+      "nonzeros": 657957,
+      "sum": 535016668,
+      "labels": {
+        "-1": 500,
+        "1": 500
+      }
+    },
+    "test": {
+      "rows": 6500,
+      "features": 5000,
+      "value_min": 0,
+      "value_max": 999,
+      "nonzeros": 4221240,
+      "sum": 3431572010,
+      "labels": null
+    }
+  },
+  "files": {
+    "train.libsvm.gz": {
+      "size": 13629246,
+      "sha256": "efa1e30eb422958d38696f6e7ac8683f17d2153402a78a4a43a512191a9c2816"
+    },
+    "validation.libsvm.gz": {
+      "size": 2305127,
+      "sha256": "5b68b03f81f1ecb5d13822337d66a603633dde7d32b53c40ef110fd7d7fbb357"
+    },
+    "test-features.csv.gz": {
+      "size": 10723231,
+      "sha256": "7b1de06c6b8af4cd1fe02c305e115db65381b8c0fb4219d2e97637095a4dbe4a"
+    },
+    "prepare.py": {
+      "size": 14248,
+      "sha256": "9c8693224a0b963388b33339821d58bfc49393f190d04ad009bbbcbdbcb7b8a5"
+    },
+    "verify.py": {
+      "size": 5446,
+      "sha256": "f72225dec1b8996f3515c786c04cb7d6d11c4feecb96cfbf21b6cb827d0bae2e"
+    },
+    "README.md": {
+      "size": 4624,
+      "sha256": "2e713f8551caf85824eb92616573a73b549a4a83677e41813a37021873610c53"
+    },
+    "LICENSE": {
+      "size": 1080,
+      "sha256": "bfc2dd3b099506cc71e65e8af09e3f9b3860d8fddf59801b30313c5d21caac36"
+    }
+  },
+  "environment": {
+    "python": "3.14.7",
+    "zlib": "1.3.2",
+    "devenv_lock_sha256": "1b5087d6e2927b94a5ba8a3b81bcc7fac5c2634b30d22893215a55bb5b695276",
+    "uv_lock_sha256": "f4065672d99fd8358fce31ab44a11ddd6c819207123b2b2b6decd47bf32de313"
+  },
+  "verification": {
+    "source_values_and_labels": "exact match across all three splits",
+    "canonical_encoders": "native Rust and independent Python agree",
+    "labeled_sha256": "9888488a6f62cbcdc506775fc70f5f8d2c2cbee5d9087f4c85803482f4372325",
+    "test_sha256": "788612f3407c5f62f44cdc95ed8a1464ea576ce5677d9f704aedb5b7494adaee",
+    "independent_release_attestation": false
+  },
+  "repeatability": "Two complete preparations produced identical hashes for all three data artifacts.",
+  "failure_checks": [
+    "Reject altered source bytes.",
+    "Reject generated data inside the repository."
+  ],
+  "source_terms": {
+    "status": "known",
+    "identifier": "CC-BY-4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/",
+    "evidence": "The UCI Gisette landing page (https://archive.ics.uci.edu/dataset/170/gisette) explicitly licenses the dataset under CC BY 4.0. This representation preserves the original feature values, available labels, and split membership; it changes file encoding and compression only."
+  },
+  "decoder_limitations": [
+    "The labeled decoder maps its fixed test input and return field to the original validation set; task metadata calls it validation.",
+    "The original unlabeled test CSV is verified separately and is not exposed by the labeled representation."
+  ],
+  "validation": {
+    "local_manifest_schema": "passed",
+    "devenv_test_exit_code": 0,
+    "skipped_live_checks": "Published-registry audits; this preparation is local and unregistered."
+  }
+}
