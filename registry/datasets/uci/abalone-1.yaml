@@ -7,8 +7,21 @@ description: Physical measurements of abalone distributed by the UCI Machine Lea
 modality: tabular
 preprocessing:
   upstream:
-    status: unknown
-    notes: The preprocessing history has not been established for this representation.
+    status: documented
+    evidence:
+    - https://archive.ics.uci.edu/dataset/1/abalone
+    - https://archive.ics.uci.edu/ml/machine-learning-databases/abalone/abalone.names
+    steps:
+    - kind: scaling
+      description: The provider removed observations with missing values, mostly missing
+        targets, and divided continuous measurements by 200 for use with an artificial
+        neural network.
+      parameters:
+        divisor: '200'
+        columns: Length, Diameter, Height, Whole_weight, Shucked_weight, Viscera_weight,
+          Shell_weight
+    notes: The provider does not specify the order of removal and scaling or the number
+      of removed observations. Rings remains a count; adding 1.5 gives age in years.
   datamonger:
     status: none
     evidence:
