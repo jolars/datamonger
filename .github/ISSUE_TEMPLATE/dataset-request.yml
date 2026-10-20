@@ -1,0 +1,65 @@
+name: Dataset request
+description: Suggest a dataset to add to Datamonger.
+title: "Dataset request: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Suggest a dataset for the registry. Provide the original source and
+        identify the data you want included. Share any other details you know;
+        you do not need to prepare a manifest or convert the data.
+
+        See the [dataset contribution guide](https://github.com/jolars/datamonger/blob/main/CONTRIBUTING.md#adding-or-revising-a-dataset)
+        for how datasets are reviewed and added.
+
+  - type: input
+    id: dataset-name
+    attributes:
+      label: Dataset name
+      description: Use the published dataset name or the paper title.
+      placeholder: Brain tumor plasma metabolomics (Godlewski et al., 2023)
+    validations:
+      required: true
+
+  - type: textarea
+    id: source
+    attributes:
+      label: Original source
+      description: |
+        Link the provider's dataset page, repository, or paper. For data from a
+        paper, include its DOI or citation, with authors and publication year.
+    validations:
+      required: true
+
+  - type: textarea
+    id: data-and-use
+    attributes:
+      label: Data and intended use
+      description: |
+        What does the dataset contain, and how would you use it? If known,
+        include the number of observations and features, and the prediction target
+        or other task.
+    validations:
+      required: true
+
+  - type: textarea
+    id: files-and-variant
+    attributes:
+      label: Files and requested variant
+      description: |
+        If known, link the original download files and describe their formats
+        and approximate sizes. Identify the tables, cohort, or version you
+        want included, any predefined training and test splits, and any known
+        preprocessing or conversion needed.
+    validations:
+      required: false
+
+  - type: textarea
+    id: reuse-terms
+    attributes:
+      label: License and reuse terms
+      description: |
+        Link any license, rights statement, or source terms covering the data,
+        including any restrictions on redistribution. Unknown is fine.
+    validations:
+      required: false
