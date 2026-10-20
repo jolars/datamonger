@@ -233,9 +233,10 @@ constraint exists, not narrate the code.
 Never commit downloaded upstream dataset artifacts. Manifests record upstream or
 reviewed mirror locations and the digests of the bytes served there.
 
-1. Choose a canonical `(source, name, version)` identity. If artifact identity
-   or the complete representation recipe differs from a published record, use a
-   new dataset version.
+1. Choose a canonical `(source, name, version)` identity. For new curated
+   datasets, follow the [curated dataset naming policy](#curated-dataset-names).
+   If artifact identity or the complete representation recipe differs from a
+   published record, use a new dataset version.
 
 2. Draft a YAML manifest from
    [`spec/schema/manifest-v3.schema.json`](spec/schema/manifest-v3.schema.json).
@@ -282,6 +283,40 @@ A release-scoped metadata improvement may retain a dataset version only when it
 obeys the append-only evolution rules in [`spec/identity.md`](spec/identity.md).
 Incorrect component expectations or verification records require an approved
 erratum in a later registry release; earlier release bytes remain unchanged.
+
+### Curated dataset names
+
+For new datasets curated and distributed under the `datamonger` source
+namespace, use `<surname><year>[<paper-letter>][-<dataset-label>]`. Use the
+first author's surname normalized to lowercase ASCII and the paper's
+publication year. Preserve the provider's spelling in `provenance.upstream_name`.
+
+| Situation | Dataset name |
+| --- | --- |
+| One paper, one dataset | `smith2023` |
+| Multiple distinct datasets from that paper | `smith2023-plasma`, `smith2023-tissue` |
+| Another paper with the same first-author surname and publication year | `smith2023b` |
+| Multiple distinct datasets from that second paper | `smith2023b-plasma`, `smith2023b-tissue` |
+
+The first paper registered with a surname and year uses the unsuffixed base.
+For subsequent papers with the same base, assign the next available letter
+starting with `b`, then `c`, and so on. Reuse that paper's base and letter for
+all its datasets. These letters identify papers within the registry and are
+independent of bibliography labels. Check existing manifests, curation
+directories, and published indexes before allocating a name.
+
+For distinct datasets from one paper, prefer short suffixes describing their
+scientific content. When no useful descriptive label exists, use a stable
+source label such as `-table-s2`. Avoid bare numeric suffixes such as `-1`:
+dataset versions already have a separate field, written as `@1` in the
+canonical ID. Multiple tasks or training and test splits alone generally
+belong within one dataset.
+
+Keep existing dataset IDs unchanged when adding papers or datasets. If a
+second dataset is discovered after an unsuffixed name is established, retain
+that name and give the new dataset a descriptive suffix. This policy applies
+to new curated names; existing IDs and names in upstream source namespaces
+retain their established spelling.
 
 ## Registry and specification changes
 

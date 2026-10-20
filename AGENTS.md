@@ -49,8 +49,11 @@ For R, use two-space indentation and `snake_case`; keep exported interfaces and
 S3 return classes documented. For Julia, follow idiomatic four-space formatting,
 use `snake_case` for functions and variables, and use `PascalCase` for types.
 
-Prefer lowercase names with hyphens between words and variant suffixes for new
-datasets (for example, `rcv1-binary`). Preserve the provider's spelling in
+For new curated datasets, use `<surname><year>` with letters for paper
+collisions and descriptive suffixes for distinct datasets from one paper.
+Follow the [naming policy](CONTRIBUTING.md#curated-dataset-names); keep existing
+IDs unchanged. For new upstream entries, prefer lowercase names and hyphenated
+variant suffixes (for example, `rcv1-binary`). Preserve the provider's spelling in
 `provenance.upstream_name`.
 
 ## Testing Guidelines

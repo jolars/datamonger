@@ -26,6 +26,13 @@ use existing manifests as examples rather than copying their claims or digests.
   `(source, name, version)`. Quote YAML versions as strings. Artifact bytes,
   artifact format or compression, and the complete representation recipe are
   immutable for a published identity; changes require a new dataset version.
+- For new curated names under `datamonger`, follow the
+  [curated dataset naming policy](../../../CONTRIBUTING.md#curated-dataset-names):
+  use the first author's lowercase ASCII surname and publication year, letters
+  starting with `b` for collisions between papers, and descriptive suffixes
+  for distinct datasets within a paper. Check curation directories as well as
+  registry records before allocating names. Keep existing IDs unchanged and
+  reserve the separate version field for dataset versions.
 - Use `license.status: unknown` when evidence is insufficient. Public download
   access does not establish a license, and a provider's software license may
   not cover its datasets. Record useful evidence without inventing reviewer
