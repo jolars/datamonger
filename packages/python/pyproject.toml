@@ -69,6 +69,8 @@ files = [
   "../../tools/dm_bundle_registry.py",
   "../../tools/dm_rust_sources.py",
   "../../tools/dm_ffi_licenses.py",
+  "../../tools/dm_catalog.py",
+  "../../tools/dm_docs.py",
 ]
 
 [tool.uv]

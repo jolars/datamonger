@@ -31,23 +31,28 @@ mkdir -p /tmp/datamonger-docs-library
 julia tools/dm_julia_core.jl
 julia --project=packages/julia -e 'using Pkg; Pkg.instantiate()'
 R CMD INSTALL --library=/tmp/datamonger-docs-library packages/r
-../diplodocus/target/debug/diplodocus serve --config documentation/diplodocus.toml --output documentation/site --port 8001 --live-reload
+python tools/dm_catalog.py
+../diplodocus/target/debug/diplodocus build --config documentation/diplodocus.toml --output documentation/site
+npm ci --ignore-scripts --prefix documentation
+python tools/dm_docs.py --serve --port 8001
 ```
 
-Open <http://127.0.0.1:8001/>. To generate deployable files, replace `serve` with
-`build` and omit `--port 8001 --live-reload`. Generated snapshots, site files,
-and npm dependencies are ignored by Git. `build` and `serve` validate sources,
+Open <http://127.0.0.1:8001/>. The preview serves the completed files with the
+same clean page URLs as the deployed site. Diplodocus's built-in `serve` uses
+an in-memory site and cannot include assets installed after rendering.
+Generated snapshots, site files, and npm dependencies are ignored by Git.
+`build` and `serve` validate sources,
 complete Julia's generated error types through the prepared runtime, execute
 Python and Julia API doctests, and use native R for package documents and examples.
 `check` remains static and reports 15 unresolved generated Julia types for this
 workspace; use `build` for complete validation.
 
-After building, run `python tools/dm_docs.py` from the repository root to install
-the favicon files and shared HTML head markup. The script copies
-`documentation/public/` into the published root, `documentation/site/`, and
-adds `documentation/head.html` to every generated HTML page. CI runs this step
-before deployment. For local previews, rerun it after Diplodocus rebuilds the
-site. Keep favicon markup in the shared file so all pages use the same links.
+Run `npm ci --ignore-scripts --prefix documentation` once to install the pinned
+website dependencies. After building, run `python tools/dm_docs.py` from the
+repository root to install public assets, catalog metadata, MiniSearch, shared
+HTML head markup, and the Datasets navigation link. CI runs these steps before
+deployment. For local previews, rerun the script after Diplodocus rebuilds the
+site. Keep shared head markup in `documentation/head.html`.
 
 The [offline conformance walkthrough](../packages/r/vignettes/offline-conformance.Rmd)
 retrieves a bundled CSV from a private temporary cache, verifies its decoded
@@ -73,6 +78,44 @@ and verify that an empty cache has no entries or bytes. They make no network
 requests and leave the user's cache untouched. API doctest failures prevent
 publication. Ordinary Markdown fences in the README and guides remain
 illustrative.
+
+## Dataset catalog
+
+`python tools/dm_catalog.py` generates the browser, dataset version pages, and
+JSON metadata in the ignored `documentation/generated/datasets/` directory.
+Generate it before building the site. The generator reads the clients' bundled
+selector in `packages/cli/assets/selector.json`, verifies the checked-in index
+against its digest and schemas, and makes no network requests. The catalog
+follows client registry updates rather than pending registry release PRs.
+Use `--selector PATH` to preview another checked-in snapshot.
+
+Diplodocus renders the generated Markdown under `/datasets/`, including a
+complete table of default dataset versions that works without JavaScript.
+The browser loads a compact JSON projection and self-hosted MiniSearch only
+when visitors open the catalog. Filters and sorting persist in the query
+string. Numeric filters must match the same task and split; missing task
+metadata does not imply unsupervised learning. Detail pages include pinned
+retrieval examples, metadata, and links to other versions in the selected
+registry. Long component lists are summarized in HTML and remain complete in
+each downloadable JSON record.
+
+Generated catalog files are never edited manually. The generator removes only
+stale files listed in its previous output inventory. No dataset artifact is
+downloaded or included in the website.
+
+Generator regression tests run as part of `devenv test`. After building the
+site, run the browser tests with:
+
+```console
+cd documentation
+npx --no-install playwright install chromium
+npm run test:catalog
+```
+
+The tests start a preview automatically. To use a system Chromium on NixOS, set
+`DM_CHROMIUM_PATH` to its executable. Set `DM_DOCS_TEST_URL` to test an already
+running local preview. CI runs the browser tests before checking the Worker
+package and deploying the site.
 
 ## Publishing
 

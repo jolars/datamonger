@@ -40,7 +40,7 @@ jobs:
           enable-cache: true
           python-version: "3.11"
       - name: Prepare the Python client
-        run: uv sync --locked --project packages/python --no-dev
+        run: uv sync --locked --project packages/python
       - uses: julia-actions/setup-julia@v3
         with:
           version: "1.12"
@@ -60,18 +60,26 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/datamonger-r"
           R CMD INSTALL --library="$RUNNER_TEMP/datamonger-r" packages/r
+      - name: Generate dataset catalog
+        run: uv run --no-sync --project packages/python python tools/dm_catalog.py
       - name: Build documentation site
         run: uv run --no-sync --project packages/python .build/diplodocus/target/debug/diplodocus build --config documentation/diplodocus.toml --output documentation/site
-      - name: Install public assets and shared head markup
-        run: python tools/dm_docs.py
       - uses: actions/setup-node@v7
         with:
           node-version: "24"
           cache: npm
           cache-dependency-path: documentation/package-lock.json
-      - name: Install Wrangler
+      - name: Install website dependencies
         working-directory: documentation
         run: npm ci --ignore-scripts
+      - name: Install public assets and shared head markup
+        run: python tools/dm_docs.py
+      - name: Install test browser
+        working-directory: documentation
+        run: npx --no-install playwright install --with-deps chromium
+      - name: Test dataset browser
+        working-directory: documentation
+        run: npm run test:catalog
       - name: Check Worker package
         working-directory: documentation
         run: npx --no-install wrangler deploy --dry-run

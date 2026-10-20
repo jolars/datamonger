@@ -65,6 +65,17 @@ format = "gfm"
 mode = "never"
 
 [[content]]
+id = "datasets"
+owner = "project"
+repository = "datamonger"
+path = "documentation/generated/datasets"
+mount = "datasets"
+format = "gfm"
+
+[content.execution]
+mode = "never"
+
+[[content]]
 id = "python-pages"
 owner = "python"
 repository = "datamonger"
