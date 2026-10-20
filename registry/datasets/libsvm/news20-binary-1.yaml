@@ -1,0 +1,88 @@
+schema_version: 3
+source: libsvm
+name: news20-binary
+version: '1'
+title: News20 Binary
+description: LIBSVM's binary classification variant of 20 Newsgroups, with 19,996 documents
+  and 1,355,191 sparse text features. Nonzero feature vectors have approximately unit length;
+  42 documents have no stored features. The provider supplies a single artifact without a
+  predefined training and test split. Feature values, binary labels, and row order are preserved.
+modality: tabular
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#news20.binary
+    steps:
+    - kind: normalization
+      description: Normalize each document's feature vector to unit length.
+      parameters:
+        axis: rows
+        norm: l2
+    notes: The provider page does not describe the earlier text feature preparation or the
+      mapping from newsgroups to the two labels. Artifact inspection finds 42 zero-feature
+      documents; nonzero vectors have unit length within the precision of the stored values.
+  datamonger:
+    status: none
+    evidence:
+    - spec/decoders/libsvm-v1.md
+    notes: Datamonger decodes the provider artifact without additional statistical preprocessing.
+provenance:
+  provider: LIBSVM
+  upstream_name: news20.binary
+  landing_page: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#news20.binary
+  authors:
+  - S. Sathiya Keerthi
+  - Dennis DeCoste
+  citation: S. Sathiya Keerthi and Dennis DeCoste. A Modified Finite Newton Method for Fast
+    Solution of Large Scale Linear SVMs. Journal of Machine Learning Research, 6:341-361,
+    2005. https://www.jmlr.org/papers/v6/keerthi05a.html
+  retrieved_at: '2026-10-20'
+license:
+  status: unknown
+  url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#news20.binary
+  evidence: The LIBSVM dataset page identifies the source publication and documents normalization,
+    but provides no license terms for this artifact. The LIBSVM software license does not
+    establish a license for the dataset.
+artifacts:
+- name: data
+  format: libsvm
+  compression: bzip2
+  size: 26779006
+  sha256: 2659afadb07f109afb57a7fc1ebc13b12581284fadab05b986a25c7d00690b69
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/news20.binary.bz2
+representation:
+  decoder: libsvm
+  decoder_version: 1
+  inputs:
+    data: data
+  options:
+    index_base: 1
+    feature_count: 1355191
+    duplicate_features: error
+    label_type: int64
+    row_order: source
+    target_name: response
+  expect:
+    components:
+    - name: features
+      kind: sparse_matrix
+      type: float64
+      rows: 19996
+      columns: 1355191
+    - name: response
+      kind: vector
+      type: int64
+      length: 19996
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: 9a9ef0a6d67d73e4a7d017d946e628987f28c30e365e0366a9215765a47e77cd
+tasks:
+- name: default
+  type: classification
+  features: features
+  target: response

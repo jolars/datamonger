@@ -10,6 +10,7 @@ manifests:
 - registry/datasets/libsvm/dna_scale-1.yaml
 - registry/datasets/libsvm/glass_scale-1.yaml
 - registry/datasets/libsvm/heart_scale-1.yaml
+- registry/datasets/libsvm/news20-binary-1.yaml
 - registry/datasets/libsvm/rcv1-binary-1.yaml
 - registry/datasets/libsvm/triazines_scale-1.yaml
 - registry/datasets/uci/abalone-1.yaml
@@ -44,6 +45,9 @@ defaults:
   version: '1'
 - source: libsvm
   name: heart_scale
+  version: '1'
+- source: libsvm
+  name: news20-binary
   version: '1'
 - source: libsvm
   name: rcv1-binary
