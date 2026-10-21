@@ -9,9 +9,9 @@ vignette: >
 ---
 
 Datamonger brings public research datasets into your R analysis. It downloads
-the registered files, checks their contents, and returns R objects you can
-work with directly. You can also inspect where the data came from, find
-citations, and record which version you used.
+the registered files, checks their contents, and returns R objects you can work
+with directly. You can also inspect where the data came from, find citations,
+and record which version you used.
 
 ```{r}
 #| label: setup
@@ -43,12 +43,12 @@ The reference `"uci:iris"` combines the source (`uci`) and dataset name
 (`iris`). You can also write `fetch_data("iris", source = "uci")`.
 
 The first call downloads the data and stores a local copy for later use.
-Downloading requires an internet connection. Download examples in this
-vignette are shown without running them during the build.
+Downloading requires an internet connection. Download examples in this vignette
+are shown without running them during the build.
 
 Iris is returned as a data frame with 150 rows, four measurements, and a species
-label. Datamonger preserves the registered column names, including spaces.
-Use `[[` to select a column by name:
+label. Datamonger preserves the registered column names, including spaces. Use
+`[[` to select a column by name:
 
 ```{r}
 #| label: plot-iris
@@ -89,16 +89,16 @@ info$license
 
 Check each dataset's license and provenance before using it. `info$provenance`
 describes its source, and `info$preprocessing` records known preparation steps.
-Missing preprocessing metadata means that the history is not recorded.
-Fetching the data does not apply the listed transformations again.
+Missing preprocessing metadata means that the history is not recorded. Fetching
+the data does not apply the listed transformations again.
 
-The `offline = TRUE` argument forbids network access. It works here because
-the metadata is bundled with the package. You can omit it during normal use.
+The `offline = TRUE` argument forbids network access. It works here because the
+metadata is bundled with the package. You can omit it during normal use.
 
 ## Cite the data
 
-`cite_data()` retrieves citation text from the registry without downloading
-the dataset:
+`cite_data()` retrieves citation text from the registry without downloading the
+dataset:
 
 ```{r}
 #| label: cite-iris
@@ -131,9 +131,9 @@ saveRDS(list(registry = registry, info = result$info), "iris-provenance.rds")
 
 The result separates the data from its metadata. `result$info` records the
 dataset version, registry release, and digests used to verify the data. The
-registry selector identifies the exact catalog used for the retrieval.
-Keep these records with your analysis so that you can select the same catalog
-in a later session:
+registry selector identifies the exact catalog used for the retrieval. Keep
+these records with your analysis so that you can select the same catalog in a
+later session:
 
 ```{r}
 #| label: reuse-registry
@@ -171,9 +171,9 @@ cache_info(cache_dir = "data-cache")
 ```
 
 `cache_clean()` removes cached downloads when you no longer need them. For
-example, `cache_clean(dataset = "uci:iris@1", cache_dir = "data-cache")`
-removes cached files associated with Iris from that cache. A later fetch can
-download them again.
+example, `cache_clean(dataset = "uci:iris@1", cache_dir = "data-cache")` removes
+cached files associated with Iris from that cache. A later fetch can download
+them again.
 
 ## Work with sparse data and splits
 
@@ -190,13 +190,13 @@ dim(heart$features)
 head(heart$response)
 ```
 
-The feature matrix normally uses the `Matrix` package. Very large dimensions
-use Datamonger's own sparse matrix class. Exact 64-bit integers use the
+The feature matrix normally uses the `Matrix` package. Very large dimensions use
+Datamonger's own sparse matrix class. Exact 64-bit integers use the
 `datamonger_int64` class, which stores decimal strings to avoid losing
 precision.
 
-Datasets with predefined splits keep those splits separate. Access a split
-by its name, such as `data[["train"]]` or `data[["test"]]`. Datamonger preserves
+Datasets with predefined splits keep those splits separate. Access a split by
+its name, such as `data[["train"]]` or `data[["test"]]`. Datamonger preserves
 the provider's row membership; you decide how to prepare the data for your
 analysis.
 
