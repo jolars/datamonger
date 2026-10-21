@@ -1,0 +1,204 @@
+---
+title: Getting started with Datamonger
+author: Johan Larsson
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with Datamonger}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+Datamonger brings public research datasets into your R analysis. It downloads
+the registered files, checks their contents, and returns R objects you can
+work with directly. You can also inspect where the data came from, find
+citations, and record which version you used.
+
+```{r}
+#| label: setup
+#| include: false
+
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", error = FALSE)
+```
+
+## Fetch your first dataset
+
+Load the package and fetch the Iris dataset from the UCI Machine Learning
+Repository:
+
+```{r}
+#| label: load-package
+
+library(datamonger)
+```
+
+```{r}
+#| label: fetch-iris
+#| eval: false
+
+flowers <- fetch_data("uci:iris")
+head(flowers)
+```
+
+The reference `"uci:iris"` combines the source (`uci`) and dataset name
+(`iris`). You can also write `fetch_data("iris", source = "uci")`.
+
+The first call downloads the data and stores a local copy for later use.
+Downloading requires an internet connection. Download examples in this
+vignette are shown without running them during the build.
+
+Iris is returned as a data frame with 150 rows, four measurements, and a species
+label. Datamonger preserves the registered column names, including spaces.
+Use `[[` to select a column by name:
+
+```{r}
+#| label: plot-iris
+#| eval: false
+
+plot(flowers[["petal length"]], flowers[["petal width"]],
+     xlab = "Petal length (cm)", ylab = "Petal width (cm)", pch = 19)
+```
+
+Datamonger checks both the downloaded files and the decoded values before
+returning the data. These checks help you detect a changed upstream file or an
+unexpected interpretation of its contents.
+
+## Find and inspect datasets
+
+`list_data()` lists the datasets in the current registry, Datamonger's catalog
+of dataset versions and their metadata. The package includes a registry, so you
+can browse it without downloading anything. Here are the available dataset
+references:
+
+```{r}
+#| label: browse-datasets
+
+available <- list_data(offline = TRUE)
+vapply(available, function(dataset) dataset$dataset_id, character(1))
+```
+
+Use `data_info()` to inspect a dataset before fetching it. Adding `@1` selects
+version 1 explicitly:
+
+```{r}
+#| label: inspect-iris
+
+info <- data_info("uci:iris@1", offline = TRUE)
+info
+info$license
+```
+
+Check each dataset's license and provenance before using it. `info$provenance`
+describes its source, and `info$preprocessing` records known preparation steps.
+Missing preprocessing metadata means that the history is not recorded.
+Fetching the data does not apply the listed transformations again.
+
+The `offline = TRUE` argument forbids network access. It works here because
+the metadata is bundled with the package. You can omit it during normal use.
+
+## Cite the data
+
+`cite_data()` retrieves citation text from the registry without downloading
+the dataset:
+
+```{r}
+#| label: cite-iris
+
+cat(cite_data("uci:iris@1", offline = TRUE))
+```
+
+When the source recommends particular references, Datamonger selects them by
+default. Use `include_all = TRUE` to see every recorded reference, or
+`format = "records"` to work with the citation fields in R. Any upstream
+citation instructions are included in the text output.
+
+## Make an analysis reproducible
+
+An unversioned reference such as `"uci:iris"` selects the registry's default
+version. Once you choose data for an analysis, use an explicit version and
+request the retrieval metadata:
+
+```{r}
+#| label: record-provenance
+#| eval: false
+
+registry <- active_registry()
+result <- fetch_data("uci:iris@1", registry = registry, return_info = TRUE)
+flowers <- result$data
+result$info
+
+saveRDS(list(registry = registry, info = result$info), "iris-provenance.rds")
+```
+
+The result separates the data from its metadata. `result$info` records the
+dataset version, registry release, and digests used to verify the data. The
+registry selector identifies the exact catalog used for the retrieval.
+Keep these records with your analysis so that you can select the same catalog
+in a later session:
+
+```{r}
+#| label: reuse-registry
+#| eval: false
+
+provenance <- readRDS("iris-provenance.rds")
+flowers <- fetch_data("uci:iris@1", registry = provenance$registry)
+```
+
+## Reuse downloaded data
+
+Datamonger keeps downloaded files in a cache. Later fetches check and reuse
+those files. After downloading Iris, you can fetch it without network access:
+
+```{r}
+#| label: fetch-offline
+#| eval: false
+
+flowers <- fetch_data("uci:iris@1", offline = TRUE)
+```
+
+If a required file is missing from the cache, an offline fetch raises an error.
+Download the datasets you need before disconnecting from the network.
+
+Use `datamonger_cache_dir()` to find the default cache and `cache_info()` to
+inspect its contents. To keep a separate cache for a project, pass the same
+`cache_dir` to each call:
+
+```{r}
+#| label: project-cache
+#| eval: false
+
+flowers <- fetch_data("uci:iris@1", cache_dir = "data-cache")
+cache_info(cache_dir = "data-cache")
+```
+
+`cache_clean()` removes cached downloads when you no longer need them. For
+example, `cache_clean(dataset = "uci:iris@1", cache_dir = "data-cache")`
+removes cached files associated with Iris from that cache. A later fetch can
+download them again.
+
+## Work with sparse data and splits
+
+The return type follows the dataset's structure. CSV and TSV datasets become
+data frames. LIBSVM and SVMLight datasets return a list with a sparse feature
+matrix and a response vector:
+
+```{r}
+#| label: fetch-sparse
+#| eval: false
+
+heart <- fetch_data("libsvm:heart_scale@1")
+dim(heart$features)
+head(heart$response)
+```
+
+The feature matrix normally uses the `Matrix` package. Very large dimensions
+use Datamonger's own sparse matrix class. Exact 64-bit integers use the
+`datamonger_int64` class, which stores decimal strings to avoid losing
+precision.
+
+Datasets with predefined splits keep those splits separate. Access a split
+by its name, such as `data[["train"]]` or `data[["test"]]`. Datamonger preserves
+the provider's row membership; you decide how to prepare the data for your
+analysis.
+
+For more detail, see the help pages for `fetch_data()`, `data_info()`,
+`cite_data()`, and `registry_selector()`.

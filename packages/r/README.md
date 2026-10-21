@@ -109,10 +109,10 @@ preserves known steps, string parameters, and evidence references. Missing
 metadata is `NULL`, including in older bundled snapshots. Fetching does not apply
 the described transformations. See the [preprocessing contract](../../spec/preprocessing.md).
 
-The [offline conformance example](vignettes/offline-conformance.Rmd) retrieves
-the shared mixed CSV fixture from a temporary cache, verifies its decoded
-digest, and renders its values and a plot. The package includes its inputs, so
-the example also runs after installation without a repository checkout.
+The [getting started vignette](vignettes/introduction.Rmd) introduces dataset
+discovery, retrieval, citations, reproducibility, and caching with public
+research datasets. Metadata examples run offline; examples that download data
+are shown without being evaluated during the build.
 
 ## Registry selection
 

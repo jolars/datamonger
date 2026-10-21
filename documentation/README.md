@@ -52,17 +52,16 @@ HTML head markup, and the Datasets navigation link. CI runs these steps before
 deployment. For local previews, rerun the script after Diplodocus rebuilds the
 site. Keep shared head markup in `documentation/head.html`.
 
-The [offline conformance walkthrough](../packages/r/vignettes/offline-conformance.Rmd)
-retrieves a bundled CSV from a private temporary cache, verifies its decoded
-values and canonical digest, and renders tables and a plot. Every retrieval
-uses `offline = TRUE`; building the article makes no network requests. The
-README and authored Markdown guide examples remain illustrative.
+The R [getting started vignette](../packages/r/vignettes/introduction.Rmd)
+introduces dataset discovery, retrieval, citations, reproducibility, and caching.
+Metadata examples use the bundled registry with `offline = TRUE`. Download
+examples and the code that depends on them use `eval = FALSE`, so building the
+article makes no network requests. The README and authored Markdown guide
+examples remain illustrative.
 
-The R package includes the shared conformance corpus and its test registry, so
-the article also runs from an installed package. `R CMD build packages/r`
-renders the standard R vignette with knitr, rmarkdown, and Pandoc, which are
-included in the repository's devenv environment. Diplodocus executes the same
-source with its native knitr collector.
+`R CMD build packages/r` renders the standard R vignette with knitr, rmarkdown,
+and Pandoc, which are included in the repository's devenv environment.
+Diplodocus executes the same source with its native knitr collector.
 
 The Julia package's [offline data workflow](../packages/julia/tutorials/offline-workflow.md)
 and [reproducibility guide](../packages/julia/tutorials/reproducibility.md) are

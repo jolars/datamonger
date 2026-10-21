@@ -51,12 +51,11 @@ adapter checks the REPL transcript, including its multiline temporary-directory
 block. Both run during extraction, use the supplied checkout, retain outcomes and
 runtime observations, make no network requests, and leave the user's cache alone.
 
-The [R offline conformance walkthrough](../packages/r/vignettes/offline-conformance.Rmd)
-retrieves the bundled mixed CSV through `fetch_artifact()` and `fetch_data()`. It
-seeds a private temporary cache, requires `offline = TRUE`, checks the five rows
-and four typed columns against their expected values, and verifies the canonical
-digest from the shared corpus. The article renders the values, reproducibility
-metadata, and a PNG plot, then removes its cache.
+The R [getting started vignette](../packages/r/vignettes/introduction.Rmd)
+executes dataset discovery, metadata inspection, and citation examples against
+the bundled registry with `offline = TRUE`. Download examples and code that
+depends on them use `eval = FALSE`. The article builds without network access
+or changes to the user's cache.
 
 Ordinary Markdown fences in the README and authored guides remain illustrative.
 They include installation commands and retrievals that can access the network.
