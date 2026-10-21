@@ -7,3 +7,5 @@ inputs:
     inputs:
       nixpkgs:
         follows: nixpkgs
+  diplodocus:
+    url: github:jolars/diplodocus

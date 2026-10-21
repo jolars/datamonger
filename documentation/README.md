@@ -12,16 +12,14 @@ after changing commands or help text. CI checks that the reference is current.
 
 ## Local preview
 
-With Datamonger and Diplodocus checked out beside each other, build the pinned
-Diplodocus revision `4f6efd87895e0f586e90589cd7d3c6c0d8cb0734` in its devenv shell:
+Enter Datamonger's `devenv shell` for the locked Diplodocus CLI, Python, R,
+Julia, and the package dependencies. Update Diplodocus with
+`devenv update diplodocus`. To test a neighboring checkout instead, enter:
 
 ```console
-cd ../diplodocus
-devenv shell -- cargo build --locked --bin diplodocus
-cd ../datamonger
+devenv --override-input diplodocus path:../diplodocus shell
 ```
 
-Enter Datamonger's `devenv shell` for Python, R, Julia, and the package dependencies.
 The shell prepares the Python environment. Instantiate the Julia project and
 compile the R client's native extension before the first build or after changing
 its dependencies or C code:
@@ -32,7 +30,7 @@ julia tools/dm_julia_core.jl
 julia --project=packages/julia -e 'using Pkg; Pkg.instantiate()'
 R CMD INSTALL --library=/tmp/datamonger-docs-library packages/r
 python tools/dm_catalog.py
-../diplodocus/target/debug/diplodocus build --config documentation/diplodocus.toml --output documentation/site
+diplodocus build --config documentation/diplodocus.toml --output documentation/site
 npm ci --ignore-scripts --prefix documentation
 python tools/dm_docs.py --serve --port 8001
 ```
@@ -120,7 +118,8 @@ package and deploying the site.
 ## Publishing
 
 The [Documentation workflow](../.github/workflows/documentation.yml) builds with
-a pinned Diplodocus commit and checks the Cloudflare package on pull requests.
+a pinned setup action and CLI release and checks the Cloudflare package on pull
+requests.
 Each push to `main` deploys the generated files as Worker static assets to
 `datamonger.dev`. A manual workflow dispatch from `main` can retry a failed
 deployment. The site requires no running Datamonger client or dataset source.

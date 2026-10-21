@@ -6,6 +6,7 @@ let
 in
 {
   packages = [
+    inputs.diplodocus.packages.${pkgs.stdenv.hostPlatform.system}.default
     pkgs.jq
     pkgs.julia
     pkgs.pandoc

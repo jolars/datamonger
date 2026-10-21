@@ -18,21 +18,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Check out Diplodocus
-        uses: actions/checkout@v7
+      - name: Install Diplodocus
+        uses: jolars/setup-diplodocus@c24f7f8cac71f80beab04350ac6b98062612345c # v1.0.0
         with:
-          repository: jolars/diplodocus
-          ref: 4f6efd87895e0f586e90589cd7d3c6c0d8cb0734
-          path: .build/diplodocus
-          persist-credentials: false
-      - name: Install Diplodocus Rust toolchain
-        run: rustup toolchain install 1.98.0 --profile minimal
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: .build/diplodocus
-          key: documentation
-      - name: Build Diplodocus
-        run: cargo +1.98.0 build --locked --manifest-path .build/diplodocus/Cargo.toml --bin diplodocus
+          # Remove after the action releases its pinned default CLI version.
+          version: "0.5.0"
       - uses: dtolnay/rust-toolchain@stable
       - name: Install uv
         uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
@@ -63,7 +53,7 @@ jobs:
       - name: Generate dataset catalog
         run: uv run --no-sync --project packages/python python tools/dm_catalog.py
       - name: Build documentation site
-        run: uv run --no-sync --project packages/python .build/diplodocus/target/debug/diplodocus build --config documentation/diplodocus.toml --output documentation/site
+        run: uv run --no-sync --project packages/python diplodocus build --config documentation/diplodocus.toml --output documentation/site
       - uses: actions/setup-node@v7
         with:
           node-version: "24"
