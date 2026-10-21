@@ -78,7 +78,7 @@ function _artifact_locations(artifact)
     return urls
 end
 
-function _retrieve_artifact(artifact, cache_dir, offline)
+function _retrieve_artifact(artifact, cache_dir, offline; lease=nothing)
     urls = _artifact_locations(artifact)
     digest = _require_string(get(artifact, "sha256", nothing), "artifact SHA-256")
     occursin(_SHA256_PATTERN, digest) ||
@@ -93,7 +93,8 @@ function _retrieve_artifact(artifact, cache_dir, offline)
         offline,
         ArtifactIntegrityError,
         OfflineError,
-        RetrievalLocationsError,
+        RetrievalLocationsError;
+        lease,
     )
 end
 
@@ -341,12 +342,17 @@ function fetch_data(
     citations, instructions = _citation_metadata(dataset)
     preprocessing = _preprocessing_metadata(dataset)
     setup = _validate_representation(dataset)
-    objects = CachedObject[]
+    objects = Dict{String,CachedObject}()
+    paths = String[]
     try
         for artifact in setup.artifacts
-            push!(objects, _retrieve_artifact(artifact, cache_dir, offline))
+            # Windows PID-file leases cannot be acquired twice by the same fetch.
+            held = get(objects, get(artifact, "sha256", nothing), nothing)
+            object = _retrieve_artifact(artifact, cache_dir, offline;
+                lease=held === nothing ? nothing : held.lease)
+            objects[artifact["sha256"]] = object
+            push!(paths, object.path)
         end
-        paths = [object.path for object in objects]
         decoded = _decode_setup(setup, paths)
 
         verification = :artifact
@@ -388,7 +394,7 @@ function fetch_data(
         )
         return return_info ? FetchResult(decoded.data, info) : decoded.data
     finally
-        for object in objects
+        for object in values(objects)
             _release_cached(object)
         end
     end

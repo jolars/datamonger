@@ -204,3 +204,47 @@ end
         RetrievalLocationsError,
     )
 end
+
+@testset "reused leases preserve artifact verification" begin
+    cache_dir = mktempdir()
+    bytes = Vector{UInt8}(codeunits("shared artifact"))
+    digest = bytes2hex(sha256(bytes))
+    path = Datamonger._object_path(cache_dir, "objects", digest)
+    mkpath(dirname(path))
+    write(path, bytes)
+    artifact = Dict(
+        "name" => "first",
+        "sha256" => digest,
+        "size" => length(bytes),
+        "distribution" => "upstream-only",
+        "downloads" => [Dict("kind" => "upstream", "url" => "https://example.com/data")],
+    )
+    object = Datamonger._retrieve_artifact(artifact, cache_dir, true)
+    try
+        repeated = deepcopy(artifact)
+        repeated["name"] = "second"
+        reused = Datamonger._retrieve_artifact(repeated, cache_dir, true; lease=object.lease)
+        @test read(reused.path) == bytes
+
+        write(path, reverse(bytes))
+        @test_throws ArtifactIntegrityError Datamonger._retrieve_artifact(
+            repeated, cache_dir, true; lease=object.lease)
+        write(path, bytes)
+
+        repeated["size"] = length(bytes) + 1
+        @test_throws ArtifactIntegrityError Datamonger._retrieve_artifact(
+            repeated, cache_dir, true; lease=object.lease)
+
+        repeated["distribution"] = "metadata-only"
+        @test_throws ArtifactUnavailableError Datamonger._retrieve_artifact(
+            repeated, cache_dir, true; lease=object.lease)
+
+        result = cache_clean(; cache_dir)
+        @test isempty(result.removed)
+        @test length(result.skipped) == 1
+        @test isfile(path)
+    finally
+        Datamonger._release_cached(object)
+    end
+    @test length(cache_clean(; cache_dir).removed) == 1
+end

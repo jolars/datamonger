@@ -310,10 +310,14 @@ function _retrieve_cached_object(
     offline,
     integrity_type,
     offline_type,
-    retrieval_type,
+    retrieval_type;
+    lease=nothing,
 )
     path = _object_path(cache_dir, namespace, digest)
-    lease = _acquire_lease(_lease_path(cache_dir, namespace, digest); exclusive=false)
+    owns_lease = lease === nothing
+    if owns_lease
+        lease = _acquire_lease(_lease_path(cache_dir, namespace, digest); exclusive=false)
+    end
     try
         if isfile(path)
             if _object_matches(path, digest, size)
@@ -366,7 +370,7 @@ function _retrieve_cached_object(
         message = "all retrieval locations failed: " * join(failures, "; ")
         throw(saw_integrity ? integrity_type(message) : retrieval_type(message))
     catch
-        _release_lease(lease)
+        owns_lease && _release_lease(lease)
         rethrow()
     end
 end
