@@ -1,9 +1,9 @@
-# Datamonger R client
+# Datamonger R Client
 
 This package implements Datamonger specification revision 1. It retrieves
-artifacts through strongly selected immutable registry indexes, verifies their bytes, decodes the revision 1 CSV, TSV,
-LIBSVM, and SVMLight representations, and verifies the canonical logical
-digest.
+artifacts through strongly selected immutable registry indexes, verifies their
+bytes, decodes the revision 1 CSV, TSV, LIBSVM, and SVMLight representations,
+and verifies the canonical logical digest.
 
 The package is pre-release software and is not yet on CRAN. Install it from the
 repository root:
@@ -13,8 +13,8 @@ install.packages("packages/r", repos = NULL, type = "source")
 ```
 
 Source installation requires Cargo and Rust 1.82 or newer, plus xz. The package
-includes the Rust core and vendored dependencies, and compiles offline. Gzip and bzip2
-use Rust backends; no system zlib or libbz2 installation is required.
+includes the Rust core and vendored dependencies, and compiles offline. Gzip and
+bzip2 use Rust backends; no system zlib or libbz2 installation is required.
 Windows source builds also require Rtools and the `x86_64-pc-windows-gnu` Rust
 target, which can be installed with `rustup target add x86_64-pc-windows-gnu`.
 
@@ -41,8 +41,8 @@ reports every content-addressed entry. Datamonger performs no telemetry.
 
 ## Use
 
-The bundled stable index is the default trust root. Its dataset artifacts
-are retrieved on first use:
+The bundled stable index is the default trust root. Its dataset artifacts are
+retrieved on first use:
 
 ```r
 library(datamonger)
@@ -84,18 +84,18 @@ result$info$canonical_digest
 Delimited data are returned as a data frame. Exact `int64` columns use the
 `datamonger_int64` vector class, backed by canonical decimal strings; this
 represents the full signed 64-bit range without conflating its minimum value
-with missing data. LIBSVM data return a `datamonger_sparse_dataset` containing
-a row-compressed `Matrix` feature matrix and an exact response vector. When a
+with missing data. LIBSVM data return a `datamonger_sparse_dataset` containing a
+row-compressed `Matrix` feature matrix and an exact response vector. When a
 dimension or stored-value count exceeds the `Matrix` package's integer limit,
-the feature matrix is an exact `datamonger_csr_matrix` instead. Split representations keep
-`train` and `test` datasets separate.
+the feature matrix is an exact `datamonger_csr_matrix` instead. Split
+representations keep `train` and `test` datasets separate.
 
 The `named-splits` assembly returns a `datamonger_dataset_splits` named list in
 recipe order. Access provider splits as `data[["train"]]`,
 `data[["validation"]]`, or `data[["test"]]`. Each value is a table or sparse
-dataset, and feature-only tables omit responses. The
-[named splits contract](../../spec/decoders/named-splits-v1.md) requires
-manifest schema 4 and preserves each split's original name and row membership.
+dataset, and feature-only tables omit responses. The [named splits
+contract](../../spec/decoders/named-splits-v1.md) requires manifest schema 4 and
+preserves each split's original name and row membership.
 
 `data_info()` and `list_data()` inspect provenance, license, distribution, and
 task metadata without retrieving artifacts. `fetch_artifact()` retrieves only
@@ -106,8 +106,9 @@ the selected index and artifacts to be bundled or already cached.
 `return_info = TRUE` expose upstream and Datamonger processing in version 3
 registries. Each stage distinguishes `unknown`, `none`, and `documented` and
 preserves known steps, string parameters, and evidence references. Missing
-metadata is `NULL`, including in older bundled snapshots. Fetching does not apply
-the described transformations. See the [preprocessing contract](../../spec/preprocessing.md).
+metadata is `NULL`, including in older bundled snapshots. Fetching does not
+apply the described transformations. See the [preprocessing
+contract](../../spec/preprocessing.md).
 
 The [getting started vignette](vignettes/introduction.Rmd) introduces dataset
 discovery, retrieval, citations, reproducibility, and caching with public
@@ -126,12 +127,12 @@ selected <- registry_selector(
 )
 ```
 
-Selection precedence is a per-call `registry` argument, `set_registry()` for
-the session, the nearest `.datamonger/selector.json`, and the bundled selector.
+Selection precedence is a per-call `registry` argument, `set_registry()` for the
+session, the nearest `.datamonger/selector.json`, and the bundled selector.
 `resolve_registry()` discovers a selector by bare release through a mutable
-HTTPS catalog. That lookup is trusted only as strongly as the TLS session; it
-is not a cryptographic pin until its returned release and digest are recorded
-and reused.
+HTTPS catalog. That lookup is trusted only as strongly as the TLS session; it is
+not a cryptographic pin until its returned release and digest are recorded and
+reused.
 
 The project code is MIT-licensed. Datasets retain their own licenses and terms;
 registry inclusion is not a license grant or a preservation guarantee.
@@ -150,7 +151,8 @@ flags are recorded, all references are returned and text output explains that
 the recommendation is unknown. Missing citations produce an empty list of
 records or an explicit text message. Legacy single citations remain supported.
 
-`data_info(...)$citations` and `fetch_data(..., return_info = TRUE)$info$citations`
-contain every reference from the selected registry record.
-`citation_instructions` preserves upstream instructions, including requests to
-cite several references together. No bibliographic lookups are performed.
+`data_info(...)$citations` and
+`fetch_data(..., return_info = TRUE)$info$citations` contain every reference
+from the selected registry record. `citation_instructions` preserves upstream
+instructions, including requests to cite several references together. No
+bibliographic lookups are performed.
