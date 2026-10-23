@@ -31,6 +31,8 @@ def citation_registry(
     )
     dataset = next(d for d in index["datasets"] if d["name"] == "iris")
     index["schema_version"] = dataset["schema_version"] = 2
+    dataset.pop("preprocessing", None)
+    dataset["provenance"].pop("citation", None)
     dataset["provenance"]["citations"] = REFERENCES
     dataset["provenance"]["citation_instructions"] = "Please cite both references."
     selected = Registry("citation-test", "a" * 64, "https://example.invalid/index")

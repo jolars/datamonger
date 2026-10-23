@@ -41,6 +41,10 @@ test('combines categorical filters and preserves unknown task metadata', async (
 });
 
 test('filters dimensions, handles split ranges, and sorts numerically', async ({ page }) => {
+  const names = ['dna_scale', 'colon-cancer', 'scheetz2006', 'brca1'];
+  const datasets = defaults.filter(entry => names.includes(entry.name));
+  expect(datasets).toHaveLength(4);
+  await page.route('**/datasets/catalog.json', route => route.fulfill({ json: { ...catalog, datasets } }));
   await openCatalog(page, '/datasets/?min_samples=1000&max_samples=2000');
   await expect(results(page)).toHaveText(['DNA Scale']);
   await expect(table(page)).toContainText('1,186–2,000');

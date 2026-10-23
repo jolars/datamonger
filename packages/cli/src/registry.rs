@@ -354,7 +354,11 @@ mod tests {
     use serde_json::json;
 
     fn citation_index() -> Value {
-        let mut index: Value = serde_json::from_slice(BUNDLED_INDEX).unwrap();
+        let mut index: Value = serde_json::from_str(include_str!(
+            "../../../tests/registry/releases/test-0001/index.json"
+        ))
+        .unwrap();
+        index["release"] = json!(bundled_selector().unwrap().release);
         index["schema_version"] = json!(2);
         index["datasets"][0]["schema_version"] = json!(2);
         let provenance = index["datasets"][0]["provenance"].as_object_mut().unwrap();
