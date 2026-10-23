@@ -1,0 +1,11 @@
+{
+  "manifest-version": 1,
+  "path": "packages/julia",
+  "baseline-sha": "5ed00dbdb6070a48e6149c6208a75adff98b0130",
+  "release-target": {
+    "path": "packages/julia",
+    "version": "0.1.0",
+    "tag": "datamonger-julia-v0.1.0"
+  },
+  "release-branch": "versionary/release-datamonger-julia-fb0aca74a1bd"
+}
