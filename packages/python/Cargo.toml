@@ -13,7 +13,7 @@ path = "rust/lib.rs"
 crate-type = ["cdylib"]
 
 [dependencies]
-datamonger-core = { version = "0.1.0", path = "../../crates/datamonger-core" }
+datamonger-core = { version = "0.2.0", path = "../../crates/datamonger-core" }
 numpy = "0.30"
 pyo3 = { version = "0.30", features = ["abi3-py311"] }
 
