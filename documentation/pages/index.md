@@ -1,10 +1,6 @@
 # Datamonger
 
-Retrieve public research datasets with a recorded registry, verified artifact
-bytes, and consistent decoded values across languages.
-
-Browse the [dataset catalog](../generated/datasets/index.md) to search for data,
-compare dimensions, and find retrieval examples.
+## Choose your client
 
 Start with the [Python guide](python.md), [R guide](r.md), or
 [Julia guide](julia.md). Use the [command-line client](cli.md) when you need

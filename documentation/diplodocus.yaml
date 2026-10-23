@@ -4,6 +4,28 @@ presentation:
   site-url: https://datamonger.dev/
   canonical-url-style: clean
   description: Retrieve, verify, and decode research datasets in Python, R, and Julia.
+  home:
+    tagline: Research datasets you can reproduce.
+    description: Retrieve, verify, and decode public research datasets with consistent values across Python, R, and Julia.
+    guide: python.html
+    actions:
+      - label: Browse datasets
+        path: datasets/index.html
+      - label: Get started
+        path: python.html
+    features:
+      - title: Find your next dataset
+        description: Search the catalog, compare dimensions, and find retrieval examples for your analysis.
+        path: datasets/index.html
+      - title: Three languages, consistent values
+        description: Use Python, R, or Julia with the same registry records and verified decoded values.
+        path: r.html
+      - title: Reproduce your data access
+        description: Record the dataset version and pin the registry to retrieve and verify the same data again.
+        path: julia.html
+      - title: Retrieve from the command line
+        description: Download verified raw artifacts for scripts, pipelines, and tools beyond the language clients.
+        path: cli.html
   logo:
     repository: datamonger
     path: assets/logo.png
@@ -61,7 +83,7 @@ content:
     owner: project
     repository: datamonger
     path: documentation/pages
-    mount: ''
+    mount: ""
     format: gfm
     execution:
       mode: never
@@ -77,7 +99,7 @@ content:
     owner: python
     repository: datamonger
     path: documentation/package-pages/python
-    mount: ''
+    mount: ""
     format: gfm
     execution:
       mode: never
@@ -85,7 +107,7 @@ content:
     owner: r
     repository: datamonger
     path: documentation/package-pages/r
-    mount: ''
+    mount: ""
     format: gfm
     execution:
       mode: never
@@ -93,7 +115,7 @@ content:
     owner: julia
     repository: datamonger
     path: documentation/package-pages/julia
-    mount: ''
+    mount: ""
     format: gfm
     execution:
       mode: never
