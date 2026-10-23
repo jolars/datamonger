@@ -20,7 +20,7 @@ Description: Retrieves public research datasets through immutable registry
     versioned, cross-language contracts. Decoded logical values are verified
     against canonical digests so that R, Python, and Julia clients can agree.
 License: MIT + file LICENSE
-URL: https://github.com/jolars/datamonger
+URL: https://datamonger.dev, https://github.com/jolars/datamonger
 BugReports: https://github.com/jolars/datamonger/issues
 Depends:
     R (>= 4.1.0)
