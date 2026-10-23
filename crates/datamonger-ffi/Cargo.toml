@@ -1,6 +1,6 @@
 [package]
 name = "datamonger-ffi"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.82"
 publish = false
@@ -11,7 +11,7 @@ description = "C ABI for Datamonger decoding and canonical verification"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-datamonger-core = { version = "0.1.0", path = "../datamonger-core" }
+datamonger-core = { version = "0.2.0", path = "../datamonger-core" }
 
 [lints.rust]
 unsafe_op_in_unsafe_fn = "deny"

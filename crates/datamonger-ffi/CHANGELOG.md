@@ -1,0 +1,9 @@
+# Changelog
+
+## [0.2.0](https://github.com/jolars/datamonger/compare/datamonger-ffi-v0.1.0...datamonger-ffi-v0.2.0) (2026-10-23)
+
+### Features
+- migrate Julia decoding to native core (#19) ([`3b7b4c0`](https://github.com/jolars/datamonger/commit/3b7b4c00ba8b785c5e887fa34385c7775d5836ff))
+
+### Dependencies
+- updated crates/datamonger-core to v0.2.0
