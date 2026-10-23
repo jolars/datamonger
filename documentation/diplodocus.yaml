@@ -5,7 +5,7 @@ presentation:
   canonical-url-style: clean
   description: Retrieve, verify, and decode research datasets in Python, R, and Julia.
   home:
-    tagline: Research datasets you can reproduce.
+    tagline: Datasets, delivered!
     description: Retrieve, verify, and decode public research datasets with consistent values across Python, R, and Julia.
     guide: python.html
     actions:
