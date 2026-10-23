@@ -23,11 +23,11 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1792521635,
-        "narHash": "sha256-oYKo2cXkf3YDVAPAPhSpwriyigvHKo94qTUG3uYlL2w=",
+        "lastModified": 1792751437,
+        "narHash": "sha256-vka9v3/gZ6m0DGT1Qe6eJWonLW/iCOJ/mQGfhHUbtCk=",
         "owner": "jolars",
         "repo": "diplodocus",
-        "rev": "9dc864acbfe0fd33b5fb8b825583bb03cedcb71a",
+        "rev": "7089f6a26561a5493807718f89077778c3076be9",
         "type": "github"
       },
       "original": {

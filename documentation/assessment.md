@@ -2,7 +2,7 @@
 
 The current configuration extracts Python, R, and Julia APIs and connects nine
 equivalent operations across all three clients. The Rust CLI has an authored guide
-because Diplodocus has no Rust API extractor.
+because Diplodocus's Rust API extractor targets libraries.
 
 The documentation workflow and [preview instructions](README.md) use one pinned
 Diplodocus revision and prepare the language clients before extraction. `build`
