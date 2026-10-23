@@ -2,16 +2,19 @@ Package: datamonger
 Title: Reproducible Retrieval and Decoding of Public Research Data
 Version: 0.0.0.9000
 Authors@R:
-    c(person(
-      "Johan",
-      "Larsson",
-      email = "johan@jolars.co",
-      role = c("aut", "cre")
-    ), person(
-      "Authors of the vendored Rust crates",
-      role = c("ctb", "cph"),
-      comment = "See COPYRIGHTS for authorship and license details."
-    ))
+    c(
+      person(
+        "Johan",
+        "Larsson",
+        email = "johan@jolars.co",
+        role = c("aut", "cre")
+      ),
+      person(
+        "Authors of the vendored Rust crates",
+        role = c("ctb", "cph"),
+        comment = "See COPYRIGHTS for authorship and license details."
+      )
+    )
 Description: Retrieves public research datasets through immutable registry
     selectors, verifies their exact bytes, and decodes them according to
     versioned, cross-language contracts. Decoded logical values are verified
@@ -35,7 +38,7 @@ Suggests:
     testthat (>= 3.0.0)
 VignetteBuilder:
     knitr
+Config/rextendr/version: 0.5.0
 Config/testthat/edition: 3
 Encoding: UTF-8
-Config/rextendr/version: 0.5.0
 SystemRequirements: Cargo >= 1.82.0, rustc >= 1.82.0, xz
