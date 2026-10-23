@@ -1,158 +1,126 @@
-# Datamonger R Client
+# Datamonger
 
-This package implements Datamonger specification revision 1. It retrieves
-artifacts through strongly selected immutable registry indexes, verifies their
-bytes, decodes the revision 1 CSV, TSV, LIBSVM, and SVMLight representations,
-and verifies the canonical logical digest.
+Datamonger brings public research datasets into R. It downloads and verifies the
+data, returns data frames or sparse matrices, and keeps track of dataset
+versions, sources, and citations. Downloaded files are cached for reuse,
+including when you work offline.
 
-The package is pre-release software and is not yet on CRAN. Install it from the
-repository root:
+## Installation
 
-```r
-install.packages("packages/r", repos = NULL, type = "source")
-```
-
-Source installation requires Cargo and Rust 1.82 or newer, plus xz. The package
-includes the Rust core and vendored dependencies, and compiles offline. Gzip and
-bzip2 use Rust backends; no system zlib or libbz2 installation is required.
-Windows source builds also require Rtools and the `x86_64-pc-windows-gnu` Rust
-target, which can be installed with `rustup target add x86_64-pc-windows-gnu`.
-
-The standalone `datamonger-core` library implements strict decoding and
-canonical hashing. The R adapter constructs the documented R objects and keeps
-registry selection, retrieval, caching, and metadata in R. Parsing reads input
-incrementally, and verification hashes canonical bytes in bounded chunks.
-
-## Cache
-
-Datamonger uses the platform cache returned by `tools::R_user_dir()` by default.
-Passing `cache_dir` uses that path for the call instead. For temporary caching,
-create a session directory and pass it consistently:
+Datamonger is under development and is not yet on CRAN. Install the development
+version from GitHub with pak:
 
 ```r
-temporary_cache <- file.path(tempdir(), "datamonger", "r")
-iris <- fetch_data("iris", source = "uci", cache_dir = temporary_cache)
+# install.packages("pak")
+pak::pak("jolars/datamonger/packages/r")
 ```
 
-The package never writes persistent files at installation or startup. Cache
-growth is never automatic beyond explicitly requested registry and artifact
-retrievals, eviction is manual through `cache_clean()`, and `cache_info()`
-reports every content-addressed entry. Datamonger performs no telemetry.
+Installation requires Rust, Cargo, and xz. On Windows, you also need Rtools and
+the `x86_64-pc-windows-gnu` Rust target, which you can install with
+`rustup target add x86_64-pc-windows-gnu`.
 
-## Use
+## Getting started
 
-The bundled stable index is the default trust root. Its dataset artifacts are
-retrieved on first use:
+Fetch the Iris dataset from the UCI Machine Learning Repository:
 
 ```r
 library(datamonger)
 
-iris <- fetch_data("iris", source = "uci")
-heart <- fetch_data("heart_scale", source = "libsvm")
+flowers <- fetch_data("uci:iris")
+head(flowers)
 ```
 
-`fetch_data()`, `data_info()`, and `fetch_artifact()` also accept the dataset
-references used by the CLI:
+The reference `"uci:iris"` combines the source and dataset name. You can also
+write `fetch_data("iris", source = "uci")`. The first call downloads the data;
+later calls verify and reuse the cached files.
+
+Iris is returned as a data frame. Sparse datasets, such as those from LIBSVM,
+return a sparse feature matrix and a response vector:
 
 ```r
-iris <- fetch_data("uci:iris")
-iris_v1 <- fetch_data("uci:iris@1")
-iris_v1 <- fetch_data("uci:iris", version = "1")
+heart <- fetch_data("libsvm:heart_scale")
+dim(heart$features)
+head(heart$response)
 ```
 
-A bare name requires `source`. Omit `source` for qualified references, and omit
-`version` when the reference embeds it. Duplicate arguments raise an error even
-when the values agree. An omitted version selects the registry's declared
-default.
+Datasets with predefined splits keep them separate. Access each split by name,
+such as `data[["train"]]` or `data[["test"]]`.
 
-For reproducible analysis, select an explicit version and retain the returned
-metadata:
+## Find datasets
+
+Browse the available datasets and inspect their metadata before downloading:
 
 ```r
-result <- fetch_data(
-  "iris",
-  source = "uci",
-  version = "1",
-  return_info = TRUE
-)
-result$info$dataset_id
-result$info$registry_release
-result$info$registry_index_sha256
-result$info$canonical_digest
+list_data()
+
+info <- data_info("uci:iris")
+info
+info$license
+info$provenance
 ```
 
-Delimited data are returned as a data frame. Exact `int64` columns use the
-`datamonger_int64` vector class, backed by canonical decimal strings; this
-represents the full signed 64-bit range without conflating its minimum value
-with missing data. LIBSVM data return a `datamonger_sparse_dataset` containing a
-row-compressed `Matrix` feature matrix and an exact response vector. When a
-dimension or stored-value count exceeds the `Matrix` package's integer limit,
-the feature matrix is an exact `datamonger_csr_matrix` instead. Split
-representations keep `train` and `test` datasets separate.
+The package includes a dataset catalog, so these calls do not need to download
+the data. Metadata includes the source, license, and known preprocessing steps.
+Fetching a dataset does not apply the recorded preprocessing again.
 
-The `named-splits` assembly returns a `datamonger_dataset_splits` named list in
-recipe order. Access provider splits as `data[["train"]]`,
-`data[["validation"]]`, or `data[["test"]]`. Each value is a table or sparse
-dataset, and feature-only tables omit responses. The [named splits
-contract](../../spec/decoders/named-splits-v1.md) requires manifest schema 4 and
-preserves each split's original name and row membership.
-
-`data_info()` and `list_data()` inspect provenance, license, distribution, and
-task metadata without retrieving artifacts. `fetch_artifact()` retrieves only
-verified artifact bytes. `offline = TRUE` forbids network access and requires
-the selected index and artifacts to be bundled or already cached.
-
-`data_info(...)$preprocessing` and fetch results requested with
-`return_info = TRUE` expose upstream and Datamonger processing in version 3
-registries. Each stage distinguishes `unknown`, `none`, and `documented` and
-preserves known steps, string parameters, and evidence references. Missing
-metadata is `NULL`, including in older bundled snapshots. Fetching does not
-apply the described transformations. See the [preprocessing
-contract](../../spec/preprocessing.md).
-
-The [getting started vignette](vignettes/introduction.Rmd) introduces dataset
-discovery, retrieval, citations, reproducibility, and caching with public
-research datasets. Metadata examples run offline; examples that download data
-are shown without being evaluated during the build.
-
-## Registry selection
-
-An explicit strong selector fixes the release and exact index bytes:
+To get citation text for your analysis:
 
 ```r
-selected <- registry_selector(
-  release = "2026.08",
-  index_sha256 = paste0(rep("0", 64), collapse = ""),
-  index_url = "https://registry.example/2026.08/index.json"
-)
+cat(cite_data("uci:iris"))
 ```
 
-Selection precedence is a per-call `registry` argument, `set_registry()` for the
-session, the nearest `.datamonger/selector.json`, and the bundled selector.
-`resolve_registry()` discovers a selector by bare release through a mutable
-HTTPS catalog. That lookup is trusted only as strongly as the TLS session; it is
-not a cryptographic pin until its returned release and digest are recorded and
-reused.
+`cite_data()` includes upstream citation instructions and selects recommended
+references when they are recorded. Use `include_all = TRUE` to see every
+reference.
 
-The project code is MIT-licensed. Datasets retain their own licenses and terms;
-registry inclusion is not a license grant or a preservation guarantee.
+## Reproducible analyses
 
-## Dataset citations
+Add a version to a dataset reference to select it explicitly. Request metadata
+alongside the data to record what you used:
 
-`cite_data("uci:wine-quality@1")` returns curated citation text without
-retrieving dataset artifacts. Use `format = "records"` for reference records and
-`include_all = TRUE` to include every reference. A reference may have a
-`dataset`, `paper`, or `collection` role, a note, and an upstream recommendation
-flag. Multiple references can be recommended together. Roles do not imply
-recommendations.
+```r
+registry <- active_registry()
+result <- fetch_data("uci:iris@1", registry = registry, return_info = TRUE)
+flowers <- result$data
+result$info
 
-By default, references marked as recommended are selected. If no recommendation
-flags are recorded, all references are returned and text output explains that
-the recommendation is unknown. Missing citations produce an empty list of
-records or an explicit text message. Legacy single citations remain supported.
+saveRDS(list(registry = registry, info = result$info), "iris-provenance.rds")
+```
 
-`data_info(...)$citations` and
-`fetch_data(..., return_info = TRUE)$info$citations` contain every reference
-from the selected registry record. `citation_instructions` preserves upstream
-instructions, including requests to cite several references together. No
-bibliographic lookups are performed.
+The metadata records the dataset version, catalog release, and checksums used to
+verify the data. Save the registry selector with your analysis to reuse the same
+catalog in a later session:
+
+```r
+provenance <- readRDS("iris-provenance.rds")
+flowers <- fetch_data("uci:iris@1", registry = provenance$registry)
+```
+
+## Caching and offline use
+
+After downloading a dataset, use it without network access:
+
+```r
+flowers <- fetch_data("uci:iris@1", offline = TRUE)
+```
+
+An offline fetch raises an error if a required file is missing from the cache.
+Use `cache_info()` to inspect cached files and `cache_clean()` to remove them.
+To use a separate cache for a project, pass `cache_dir`:
+
+```r
+flowers <- fetch_data("uci:iris@1", cache_dir = "data-cache")
+cache_info(cache_dir = "data-cache")
+```
+
+## Learn more
+
+See the [getting started vignette](vignettes/introduction.Rmd) for more
+examples, or use `?fetch_data`, `?data_info`, and `?cite_data` in R. The
+[project website](https://datamonger.dev) introduces the other Datamonger
+clients, and [CONTRIBUTING.md](../../CONTRIBUTING.md) covers local development.
+
+## License
+
+Datamonger is licensed under the [MIT license](LICENSE). Datasets retain their
+own licenses and terms; check each dataset's metadata before using it.
