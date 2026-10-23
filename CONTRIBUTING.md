@@ -119,15 +119,14 @@ debug build; `NOT_CRAN=1` permits development without the vendor archive.
 
 Publish core changes before preparing an R release that needs them. Update the
 R adapter's version requirement when needed, then run `dm-vendor-r`. That command
-resolves the published core, runs `rextendr::vendor_crates()`, and records license
-notices and the lockfile digest. Commit the lockfile, vendor archive, vendor
-configuration, digest, and notices. The core receives the same vendoring treatment
-as every other registry dependency. The R tarball must build with no checkout or
-Cargo network access.
+resolves the published core, runs `rextendr::vendor_crates()`, and records the
+lockfile digest. Commit the lockfile, vendor archive, vendor configuration, and
+digest. The core receives the same vendoring treatment as every other registry
+dependency. The R tarball must build with no checkout or Cargo network access.
 
 Run `python tools/dm_rust_sources.py` after shared conformance changes to update
-the core's fixture copy. `python tools/dm_rust_sources.py --check` checks fixtures,
-vendor metadata, and license notices. Check changes with Rust 1.82.
+the core's fixture copy. `python tools/dm_rust_sources.py --check` checks fixtures
+and vendor metadata. Check changes with Rust 1.82.
 
 Run `dm-document-r` after changing extendr function signatures or Rust wrapper
 documentation. It generates the private R wrappers directly from extendr

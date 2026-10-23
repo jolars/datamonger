@@ -6,55 +6,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 import shutil
-import tarfile
 import tomllib
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 CORE = ROOT / "crates/datamonger-core"
-
-
-def license_notices(archive_path: Path) -> bytes:
-    notices = [
-        "Rust source authorship and licenses\n",
-        "The R package includes datamonger-core and the following vendored crates.",
-        "Crate metadata and complete bundled license notices follow.\n",
-    ]
-    packages = {}
-    with tarfile.open(archive_path, "r:xz") as archive:
-        members = {m.name: m for m in archive.getmembers() if m.isfile()}
-        for name in sorted(members):
-            path = PurePosixPath(name)
-            if len(path.parts) != 3 or path.name != "Cargo.toml":
-                continue
-            stream = archive.extractfile(members[name])
-            assert stream is not None
-            metadata = tomllib.loads(stream.read().decode("utf-8"))
-            licenses = {}
-            for candidate, member in sorted(members.items()):
-                license_path = PurePosixPath(candidate)
-                if license_path.parent != path.parent or not any(
-                    word in license_path.name.upper()
-                    for word in ("LICENSE", "COPYING", "COPYRIGHT", "NOTICE")
-                ):
-                    continue
-                stream = archive.extractfile(member)
-                assert stream is not None
-                licenses[license_path.name] = stream.read()
-            packages[path.parent.name] = (metadata, licenses)
-    for metadata, licenses in packages.values():
-        package = metadata["package"]
-        notices.extend(
-            [
-                "=" * 72,
-                f"{package['name']} {package['version']}",
-                "Authors: " + "; ".join(package.get("authors", [])),
-                "License: " + package.get("license", "See bundled license files."),
-            ]
-        )
-        for filename, contents in sorted(licenses.items()):
-            notices.extend([f"\n--- {filename} ---\n", contents.decode("utf-8")])
-    return ("\n".join(notices) + "\n").replace("\r\n", "\n").encode("utf-8")
 
 
 def synchronize(source: Path, destination: Path, *, check: bool) -> bool:
@@ -120,16 +76,7 @@ def main() -> int:
     )
     if args.check and not vendor:
         print("Stale vendored Rust sources: run dm-vendor-r")
-    notices_match = True
-    if (rust / "vendor.tar.xz").is_file():
-        expected_notices = license_notices(rust / "vendor.tar.xz")
-        notices = ROOT / "packages/r/inst/COPYRIGHTS"
-        notices_match = notices.is_file() and notices.read_bytes() == expected_notices
-        if args.check and not notices_match:
-            print("Stale Rust license notices: run python tools/dm_rust_sources.py")
-        elif not args.check:
-            notices.write_bytes(expected_notices)
-    valid = fixtures and notices_match and vendor
+    valid = fixtures and vendor
     return 0 if valid or not args.check else 1
 
 

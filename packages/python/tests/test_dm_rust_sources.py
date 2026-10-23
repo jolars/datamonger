@@ -38,7 +38,6 @@ def source_root(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     rust = tmp_path / "packages/r/src/rust"
     with tarfile.open(rust / "vendor.tar.xz", "w:xz") as archive:
         archive.add(rust / "vendor", arcname="vendor")
-    (tmp_path / "packages/r/inst").mkdir()
     monkeypatch.setattr(dm_rust_sources, "ROOT", tmp_path)
     monkeypatch.setattr(dm_rust_sources, "CORE", tmp_path / "crates/datamonger-core")
     return tmp_path
@@ -56,9 +55,7 @@ def test_records_metadata_without_repacking_vendor_archive(
     contents = archive.read_bytes()
     assert run(monkeypatch, "--record-vendor") == 0
     assert archive.read_bytes() == contents
-    notices = (source_root / "packages/r/inst/COPYRIGHTS").read_bytes()
-    assert b"Core license." in notices
-    assert b"\r\n" not in notices
+    assert not (source_root / "packages/r/inst/COPYRIGHTS").exists()
     assert run(monkeypatch, "--check") == 0
     (source_root / "crates/datamonger-core/src/lib.rs").write_bytes(
         b"unreleased edit\n"
