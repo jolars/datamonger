@@ -130,8 +130,8 @@ offline workflows, and the [trust model](TRUST.md) for the verification
 guarantees and their limits.
 
 <!-- bundled-registry:start -->
-All four clients bundle the stable `1.2.0` snapshot. Its selector is
-[`registry/releases/1.2.0/selector.json`](registry/releases/1.2.0/selector.json).
+All four clients bundle the stable `1.3.0` snapshot. Its selector is
+[`registry/releases/1.3.0/selector.json`](registry/releases/1.3.0/selector.json).
 <!-- bundled-registry:end -->
 
 Only the registry index is bundled; dataset files are downloaded separately.
