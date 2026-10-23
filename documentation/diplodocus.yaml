@@ -28,7 +28,7 @@ presentation:
         path: cli.html
   logo:
     repository: datamonger
-    path: assets/logo.png
+    path: assets/logo-large.png
   footer:
     docs-version: dev
     links:
