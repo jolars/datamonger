@@ -197,10 +197,8 @@ jobs:
         shell: bash
       - name: Test R adapter against local core
         env:
-          DM_R_CORE_PATH: ${{ github.workspace }}/crates/datamonger-core
           CARGO_NET_OFFLINE: "false"
-          DEBUG: "1"
-        run: Rscript -e 'pkgbuild::compile_dll(".", debug = TRUE, force = TRUE); testthat::test_local(".")'
+        run: python ../../tools/dm_r_local.py -e 'pkgbuild::compile_dll(".", debug = TRUE, force = TRUE); testthat::test_local(".")'
 
   julia-distributions:
     uses: ./.github/workflows/julia-native.yml

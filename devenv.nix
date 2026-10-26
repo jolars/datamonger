@@ -100,13 +100,7 @@ in
     description = "Run Rscript against the local Rust core";
     exec = ''
       set -euo pipefail
-      dm_r_lock="$DEVENV_ROOT/packages/r/src/rust/Cargo.lock"
-      dm_r_saved_lock="$(mktemp)"
-      cp "$dm_r_lock" "$dm_r_saved_lock"
-      trap 'cp "$dm_r_saved_lock" "$dm_r_lock"; rm -f "$dm_r_saved_lock"' EXIT
-      export DM_R_CORE_PATH="$DEVENV_ROOT/crates/datamonger-core"
-      export DEBUG=1
-      Rscript "$@"
+      python "$DEVENV_ROOT/tools/dm_r_local.py" "$@"
     '';
   };
 

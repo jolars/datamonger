@@ -112,7 +112,8 @@ dm-core-cargo doc --locked --manifest-path crates/datamonger-core/Cargo.toml --n
 The R adapter depends on a published `datamonger-core` version from crates.io.
 Use `dm-test-r` to test it against unpublished core edits. For other development
 scripts, use `dm-local-r` in place of `Rscript`; it sets `DM_R_CORE_PATH` and
-enables a local Cargo patch. These commands preserve the release lockfile.
+enables a local Cargo patch. These commands temporarily match the dependency pin
+to the local core version and restore the release manifest and lockfile afterward.
 For example, from `packages/r`, run:
 
 ```console
