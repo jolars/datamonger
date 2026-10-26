@@ -22,6 +22,14 @@ manifests:
 - registry/datasets/libsvm/news20-binary-1.yaml
 - registry/datasets/libsvm/rcv1-binary-1.yaml
 - registry/datasets/libsvm/triazines_scale-1.yaml
+- registry/datasets/libsvm/w1a-1.yaml
+- registry/datasets/libsvm/w2a-1.yaml
+- registry/datasets/libsvm/w3a-1.yaml
+- registry/datasets/libsvm/w4a-1.yaml
+- registry/datasets/libsvm/w5a-1.yaml
+- registry/datasets/libsvm/w6a-1.yaml
+- registry/datasets/libsvm/w7a-1.yaml
+- registry/datasets/libsvm/w8a-1.yaml
 - registry/datasets/uci/abalone-1.yaml
 - registry/datasets/uci/breast-cancer-wisconsin-diagnostic-1.yaml
 - registry/datasets/uci/iris-1.yaml
@@ -90,6 +98,30 @@ defaults:
   version: '1'
 - source: libsvm
   name: triazines_scale
+  version: '1'
+- source: libsvm
+  name: w1a
+  version: '1'
+- source: libsvm
+  name: w2a
+  version: '1'
+- source: libsvm
+  name: w3a
+  version: '1'
+- source: libsvm
+  name: w4a
+  version: '1'
+- source: libsvm
+  name: w5a
+  version: '1'
+- source: libsvm
+  name: w6a
+  version: '1'
+- source: libsvm
+  name: w7a
+  version: '1'
+- source: libsvm
+  name: w8a
   version: '1'
 - source: uci
   name: abalone

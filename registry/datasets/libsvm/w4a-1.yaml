@@ -1,0 +1,104 @@
+schema_version: 4
+source: libsvm
+name: w4a
+version: '1'
+title: Web (w4a)
+description: The w4a binary classification variant of the Web dataset, distributed by LIBSVM
+  with predefined training and test artifacts and 300 sparse features.
+modality: tabular
+preprocessing:
+  upstream:
+    status: unknown
+    evidence:
+    - https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#w4a
+    - https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/ref.html#JP98a
+    notes: LIBSVM documents the feature count and training and test sizes but does not describe
+      feature construction, sample selection, or the split selection procedure for these artifacts.
+  datamonger:
+    status: none
+    evidence:
+    - spec/decoders/libsvm-v1.md
+    notes: Datamonger decodes the provider artifacts without additional statistical preprocessing.
+provenance:
+  provider: LIBSVM
+  upstream_name: w4a
+  landing_page: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#w4a
+  authors:
+  - John C. Platt
+  citations:
+  - citation: John C. Platt. Fast training of support vector machines using sequential minimal
+      optimization. In Advances in Kernel Methods - Support Vector Learning. MIT Press, 1998.
+    role: paper
+    note: 'Reference JP98a associated with this variant by LIBSVM: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/ref.html#JP98a.'
+  retrieved_at: '2026-10-26'
+license:
+  status: unknown
+  evidence: 'The LIBSVM dataset page identifies Platt''s JP98a reference as the source but
+    states no license terms for these artifacts: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#w4a.
+    The LIBSVM software license does not establish a license for the distributed dataset.'
+artifacts:
+- name: train
+  format: libsvm
+  compression: none
+  size: 515479
+  sha256: 36a72c5519d51f46302b4a0695ff1b8c6894e5fd3b586c72b1b10743372f1cd7
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/w4a
+- name: test
+  format: libsvm
+  compression: none
+  size: 2962759
+  sha256: 6a9d9cd379b55ff6714fb8aafb02a41f55aa651e483e86100025f980b292157c
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/w4a.t
+representation:
+  decoder: libsvm-split
+  decoder_version: 1
+  inputs:
+    train: train
+    test: test
+  options:
+    index_base: 1
+    feature_count: 300
+    duplicate_features: error
+    label_type: int64
+    row_order: source
+    target_name: response
+  expect:
+    components:
+    - name: train_features
+      kind: sparse_matrix
+      type: float64
+      rows: 7366
+      columns: 300
+    - name: train_response
+      kind: vector
+      type: int64
+      length: 7366
+    - name: test_features
+      kind: sparse_matrix
+      type: float64
+      rows: 42383
+      columns: 300
+    - name: test_response
+      kind: vector
+      type: int64
+      length: 42383
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: de1f2d7698890edf6310fa9eb7d124aa9de51923cbe26297aacf4e0b5b7a3d10
+tasks:
+- name: default
+  type: classification
+  splits:
+    train:
+      features: train_features
+      target: train_response
+    test:
+      features: test_features
+      target: test_response
