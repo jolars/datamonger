@@ -35,6 +35,7 @@ manifests:
 - registry/datasets/libsvm/w8a-1.yaml
 - registry/datasets/uci/abalone-1.yaml
 - registry/datasets/uci/breast-cancer-wisconsin-diagnostic-1.yaml
+- registry/datasets/uci/covertype-1.yaml
 - registry/datasets/uci/iris-1.yaml
 - registry/datasets/uci/wholesale-customers-1.yaml
 - registry/datasets/uci/wine-quality-1.yaml
@@ -140,6 +141,9 @@ defaults:
   version: '1'
 - source: uci
   name: breast-cancer-wisconsin-diagnostic
+  version: '1'
+- source: uci
+  name: covertype
   version: '1'
 - source: uci
   name: iris

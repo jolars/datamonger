@@ -1,0 +1,472 @@
+schema_version: 5
+source: uci
+name: covertype
+version: '1'
+title: Covertype
+description: Forest cover types for 581,012 cells measuring 30 by 30 meters in four wilderness
+  areas of the Roosevelt National Forest in northern Colorado. The 54 cartographic features
+  comprise 10 quantitative measurements, four binary wilderness indicators, and 40 binary
+  soil-type indicators. Cover_Type codes 1 through 7 denote spruce/fir, lodgepole pine, ponderosa
+  pine, cottonwood/willow, aspen, Douglas-fir, and krummholz, respectively.
+modality: tabular
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - https://archive.ics.uci.edu/dataset/31/covertype
+    - https://archive.ics.uci.edu/ml/machine-learning-databases/covtype/covtype.info
+    steps:
+    - kind: feature-encoding
+      description: The provider represents wilderness area and soil type using four and 40
+        binary indicator columns, respectively.
+      parameters:
+        wilderness_columns: Wilderness_Area1 through Wilderness_Area4
+        soil_columns: Soil_Type1 through Soil_Type40
+        absence: '0'
+        presence: '1'
+    notes: The provider documents unscaled data with no missing values. The original study
+      used the first 11,340 records for training, the next 3,780 for validation, and the last
+      565,892 for testing. The upstream CSV contains the full table; this entry retains its
+      source order and does not materialize separate split artifacts.
+  datamonger:
+    status: none
+    evidence:
+    - spec/decoders/delimited-text-v1.md
+    notes: Datamonger decodes the provider artifact without additional statistical preprocessing.
+provenance:
+  provider: UCI Machine Learning Repository
+  upstream_name: Covertype
+  upstream_id: '31'
+  landing_page: https://archive.ics.uci.edu/dataset/31/covertype
+  authors:
+  - Jock Blackard
+  citation: Blackard, J. (1998). Covertype [Dataset]. UCI Machine Learning Repository. https://doi.org/10.24432/C50K5N.
+  citation_instructions: Cite the UCI dataset DOI and retain the copyright notice for Jock
+    A. Blackard and Colorado State University, as requested in covtype.info.
+  retrieved_at: '2026-10-26'
+license:
+  status: known
+  identifier: CC-BY-4.0
+  url: https://creativecommons.org/licenses/by/4.0/
+  evidence: The UCI landing page at https://archive.ics.uci.edu/dataset/31/covertype states
+    that the dataset is licensed under CC BY 4.0. The original covtype.info permits unlimited
+    reuse with retention of the copyright notice for Jock A. Blackard and Colorado State University.
+artifacts:
+- name: data
+  format: csv
+  compression: none
+  size: 75751077
+  sha256: a07902ee1c9d3231c6655f23e6f75a6797d0ba26a2359f533c2c0e65d05c9bd4
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://archive.ics.uci.edu/static/public/31/data.csv
+representation:
+  decoder: delimited-text
+  decoder_version: 1
+  inputs:
+    data: data
+  options:
+    encoding: utf-8
+    delimiter: ','
+    header: true
+    quote: '"'
+    escape: double
+    missing_values: []
+    row_order: source
+    columns:
+    - name: Elevation
+      type: int64
+    - name: Aspect
+      type: int64
+    - name: Slope
+      type: int64
+    - name: Horizontal_Distance_To_Hydrology
+      type: int64
+    - name: Vertical_Distance_To_Hydrology
+      type: int64
+    - name: Horizontal_Distance_To_Roadways
+      type: int64
+    - name: Hillshade_9am
+      type: int64
+    - name: Hillshade_Noon
+      type: int64
+    - name: Hillshade_3pm
+      type: int64
+    - name: Horizontal_Distance_To_Fire_Points
+      type: int64
+    - name: Wilderness_Area1
+      type: int64
+    - name: Wilderness_Area2
+      type: int64
+    - name: Wilderness_Area3
+      type: int64
+    - name: Wilderness_Area4
+      type: int64
+    - name: Soil_Type1
+      type: int64
+    - name: Soil_Type2
+      type: int64
+    - name: Soil_Type3
+      type: int64
+    - name: Soil_Type4
+      type: int64
+    - name: Soil_Type5
+      type: int64
+    - name: Soil_Type6
+      type: int64
+    - name: Soil_Type7
+      type: int64
+    - name: Soil_Type8
+      type: int64
+    - name: Soil_Type9
+      type: int64
+    - name: Soil_Type10
+      type: int64
+    - name: Soil_Type11
+      type: int64
+    - name: Soil_Type12
+      type: int64
+    - name: Soil_Type13
+      type: int64
+    - name: Soil_Type14
+      type: int64
+    - name: Soil_Type15
+      type: int64
+    - name: Soil_Type16
+      type: int64
+    - name: Soil_Type17
+      type: int64
+    - name: Soil_Type18
+      type: int64
+    - name: Soil_Type19
+      type: int64
+    - name: Soil_Type20
+      type: int64
+    - name: Soil_Type21
+      type: int64
+    - name: Soil_Type22
+      type: int64
+    - name: Soil_Type23
+      type: int64
+    - name: Soil_Type24
+      type: int64
+    - name: Soil_Type25
+      type: int64
+    - name: Soil_Type26
+      type: int64
+    - name: Soil_Type27
+      type: int64
+    - name: Soil_Type28
+      type: int64
+    - name: Soil_Type29
+      type: int64
+    - name: Soil_Type30
+      type: int64
+    - name: Soil_Type31
+      type: int64
+    - name: Soil_Type32
+      type: int64
+    - name: Soil_Type33
+      type: int64
+    - name: Soil_Type34
+      type: int64
+    - name: Soil_Type35
+      type: int64
+    - name: Soil_Type36
+      type: int64
+    - name: Soil_Type37
+      type: int64
+    - name: Soil_Type38
+      type: int64
+    - name: Soil_Type39
+      type: int64
+    - name: Soil_Type40
+      type: int64
+    - name: Cover_Type
+      type: int64
+  expect:
+    components:
+    - name: Elevation
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Aspect
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Slope
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Horizontal_Distance_To_Hydrology
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Vertical_Distance_To_Hydrology
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Horizontal_Distance_To_Roadways
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Hillshade_9am
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Hillshade_Noon
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Hillshade_3pm
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Horizontal_Distance_To_Fire_Points
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Wilderness_Area1
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Wilderness_Area2
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Wilderness_Area3
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Wilderness_Area4
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type1
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type2
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type3
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type4
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type5
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type6
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type7
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type8
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type9
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type10
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type11
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type12
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type13
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type14
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type15
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type16
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type17
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type18
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type19
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type20
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type21
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type22
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type23
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type24
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type25
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type26
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type27
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type28
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type29
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type30
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type31
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type32
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type33
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type34
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type35
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type36
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type37
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type38
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type39
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Soil_Type40
+      kind: vector
+      type: int64
+      length: 581012
+    - name: Cover_Type
+      kind: vector
+      type: int64
+      length: 581012
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: 407fc42a94e0e4ba672be033a3c1f0aecbbdf2d656c1bec4ddcc87684763699a
+tasks:
+- name: default
+  type: classification
+  target: Cover_Type
+  features:
+  - Elevation
+  - Aspect
+  - Slope
+  - Horizontal_Distance_To_Hydrology
+  - Vertical_Distance_To_Hydrology
+  - Horizontal_Distance_To_Roadways
+  - Hillshade_9am
+  - Hillshade_Noon
+  - Hillshade_3pm
+  - Horizontal_Distance_To_Fire_Points
+  - Wilderness_Area1
+  - Wilderness_Area2
+  - Wilderness_Area3
+  - Wilderness_Area4
+  - Soil_Type1
+  - Soil_Type2
+  - Soil_Type3
+  - Soil_Type4
+  - Soil_Type5
+  - Soil_Type6
+  - Soil_Type7
+  - Soil_Type8
+  - Soil_Type9
+  - Soil_Type10
+  - Soil_Type11
+  - Soil_Type12
+  - Soil_Type13
+  - Soil_Type14
+  - Soil_Type15
+  - Soil_Type16
+  - Soil_Type17
+  - Soil_Type18
+  - Soil_Type19
+  - Soil_Type20
+  - Soil_Type21
+  - Soil_Type22
+  - Soil_Type23
+  - Soil_Type24
+  - Soil_Type25
+  - Soil_Type26
+  - Soil_Type27
+  - Soil_Type28
+  - Soil_Type29
+  - Soil_Type30
+  - Soil_Type31
+  - Soil_Type32
+  - Soil_Type33
+  - Soil_Type34
+  - Soil_Type35
+  - Soil_Type36
+  - Soil_Type37
+  - Soil_Type38
+  - Soil_Type39
+  - Soil_Type40
