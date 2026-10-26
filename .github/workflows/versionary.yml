@@ -39,6 +39,44 @@ jobs:
           token: ${{ secrets.RELEASE_TOKEN }}
           versionary-version: 1.4.0
 
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.82.0"
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: any::rextendr
+
+      - name: Refresh R vendor archives in release PRs
+        env:
+          REVIEW_REQUESTS: ${{ steps.versionary.outputs.review_requests }}
+          RUSTUP_TOOLCHAIN: "1.82.0"
+        run: |
+          while IFS= read -r branch; do
+            git check-ref-format "refs/heads/$branch"
+            git fetch origin "refs/heads/$branch"
+            git checkout --detach FETCH_HEAD
+            if python tools/dm_rust_sources.py --check; then
+              continue
+            fi
+            Rscript -e 'rextendr::vendor_crates("packages/r", overwrite = TRUE, clean = TRUE)'
+            python tools/dm_rust_sources.py --record-vendor
+            python tools/dm_rust_sources.py --check
+            git add packages/r/src/rust/Cargo.lock packages/r/src/rust/vendor.tar.xz \
+              packages/r/src/rust/vendor-config.toml packages/r/src/rust/vendor-lock.sha256 \
+              packages/r/inst/COPYRIGHTS
+            if ! git diff --cached --quiet; then
+              git -c user.name='github-actions[bot]' \
+                -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+                commit -m 'chore(r): refresh vendored Rust dependencies'
+              git push origin "HEAD:refs/heads/$branch"
+            fi
+          done < <(jq -r '.[].branch' <<< "$REVIEW_REQUESTS" | sort -u)
+
       - name: Select registry release work
         id: registry
         env:
