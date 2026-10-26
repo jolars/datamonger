@@ -5,6 +5,15 @@ manifests:
 - registry/datasets/datamonger/godlewski2023-1.yaml
 - registry/datasets/datamonger/koussounadis2014-1.yaml
 - registry/datasets/datamonger/scheetz2006-1.yaml
+- registry/datasets/libsvm/a1a-1.yaml
+- registry/datasets/libsvm/a2a-1.yaml
+- registry/datasets/libsvm/a3a-1.yaml
+- registry/datasets/libsvm/a4a-1.yaml
+- registry/datasets/libsvm/a5a-1.yaml
+- registry/datasets/libsvm/a6a-1.yaml
+- registry/datasets/libsvm/a7a-1.yaml
+- registry/datasets/libsvm/a8a-1.yaml
+- registry/datasets/libsvm/a9a-1.yaml
 - registry/datasets/libsvm/cadata-1.yaml
 - registry/datasets/libsvm/colon-cancer-1.yaml
 - registry/datasets/libsvm/dna_scale-1.yaml
@@ -30,6 +39,33 @@ defaults:
   version: '1'
 - source: datamonger
   name: scheetz2006
+  version: '1'
+- source: libsvm
+  name: a1a
+  version: '1'
+- source: libsvm
+  name: a2a
+  version: '1'
+- source: libsvm
+  name: a3a
+  version: '1'
+- source: libsvm
+  name: a4a
+  version: '1'
+- source: libsvm
+  name: a5a
+  version: '1'
+- source: libsvm
+  name: a6a
+  version: '1'
+- source: libsvm
+  name: a7a
+  version: '1'
+- source: libsvm
+  name: a8a
+  version: '1'
+- source: libsvm
+  name: a9a
   version: '1'
 - source: libsvm
   name: cadata

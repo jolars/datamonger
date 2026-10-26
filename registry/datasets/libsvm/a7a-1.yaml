@@ -1,0 +1,119 @@
+schema_version: 4
+source: libsvm
+name: a7a
+version: '1'
+title: Adult (a7a)
+description: The a7a binary classification variant of the UCI Adult census income dataset,
+  distributed by LIBSVM with predefined training and test artifacts. The task predicts whether
+  annual income exceeds $50,000 using 123 binary features derived from the original 14 attributes.
+modality: tabular
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#a7a
+    - https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#a1a
+    steps:
+    - kind: feature-encoding
+      description: The six continuous Adult attributes are discretized into quantiles and
+        represented by binary indicators. Each category of the eight categorical attributes
+        is represented by a binary indicator.
+    notes: LIBSVM documents 123 features and the training and test sizes. The quantile boundaries,
+      fitting population, handling of original missing values, and split selection procedure
+      have not been established.
+  datamonger:
+    status: none
+    evidence:
+    - spec/decoders/libsvm-v1.md
+    notes: Datamonger decodes the provider artifacts without additional statistical preprocessing.
+provenance:
+  provider: LIBSVM
+  upstream_name: a7a
+  landing_page: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#a7a
+  authors:
+  - Barry Becker
+  - Ronny Kohavi
+  citations:
+  - citation: Becker, B., and Kohavi, R. (1996). Adult [Dataset]. UCI Machine Learning Repository.
+      https://doi.org/10.24432/C5XW20.
+    role: dataset
+    note: Original Adult dataset, as cited by UCI.
+  - citation: John C. Platt. Fast training of support vector machines using sequential minimal
+      optimization. In Advances in Kernel Methods - Support Vector Learning. MIT Press, 1998.
+    role: paper
+    note: 'Reference JP98a associated with these variants by LIBSVM: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/ref.html#JP98a.'
+  retrieved_at: '2026-10-26'
+license:
+  status: unknown
+  evidence: 'UCI identifies Barry Becker and Ronny Kohavi as the Adult dataset creators and
+    licenses the original dataset under CC BY 4.0: https://archive.ics.uci.edu/dataset/2/adult.
+    The LIBSVM page identifies Adult as the source and documents its feature encoding but
+    states no license terms for the transformed artifacts: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#a7a.
+    The applicability of the original license to these distributed artifacts has not been
+    established.'
+artifacts:
+- name: train
+  format: libsvm
+  compression: none
+  size: 1152056
+  sha256: d383cf150d4d9f9097b91cc88022cd0ac473c3a72da3f33b4c17801a4bfccdc6
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/a7a
+- name: test
+  format: libsvm
+  compression: none
+  size: 1177819
+  sha256: 9614161fbc7ac8ae52509d19ed0be987aef752d446838816af402fc36ffccce9
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/a7a.t
+representation:
+  decoder: libsvm-split
+  decoder_version: 1
+  inputs:
+    train: train
+    test: test
+  options:
+    index_base: 1
+    feature_count: 123
+    duplicate_features: error
+    label_type: int64
+    row_order: source
+    target_name: response
+  expect:
+    components:
+    - name: train_features
+      kind: sparse_matrix
+      type: float64
+      rows: 16100
+      columns: 123
+    - name: train_response
+      kind: vector
+      type: int64
+      length: 16100
+    - name: test_features
+      kind: sparse_matrix
+      type: float64
+      rows: 16461
+      columns: 123
+    - name: test_response
+      kind: vector
+      type: int64
+      length: 16461
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: e2ea11b37db729b6d25d2faebf0b3d2f2c8f2167a6bcea32291c2bb79c6d6490
+tasks:
+- name: default
+  type: classification
+  splits:
+    train:
+      features: train_features
+      target: train_response
+    test:
+      features: test_features
+      target: test_response
