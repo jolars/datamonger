@@ -1,4 +1,4 @@
-"""LIBSVM and SVMLight version 1 decoding through datamonger-core."""
+"""LIBSVM and SVMLight versions 1 and 2 decoding through datamonger-core."""
 
 from __future__ import annotations
 
@@ -28,15 +28,21 @@ def decode_libsvm(
     options: Mapping[str, object],
     *,
     compression: str = "none",
+    decoder_version: int = 1,
 ) -> DecodedSparseDataset:
-    """Decode a strict LIBSVM or SVMLight version 1 representation."""
+    """Decode a strict LIBSVM or SVMLight version 1 or 2 representation."""
 
     feature_count, label_type, target_name = libsvm_options(options)
     matrix, response_component = cast(
         tuple[LogicalSparseMatrix, LogicalComponent],
         tuple(
             _native.decode_libsvm(
-                Path(path), feature_count, label_type, target_name, compression
+                Path(path),
+                feature_count,
+                label_type,
+                target_name,
+                compression,
+                decoder_version,
             )
         ),
     )
@@ -59,11 +65,22 @@ def decode_libsvm_split(
     *,
     train_compression: str = "none",
     test_compression: str = "none",
+    decoder_version: int = 1,
 ) -> DecodedSparseDatasetSplit:
     """Decode train and test inputs without concatenating either split."""
 
-    train = decode_libsvm(train_path, options, compression=train_compression)
-    test = decode_libsvm(test_path, options, compression=test_compression)
+    train = decode_libsvm(
+        train_path,
+        options,
+        compression=train_compression,
+        decoder_version=decoder_version,
+    )
+    test = decode_libsvm(
+        test_path,
+        options,
+        compression=test_compression,
+        decoder_version=decoder_version,
+    )
     train_features, train_response = train.components
     test_features, test_response = test.components
     components = (

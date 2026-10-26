@@ -104,13 +104,17 @@ function _sparse_dataset(features, response)
     return SparseDataset(matrix, response.values)
 end
 
-function decode_libsvm(path, options::AbstractDict; compression="none", prefix="")
+function decode_libsvm(path, options::AbstractDict;
+                       compression="none", prefix="", decoder_version=1)
+    typeof(decoder_version) === Int && decoder_version in (1, 2) ||
+        throw(UnsupportedDecoderError("unsupported LIBSVM version"))
     feature_count, label_type, target_name = _validate_libsvm_options(options)
     path, prefix = String(path), String(prefix)
     artifact = _native_artifact(path, compression)
     GC.@preserve path prefix target_name begin
         recipe = _NativeLibsvmOptions(feature_count, _NATIVE_TYPES[label_type], _NativeBytes(target_name))
-        result = ccall(_native_symbol(:dm_decode_libsvm), Ptr{Cvoid},
+        symbol = decoder_version == 2 ? :dm_decode_libsvm_v2 : :dm_decode_libsvm
+        result = ccall(_native_symbol(symbol), Ptr{Cvoid},
             (_NativeArtifact, _NativeLibsvmOptions, _NativeBytes), artifact, recipe, _NativeBytes(prefix))
         components = _with_native_result(_native_components, result)
         return Decoded(_sparse_dataset(components...), components)
@@ -118,14 +122,17 @@ function decode_libsvm(path, options::AbstractDict; compression="none", prefix="
 end
 
 function decode_libsvm_split(train_path, test_path, options::AbstractDict;
-                             train_compression="none", test_compression="none")
+                             train_compression="none", test_compression="none", decoder_version=1)
+    typeof(decoder_version) === Int && decoder_version in (1, 2) ||
+        throw(UnsupportedDecoderError("unsupported LIBSVM version"))
     feature_count, label_type, target_name = _validate_libsvm_options(options)
     train_path, test_path = String(train_path), String(test_path)
     train = _native_artifact(train_path, train_compression)
     test = _native_artifact(test_path, test_compression)
     GC.@preserve train_path test_path target_name begin
         recipe = _NativeLibsvmOptions(feature_count, _NATIVE_TYPES[label_type], _NativeBytes(target_name))
-        result = ccall(_native_symbol(:dm_decode_libsvm_split), Ptr{Cvoid},
+        symbol = decoder_version == 2 ? :dm_decode_libsvm_split_v2 : :dm_decode_libsvm_split
+        result = ccall(_native_symbol(symbol), Ptr{Cvoid},
             (_NativeArtifact, _NativeArtifact, _NativeLibsvmOptions), train, test, recipe)
         components = _with_native_result(_native_components, result)
         data = SparseDatasetSplit(_sparse_dataset(components[1:2]...), _sparse_dataset(components[3:4]...))

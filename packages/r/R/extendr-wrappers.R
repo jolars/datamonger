@@ -2,6 +2,9 @@
 #' Decode verified artifact paths and optionally hash before converting buffers.
 dm_decode <- function(decoder, paths, compressions, options, hash) .Call(wrap__dm_decode, decoder, paths, compressions, options, hash)
 
+#' Report whether this build includes the updated core decoder API.
+dm_supports_libsvm_v2 <- function() .Call(wrap__dm_supports_libsvm_v2)
+
 #' Encode or hash supplied logical components for conformance and diagnostics.
 dm_canonical <- function(components, hash) .Call(wrap__dm_canonical, components, hash)
 

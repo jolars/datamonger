@@ -156,3 +156,47 @@ test_that("canonical sparse NaNs normalize while infinities and zeros fail", {
     class = "datamonger_decoded_integrity"
   )
 })
+
+test_that("LIBSVM v2 normalizes zeros with the updated local core", {
+  skip_if(!dm_internal("dm_supports_libsvm_v2")(), "Requires the updated core.")
+  recipe <- conformance_recipe(3)
+  explicit <- write_text("1 1:-0.0 2:2 3:1e-9999\n-1 1:0\n")
+  implicit <- write_text("1 2:2\n-1\n")
+  decode <- dm_internal(".decode_libsvm")
+  digest <- dm_internal(".canonical_sha256")
+  expected <- decode(implicit, recipe)
+  actual <- decode(explicit, recipe, decoder_version = 2L)
+  expect_identical(digest(actual$components), digest(expected$components))
+  expect_error(decode(explicit, recipe), class = "datamonger_decode")
+  split <- dm_internal(".decode_libsvm_split")
+  actual_split <- split(explicit, explicit, recipe, decoder_version = 2L)
+  expected_split <- split(implicit, implicit, recipe)
+  expect_identical(digest(actual_split$components), digest(expected_split$components))
+  for (fields in c("1:0 1:2", "2:0 1:1", "0:0")) {
+    expect_error(
+      decode(write_text(paste0("1 ", fields, "\n")), recipe, decoder_version = 2L),
+      class = "datamonger_decode"
+    )
+  }
+})
+
+test_that("LIBSVM v2 matches the shared canonical digest", {
+  skip_if(!dm_internal("dm_supports_libsvm_v2")(), "Requires the updated core.")
+  case <- read_fixture_json("conformance", "libsvm-v2.json")
+  decoded <- dm_internal(".decode_libsvm")(
+    write_text(case$input), case$recipe, decoder_version = 2L
+  )
+  expect_identical(dm_internal(".canonical_sha256")(decoded$components), case$expected_sha256)
+})
+
+test_that("LIBSVM v2 capability is checked before artifact retrieval", {
+  dataset <- read_fixture_json("conformance", "named-splits.json")$cases[[1]]$manifest
+  dataset$schema_version <- 5L
+  dataset$representation$options$splits[[1]]$decoder_version <- 2L
+  validate <- dm_internal(".validate_representation")
+  if (dm_internal("dm_supports_libsvm_v2")()) {
+    expect_identical(validate(dataset)$children[[1]]$representation$decoder_version, 2L)
+  } else {
+    expect_error(validate(dataset), "updated native core", class = "datamonger_unsupported_decoder")
+  }
+})

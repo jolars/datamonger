@@ -179,7 +179,7 @@ fn decode_delimited(
     to_python(py, components)
 }
 
-#[pyfunction]
+#[pyfunction(signature = (path, feature_count, label_type, target_name, compression, decoder_version=1))]
 fn decode_libsvm(
     py: Python<'_>,
     path: PathBuf,
@@ -187,6 +187,7 @@ fn decode_libsvm(
     label_type: &str,
     target_name: String,
     compression: &str,
+    decoder_version: u32,
 ) -> PyResult<Vec<Py<PyAny>>> {
     let coding = self::compression(compression)?;
     let options = core::LibsvmOptions {
@@ -201,7 +202,12 @@ fn decode_libsvm(
     let components = run(py, |control| {
         reader(path, coding)
             .and_then(|reader| {
-                core::decode_libsvm_with_control(reader, &options, &mut || control.checkpoint())
+                core::decode_libsvm_version_with_control(
+                    reader,
+                    &options,
+                    decoder_version,
+                    &mut || control.checkpoint(),
+                )
             })
             .map_err(|error| artifact_error(error, compression))
     })?;

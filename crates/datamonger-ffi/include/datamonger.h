@@ -54,6 +54,9 @@ DM_API uint32_t dm_abi_version(void);
 DM_API DmResult *dm_decode_delimited(DmArtifact, DmDelimitedOptions);
 DM_API DmResult *dm_decode_libsvm(DmArtifact, DmLibsvmOptions, DmBytes prefix);
 DM_API DmResult *dm_decode_libsvm_split(DmArtifact train, DmArtifact test, DmLibsvmOptions);
+/* Version 2 omits feature values that round to zero. */
+DM_API DmResult *dm_decode_libsvm_v2(DmArtifact, DmLibsvmOptions, DmBytes prefix);
+DM_API DmResult *dm_decode_libsvm_split_v2(DmArtifact train, DmArtifact test, DmLibsvmOptions);
 /* emit_bytes=0 streams the digest without allocating a canonical byte buffer;
  * emit_bytes=1 also returns canonical bytes. Components are copied for the call. */
 DM_API DmResult *dm_canonical(const DmComponent *, size_t count, uint32_t emit_bytes);

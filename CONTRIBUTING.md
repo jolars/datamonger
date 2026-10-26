@@ -238,7 +238,7 @@ reviewed mirror locations and the digests of the bytes served there.
    published record, use a new dataset version.
 
 2. Draft a YAML manifest from
-   [`spec/schema/manifest-v4.schema.json`](spec/schema/manifest-v4.schema.json).
+   [`spec/schema/manifest-v5.schema.json`](spec/schema/manifest-v5.schema.json).
    Supply descriptive, provenance, license, artifact, location, decoder, and
    task metadata. Do not guess a license—use `status: unknown` when the evidence
    is insufficient.
@@ -282,6 +282,21 @@ A release-scoped metadata improvement may retain a dataset version only when it
 obeys the append-only evolution rules in [`spec/identity.md`](spec/identity.md).
 Incorrect component expectations or verification records require an approved
 erratum in a later registry release; earlier release bytes remain unchanged.
+
+### LIBSVM decoder version 2
+
+Use manifest schema 5 and `decoder_version: 2` for LIBSVM artifacts that
+explicitly store zero-valued features. The decoder omits those entries while
+preserving the exact downloaded bytes for artifact verification. See
+[`spec/decoders/libsvm-v2.md`](spec/decoders/libsvm-v2.md).
+
+The R adapter's published vendor archive currently contains core 0.1.0 and
+supports decoder v1. Use `dm-test-r` to exercise v2 against the local core.
+Before releasing R support for v2, publish the updated core, update the R
+core dependency, enable its v2 dispatch for that dependency, and run
+`dm-vendor-r`. Julia likewise needs a native artifact containing the new
+v2 entry points; `tools/dm_julia_core.jl` builds it locally. Do not release
+a registry selecting v2 until the affected client releases are available.
 
 ### Curated dataset names
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import bz2
 import gzip
+import json
 from collections.abc import Callable
 from pathlib import Path
 
@@ -398,3 +399,36 @@ def test_invalid_utf8_is_a_libsvm_decoding_error(tmp_path: Path) -> None:
 
     with pytest.raises(DecodeError, match="UTF-8"):
         decode_libsvm(source, LIBSVM_OPTIONS)
+
+
+@pytest.mark.parametrize("token", ["0", "-0.0", "+0", "1e-9999"])
+def test_libsvm_v2_normalizes_zero_features(tmp_path: Path, token: str) -> None:
+    explicit = tmp_path / "explicit.libsvm"
+    implicit = tmp_path / "implicit.libsvm"
+    explicit.write_text(f"1 1:{token} 2:2\n-1 1:{token}\n")
+    implicit.write_text("1 2:2\n-1\n")
+    decoded = decode_libsvm(explicit, LIBSVM_OPTIONS, decoder_version=2)
+    expected = decode_libsvm(implicit, LIBSVM_OPTIONS)
+    assert canonical_sha256(decoded.components) == canonical_sha256(expected.components)
+    assert decoded.data.features.nnz == 1
+    assert decoded.data.features.shape[0] == 2
+    with pytest.raises(DecodeError):
+        decode_libsvm(explicit, LIBSVM_OPTIONS)
+    split = decode_libsvm_split(explicit, explicit, LIBSVM_OPTIONS, decoder_version=2)
+    assert split.data.train.features.nnz == split.data.test.features.nnz == 1
+
+
+@pytest.mark.parametrize("fields", ["1:0 1:2", "2:0 1:1", "0:0"])
+def test_libsvm_v2_validates_zero_entry_indices(tmp_path: Path, fields: str) -> None:
+    path = tmp_path / "invalid.libsvm"
+    path.write_text(f"1 {fields}\n")
+    with pytest.raises(DecodeError):
+        decode_libsvm(path, LIBSVM_OPTIONS, decoder_version=2)
+
+
+def test_libsvm_v2_shared_canonical_digest(tmp_path: Path) -> None:
+    case = json.loads((CORPUS / "libsvm-v2.json").read_bytes())
+    path = tmp_path / "shared.libsvm"
+    path.write_text(case["input"])
+    decoded = decode_libsvm(path, case["recipe"], decoder_version=2)
+    assert canonical_sha256(decoded.components) == case["expected_sha256"]

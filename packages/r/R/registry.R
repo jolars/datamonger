@@ -293,7 +293,8 @@ active_registry <- function(project_dir = getwd()) {
   if (!identical(index$schema_version, 1L) &&
       !identical(index$schema_version, 2L) &&
       !identical(index$schema_version, 3L) &&
-      !identical(index$schema_version, 4L)) {
+      !identical(index$schema_version, 4L) &&
+      !identical(index$schema_version, 5L)) {
     .abort_category(
       "unsupported-registry",
       paste0("unsupported registry schema ", index$schema_version)
@@ -426,7 +427,7 @@ active_registry <- function(project_dir = getwd()) {
 
   if (!is.integer(dataset$schema_version) ||
       length(dataset$schema_version) != 1L ||
-      !(dataset$schema_version %in% 1:4) ||
+      !(dataset$schema_version %in% 1:5) ||
       dataset$schema_version > index$schema_version) {
     .abort_category(
       "unsupported-registry",

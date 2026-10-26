@@ -17,7 +17,7 @@ function _split_recipes(representation)
         name isa String && !isempty(name) && !(name in names) ||
             fail("split names must be nonempty and unique")
         push!(names, name)
-        split["decoder_version"] === 1 && split["decoder"] in ("delimited-text", "libsvm") &&
+        typeof(split["decoder_version"]) === Int && split["decoder_version"] in (split["decoder"] == "libsvm" ? (1, 2) : (1,)) && split["decoder"] in ("delimited-text", "libsvm") &&
             split["options"] isa AbstractDict || fail("unsupported split decoder recipe")
     end
     inputs = get(representation, "inputs", nothing)
@@ -46,8 +46,8 @@ function _decode_setup(setup, paths)
     elseif setup.decoder == "delimited-text"
         return decode_delimited(paths[1], setup.options; compression=setup.compressions[1])
     elseif setup.decoder == "libsvm"
-        return decode_libsvm(paths[1], setup.options; compression=setup.compressions[1])
+        return decode_libsvm(paths[1], setup.options; compression=setup.compressions[1], decoder_version=setup.representation["decoder_version"])
     end
     return decode_libsvm_split(paths[1], paths[2], setup.options;
-        train_compression=setup.compressions[1], test_compression=setup.compressions[2])
+        train_compression=setup.compressions[1], test_compression=setup.compressions[2], decoder_version=setup.representation["decoder_version"])
 end

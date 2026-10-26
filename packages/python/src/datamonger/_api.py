@@ -521,7 +521,8 @@ def _prepare_representation(
     decoder_version = representation.get("decoder_version")
     if (
         type(decoder_version) is not int
-        or decoder_version != 1
+        or decoder_version
+        not in ((1, 2) if decoder in {"libsvm", "libsvm-split"} else (1,))
         or decoder
         not in {
             "delimited-text",
@@ -530,9 +531,12 @@ def _prepare_representation(
         }
     ):
         raise UnsupportedDecoderError(
-            "the Python client supports delimited-text, LIBSVM, and "
-            "LIBSVM split version 1"
+            "the Python client supports delimited-text version 1 and "
+            "LIBSVM and LIBSVM split versions 1 and 2"
         )
+
+    if decoder_version == 2 and dataset.get("schema_version") != 5:
+        raise UnsupportedDecoderError("LIBSVM v2 requires manifest schema 5")
 
     roles = ("train", "test") if decoder == "libsvm-split" else ("data",)
     artifacts = _artifacts_for_representation(dataset, representation, roles)
@@ -568,17 +572,24 @@ def _decode_leaf(
     paths: Sequence[Path],
     options: Mapping[str, Any],
     compressions: Sequence[str],
+    decoder_version: int = 1,
 ) -> DecodedTable | DecodedSparseDataset | DecodedSparseDatasetSplit:
     if decoder == "delimited-text":
         return decode_delimited_text(paths[0], options, compression=compressions[0])
     if decoder == "libsvm":
-        return decode_libsvm(paths[0], options, compression=compressions[0])
+        return decode_libsvm(
+            paths[0],
+            options,
+            compression=compressions[0],
+            decoder_version=decoder_version,
+        )
     return decode_libsvm_split(
         paths[0],
         paths[1],
         options,
         train_compression=compressions[0],
         test_compression=compressions[1],
+        decoder_version=decoder_version,
     )
 
 
@@ -659,7 +670,7 @@ def fetch_data(
     representation = _object(dataset.get("representation"), "dataset.representation")
     recipes: tuple[Mapping[str, Any], ...] = ()
     if representation.get("decoder") == "named-splits":
-        if dataset.get("schema_version") != 4:
+        if dataset.get("schema_version") not in (4, 5):
             raise UnsupportedDecoderError("named-splits requires manifest schema 4")
         recipes = split_recipes(representation)
         inputs = _object(representation.get("inputs"), "representation.inputs")
@@ -680,14 +691,26 @@ def fetch_data(
     artifacts = tuple(artifact for setup in setups for artifact in setup[1])
     with ExitStack() as stack:
         children = []
-        for decoder, child_artifacts, options, compressions in setups:
+        for child_index, (decoder, child_artifacts, options, compressions) in enumerate(
+            setups
+        ):
             paths = tuple(
                 stack.enter_context(
                     _retrieve_artifact_lease(artifact, cache_root, offline=offline)
                 )
                 for artifact in child_artifacts
             )
-            children.append(_decode_leaf(decoder, paths, options, compressions))
+            children.append(
+                _decode_leaf(
+                    decoder,
+                    paths,
+                    options,
+                    compressions,
+                    (recipes[child_index] if recipes else representation)[
+                        "decoder_version"
+                    ],
+                )
+            )
         decoded: (
             DecodedTable
             | DecodedSparseDataset

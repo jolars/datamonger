@@ -6,7 +6,7 @@ function _preprocessing_metadata(dataset)
         isempty(text) && fail("$field must not be empty")
         return text
     end
-    get(dataset, "schema_version", nothing) in (3, 4) ||
+    get(dataset, "schema_version", nothing) in (3, 4, 5) ||
         fail("preprocessing requires manifest schema 3 or 4")
     metadata = _require_object(dataset["preprocessing"], "preprocessing")
     Set(keys(metadata)) == Set(["upstream", "datamonger"]) ||

@@ -33,8 +33,8 @@ pub enum LabelType {
     Float64,
 }
 
-/// The configurable parts of the revision 1 LIBSVM recipe.
-/// Input indices are one-based; duplicates and stored zeros are errors.
+/// The configurable parts shared by LIBSVM recipes 1 and 2.
+/// Input indices are one-based and duplicates are errors.
 #[derive(Clone, Debug)]
 pub struct LibsvmOptions {
     /// Declared feature count, at most `2^53 - 1`.
@@ -373,7 +373,7 @@ pub fn decode_libsvm_with_control<R: BufRead>(
     options: &LibsvmOptions,
     control: &mut impl Control,
 ) -> Result<Vec<Component>> {
-    decode_libsvm_impl(reader, options, DecodeOptions::default(), control)
+    decode_libsvm_version_with_control(reader, options, 1, control)
 }
 
 /// Decode with explicit numeric compatibility for an existing client.
@@ -382,16 +382,40 @@ pub fn decode_libsvm_with_options<R: BufRead>(
     options: &LibsvmOptions,
     compatibility: DecodeOptions,
 ) -> Result<Vec<Component>> {
-    decode_libsvm_impl(reader, options, compatibility, &mut || Ok(()))
+    decode_libsvm_version_with_options(reader, options, 1, compatibility)
+}
+
+/// Decode a declared LIBSVM version with cancellation checkpoints.
+pub fn decode_libsvm_version_with_control<R: BufRead>(
+    reader: R,
+    options: &LibsvmOptions,
+    version: u32,
+    control: &mut impl Control,
+) -> Result<Vec<Component>> {
+    decode_libsvm_impl(reader, options, version, DecodeOptions::default(), control)
+}
+
+/// Decode a declared LIBSVM version with numeric compatibility options.
+pub fn decode_libsvm_version_with_options<R: BufRead>(
+    reader: R,
+    options: &LibsvmOptions,
+    version: u32,
+    compatibility: DecodeOptions,
+) -> Result<Vec<Component>> {
+    decode_libsvm_impl(reader, options, version, compatibility, &mut || Ok(()))
 }
 
 fn decode_libsvm_impl<R: BufRead>(
     reader: R,
     options: &LibsvmOptions,
+    version: u32,
     compatibility: DecodeOptions,
     control: &mut impl Control,
 ) -> Result<Vec<Component>> {
     control.checkpoint()?;
+    if !matches!(version, 1 | 2) {
+        return Err(unsupported("unsupported LIBSVM version"));
+    }
     if options.feature_count == 0
         || options.feature_count > (1_u64 << 53) - 1
         || options.target_name.is_empty()
@@ -439,14 +463,25 @@ fn decode_libsvm_impl<R: BufRead>(
             if index < previous {
                 return Err(decode_error("feature indices must be strictly increasing"));
             }
-            let value = parse_binary64_with_options(value, true, compatibility)
-                .map_err(|e| decode_error(format!("invalid feature value: {e}")))?;
+            let value = parse_binary64_with_options(
+                value,
+                true,
+                if version == 2 {
+                    DecodeOptions::default()
+                } else {
+                    compatibility
+                },
+            )
+            .map_err(|e| decode_error(format!("invalid feature value: {e}")))?;
+            previous = index;
             if value == 0.0 {
-                return Err(decode_error("stored sparse zero is invalid"));
+                if version == 1 {
+                    return Err(decode_error("stored sparse zero is invalid"));
+                }
+                continue;
             }
             column_indices.push(index - 1);
             values.push(value);
-            previous = index;
         }
         row_offsets.push(values.len() as u64);
         if labels.len() % 1024 == 0 {
@@ -492,7 +527,7 @@ pub fn decode_libsvm_split_with_control<R: BufRead, S: BufRead>(
     options: &LibsvmOptions,
     control: &mut impl Control,
 ) -> Result<Vec<Component>> {
-    decode_libsvm_split_impl(train, test, options, DecodeOptions::default(), control)
+    decode_libsvm_split_version_with_control(train, test, options, 1, control)
 }
 
 /// Decode a split with explicit numeric compatibility for an existing client.
@@ -502,21 +537,51 @@ pub fn decode_libsvm_split_with_options<R: BufRead, S: BufRead>(
     options: &LibsvmOptions,
     compatibility: DecodeOptions,
 ) -> Result<Vec<Component>> {
-    decode_libsvm_split_impl(train, test, options, compatibility, &mut || Ok(()))
+    decode_libsvm_split_version_with_options(train, test, options, 1, compatibility)
+}
+
+/// Decode both splits with the declared LIBSVM version and cancellation.
+pub fn decode_libsvm_split_version_with_control<R: BufRead, S: BufRead>(
+    train: R,
+    test: S,
+    options: &LibsvmOptions,
+    version: u32,
+    control: &mut impl Control,
+) -> Result<Vec<Component>> {
+    decode_libsvm_split_impl(
+        train,
+        test,
+        options,
+        version,
+        DecodeOptions::default(),
+        control,
+    )
+}
+
+/// Decode both splits with the declared LIBSVM version and numeric compatibility.
+pub fn decode_libsvm_split_version_with_options<R: BufRead, S: BufRead>(
+    train: R,
+    test: S,
+    options: &LibsvmOptions,
+    version: u32,
+    compatibility: DecodeOptions,
+) -> Result<Vec<Component>> {
+    decode_libsvm_split_impl(train, test, options, version, compatibility, &mut || Ok(()))
 }
 
 fn decode_libsvm_split_impl<R: BufRead, S: BufRead>(
     train: R,
     test: S,
     options: &LibsvmOptions,
+    version: u32,
     compatibility: DecodeOptions,
     control: &mut impl Control,
 ) -> Result<Vec<Component>> {
-    let mut components = decode_libsvm_impl(train, options, compatibility, control)?;
+    let mut components = decode_libsvm_impl(train, options, version, compatibility, control)?;
     for component in &mut components {
         component.name = format!("train_{}", component.name);
     }
-    let mut test = decode_libsvm_impl(test, options, compatibility, control)?;
+    let mut test = decode_libsvm_impl(test, options, version, compatibility, control)?;
     for component in &mut test {
         component.name = format!("test_{}", component.name);
     }

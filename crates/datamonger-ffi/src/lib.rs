@@ -13,7 +13,8 @@ use std::slice;
 
 use datamonger_core::{
     artifact_reader, canonical_sha256, decode_delimited_with_options,
-    decode_libsvm_split_with_options, decode_libsvm_with_options, write_canonical, Column,
+    decode_libsvm_split_version_with_options, decode_libsvm_split_with_options,
+    decode_libsvm_version_with_options, decode_libsvm_with_options, write_canonical, Column,
     Component, Compression, DataType, DecodeOptions, DelimitedOptions, Error, ErrorKind, LabelType,
     LibsvmOptions, Result, Shape, Values,
 };
@@ -342,6 +343,44 @@ pub unsafe extern "C" fn dm_decode_libsvm_split(
             unsafe { reader(train)? },
             unsafe { reader(test)? },
             &options,
+            JULIA_NUMBERS,
+        )?))
+    })
+}
+#[no_mangle]
+pub unsafe extern "C" fn dm_decode_libsvm_v2(
+    artifact: DmArtifact,
+    options: DmLibsvmOptions,
+    prefix: DmBytes,
+) -> *mut DmResult {
+    boundary(|| {
+        let options = unsafe { svm_options(options)? };
+        let prefix = unsafe { text(prefix, ErrorKind::UnsupportedDecoder)? };
+        let mut components = decode_libsvm_version_with_options(
+            unsafe { reader(artifact)? },
+            &options,
+            2,
+            JULIA_NUMBERS,
+        )?;
+        for component in &mut components {
+            component.name.insert_str(0, &prefix);
+        }
+        Ok(DmResult::new(components))
+    })
+}
+#[no_mangle]
+pub unsafe extern "C" fn dm_decode_libsvm_split_v2(
+    train: DmArtifact,
+    test: DmArtifact,
+    options: DmLibsvmOptions,
+) -> *mut DmResult {
+    boundary(|| {
+        let options = unsafe { svm_options(options)? };
+        Ok(DmResult::new(decode_libsvm_split_version_with_options(
+            unsafe { reader(train)? },
+            unsafe { reader(test)? },
+            &options,
+            2,
             JULIA_NUMBERS,
         )?))
     })

@@ -93,6 +93,12 @@ function _native_symbol(name)
     end
 end
 
+function _supports_libsvm_v2()
+    _native_symbol(:dm_abi_version)
+    return Libdl.dlsym_e(_NATIVE_LIBRARY[], :dm_decode_libsvm_v2) != C_NULL &&
+           Libdl.dlsym_e(_NATIVE_LIBRARY[], :dm_decode_libsvm_split_v2) != C_NULL
+end
+
 function _copy_native(::Type{T}, data::Ptr, len::Integer) where {T}
     len == 0 && return T[]
     return copy(unsafe_wrap(Vector{T}, Ptr{T}(data), Int(len); own=false))

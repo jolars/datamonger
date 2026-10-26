@@ -149,15 +149,20 @@ def _prepare_draft(source: Mapping[str, Any], retrieved_at: date) -> dict[str, A
         "representation",
     )
     decoder = _string(representation["decoder"], "representation.decoder")
-    if decoder not in _SUPPORTED_DECODERS or representation["decoder_version"] != 1:
+    if (
+        decoder not in _SUPPORTED_DECODERS
+        or type(representation["decoder_version"]) is not int
+        or representation["decoder_version"]
+        not in ((1, 2) if decoder in {"libsvm", "libsvm-split"} else (1,))
+    ):
         raise ValueError(
             "dm-add supports delimited-text, libsvm, libsvm-split, "
-            "and named-splits version 1"
+            "and named-splits version 1; LIBSVM also supports version 2"
         )
     inputs = _mapping(representation["inputs"], "representation.inputs")
     roles = {"train", "test"} if decoder == "libsvm-split" else {"data"}
     if decoder == "named-splits":
-        if manifest["schema_version"] != 4:
+        if manifest["schema_version"] not in (4, 5):
             raise ValueError("named-splits requires manifest schema 4")
         roles = {split["name"] for split in split_recipes(representation)}
     if set(inputs) != roles:
@@ -316,14 +321,30 @@ def _decode(
                 if recipe["decoder"] == "delimited-text"
                 else decode_libsvm
             )
-            children.append(decode(path, recipe["options"], compression=compression))
+            children.append(
+                decode(
+                    path,
+                    recipe["options"],
+                    compression=compression,
+                    **(
+                        {"decoder_version": recipe["decoder_version"]}
+                        if recipe["decoder"] == "libsvm"
+                        else {}
+                    ),
+                )
+            )
         return assemble_splits(recipes, children)
     if decoder == "delimited-text":
         path, compression = selected("data")
         return decode_delimited_text(path, options, compression=compression)
     if decoder == "libsvm":
         path, compression = selected("data")
-        return decode_libsvm(path, options, compression=compression)
+        return decode_libsvm(
+            path,
+            options,
+            compression=compression,
+            decoder_version=representation["decoder_version"],
+        )
     train_path, train_compression = selected("train")
     test_path, test_compression = selected("test")
     return decode_libsvm_split(
@@ -332,6 +353,7 @@ def _decode(
         options,
         train_compression=train_compression,
         test_compression=test_compression,
+        decoder_version=representation["decoder_version"],
     )
 
 

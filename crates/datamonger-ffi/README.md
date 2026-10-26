@@ -18,6 +18,12 @@ ABI. This ABI uses Julia's numeric compatibility: a nonzero decimal that rounds
 to zero raises a decode error, while nonzero subnormals remain valid. Core users
 retain the default conversion behavior unless they request this option.
 
+The additive `dm_decode_libsvm_v2` and `dm_decode_libsvm_split_v2` entry points
+implement LIBSVM decoder version 2 without changing ABI 1 layouts or existing
+symbols. V2 omits zero-valued features, including underflowed feature values,
+while retaining the numeric compatibility rules for labels. Existing LIBSVM
+entry points continue to implement decoder version 1.
+
 Inputs are borrowed for the call and never retained. All buffers must be aligned,
 readable, and immutable, and lengths must describe their accessible storage.
 The bridge checks null pointers, alignment, lengths, UTF-8, validity bytes, and

@@ -36,3 +36,8 @@ These cases extend the corpus without changing the revision 1 implementation
 claim. Golden bytes were produced by the independent Python decoder and
 canonical encoder in `packages/python/tests/reference`, with names qualified
 according to `spec/decoders/named-splits-v1.md`.
+
+`libsvm-v2.json` adds explicit positive, negative, and underflowed zeros to the
+small LIBSVM fixture. All four decoders must reproduce the existing fixture's
+canonical-form 1 digest after omitting these entries. Decoder v1 continues to
+reject this input. The version 1 fixture and its digest remain unchanged.

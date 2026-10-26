@@ -54,7 +54,7 @@ def seed(case: dict[str, Any], cache: Path, compression: str = "none") -> Regist
         )
         (objects / artifact["sha256"]).write_bytes(contents)
     index = {
-        "schema_version": 4,
+        "schema_version": dataset["schema_version"],
         "release": "named-splits-test",
         "datasets": [dataset],
         "defaults": [],
@@ -191,3 +191,26 @@ def test_named_split_metadata_validation(mutation: str) -> None:
         dataset["schema_version"] = 3
     with pytest.raises(ValueError):
         dm_index.validate_manifest(dataset)
+
+
+def test_named_splits_can_select_libsvm_v2(tmp_path: Path) -> None:
+    case = copy.deepcopy(DOCUMENT["cases"][0])
+    case["manifest"]["schema_version"] = 5
+    for recipe in case["manifest"]["representation"]["options"]["splits"]:
+        if recipe["decoder"] == "libsvm":
+            recipe["decoder_version"] = 2
+    dm_index.validate_manifest(case["manifest"])
+    registry = seed(case, tmp_path)
+    result = fetch_data(
+        case["manifest"]["name"],
+        source="conformance",
+        version="1",
+        registry=registry,
+        cache_dir=tmp_path,
+        offline=True,
+        return_info=True,
+    )
+    assert (
+        result.info.canonical_digest
+        == case["manifest"]["representation"]["expect"]["verification"][0]["digest"]
+    )

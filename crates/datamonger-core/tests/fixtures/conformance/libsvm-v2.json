@@ -1,0 +1,15 @@
+{
+  "decoder": "libsvm",
+  "decoder_version": 2,
+  "canonical_form": 1,
+  "recipe": {
+    "index_base": 1,
+    "feature_count": 4,
+    "duplicate_features": "error",
+    "label_type": "int64",
+    "row_order": "source",
+    "target_name": "response"
+  },
+  "input": "+1 1:1.5 2:0 3:-0.0 4:-2\n-1 1:+0 2:3 3:1e-9999 4:0\n",
+  "expected_sha256": "50b077922f6ffc77054622fd807fbc8de48d1c3fcb3be644027422b244b0190b"
+}

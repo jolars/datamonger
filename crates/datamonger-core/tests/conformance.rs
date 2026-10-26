@@ -501,3 +501,91 @@ fn julia_float_underflow_compatibility_is_explicit() {
         );
     }
 }
+
+#[test]
+fn libsvm_v2_omits_zeros_without_changing_canonical_values() {
+    let options = LibsvmOptions {
+        feature_count: 5,
+        label_type: LabelType::Int64,
+        target_name: "response".into(),
+    };
+    let explicit = b"+1 1:0 2:-0.0 3:1e-9999 4:2 5:+0\n-1 1:0\n";
+    let implicit = b"+1 4:2\n-1\n";
+    let decoded =
+        decode_libsvm_version_with_control(&explicit[..], &options, 2, &mut || Ok(())).unwrap();
+    let expected = decode_libsvm(&implicit[..], &options).unwrap();
+    assert_eq!(
+        canonical_sha256(&decoded).unwrap(),
+        canonical_sha256(&expected).unwrap()
+    );
+    assert!(decode_libsvm(&explicit[..], &options).is_err());
+    assert!(
+        decode_libsvm_version_with_control(&implicit[..], &options, 3, &mut || Ok(())).is_err()
+    );
+    let split = decode_libsvm_split_version_with_control(
+        &explicit[..],
+        &explicit[..],
+        &options,
+        2,
+        &mut || Ok(()),
+    )
+    .unwrap();
+    let expected_split = decode_libsvm_split(&implicit[..], &implicit[..], &options).unwrap();
+    assert_eq!(
+        canonical_sha256(&split).unwrap(),
+        canonical_sha256(&expected_split).unwrap()
+    );
+    // Numeric compatibility must not prevent v2 feature underflow normalization.
+    let compatible = decode_libsvm_version_with_options(
+        &explicit[..],
+        &options,
+        2,
+        DecodeOptions {
+            reject_float_underflow: true,
+        },
+    )
+    .unwrap();
+    assert_eq!(
+        canonical_sha256(&compatible).unwrap(),
+        canonical_sha256(&expected).unwrap()
+    );
+}
+
+#[test]
+fn libsvm_v2_validates_indices_even_when_values_are_zero() {
+    let options = LibsvmOptions {
+        feature_count: 3,
+        label_type: LabelType::Int64,
+        target_name: "response".into(),
+    };
+    for input in [
+        "1 1:0 1:2\n",
+        "1 2:0 1:1\n",
+        "1 0:0\n",
+        "1 4:0\n",
+        "1 1:NaN\n",
+        "1 1:1e9999\n",
+    ] {
+        assert!(
+            decode_libsvm_version_with_control(input.as_bytes(), &options, 2, &mut || Ok(()))
+                .is_err(),
+            "{input}"
+        );
+    }
+}
+
+#[test]
+fn libsvm_v2_shared_canonical_digest() {
+    let case = document("libsvm-v2.json");
+    let components = decode_libsvm_version_with_control(
+        case["input"].as_str().unwrap().as_bytes(),
+        &svm_options(&case["recipe"]),
+        2,
+        &mut || Ok(()),
+    )
+    .unwrap();
+    assert_eq!(
+        hex(&canonical_sha256(&components).unwrap()),
+        case["expected_sha256"].as_str().unwrap()
+    );
+}

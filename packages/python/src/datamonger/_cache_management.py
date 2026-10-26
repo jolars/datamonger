@@ -108,7 +108,7 @@ def _registry_metadata(contents: bytes) -> tuple[str | None, dict[str, set[str]]
     if (
         not isinstance(value, Mapping)
         or type(value.get("schema_version")) is not int
-        or value.get("schema_version") not in (1, 2, 3, 4)
+        or value.get("schema_version") not in (1, 2, 3, 4, 5)
     ):
         return None, {}
 

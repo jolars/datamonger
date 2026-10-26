@@ -51,7 +51,8 @@ def split_recipes(representation: Mapping[str, Any]) -> tuple[Mapping[str, Any],
         if (
             split["decoder"] not in ("delimited-text", "libsvm")
             or type(split["decoder_version"]) is not int
-            or split["decoder_version"] != 1
+            or split["decoder_version"]
+            not in ((1, 2) if split["decoder"] == "libsvm" else (1,))
             or not isinstance(split["options"], Mapping)
         ):
             raise fail("unsupported split decoder recipe")

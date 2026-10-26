@@ -366,10 +366,27 @@ fn dm_decode(
                 &libsvm_options(&options)?,
                 &mut control,
             )?,
+            #[cfg(local_core_v2)]
+            "libsvm-v2" => core::decode_libsvm_version_with_control(
+                reader(&paths[0], &compressions[0])?,
+                &libsvm_options(&options)?,
+                2,
+                &mut control,
+            )?,
+            #[cfg(local_core_v2)]
+            "libsvm-split-v2" if paths.len() == 2 => {
+                core::decode_libsvm_split_version_with_control(
+                    reader(&paths[0], &compressions[0])?,
+                    reader(&paths[1], &compressions[1])?,
+                    &libsvm_options(&options)?,
+                    2,
+                    &mut control,
+                )?
+            }
             _ => {
                 return Err(core::Error::new(
                     core::ErrorKind::UnsupportedDecoder,
-                    "unsupported decoder or inputs",
+                    "unsupported decoder or inputs (LIBSVM v2 requires the updated core)",
                 ))
             }
         };
@@ -432,9 +449,16 @@ fn dm_parse_binary64(value: &str) -> List {
     envelope(core::parse_binary64(value, true).map(Robj::from))
 }
 
+/// Report whether this build includes the updated core decoder API.
+#[extendr]
+fn dm_supports_libsvm_v2() -> bool {
+    cfg!(local_core_v2)
+}
+
 extendr_module! {
     mod datamonger;
     fn dm_decode;
+    fn dm_supports_libsvm_v2;
     fn dm_canonical;
     fn dm_http_gzip;
     fn dm_parse_binary64;

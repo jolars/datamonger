@@ -33,9 +33,11 @@ pub use compression::{
 };
 pub use decode::{
     decode_delimited, decode_delimited_with_control, decode_delimited_with_options, decode_libsvm,
-    decode_libsvm_split, decode_libsvm_split_with_control, decode_libsvm_split_with_options,
-    decode_libsvm_with_control, decode_libsvm_with_options, parse_binary64, Column, DecodeOptions,
-    DelimitedOptions, LabelType, LibsvmOptions,
+    decode_libsvm_split, decode_libsvm_split_version_with_control,
+    decode_libsvm_split_version_with_options, decode_libsvm_split_with_control,
+    decode_libsvm_split_with_options, decode_libsvm_version_with_control,
+    decode_libsvm_version_with_options, decode_libsvm_with_control, decode_libsvm_with_options,
+    parse_binary64, Column, DecodeOptions, DelimitedOptions, LabelType, LibsvmOptions,
 };
 pub use error::{Error, ErrorKind, Result};
 pub use model::{Component, DataType, Shape, Values};

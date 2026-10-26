@@ -1,0 +1,120 @@
+schema_version: 5
+source: libsvm
+name: madelon
+version: '1'
+title: Madelon
+description: Artificial binary classification data from the NIPS 2003 feature selection challenge,
+  distributed by LIBSVM with 500 features. The predefined test artifact contains the original
+  challenge validation set, not its unlabeled test set.
+modality: tabular
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - https://archive.ics.uci.edu/dataset/171/madelon
+    - https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#madelon
+    steps:
+    - kind: synthetic-generation
+      description: Generate clusters on a five-dimensional hypercube, add 15 linear combinations
+        to the five informative features and 480 distractor features, and randomize feature
+        and observation order.
+    - kind: split-selection
+      description: LIBSVM uses the original 600-row validation set as its test set because
+        labels for the original 1800-row test set are unavailable.
+    notes: The exact numerical transformations used to prepare LIBSVM's feature values have
+      not been established.
+  datamonger:
+    status: none
+    evidence:
+    - spec/decoders/libsvm-v2.md
+    notes: LIBSVM v2 omits explicitly stored zeros without changing feature values. Datamonger
+      applies no statistical preprocessing.
+provenance:
+  provider: LIBSVM
+  upstream_name: madelon
+  landing_page: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#madelon
+  authors:
+  - Isabelle Guyon
+  citations:
+  - citation: Guyon, I. (2004). Madelon [Dataset]. UCI Machine Learning Repository. https://doi.org/10.24432/C5602H.
+    role: dataset
+    note: Original dataset and creator as cited by UCI.
+  - citation: Isabelle Guyon, Steve Gunn, Asa Ben Hur, and Gideon Dror. Result analysis of
+      the NIPS 2003 feature selection challenge. Advances in Neural Information Processing
+      Systems, volume 17, 2005.
+    role: paper
+    note: 'Reference IG05a associated with Madelon by LIBSVM: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/ref.html#IG05a.'
+  retrieved_at: '2026-10-26'
+license:
+  status: unknown
+  evidence: 'UCI licenses the original Madelon dataset under CC BY 4.0: https://archive.ics.uci.edu/dataset/171/madelon.
+    LIBSVM identifies that source and documents the split selection but states no license
+    terms for its converted artifacts: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#madelon.
+    The applicability of the original license to these distributed artifacts has not been
+    established.'
+artifacts:
+- name: train
+  format: libsvm
+  compression: none
+  size: 7788995
+  sha256: 4801c452441772b47674fa8deb3724b1cb897eff49ccd8d47078367080c05b54
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/madelon
+- name: test
+  format: libsvm
+  compression: none
+  size: 2336699
+  sha256: ae60251b63a46c6ace348b77749e79e25d4098d629d1dead2852c3d4daf1f8ea
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/madelon.t
+representation:
+  decoder: libsvm-split
+  decoder_version: 2
+  inputs:
+    train: train
+    test: test
+  options:
+    index_base: 1
+    feature_count: 500
+    duplicate_features: error
+    label_type: int64
+    row_order: source
+    target_name: response
+  expect:
+    components:
+    - name: train_features
+      kind: sparse_matrix
+      type: float64
+      rows: 2000
+      columns: 500
+    - name: train_response
+      kind: vector
+      type: int64
+      length: 2000
+    - name: test_features
+      kind: sparse_matrix
+      type: float64
+      rows: 600
+      columns: 500
+    - name: test_response
+      kind: vector
+      type: int64
+      length: 600
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: 997dff34ede32628996d5944cec46a39803bdda495ad8b7830e6e5d372d3a125
+tasks:
+- name: default
+  type: classification
+  splits:
+    train:
+      features: train_features
+      target: train_response
+    test:
+      features: test_features
+      target: test_response

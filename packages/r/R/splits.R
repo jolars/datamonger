@@ -29,7 +29,8 @@
       fail("split names must be nonempty and unique")
     }
     split_names <- c(split_names, split$name)
-    if (!identical(split$decoder_version, 1L) ||
+    if (!(identical(split$decoder_version, 1L) ||
+        (identical(split$decoder_version, 2L) && identical(split$decoder, "libsvm"))) ||
         !.is_scalar_character(split$decoder) ||
         !(split$decoder %in% c("delimited-text", "libsvm")) ||
         !is.list(split$options)) {
@@ -68,11 +69,13 @@
       paths[[1]], setup$options, setup$compressions[[1]], hash = hash
     ),
     libsvm = .decode_libsvm(
-      paths[[1]], setup$options, setup$compressions[[1]], hash = hash
+      paths[[1]], setup$options, setup$compressions[[1]], hash = hash,
+      decoder_version = setup$representation$decoder_version
     ),
     `libsvm-split` = .decode_libsvm_split(
       paths[[1]], paths[[2]], setup$options,
-      setup$compressions[[1]], setup$compressions[[2]], hash = hash
+      setup$compressions[[1]], setup$compressions[[2]], hash = hash,
+      decoder_version = setup$representation$decoder_version
     )
   )
 }

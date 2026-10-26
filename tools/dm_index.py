@@ -448,7 +448,7 @@ def _validate_named_splits(dataset: Mapping[str, Any]) -> None:
 
 def _versioned_schema(record: Mapping[str, Any], name: str) -> str:
     version = record.get("schema_version")
-    if type(version) is not int or version not in (1, 2, 3, 4):
+    if type(version) is not int or version not in (1, 2, 3, 4, 5):
         raise ValueError(f"unsupported {name} schema_version {version!r}")
     return f"{name}-v{version}.schema.json"
 

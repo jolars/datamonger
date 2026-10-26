@@ -986,10 +986,23 @@ def test_collection_preprocessing_covers_both_stages_without_changing_identity()
     collection = dm_index.load_yaml(ROOT / "registry/collection.yaml")
     for path in collection["manifests"]:
         dataset = dm_index.load_yaml(ROOT / path)
-        assert dataset["schema_version"] in {3, 4}
+        assert dataset["schema_version"] in {3, 4, 5}
         assert set(dataset["preprocessing"]) == {"upstream", "datamonger"}
         identity = dataset["source"], dataset["name"], dataset["version"]
         if identity in snapshots:
             assert dm_index._identity_projection(
                 dataset
             ) == dm_index._identity_projection(snapshots[identity])
+
+
+def test_libsvm_v2_requires_new_schema_and_restricts_decoder_versions() -> None:
+    dataset = dict(dm_index.load_yaml(ROOT / "registry/datasets/libsvm/madelon-1.yaml"))
+    dm_index.validate_manifest(dataset)
+    dataset["schema_version"] = 4
+    with pytest.raises(ValueError):
+        dm_index.validate_manifest(dataset)
+    dataset["schema_version"] = 5
+    for version in (0, 3, True):
+        dataset["representation"]["decoder_version"] = version
+        with pytest.raises(ValueError):
+            dm_index.validate_manifest(dataset)

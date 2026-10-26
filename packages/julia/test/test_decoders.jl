@@ -149,3 +149,43 @@ end
         invalid_recipe,
     )
 end
+
+@testset "LIBSVM v2 zero normalization" begin
+    recipe = read_json("conformance", "cases.json")["cases"][3]["recipe"]
+    mktempdir() do directory
+        explicit = joinpath(directory, "explicit.libsvm")
+        implicit = joinpath(directory, "implicit.libsvm")
+        write(explicit, "1 1:-0.0 2:2 3:1e-9999\n-1 1:0\n")
+        write(implicit, "1 2:2\n-1\n")
+        expected = Datamonger.decode_libsvm(implicit, recipe)
+        actual = Datamonger.decode_libsvm(explicit, recipe; decoder_version=2)
+        @test Datamonger.canonical_sha256(actual.components) == Datamonger.canonical_sha256(expected.components)
+        @test_throws Datamonger.DecodeError Datamonger.decode_libsvm(explicit, recipe)
+        actual_split = Datamonger.decode_libsvm_split(explicit, explicit, recipe; decoder_version=2)
+        expected_split = Datamonger.decode_libsvm_split(implicit, implicit, recipe)
+        @test Datamonger.canonical_sha256(actual_split.components) == Datamonger.canonical_sha256(expected_split.components)
+        for fields in ("1:0 1:2", "2:0 1:1", "0:0")
+            write(explicit, "1 $fields\n")
+            @test_throws Datamonger.DecodeError Datamonger.decode_libsvm(explicit, recipe; decoder_version=2)
+        end
+    end
+end
+
+@testset "LIBSVM v2 shared canonical digest" begin
+    case = read_json("conformance", "libsvm-v2.json")
+    mktemp() do path, io
+        write(io, case["input"])
+        close(io)
+        decoded = Datamonger.decode_libsvm(path, case["recipe"]; decoder_version=2)
+        @test Datamonger.canonical_sha256(decoded.components) == case["expected_sha256"]
+    end
+end
+
+@testset "LIBSVM v2 native capability" begin
+    @test Datamonger._supports_libsvm_v2()
+    dataset = read_json("conformance", "named-splits.json")["cases"][1]["manifest"]
+    dataset["schema_version"] = 5
+    dataset["representation"]["options"]["splits"][1]["decoder_version"] = 2
+    setup = Datamonger._validate_representation(dataset)
+    @test setup.children[1].representation["decoder_version"] == 2
+end

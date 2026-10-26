@@ -6,7 +6,7 @@
     if (!nzchar(text)) fail(paste0(field, " must not be empty"))
     text
   }
-  if (!(dataset$schema_version %in% c(3L, 4L))) {
+  if (!(dataset$schema_version %in% c(3L, 4L, 5L))) {
     fail("preprocessing requires manifest schema 3 or 4")
   }
   metadata <- .require_object(dataset$preprocessing, "preprocessing")

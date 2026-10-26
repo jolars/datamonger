@@ -1794,3 +1794,59 @@ def test_preprocessing_metadata_uses_the_fetched_registry_without_transforming_d
         and entry.registry_release == registry.release
         for entry in cached.entries
     )
+
+
+@pytest.mark.parametrize("split", [False, True])
+def test_fetch_libsvm_v2_verifies_original_bytes_and_normalized_matrix(
+    local_server: tuple[str, ServerState], tmp_path: Path, split: bool
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+    registry = (
+        add_libsvm_split_dataset(base_url, state, registry)
+        if split
+        else add_libsvm_dataset(base_url, state, registry)
+    )
+    index = json.loads(state.bodies["/index.json"])
+    index["schema_version"] = 5
+    dataset = index["datasets"][-1]
+    dataset["schema_version"] = 5
+    dataset["representation"]["decoder_version"] = 2
+    for artifact in dataset["artifacts"]:
+        url = artifact["downloads"][0]["url"]
+        route = url.removeprefix(base_url)
+        raw = state.bodies[route]
+        compression = artifact["compression"]
+        if compression == "gzip":
+            raw = gzip.decompress(raw)
+        elif compression == "bzip2":
+            raw = bz2.decompress(raw)
+        # Feature 3 is absent from the fixture's first row.
+        raw = raw.replace(b"1:1.5 4:-2", b"1:1.5 3:-0.0 4:-2")
+        if compression == "gzip":
+            raw = gzip.compress(raw)
+        elif compression == "bzip2":
+            raw = bz2.compress(raw)
+        state.bodies[route] = raw
+        artifact.update(size=len(raw), sha256=hashlib.sha256(raw).hexdigest())
+    registry = _reseal_index(base_url, state, index)
+    result = fetch_data(
+        dataset["name"],
+        source="fixture",
+        registry=registry,
+        cache_dir=tmp_path,
+        return_info=True,
+    )
+    assert result.info.verification == "decoded"
+    expected = LIBSVM_SPLIT_DIGEST if split else LIBSVM_DIGEST
+    assert result.info.canonical_digest == expected
+    state.online = False
+    cached = fetch_data(
+        dataset["name"],
+        source="fixture",
+        registry=registry,
+        cache_dir=tmp_path,
+        offline=True,
+        return_info=True,
+    )
+    assert cached.info.canonical_digest == expected

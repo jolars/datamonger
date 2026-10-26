@@ -291,8 +291,9 @@ def test_build_rejects_mislabeled_content_encoding_hazard(
         dm_add.build(write_draft(tmp_path, draft), root=ROOT)
 
 
+@pytest.mark.parametrize("decoder_version", [1, 2])
 def test_build_supports_libsvm_split_and_reports_sparse_samples(
-    tmp_path: Path, local_server: tuple[str, ServerState]
+    tmp_path: Path, local_server: tuple[str, ServerState], decoder_version: int
 ) -> None:
     base_url, state = local_server
     test_contents = (
@@ -303,6 +304,11 @@ def test_build_supports_libsvm_split_and_reports_sparse_samples(
     )
     draft = delimited_draft(base_url)
     draft["name"] = "small_split"
+    if decoder_version == 2:
+        draft["schema_version"] = 5
+        state.bodies["/train.libsvm"] = state.bodies["/train.libsvm"].replace(
+            b"1:1.5 4:-2", b"1:1.5 3:0 4:-2"
+        )
     draft["artifacts"] = [
         {
             "name": "train",
@@ -321,7 +327,7 @@ def test_build_supports_libsvm_split_and_reports_sparse_samples(
     ]
     draft["representation"] = {
         "decoder": "libsvm-split",
-        "decoder_version": 1,
+        "decoder_version": decoder_version,
         "inputs": {"train": "train", "test": "test"},
         "options": copy.deepcopy(LIBSVM_OPTIONS),
     }
