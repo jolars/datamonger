@@ -67,8 +67,7 @@ jobs:
             python tools/dm_rust_sources.py --record-vendor
             python tools/dm_rust_sources.py --check
             git add packages/r/src/rust/Cargo.lock packages/r/src/rust/vendor.tar.xz \
-              packages/r/src/rust/vendor-config.toml packages/r/src/rust/vendor-lock.sha256 \
-              packages/r/inst/COPYRIGHTS
+              packages/r/src/rust/vendor-config.toml packages/r/src/rust/vendor-lock.sha256
             if ! git diff --cached --quiet; then
               git -c user.name='github-actions[bot]' \
                 -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
