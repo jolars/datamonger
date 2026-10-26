@@ -29,7 +29,7 @@ def main() -> int:
     if count != 1:
         raise ValueError("expected one R core dependency pin")
     try:
-        manifest.write_text(patched)
+        manifest.write_bytes(patched.encode())
         return subprocess.call(
             ["Rscript", *sys.argv[1:]],
             env={**os.environ, "DM_R_CORE_PATH": str(core), "DEBUG": "1"},
