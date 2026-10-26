@@ -1,0 +1,126 @@
+{
+  "dataset_id": "datamonger:guyon2004-madelon@1",
+  "id": "23665387",
+  "state": "published",
+  "created_at": "2026-10-26T12:08:09.980638+00:00",
+  "url": "https://zenodo.org/records/23665387",
+  "publication_authorization": "User explicitly authorized public publication on 2026-10-26.",
+  "intended_files": {
+    "train.csv.gz": {
+      "size": 1245277,
+      "sha256": "e59c3774a1f87c4872ae52eadb4b3547251ac1dc45fc6ccb3bcb8148783fa78d"
+    },
+    "validation.csv.gz": {
+      "size": 374642,
+      "sha256": "a3710221515e3d9e9a2ad160c5b7a25b0dbb14de7435c5f3754c88c7cb678b88"
+    },
+    "test.csv.gz": {
+      "size": 1119478,
+      "sha256": "ac450116686690bc378441c1e47f885a4f239ad4c70cbd09242e7610c4ad857e"
+    },
+    "README.md": {
+      "size": 4113,
+      "sha256": "1d4e1a0d5823f9f66e07646e709e13b3a071db2484d2042e0685314033f248f0"
+    },
+    "prepare.py": {
+      "size": 11696,
+      "sha256": "9a4004ce1972fc2e9c5d0d25666e709b8f2338fabf8e6808e781a726951a1eec"
+    },
+    "provenance.json": {
+      "size": 3361,
+      "sha256": "87838116eecb7f83e0f47d3488be4302c17d3d83c10a2e9a71aae31849df27e2"
+    },
+    "LICENSE": {
+      "size": 1080,
+      "sha256": "bfc2dd3b099506cc71e65e8af09e3f9b3860d8fddf59801b30313c5d21caac36"
+    }
+  },
+  "uploaded_files_verified": true,
+  "rights_scope": "CC BY 4.0 applies to data; MIT applies to preparation code and accompanying documentation.",
+  "doi": "10.5281/zenodo.23665387",
+  "access": {
+    "record": "public",
+    "files": "public",
+    "embargo": {
+      "active": false,
+      "reason": null
+    },
+    "status": "open"
+  },
+  "rights": [
+    {
+      "id": "cc-by-4.0",
+      "title": {
+        "en": "Creative Commons Attribution 4.0 International"
+      },
+      "description": {
+        "en": "The Creative Commons Attribution license allows re-distribution and re-use of a licensed work on the condition that the creator is appropriately credited."
+      },
+      "icon": "cc-by-icon",
+      "props": {
+        "url": "https://creativecommons.org/licenses/by/4.0/legalcode",
+        "scheme": "spdx"
+      }
+    },
+    {
+      "id": "mit",
+      "title": {
+        "en": "MIT License"
+      },
+      "description": {
+        "en": "A short and simple permissive license with conditions only requiring preservation of copyright and license notices. Licensed works, modifications, and larger works may be distributed under different terms and without source code."
+      },
+      "props": {
+        "url": "https://opensource.org/licenses/MIT",
+        "scheme": "spdx"
+      }
+    }
+  ],
+  "anonymous_downloads": {
+    "train.csv.gz": {
+      "url": "https://zenodo.org/records/23665387/files/train.csv.gz?download=1",
+      "size": 1245277,
+      "sha256": "e59c3774a1f87c4872ae52eadb4b3547251ac1dc45fc6ccb3bcb8148783fa78d"
+    },
+    "validation.csv.gz": {
+      "url": "https://zenodo.org/records/23665387/files/validation.csv.gz?download=1",
+      "size": 374642,
+      "sha256": "a3710221515e3d9e9a2ad160c5b7a25b0dbb14de7435c5f3754c88c7cb678b88"
+    },
+    "test.csv.gz": {
+      "url": "https://zenodo.org/records/23665387/files/test.csv.gz?download=1",
+      "size": 1119478,
+      "sha256": "ac450116686690bc378441c1e47f885a4f239ad4c70cbd09242e7610c4ad857e"
+    },
+    "README.md": {
+      "url": "https://zenodo.org/records/23665387/files/README.md?download=1",
+      "size": 4113,
+      "sha256": "1d4e1a0d5823f9f66e07646e709e13b3a071db2484d2042e0685314033f248f0"
+    },
+    "prepare.py": {
+      "url": "https://zenodo.org/records/23665387/files/prepare.py?download=1",
+      "size": 11696,
+      "sha256": "9a4004ce1972fc2e9c5d0d25666e709b8f2338fabf8e6808e781a726951a1eec"
+    },
+    "provenance.json": {
+      "url": "https://zenodo.org/records/23665387/files/provenance.json?download=1",
+      "size": 3361,
+      "sha256": "87838116eecb7f83e0f47d3488be4302c17d3d83c10a2e9a71aae31849df27e2"
+    },
+    "LICENSE": {
+      "url": "https://zenodo.org/records/23665387/files/LICENSE?download=1",
+      "size": 1080,
+      "sha256": "bfc2dd3b099506cc71e65e8af09e3f9b3860d8fddf59801b30313c5d21caac36"
+    }
+  },
+  "doi_resolves": true,
+  "verified_at": "2026-10-26T12:08:48.683054+00:00",
+  "registry_validation": {
+    "dm_add": "Published artifacts retrieved, byte hashes and complete decoded canonical digest match the prepared expectations.",
+    "collection": "Temporary next-sequence collection build passed identity and append-only checks.",
+    "components": 1502,
+    "feature_values": 2200000,
+    "available_labels": 2600,
+    "registry_release_published": false
+  }
+}

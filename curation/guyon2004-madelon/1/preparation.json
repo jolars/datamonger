@@ -1,0 +1,139 @@
+{
+  "dataset_id": "datamonger:guyon2004-madelon@1",
+  "stage": "local preparation",
+  "registered": false,
+  "deposit": null,
+  "source": {
+    "url": "https://archive.ics.uci.edu/static/public/171/madelon.zip",
+    "size": 3040503,
+    "sha256": "eb99a0153ebe7d9f4e74551b4b10c54a958b2990b156ce7d76b4e8d71a6f6e82"
+  },
+  "source_members": {
+    "Dataset.pdf": {
+      "size": 453565,
+      "sha256": "9a1752b81c45e1d2924d341269f0856a6530b74742c572353180708dacfa3d0b"
+    },
+    "MADELON/madelon.param": {
+      "size": 266,
+      "sha256": "c65bcf86fb79b284c2e628c0a8cf47b89f49aca14ca3a85e68f9f8a2f031f1b1"
+    },
+    "MADELON/madelon_test.data": {
+      "size": 3601795,
+      "sha256": "93efc31148c850645520fbd8eae4422ac5e4861dc6454d2eceae7e93c1e2badb"
+    },
+    "MADELON/madelon_train.data": {
+      "size": 4001995,
+      "sha256": "0b6e37711efdc7ab74250c51e7d6966bffd9f8f2b0e9971e882c3a7a380c2314"
+    },
+    "MADELON/madelon_train.labels": {
+      "size": 5000,
+      "sha256": "10bffcc3b017467cb810d326b931951adcbde2b4870faf981da2991993b48689"
+    },
+    "MADELON/madelon_valid.data": {
+      "size": 1200599,
+      "sha256": "cb9a46475147de1a58d9f15ef4c318e5b85de344e0f9ab92626fa446aa815dc9"
+    },
+    "madelon_valid.labels": {
+      "size": 1500,
+      "sha256": "fbac32fa87fac41ab731994a1c824e7b25396069bff6df242c01fe240fcb34dc"
+    }
+  },
+  "splits": {
+    "train": {
+      "rows": 2000,
+      "features": 500,
+      "sum": 488083511,
+      "min": 0,
+      "max": 999,
+      "labels": {
+        "-1": 1000,
+        "1": 1000
+      }
+    },
+    "validation": {
+      "rows": 600,
+      "features": 500,
+      "sum": 146395833,
+      "min": 37,
+      "max": 822,
+      "labels": {
+        "-1": 300,
+        "1": 300
+      }
+    },
+    "test": {
+      "rows": 1800,
+      "features": 500,
+      "sum": 439209553,
+      "min": 12,
+      "max": 904,
+      "labels": null
+    }
+  },
+  "files": {
+    "train.csv.gz": {
+      "size": 1245277,
+      "sha256": "e59c3774a1f87c4872ae52eadb4b3547251ac1dc45fc6ccb3bcb8148783fa78d"
+    },
+    "validation.csv.gz": {
+      "size": 374642,
+      "sha256": "a3710221515e3d9e9a2ad160c5b7a25b0dbb14de7435c5f3754c88c7cb678b88"
+    },
+    "test.csv.gz": {
+      "size": 1119478,
+      "sha256": "ac450116686690bc378441c1e47f885a4f239ad4c70cbd09242e7610c4ad857e"
+    }
+  },
+  "environment": {
+    "python": "3.14.7",
+    "numpy": "2.5.2",
+    "zlib": "1.3.2",
+    "devenv_lock": {
+      "size": 3653,
+      "sha256": "35ff1bdebb880edaaa7f089f2751a63f3f76e9955c8b1b86a9a88fccafee22eb"
+    },
+    "uv_lock": {
+      "size": 284471,
+      "sha256": "f4065672d99fd8358fce31ab44a11ddd6c819207123b2b2b6decd47bf32de313"
+    }
+  },
+  "verification": {
+    "feature_values_compared": 2200000,
+    "labels_compared": 2600,
+    "source_checksums": "passed",
+    "canonical_sha256": "d2954327f0617c32496958d50b099116e2bb14233563b2074a2977907059c703",
+    "rust_and_reference_python": "agree",
+    "independent_release_attestation": false
+  },
+  "repeatability": "Three preparations produced identical bytes for all three compressed CSV artifacts.",
+  "failure_checks": [
+    "Reject altered source bytes.",
+    "Reject generated artifacts inside the repository."
+  ],
+  "recipe_files": {
+    "prepare.py": {
+      "size": 11696,
+      "sha256": "9a4004ce1972fc2e9c5d0d25666e709b8f2338fabf8e6808e781a726951a1eec"
+    },
+    "README.md": {
+      "size": 2168,
+      "sha256": "107dd04536a3c9a4466e2a0db614b547f74da65fb0de32252de31010f671afe2"
+    },
+    "DATASET.md": {
+      "size": 2870,
+      "sha256": "ffecf71798cfcf7b8fc3718c542a73e116f652bb07794b6df9a160969a4ab9e1"
+    },
+    "RIGHTS.md": {
+      "size": 849,
+      "sha256": "c15a0976da0c381e4b0d343309da84ecbc6d5658a2392dab15a881d8303f3fde"
+    }
+  },
+  "validation": {
+    "local_manifest_schema": "passed",
+    "ruff_format": "passed",
+    "ruff_check": "passed",
+    "mypy": "passed",
+    "devenv_test": "Interrupted after 426.78 seconds in jsonschema validation during test_dm_registry_release.py; 330 Python tests passed, with no test failures reported before interruption. Later gate checks did not run.",
+    "live_checks": "UCI source download and landing-page review performed; published-registry and client live-source checks skipped for this local, unregistered preparation."
+  }
+}
