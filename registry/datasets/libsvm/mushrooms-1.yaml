@@ -1,0 +1,88 @@
+schema_version: 5
+source: libsvm
+name: mushrooms
+version: '1'
+title: Mushrooms
+description: Binary classification data for edible and poisonous mushrooms from the UCI Mushroom
+  dataset, distributed by LIBSVM as 112 binary features for 8124 observations. The provider
+  supplies one artifact without a predefined split.
+  Response labels are 1 (poisonous) and 2 (edible).
+modality: tabular
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#mushrooms
+    - https://archive.ics.uci.edu/dataset/73/mushroom
+    steps:
+    - kind: feature-exclusion
+      description: Omit the original stalk-root attribute, described by LIBSVM as attribute
+        12 including the class column, because it contains missing values.
+    - kind: feature-encoding
+      description: Expand each retained nominal attribute into binary indicators, producing
+        112 features.
+    notes: The provider does not document the complete category-to-index mapping.
+  datamonger:
+    status: none
+    evidence:
+    - spec/decoders/libsvm-v1.md
+    notes: Datamonger decodes the provider artifact without additional statistical preprocessing.
+provenance:
+  provider: LIBSVM
+  upstream_name: mushrooms
+  landing_page: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#mushrooms
+  citations:
+  - citation: Mushroom [Dataset]. (1981). UCI Machine Learning Repository. https://doi.org/10.24432/C5959T.
+    role: dataset
+    note: Original dataset citation supplied by UCI. The agaricus-lepiota.names file in https://archive.ics.uci.edu/static/public/73/mushroom.zip
+      identifies Jeff Schlimmer as the donor and the 1981 Audubon Society field guide as the
+      source.
+  retrieved_at: '2026-10-26'
+license:
+  status: unknown
+  evidence: 'UCI licenses the original Mushroom dataset under CC BY 4.0: https://archive.ics.uci.edu/dataset/73/mushroom.
+    LIBSVM identifies UCI as the source and documents feature encoding and exclusion but states
+    no license terms for its transformed artifact: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#mushrooms.
+    The applicability of the original license to this distributed artifact has not been established.'
+artifacts:
+- name: data
+  format: libsvm
+  compression: none
+  size: 879712
+  sha256: f39a4eb628dc61a7d43760815b061c9e497aa728ce1ad8bde57a09ef6043b538
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/mushrooms
+representation:
+  decoder: libsvm
+  decoder_version: 1
+  inputs:
+    data: data
+  options:
+    index_base: 1
+    feature_count: 112
+    duplicate_features: error
+    label_type: int64
+    row_order: source
+    target_name: response
+  expect:
+    components:
+    - name: features
+      kind: sparse_matrix
+      type: float64
+      rows: 8124
+      columns: 112
+    - name: response
+      kind: vector
+      type: int64
+      length: 8124
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: 4cda92c0e91e1a63c752890cbb89b466e2a41bf4b006c2be660c47480cf71682
+tasks:
+- name: default
+  type: classification
+  features: features
+  target: response

@@ -20,6 +20,7 @@ manifests:
 - registry/datasets/libsvm/glass_scale-1.yaml
 - registry/datasets/libsvm/heart_scale-1.yaml
 - registry/datasets/libsvm/madelon-1.yaml
+- registry/datasets/libsvm/mushrooms-1.yaml
 - registry/datasets/libsvm/news20-binary-1.yaml
 - registry/datasets/libsvm/rcv1-binary-1.yaml
 - registry/datasets/libsvm/triazines_scale-1.yaml
@@ -93,6 +94,9 @@ defaults:
   version: '1'
 - source: libsvm
   name: madelon
+  version: '1'
+- source: libsvm
+  name: mushrooms
   version: '1'
 - source: libsvm
   name: news20-binary
