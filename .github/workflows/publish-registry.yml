@@ -130,6 +130,17 @@ jobs:
         if: always() && steps.canary.outcome != 'skipped'
         run: cat "$RUNNER_TEMP/dm-canary.md" >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Mark the current stable registry as latest
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          selector="$(gh api --method GET \
+            "repos/$GITHUB_REPOSITORY/contents/registry/latest.json" \
+            -f "ref=$DEFAULT_BRANCH" --jq .content | base64 --decode)"
+          if [[ "registry-v$(jq -r .release <<< "$selector")" == "$RELEASE_TAG" ]]; then
+            gh release edit "$RELEASE_TAG" --latest
+          fi
+
   bundle:
     name: Propose client registry update
     needs: publish

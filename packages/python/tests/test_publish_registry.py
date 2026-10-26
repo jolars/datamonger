@@ -23,7 +23,8 @@ def publisher(tmp_path: Path) -> tuple[dict[str, str], Path]:
     binary = tmp_path / "gh"
     binary.write_text(
         f"#!{sys.executable}\n"
-        """import json
+        """import base64
+import json
 import os
 import sys
 from pathlib import Path
@@ -32,7 +33,12 @@ path = Path(os.environ['FAKE_RELEASE'])
 state = json.loads(path.read_text())
 args = sys.argv[1:]
 state['calls'].append(args)
-if args[:2] == ['release', 'view']:
+if args[0] == 'api':
+    selector = json.dumps({'release': state['current_release']}).encode()
+    print(base64.b64encode(selector).decode())
+elif args[:2] == ['release', 'edit']:
+    assert args[2:] == [os.environ['RELEASE_TAG'], '--latest']
+elif args[:2] == ['release', 'view']:
     print(json.dumps(state['assets']))
 elif args[:2] == ['release', 'upload']:
     assert '--clobber' not in args
@@ -98,3 +104,28 @@ def test_index_publication_is_immutable_and_retryable(
     assert (result.returncode == 0) == success, result.stderr
     calls = json.loads(state.read_text())["calls"]
     assert any(call[:2] == ["release", "upload"] for call in calls) == uploaded
+
+
+@pytest.mark.parametrize("current_release", ["1.1.0", "1.2.0"])
+def test_only_current_registry_gets_latest_badge(
+    publisher: tuple[dict[str, str], Path], current_release: str
+) -> None:
+    env, state = publisher
+    env.update(GITHUB_REPOSITORY="jolars/datamonger", DEFAULT_BRANCH="main")
+    state.write_text(json.dumps({"calls": [], "current_release": current_release}))
+    script = next(
+        step["run"]
+        for step in WORKFLOW["jobs"]["publish"]["steps"]
+        if step.get("name") == "Mark the current stable registry as latest"
+    )
+    result = subprocess.run(
+        ["bash", "-euo", "pipefail", "-c", script],
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    calls = json.loads(state.read_text())["calls"]
+    assert any(call[:2] == ["release", "edit"] for call in calls) == (
+        current_release == "1.1.0"
+    )
