@@ -15,6 +15,23 @@ in
     pkgs.xz
   ];
 
+  git-hooks.hooks = {
+    nixfmt.enable = true;
+    ruff = {
+      enable = true;
+      files = "^(packages/python/|tools/|curation/).*\\.py$";
+    };
+    ruff-format = {
+      enable = true;
+      files = "^(packages/python/|tools/|curation/).*\\.py$";
+    };
+    prettier = {
+      enable = true;
+      types = [ "file" ];
+      files = "^(\\.github/.*\\.ya?ml|devenv\\.yaml)$";
+    };
+  };
+
   languages.python = {
     enable = true;
     directory = "./packages/python";

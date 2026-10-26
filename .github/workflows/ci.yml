@@ -9,6 +9,16 @@ permissions:
   contents: read
 
 jobs:
+  yaml-formatting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - name: Check YAML formatting
+        run: npx --yes prettier@3.9.6 --check '.github/**/*.yml' '.github/**/*.yaml' devenv.yaml --no-error-on-unmatched-pattern
+
   python-distributions:
     uses: ./.github/workflows/python-wheels.yml
 
@@ -89,12 +99,17 @@ jobs:
           done
 
   quality:
+    name: Python quality (${{ matrix.python }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.14"]
     defaults:
       run:
         working-directory: packages/python
     env:
-      UV_PYTHON: "3.11"
+      UV_PYTHON: ${{ matrix.python }}
     steps:
       - uses: actions/checkout@v7
       - name: Install uv

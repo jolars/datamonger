@@ -42,8 +42,15 @@ devenv shell
 devenv test
 ```
 
-The quality gate formats and lints Python, type-checks the package and tools,
-runs the Rust CLI and all three hermetic language client suites, checks
+Entering the shell installs Git hooks for Ruff, nixfmt, and Prettier. The hooks
+format staged Python and Nix files and YAML under `.github` plus `devenv.yaml`.
+Generated registry files and conformance fixtures are outside the YAML formatter's
+scope. Run `prek run --all-files` to check all matching files; formatters may
+update files, so review and stage their changes before committing. `devenv test`
+also runs these hooks, and CI checks YAML formatting with Prettier.
+
+The quality gate checks formatting, lints Python, type-checks the package and
+tools, runs the Rust CLI and all three hermetic language client suites, checks
 generated registry data and shared fixture synchronization, builds the Python
 and R distributions, and runs a CRAN-style R package check. Focused commands
 from `packages/python` are:

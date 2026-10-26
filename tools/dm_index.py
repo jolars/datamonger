@@ -7,6 +7,7 @@ import hashlib
 import json
 import sys
 from collections.abc import Mapping, Sequence
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, cast
 
@@ -111,13 +112,29 @@ def _load_json(path: Path) -> Mapping[str, Any]:
 
 
 def _schema_resources(schema_directory: Path) -> tuple[SchemaRegistry, dict[str, Any]]:
+    # Key by content so edits invalidate the cache, including copied test schemas.
+    sources = tuple(
+        (path.name, path.read_bytes())
+        for path in sorted(schema_directory.glob("*.schema.json"))
+    )
+    return _cached_schema_resources(sources)
+
+
+@lru_cache(maxsize=16)
+def _cached_schema_resources(
+    sources: tuple[tuple[str, bytes], ...],
+) -> tuple[SchemaRegistry, dict[str, Any]]:
     schemas: dict[str, Any] = {}
     registry = SchemaRegistry()
-    for path in sorted(schema_directory.glob("*.schema.json")):
-        schema = dict(_load_json(path))
-        schema_id = _string(schema.get("$id"), f"{path}.$id")
+    for name, contents in sources:
+        try:
+            value = json.loads(contents)
+        except (UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise ValueError(f"cannot parse schema {name}: {error}") from error
+        schema = dict(_mapping(value, name))
+        schema_id = _string(schema.get("$id"), f"{name}.$id")
         Draft202012Validator.check_schema(schema)
-        schemas[path.name] = schema
+        schemas[name] = schema
         registry = registry.with_resource(schema_id, Resource.from_contents(schema))
     return registry, schemas
 

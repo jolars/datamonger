@@ -1,5 +1,12 @@
 # yaml-language-server: $schema=https://devenv.sh/devenv.schema.json
 inputs:
+  diplodocus:
+    url: github:jolars/diplodocus
+  git-hooks:
+    url: github:cachix/git-hooks.nix
+    inputs:
+      nixpkgs:
+        follows: nixpkgs
   nixpkgs:
     url: github:cachix/devenv-nixpkgs/rolling
   rust-overlay:
@@ -7,5 +14,3 @@ inputs:
     inputs:
       nixpkgs:
         follows: nixpkgs
-  diplodocus:
-    url: github:jolars/diplodocus

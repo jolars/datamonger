@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import importlib.util
 import json
+import os
 import shutil
 from pathlib import Path
 from typing import Any
@@ -92,6 +93,60 @@ def make_release(
 
 def default(version: str = "1") -> dict[str, str]:
     return {"source": "uci", "name": "iris", "version": version}
+
+
+def test_schema_resources_reuse_identical_copies(tmp_path: Path) -> None:
+    prepare_root(tmp_path)
+    first = dm_index._schema_resources(ROOT / "spec/schema")
+    copied = dm_index._schema_resources(tmp_path / "spec/schema")
+    assert copied is first
+
+
+def test_manifest_validation_observes_schema_edits(tmp_path: Path) -> None:
+    prepare_root(tmp_path)
+    manifest = manifest_template()
+    path = tmp_path / "spec/schema/manifest-v1.schema.json"
+    schema = {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": "https://example.com/manifest.schema.json",
+        "properties": {"source": {"const": "uci"}},
+    }
+    path.write_text(json.dumps(schema))
+    dm_index.validate_manifest(manifest, root=tmp_path)
+    original_stat = path.stat()
+
+    schema["properties"]["source"]["const"] = "xxx"
+    path.write_text(json.dumps(schema))
+    # Equal-size edits with restored timestamps must still invalidate cached schemas.
+    os.utime(path, ns=(original_stat.st_atime_ns, original_stat.st_mtime_ns))
+    with pytest.raises(ValueError, match="violates manifest-v1"):
+        dm_index.validate_manifest(manifest, root=tmp_path)
+
+    schema["properties"]["source"]["const"] = "uci"
+    path.write_text(json.dumps(schema))
+    dm_index.validate_manifest(manifest, root=tmp_path)
+
+
+def test_schema_resources_observe_added_and_removed_files(tmp_path: Path) -> None:
+    prepare_root(tmp_path)
+    directory = tmp_path / "spec/schema"
+    original = dm_index._schema_resources(directory)
+    path = directory / "extra.schema.json"
+    path.write_text(
+        json.dumps(
+            {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "$id": "https://example.com/extra",
+                "type": "string",
+            }
+        )
+    )
+    _, schemas = dm_index._schema_resources(directory)
+    assert "extra.schema.json" in schemas
+
+    path.unlink()
+    restored = dm_index._schema_resources(directory)
+    assert restored is original
 
 
 def test_curated_dataset_manifests_are_valid_and_cover_mvp() -> None:
