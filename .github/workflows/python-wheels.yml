@@ -1,6 +1,13 @@
 name: Python distributions
 
 on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Commit or release tag to build (defaults to the selected branch)
+        required: false
+        type: string
+        default: ""
   workflow_call:
     inputs:
       ref:

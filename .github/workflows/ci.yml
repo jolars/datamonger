@@ -19,8 +19,82 @@ jobs:
       - name: Check YAML formatting
         run: npx --yes prettier@3.9.6 --check '.github/**/*.yml' '.github/**/*.yaml' devenv.yaml --no-error-on-unmatched-pattern
 
+  python-distribution-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      required: ${{ steps.changes.outputs.required }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
+      - name: Check changed paths
+        id: changes
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          # New branches and unavailable history need the full distribution checks.
+          required=true
+          if [[ -n "$BASE_SHA" && "$BASE_SHA" != 0000000000000000000000000000000000000000 ]]; then
+            if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
+              comparison="$BASE_SHA...$HEAD_SHA"
+            else
+              comparison="$BASE_SHA..$HEAD_SHA"
+            fi
+            changed="$RUNNER_TEMP/python-distribution-changes"
+            # Include both paths of a move so moving Python files out still runs the builds.
+            if git diff --no-renames --name-only -z "$comparison" > "$changed"; then
+              required=false
+              while IFS= read -r -d '' path; do
+                case "$path" in
+                  packages/python/* | crates/datamonger-core/* | tests/conformance/* | \
+                  .cargo/* | .github/actions/* | .gitattributes | .gitignore | \
+                  Cargo.toml | Cargo.lock | LICENSE | rust-toolchain.toml | \
+                  .github/workflows/ci.yml | .github/workflows/python-wheels.yml | \
+                  .github/workflows/publish-python.yml)
+                    required=true
+                    break
+                    ;;
+                esac
+              done < "$changed"
+            fi
+          fi
+          echo "Python distribution matrix required: $required"
+          echo "required=$required" >> "$GITHUB_OUTPUT"
+
   python-distributions:
+    needs: python-distribution-changes
+    if: needs.python-distribution-changes.outputs.required == 'true'
     uses: ./.github/workflows/python-wheels.yml
+
+  python-distributions-status:
+    name: Python distributions
+    if: always()
+    needs: [python-distribution-changes, python-distributions]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check distribution result
+        env:
+          CHANGES_RESULT: ${{ needs.python-distribution-changes.result }}
+          DISTRIBUTIONS_REQUIRED: ${{ needs.python-distribution-changes.outputs.required }}
+          DISTRIBUTIONS_RESULT: ${{ needs.python-distributions.result }}
+        run: |
+          test "$CHANGES_RESULT" = success
+          case "$DISTRIBUTIONS_REQUIRED:$DISTRIBUTIONS_RESULT" in
+            true:success)
+              echo "Python distribution builds and tests passed."
+              ;;
+            false:skipped)
+              echo "Python distribution inputs are unchanged; the matrix was skipped."
+              ;;
+            *)
+              echo "Python distribution checks did not succeed." >&2
+              exit 1
+              ;;
+          esac
 
   core-quality:
     runs-on: ${{ matrix.os }}

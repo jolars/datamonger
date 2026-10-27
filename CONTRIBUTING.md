@@ -88,9 +88,12 @@ The Python oracle is test-only. Keep its parsing and canonical encoding
 independent of the native backend. The differential tests compare native and
 Python results against the shared conformance corpus, compressed inputs,
 malformed artifacts, and generated inputs before a backend change can ship.
-CI also builds portable wheels for all supported platforms, installs them into
-fresh environments, and tests those installed distributions. The release
-workflow reuses the same build and test workflow.
+CI builds portable wheels for all supported platforms when the Python client,
+shared Rust core, packaging configuration, or shared conformance fixtures change.
+It installs the wheels into fresh environments and tests those distributions.
+The ordinary Linux Python quality checks run on every CI run. The release
+workflow always runs the full wheel matrix. Run `Python distributions` manually
+to check a selected branch, commit, or tag before a release.
 
 Focused commands from `packages/r` are:
 

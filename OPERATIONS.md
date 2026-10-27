@@ -94,6 +94,10 @@ The Python release is fully automated:
 The publishing job deliberately receives only the downloaded distributions and
 an OpenID Connect token. Package building runs in a separate, unprivileged job.
 
+The `Python distributions` workflow can also run manually to build and test a
+selected branch, commit, or tag. CI runs that matrix when Python distribution
+inputs change and reports its result through the `Python distributions` check.
+
 ### R
 
 The R release remains a reviewed CRAN handoff:
