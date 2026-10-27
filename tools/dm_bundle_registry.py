@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
+import io
 import json
 import re
 import sys
@@ -15,11 +17,11 @@ from jsonschema import Draft202012Validator, ValidationError
 
 ROOT = Path(__file__).resolve().parents[1]
 _VERSION = re.compile(r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)")
-BUNDLE_DIRECTORIES = (
-    Path("packages/cli/assets"),
-    Path("packages/python/src/datamonger/_data"),
-    Path("packages/r/inst/extdata"),
-    Path("packages/julia/src/data"),
+BUNDLE_FILES = (
+    Path("packages/cli/assets/index.json"),
+    Path("packages/python/src/datamonger/_data/index.json"),
+    Path("packages/r/inst/extdata/index.json.gz"),
+    Path("packages/julia/src/data/index.json"),
 )
 
 
@@ -39,10 +41,30 @@ def _replace(text: str, pattern: str, replacement: str, path: Path) -> str:
     return result
 
 
-def bundle(root: Path, release: str | None = None, *, check_only: bool = False) -> None:
+def _gzip(contents: bytes) -> bytes:
+    buffer = io.BytesIO()
+    # Keep gzip headers reproducible across platforms and Python versions.
+    with gzip.GzipFile(
+        fileobj=buffer, mode="wb", compresslevel=9, mtime=0
+    ) as compressed:
+        compressed.write(contents)
+    return buffer.getvalue()
+
+
+def bundle(
+    root: Path,
+    release: str | None = None,
+    *,
+    check_only: bool = False,
+    refresh_r: bool = False,
+) -> None:
     """Validate every output before checking or updating the client snapshots."""
     root = root.resolve()
-    current = json.loads((root / BUNDLE_DIRECTORIES[0] / "selector.json").read_bytes())
+    current = json.loads(
+        (root / BUNDLE_FILES[0].with_name("selector.json")).read_bytes()
+    )
+    if refresh_r and release is not None:
+        raise ValueError("refreshing the R catalog cannot select a different release")
     if release is None:
         release = current["release"]
     if not isinstance(release, str) or not _VERSION.fullmatch(release):
@@ -75,8 +97,10 @@ def bundle(root: Path, release: str | None = None, *, check_only: bool = False) 
     ):
         raise ValueError("index release or schema does not match selector")
 
-    outputs = {directory / "index.json": index for directory in BUNDLE_DIRECTORIES}
-    outputs[BUNDLE_DIRECTORIES[0] / "selector.json"] = selector_bytes
+    outputs = {
+        path: _gzip(index) if path.suffix == ".gz" else index for path in BUNDLE_FILES
+    }
+    outputs[BUNDLE_FILES[0].with_name("selector.json")] = selector_bytes
     declarations = {
         Path("packages/python/src/datamonger/_registry.py"): (
             r"BUNDLED_REGISTRY = Registry\(.*?\n\)",
@@ -110,26 +134,37 @@ def bundle(root: Path, release: str | None = None, *, check_only: bool = False) 
         ),
     }
     for path, (pattern, replacement) in declarations.items():
-        outputs[path] = _replace(
-            (root / path).read_text(encoding="utf-8"), pattern, replacement, path
-        ).encode("utf-8")
+        original = (root / path).read_text(encoding="utf-8")
+        updated = _replace(original, pattern, replacement, path)
+        if refresh_r and path.is_relative_to("packages/r") and original != updated:
+            raise ValueError("R catalog refresh must preserve the bundled selector")
+        outputs[path] = updated.encode("utf-8")
 
+    if refresh_r:
+        outputs = {BUNDLE_FILES[2]: outputs[BUNDLE_FILES[2]]}
     changed = [
-        path for path, data in outputs.items() if (root / path).read_bytes() != data
+        path
+        for path, data in outputs.items()
+        if not (root / path).exists() or (root / path).read_bytes() != data
     ]
+    obsolete = BUNDLE_FILES[2].with_suffix("")
+    removed = [obsolete] if (root / obsolete).exists() else []
     if check_only:
-        if changed:
+        if changed or removed:
             raise ValueError(
-                "bundled registry files are stale: " + ", ".join(map(str, changed))
+                "bundled registry files are stale: "
+                + ", ".join(map(str, [*changed, *removed]))
             )
         return
-    # An unpublished snapshot must never become a package's default trust root.
-    if fetch_index(url) != index:
+    # Adopting a new trust root requires verifying the published asset.
+    if not refresh_r and fetch_index(url) != index:
         raise ValueError(
             "published index does not match the local snapshot and selector"
         )
     for path in changed:
         (root / path).write_bytes(outputs[path])
+    for path in removed:
+        (root / path).unlink()
     print(f"Bundled registry {release}: updated {len(changed)} files.")
 
 
@@ -137,17 +172,23 @@ def main() -> int:
     """Run the client bundle update or the offline consistency check."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("release", nargs="?")
-    parser.add_argument(
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
         "--check",
         action="store_true",
         help="check offline; default to the bundled release",
     )
+    mode.add_argument(
+        "--refresh-r",
+        action="store_true",
+        help="refresh the R catalog offline from the currently bundled release",
+    )
     parser.add_argument("--root", type=Path, default=ROOT)
     args = parser.parse_args()
-    if not args.check and args.release is None:
+    if not args.check and not args.refresh_r and args.release is None:
         parser.error("release is required when updating bundles")
     try:
-        bundle(args.root, args.release, check_only=args.check)
+        bundle(args.root, args.release, check_only=args.check, refresh_r=args.refresh_r)
     except (OSError, ValueError, ValidationError) as error:
         print(f"dm-bundle-registry: {error}", file=sys.stderr)
         return 2

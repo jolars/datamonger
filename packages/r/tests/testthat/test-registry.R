@@ -83,3 +83,16 @@ test_that("the bundled registry is a verified offline trust root", {
     ) %in% vapply(listed, `[[`, character(1), "dataset_id")
   ))
 })
+
+test_that("bundled registry verification checks the decompressed bytes", {
+  registry <- dm_internal(".bundled_registry")
+  altered <- charToRaw("{}")
+  testthat::with_mocked_bindings(
+    expect_error(
+      list_data(registry = registry, cache_dir = tempfile(), offline = TRUE),
+      class = "datamonger_registry_integrity"
+    ),
+    .bundled_registry_bytes = function() altered,
+    .package = "datamonger"
+  )
+})

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gzip
 import hashlib
 import importlib.util
 import json
@@ -23,7 +24,7 @@ def bundle_root(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     for path in (
         "registry/releases/1.1.0",
         "spec/schema",
-        *map(str, dm_bundle_registry.BUNDLE_DIRECTORIES),
+        *(str(path.parent) for path in dm_bundle_registry.BUNDLE_FILES),
     ):
         shutil.copytree(ROOT / path, tmp_path / path)
     for path in (
@@ -37,9 +38,9 @@ def bundle_root(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         shutil.copyfile(ROOT / path, target)
     # Keep the baseline fixed when an automation PR updates the real client bundles.
     baseline = tmp_path / "registry/releases/1.1.0"
-    (tmp_path / dm_bundle_registry.BUNDLE_DIRECTORIES[0] / "selector.json").write_bytes(
-        (baseline / "selector.json").read_bytes()
-    )
+    (
+        tmp_path / dm_bundle_registry.BUNDLE_FILES[0].with_name("selector.json")
+    ).write_bytes((baseline / "selector.json").read_bytes())
     monkeypatch.setattr(
         dm_bundle_registry,
         "fetch_index",
@@ -105,8 +106,12 @@ def test_updates_all_clients_and_is_idempotent(
     monkeypatch.setattr(dm_bundle_registry, "fetch_index", fetch)
     before = snapshot(bundle_root)
     dm_bundle_registry.bundle(bundle_root, "1.2.0")
-    for directory in dm_bundle_registry.BUNDLE_DIRECTORIES:
-        assert (bundle_root / directory / "index.json").read_bytes() == contents
+    for path in dm_bundle_registry.BUNDLE_FILES:
+        bundled = (bundle_root / path).read_bytes()
+        if path.suffix == ".gz":
+            bundled = gzip.decompress(bundled)
+        assert bundled == contents
+    assert not (bundle_root / "packages/r/inst/extdata/index.json").exists()
     for path in (
         "packages/python/src/datamonger/_registry.py",
         "packages/r/R/registry.R",
@@ -135,10 +140,64 @@ def test_updates_all_clients_and_is_idempotent(
 
 def test_check_detects_drift_without_writing(bundle_root: Path) -> None:
     dm_bundle_registry.bundle(bundle_root, check_only=True)
-    (bundle_root / "packages/r/inst/extdata/index.json").write_bytes(b"corrupt")
+    (bundle_root / "packages/r/inst/extdata/index.json.gz").write_bytes(b"corrupt")
     before = snapshot(bundle_root)
+    with pytest.raises(
+        ValueError, match=r"stale.*packages/r/inst/extdata/index\.json\.gz"
+    ):
+        dm_bundle_registry.bundle(bundle_root, check_only=True)
+    assert snapshot(bundle_root) == before
+
+
+def test_refresh_r_catalog_is_offline_and_preserves_other_clients(
+    bundle_root: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def no_network(url: str) -> bytes:
+        pytest.fail("refreshing the current R catalog attempted network access")
+
+    monkeypatch.setattr(dm_bundle_registry, "fetch_index", no_network)
+    catalog = bundle_root / "packages/r/inst/extdata/index.json.gz"
+    catalog.unlink()
+    uncompressed = catalog.with_suffix("")
+    uncompressed.write_bytes(b"obsolete")
+    other_client = bundle_root / "packages/python/src/datamonger/_data/index.json"
+    other_client.write_bytes(b"leave unchanged")
+    before = snapshot(bundle_root)
+
+    dm_bundle_registry.bundle(bundle_root, refresh_r=True)
+
+    assert (
+        gzip.decompress(catalog.read_bytes())
+        == (bundle_root / "registry/releases/1.1.0/index.json").read_bytes()
+    )
+    assert not uncompressed.exists()
+    assert other_client.read_bytes() == b"leave unchanged"
+    after = snapshot(bundle_root)
+    assert all(
+        after[path] == data
+        for path, data in before.items()
+        if not path.is_relative_to("packages/r")
+    )
+    dm_bundle_registry.bundle(bundle_root, refresh_r=True)
+    assert snapshot(bundle_root) == after
+    with pytest.raises(ValueError, match="cannot select a different release"):
+        dm_bundle_registry.bundle(bundle_root, "1.2.0", refresh_r=True)
+
+
+def test_check_rejects_an_obsolete_uncompressed_r_catalog(bundle_root: Path) -> None:
+    (bundle_root / "packages/r/inst/extdata/index.json").write_bytes(b"obsolete")
     with pytest.raises(ValueError, match=r"stale.*packages/r/inst/extdata/index\.json"):
         dm_bundle_registry.bundle(bundle_root, check_only=True)
+
+
+def test_refresh_r_cannot_change_the_bundled_selector(bundle_root: Path) -> None:
+    declaration = bundle_root / "packages/r/R/registry.R"
+    declaration.write_text(
+        declaration.read_text().replace('release = "1.1.0"', 'release = "1.0.0"')
+    )
+    before = snapshot(bundle_root)
+    with pytest.raises(ValueError, match="must preserve the bundled selector"):
+        dm_bundle_registry.bundle(bundle_root, refresh_r=True)
     assert snapshot(bundle_root) == before
 
 

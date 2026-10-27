@@ -72,8 +72,8 @@ The core has an independent release PR and publishes automatically after merge:
    runs the tests and a publication dry run with Rust 1.82, and publishes the
    crate through trusted publishing.
 4. Update the R adapter's version requirement if needed, run the Cargo update
-   and `dm-vendor-r` commands in `CONTRIBUTING.md`, and review the dependency
-   refresh before preparing an R release.
+   and `devenv tasks run r:vendor` commands in `CONTRIBUTING.md`, and review the
+   dependency refresh before preparing an R release.
 
 The R release lockfile and vendor archive stay pinned until that separate
 refresh. Publishing a core release does not automatically change an R release.

@@ -35,7 +35,7 @@ if (local_core) {
 }
 vendored <- !local_core && file.exists("src/rust/vendor.tar.xz")
 if (!vendored && !local_core && !nzchar(Sys.getenv("NOT_CRAN"))) {
-  stop("Missing vendored Rust sources. Run dm-vendor-r before building.")
+  stop("Missing vendored Rust sources. Run devenv tasks run r:vendor before building.")
 }
 template <- if (.Platform$OS.type == "windows") "src/Makevars.win.in" else "src/Makevars.in"
 text <- readLines(template)

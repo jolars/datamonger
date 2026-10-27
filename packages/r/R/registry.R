@@ -239,14 +239,24 @@ active_registry <- function(project_dir = getwd()) {
 }
 
 .bundled_registry_bytes <- function() {
-  path <- system.file("extdata", "index.json", package = "datamonger")
+  path <- system.file("extdata", "index.json.gz", package = "datamonger")
   if (!nzchar(path)) {
     .dm_abort(
       "datamonger_registry_retrieval",
       "cannot locate the bundled registry index"
     )
   }
-  .read_raw(path, "datamonger_registry_retrieval")
+  tryCatch(
+    memDecompress(.read_raw(path, "datamonger_registry_retrieval"), "gzip"),
+    error = function(error) {
+      .dm_abort(
+        "datamonger_registry_retrieval",
+        paste0(
+          "cannot decompress the bundled registry index: ", conditionMessage(error)
+        )
+      )
+    }
+  )
 }
 
 .is_bundled_registry <- function(registry) {

@@ -66,7 +66,10 @@ def main() -> int:
     )
     if args.record_vendor:
         if not registry_core or not (rust / "vendor.tar.xz").is_file():
-            parser.error("vendor the published datamonger-core with dm-vendor-r first")
+            parser.error(
+                "vendor the published datamonger-core with "
+                "devenv tasks run r:vendor first"
+            )
         stamp.write_text(expected_stamp + "\n")
     vendor = (
         (rust / "vendor.tar.xz").is_file()
@@ -75,7 +78,7 @@ def main() -> int:
         and registry_core
     )
     if args.check and not vendor:
-        print("Stale vendored Rust sources: run dm-vendor-r")
+        print("Stale vendored Rust sources: run devenv tasks run r:vendor")
     valid = fixtures and vendor
     return 0 if valid or not args.check else 1
 

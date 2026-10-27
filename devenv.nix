@@ -85,8 +85,20 @@ in
     '';
   };
 
-  scripts.dm-vendor-r = {
+  tasks."r:catalog" = {
+    description = "Refresh the compressed R catalog from the bundled registry";
+    after = [ "devenv:python:uv" ];
+    wantedBy = [ ];
+    exec = ''
+      cd "$DEVENV_ROOT"
+      uv run --project packages/python python tools/dm_bundle_registry.py --refresh-r
+    '';
+  };
+
+  tasks."r:vendor" = {
     description = "Vendor the R package's published Rust dependencies";
+    after = [ "r:catalog" ];
+    wantedBy = [ ];
     exec = ''
       set -euo pipefail
       cd "$DEVENV_ROOT"
