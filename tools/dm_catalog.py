@@ -102,19 +102,25 @@ def dimensions(dataset: Mapping[str, Any]) -> list[Dimension]:
     result: list[Dimension] = []
     for task in dataset.get("tasks", []):
         for split, binding in sorted(task.get("splits", {"": task}).items()):
-            features = binding["features"]
-            predictors = (
-                len(features)
-                if isinstance(features, list)
-                else components[features].get("columns")
-            )
-            target = components[binding["target"]]
+            features = binding.get("features")
+            if isinstance(features, list):
+                predictors = len(features)
+            elif features is not None:
+                predictors = components[features].get("columns")
+            else:
+                predictors = None
+            sample_name = binding.get("target")
+            if sample_name is None:
+                sample_name = features[0] if isinstance(features, list) else features
+            sample_component = components[sample_name]
             result.append(
                 {
                     "task": task["name"],
                     "type": task["type"],
                     "split": split or None,
-                    "samples": target.get("length", target.get("rows")),
+                    "samples": sample_component.get(
+                        "length", sample_component.get("rows")
+                    ),
                     "predictors": predictors,
                 }
             )
@@ -184,6 +190,24 @@ def _link(label: str, url: str, *, local: bool = False) -> str:
         return f"{_text(label)}: {_text(url)}"
     destination = quote(url, safe="/#%._-" if local else "/:#?&=%@!$'+,;~-._")
     return f"[{_text(label)}](<{destination}>)"
+
+
+def _prose(value: object) -> str:
+    """Escape prose without introducing Markdown escapes into URL destinations."""
+    parts = re.split(r"((?:https?://|doi:10\.\d{4,9}/)[^\s<>]+)", str(value))
+    rendered = []
+    for index, part in enumerate(parts):
+        if index % 2:
+            url = part.rstrip(".,;")
+            destination = (
+                "https://doi.org/" + url.removeprefix("doi:")
+                if url.startswith("doi:")
+                else url
+            )
+            rendered.append(_link(url, destination) + _text(part[len(url) :]))
+        else:
+            rendered.append(_text(part))
+    return "".join(rendered)
 
 
 def _table(headers: Sequence[str], rows: Sequence[Sequence[object]]) -> str:
@@ -339,7 +363,7 @@ def dataset_page(
             if entry["default"]
             else "Other version."
         ),
-        _text(entry["description"]),
+        _prose(entry["description"]),
         "## Dimensions and tasks",
         _table(
             ["Task", "Type", "Split", "Samples", "Predictors"],
@@ -401,14 +425,16 @@ def dataset_page(
             stage = preprocessing[key]
             lines.extend([f"### {label}", f"Status: {_text(stage['status'])}."])
             if stage.get("notes"):
-                lines.append(_text(stage["notes"]))
+                lines.append(_prose(stage["notes"]))
             for step in stage.get("steps", []):
-                lines.append(f"**{_text(step['kind'])}.** {_text(step['description'])}")
+                lines.append(
+                    f"**{_text(step['kind'])}.** {_prose(step['description'])}"
+                )
                 if step.get("parameters"):
                     lines.append(
                         "Parameters: "
                         + "; ".join(
-                            f"{_text(key)}: {_text(value)}"
+                            f"{_text(key)}: {_prose(value)}"
                             for key, value in sorted(step["parameters"].items())
                         )
                         + "."
@@ -436,20 +462,20 @@ def dataset_page(
     if provenance.get("authors"):
         lines.append("Authors: " + ", ".join(map(_text, provenance["authors"])) + ".")
     if provenance.get("citation"):
-        lines.append(_text(provenance["citation"]))
+        lines.append(_prose(provenance["citation"]))
     for citation in provenance.get("citations", []):
         label = "Recommended citation. " if citation.get("recommended") else ""
-        lines.append(label + _text(citation["citation"]))
+        lines.append(label + _prose(citation["citation"]))
         if citation.get("note"):
-            lines.append(_text(citation["note"]))
+            lines.append(_prose(citation["note"]))
     if provenance.get("citation_instructions"):
-        lines.append(_text(provenance["citation_instructions"]))
+        lines.append(_prose(provenance["citation_instructions"]))
     license_record = dataset["license"]
     lines.extend(["## License", _text(entry["license"])])
     if license_record.get("url"):
         lines.append(_link("License information", license_record["url"]))
     if license_record.get("evidence"):
-        lines.append(_text(license_record["evidence"]))
+        lines.append(_prose(license_record["evidence"]))
     lines.extend(
         [
             "## Artifacts",

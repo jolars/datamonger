@@ -122,6 +122,91 @@ def test_uses_bundled_snapshot_and_keeps_search_projection_small(
     assert outputs == dm_catalog.generate(catalog_root)
 
 
+@pytest.mark.parametrize("schema_version", [4, 5])
+@pytest.mark.parametrize("name", ["iris", "dna_scale"])
+def test_feature_only_split_counts(
+    catalog_root: Path, name: str, schema_version: int
+) -> None:
+    index = read_index(catalog_root)
+    index["schema_version"] = schema_version
+    dataset = next(d for d in index["datasets"] if d["name"] == name)
+    dataset["schema_version"] = schema_version
+    task = dataset["tasks"][0]
+    if name == "iris":
+        roles = {key: task.pop(key) for key in ("features", "target")}
+        task["splits"] = {"train": roles, "test": copy.deepcopy(roles)}
+    del task["splits"]["test"]["target"]
+    write_snapshot(catalog_root, index)
+
+    outputs = dm_catalog.generate(catalog_root)
+    entry = next(
+        e
+        for e in json.loads(outputs[Path("catalog.json")])["datasets"]
+        if e["name"] == name
+    )
+    samples, predictors = (150, 4) if name == "iris" else (1186, 180)
+    assert entry["dimensions"][0] == {
+        "task": "default",
+        "type": "classification",
+        "split": "test",
+        "samples": samples,
+        "predictors": predictors,
+    }
+    page = outputs[Path(dataset["source"]) / name / "1.md"].decode()
+    assert f"| default | classification | test | {samples:,} | {predictors} |" in page
+
+
+@pytest.mark.parametrize("split", [False, True])
+def test_target_only_task_counts(catalog_root: Path, split: bool) -> None:
+    index = read_index(catalog_root)
+    dataset = next(d for d in index["datasets"] if d["name"] == "iris")
+    task = dataset["tasks"][0]
+    del task["features"]
+    if split:
+        task["splits"] = {"test": {"target": task.pop("target")}}
+    write_snapshot(catalog_root, index)
+
+    outputs = dm_catalog.generate(catalog_root)
+    entry = next(
+        e
+        for e in json.loads(outputs[Path("catalog.json")])["datasets"]
+        if e["name"] == "iris"
+    )
+    assert entry["dimensions"] == [
+        {
+            "task": "default",
+            "type": "classification",
+            "split": "test" if split else None,
+            "samples": 150,
+            "predictors": None,
+        }
+    ]
+    assert "| 150 | Unknown |" in outputs[Path("uci/iris/1.md")].decode()
+
+
+@pytest.mark.parametrize("name", ["iris", "dna_scale"])
+def test_unsupervised_task_counts(catalog_root: Path, name: str) -> None:
+    index = read_index(catalog_root)
+    dataset = next(d for d in index["datasets"] if d["name"] == name)
+    expected = dm_catalog.dimensions(dataset)
+    task = dataset["tasks"][0]
+    task["type"] = "unsupervised"
+    for binding in task.get("splits", {"": task}).values():
+        del binding["target"]
+    write_snapshot(catalog_root, index)
+
+    outputs = dm_catalog.generate(catalog_root)
+    entry = next(
+        e
+        for e in json.loads(outputs[Path("catalog.json")])["datasets"]
+        if e["name"] == name
+    )
+    assert entry["tasks"] == ["unsupervised"]
+    assert entry["dimensions"] == [
+        {**dimension, "type": "unsupervised"} for dimension in expected
+    ]
+
+
 def test_declared_defaults_take_precedence_over_version_sorting(
     catalog_root: Path,
 ) -> None:
@@ -240,7 +325,7 @@ def test_wide_records_remain_complete_and_metadata_is_escaped(
     assert "<script>" not in page
     assert "&lt;script&gt;" in page
     assert "A \\|" in page
-    assert "https://doi.org/10.1234/example." in page
+    assert "](<https://doi.org/10.1234/example>)." in page
     assert "Showing 30 of 45 components" in page
     assert "extra_39" not in page
     assert (
@@ -257,6 +342,43 @@ def test_wide_records_remain_complete_and_metadata_is_escaped(
         if e["name"] == "iris"
     )
     assert entry["license"] == "Unknown"
+
+
+def test_prose_links_preserve_url_fragments_and_escape_markdown(
+    catalog_root: Path,
+) -> None:
+    index = read_index(catalog_root)
+    index["schema_version"] = 3
+    iris = next(d for d in index["datasets"] if d["name"] == "iris")
+    iris["schema_version"] = 3
+    url = "https://example.org/data_set.html#reference"
+    prose = f"A | <script>reference</script>: {url}. doi:10.1234/example."
+    iris["description"] = prose
+    iris["provenance"].pop("citation", None)
+    iris["provenance"]["citations"] = [{"citation": prose, "note": prose}]
+    iris["provenance"]["citation_instructions"] = prose
+    iris["license"]["evidence"] = prose
+    iris["preprocessing"] = {
+        "upstream": {"status": "unknown", "notes": prose},
+        "datamonger": {
+            "status": "documented",
+            "steps": [{"kind": "other", "description": prose}],
+            "evidence": ["https://example.org/preparation"],
+        },
+    }
+    write_snapshot(catalog_root, index)
+
+    outputs = dm_catalog.generate(catalog_root)
+    page = outputs[Path("uci/iris/1.md")].decode()
+    assert page.count(f"](<{url}>).") == 7
+    assert page.count("](<https://doi.org/10.1234/example>).") == 7
+    assert page.count("A \\| &lt;script&gt;reference&lt;/script&gt;:") == 7
+    entry = next(
+        e
+        for e in json.loads(outputs[Path("catalog.json")])["datasets"]
+        if e["name"] == "iris"
+    )
+    assert entry["description"] == prose
 
 
 def test_removes_only_previously_generated_files(catalog_root: Path) -> None:
