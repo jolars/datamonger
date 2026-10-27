@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.4.0](https://github.com/jolars/datamonger/compare/registry-v1.3.0...registry-v1.4.0) (2026-10-27)
+
+### Features
+- **registry:** add Covertype ([`0641a89`](https://github.com/jolars/datamonger/commit/0641a8964f3c55c15272e0b87cbf8a30c6dce340))
+- **registry:** add original Madelon splits ([`364223f`](https://github.com/jolars/datamonger/commit/364223f9622e84119b11ea91438c84c3cdb6a341))
+- **registry:** add LIBSVM mushrooms ([`4c1c2f1`](https://github.com/jolars/datamonger/commit/4c1c2f10702e3ed31e202bbe473820af77b8b57e))
+- **registry:** add Madelon with LIBSVM decoder v2 ([`9b07dd2`](https://github.com/jolars/datamonger/commit/9b07dd2196037442ea0bbd88ef2c3bed7dc212da))
+- **registry:** add LIBSVM w1a through w8a ([`ab84118`](https://github.com/jolars/datamonger/commit/ab84118b6afc63750376f5c954ac924550a111bd))
+- **registry:** add LIBSVM a1a through a9a ([`b915fde`](https://github.com/jolars/datamonger/commit/b915fde44abd117d9ec3ed33a6525219434985e4))
+
 ## [1.3.0](https://github.com/jolars/datamonger/compare/registry-v1.2.0...registry-v1.3.0) (2026-10-21)
 
 ### Features
