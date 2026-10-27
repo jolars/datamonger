@@ -1,0 +1,10 @@
+# Changelog
+
+## [0.2.0](https://github.com/jolars/datamonger/compare/datamonger-ffi-v0.1.0...datamonger-ffi-v0.2.0) (2026-10-27)
+
+### Features
+- **registry:** add Madelon with LIBSVM decoder v2 ([`9b07dd2`](https://github.com/jolars/datamonger/commit/9b07dd2196037442ea0bbd88ef2c3bed7dc212da))
+- migrate Julia decoding to native core (#19) ([`3b7b4c0`](https://github.com/jolars/datamonger/commit/3b7b4c00ba8b785c5e887fa34385c7775d5836ff))
+
+### Dependencies
+- updated crates/datamonger-core to v0.2.0
