@@ -1,0 +1,159 @@
+schema_version: 1
+repository: jolars/datamonger
+manifests:
+- registry/datasets/datamonger/brca1-1.yaml
+- registry/datasets/datamonger/godlewski2023-1.yaml
+- registry/datasets/datamonger/guyon2004-madelon-1.yaml
+- registry/datasets/datamonger/koussounadis2014-1.yaml
+- registry/datasets/datamonger/scheetz2006-1.yaml
+- registry/datasets/libsvm/a1a-1.yaml
+- registry/datasets/libsvm/a2a-1.yaml
+- registry/datasets/libsvm/a3a-1.yaml
+- registry/datasets/libsvm/a4a-1.yaml
+- registry/datasets/libsvm/a5a-1.yaml
+- registry/datasets/libsvm/a6a-1.yaml
+- registry/datasets/libsvm/a7a-1.yaml
+- registry/datasets/libsvm/a8a-1.yaml
+- registry/datasets/libsvm/a9a-1.yaml
+- registry/datasets/libsvm/cadata-1.yaml
+- registry/datasets/libsvm/colon-cancer-1.yaml
+- registry/datasets/libsvm/dna_scale-1.yaml
+- registry/datasets/libsvm/glass_scale-1.yaml
+- registry/datasets/libsvm/heart_scale-1.yaml
+- registry/datasets/libsvm/madelon-1.yaml
+- registry/datasets/libsvm/mushrooms-1.yaml
+- registry/datasets/libsvm/news20-binary-1.yaml
+- registry/datasets/libsvm/rcv1-binary-1.yaml
+- registry/datasets/libsvm/triazines_scale-1.yaml
+- registry/datasets/libsvm/w1a-1.yaml
+- registry/datasets/libsvm/w2a-1.yaml
+- registry/datasets/libsvm/w3a-1.yaml
+- registry/datasets/libsvm/w4a-1.yaml
+- registry/datasets/libsvm/w5a-1.yaml
+- registry/datasets/libsvm/w6a-1.yaml
+- registry/datasets/libsvm/w7a-1.yaml
+- registry/datasets/libsvm/w8a-1.yaml
+- registry/datasets/uci/abalone-1.yaml
+- registry/datasets/uci/breast-cancer-wisconsin-diagnostic-1.yaml
+- registry/datasets/uci/covertype-1.yaml
+- registry/datasets/uci/iris-1.yaml
+- registry/datasets/uci/wholesale-customers-1.yaml
+- registry/datasets/uci/wine-quality-1.yaml
+defaults:
+- source: datamonger
+  name: brca1
+  version: '1'
+- source: datamonger
+  name: godlewski2023
+  version: '1'
+- source: datamonger
+  name: guyon2004-madelon
+  version: '1'
+- source: datamonger
+  name: koussounadis2014
+  version: '1'
+- source: datamonger
+  name: scheetz2006
+  version: '1'
+- source: libsvm
+  name: a1a
+  version: '1'
+- source: libsvm
+  name: a2a
+  version: '1'
+- source: libsvm
+  name: a3a
+  version: '1'
+- source: libsvm
+  name: a4a
+  version: '1'
+- source: libsvm
+  name: a5a
+  version: '1'
+- source: libsvm
+  name: a6a
+  version: '1'
+- source: libsvm
+  name: a7a
+  version: '1'
+- source: libsvm
+  name: a8a
+  version: '1'
+- source: libsvm
+  name: a9a
+  version: '1'
+- source: libsvm
+  name: cadata
+  version: '1'
+- source: libsvm
+  name: colon-cancer
+  version: '1'
+- source: libsvm
+  name: dna_scale
+  version: '1'
+- source: libsvm
+  name: glass_scale
+  version: '1'
+- source: libsvm
+  name: heart_scale
+  version: '1'
+- source: libsvm
+  name: madelon
+  version: '1'
+- source: libsvm
+  name: mushrooms
+  version: '1'
+- source: libsvm
+  name: news20-binary
+  version: '1'
+- source: libsvm
+  name: rcv1-binary
+  version: '1'
+- source: libsvm
+  name: triazines_scale
+  version: '1'
+- source: libsvm
+  name: w1a
+  version: '1'
+- source: libsvm
+  name: w2a
+  version: '1'
+- source: libsvm
+  name: w3a
+  version: '1'
+- source: libsvm
+  name: w4a
+  version: '1'
+- source: libsvm
+  name: w5a
+  version: '1'
+- source: libsvm
+  name: w6a
+  version: '1'
+- source: libsvm
+  name: w7a
+  version: '1'
+- source: libsvm
+  name: w8a
+  version: '1'
+- source: uci
+  name: abalone
+  version: '1'
+- source: uci
+  name: breast-cancer-wisconsin-diagnostic
+  version: '1'
+- source: uci
+  name: covertype
+  version: '1'
+- source: uci
+  name: iris
+  version: '1'
+- source: uci
+  name: wholesale-customers
+  version: '1'
+- source: uci
+  name: wine-quality
+  version: '1'
+release: 1.4.0
+sequence: 7
+tag: registry-v1.4.0
