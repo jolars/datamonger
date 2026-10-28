@@ -252,7 +252,8 @@ active_registry <- function(project_dir = getwd()) {
       .dm_abort(
         "datamonger_registry_retrieval",
         paste0(
-          "cannot decompress the bundled registry index: ", conditionMessage(error)
+          "cannot decompress the bundled registry index: ",
+          conditionMessage(error)
         )
       )
     }
@@ -300,11 +301,13 @@ active_registry <- function(project_dir = getwd()) {
   index <- .parse_json_raw(contents, "verified registry index")
   .require_object(index, "registry index")
 
-  if (!identical(index$schema_version, 1L) &&
+  if (
+    !identical(index$schema_version, 1L) &&
       !identical(index$schema_version, 2L) &&
       !identical(index$schema_version, 3L) &&
       !identical(index$schema_version, 4L) &&
-      !identical(index$schema_version, 5L)) {
+      !identical(index$schema_version, 5L)
+  ) {
     .abort_category(
       "unsupported-registry",
       paste0("unsupported registry schema ", index$schema_version)
@@ -435,10 +438,12 @@ active_registry <- function(project_dir = getwd()) {
 
   dataset <- matches[[1]]
 
-  if (!is.integer(dataset$schema_version) ||
+  if (
+    !is.integer(dataset$schema_version) ||
       length(dataset$schema_version) != 1L ||
       !(dataset$schema_version %in% 1:5) ||
-      dataset$schema_version > index$schema_version) {
+      dataset$schema_version > index$schema_version
+  ) {
     .abort_category(
       "unsupported-registry",
       paste0("unsupported dataset schema ", dataset$schema_version)

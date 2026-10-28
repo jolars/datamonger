@@ -405,19 +405,26 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
 
   if (identical(decoder, "named-splits")) {
     if (!(dataset$schema_version %in% c(4L, 5L))) {
-      .abort_category("unsupported-decoder", "named-splits requires manifest schema 4")
+      .abort_category(
+        "unsupported-decoder",
+        "named-splits requires manifest schema 4"
+      )
     }
     recipes <- .split_recipes(representation)
     children <- lapply(recipes, function(recipe) {
       child <- dataset
       child$representation <- list(
-        decoder = recipe$decoder, decoder_version = recipe$decoder_version,
-        inputs = list(data = representation$inputs[[recipe$name]]), options = recipe$options
+        decoder = recipe$decoder,
+        decoder_version = recipe$decoder_version,
+        inputs = list(data = representation$inputs[[recipe$name]]),
+        options = recipe$options
       )
       .validate_representation(child)
     })
     return(list(
-      representation = representation, decoder = decoder, options = representation$options,
+      representation = representation,
+      decoder = decoder,
+      options = representation$options,
       children = children,
       artifacts = unlist(lapply(children, `[[`, "artifacts"), recursive = FALSE)
     ))
@@ -425,7 +432,8 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
 
   if (
     !(identical(representation$decoder_version, 1L) ||
-      (identical(representation$decoder_version, 2L) && decoder %in% c("libsvm", "libsvm-split"))) ||
+      (identical(representation$decoder_version, 2L) &&
+        decoder %in% c("libsvm", "libsvm-split"))) ||
       !(decoder %in% c("delimited-text", "libsvm", "libsvm-split"))
   ) {
     .abort_category(
@@ -434,13 +442,23 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
     )
   }
 
-  if (identical(representation$decoder_version, 2L) &&
-      !identical(dataset$schema_version, 5L)) {
-    .abort_category("unsupported-decoder", "LIBSVM v2 requires manifest schema 5")
+  if (
+    identical(representation$decoder_version, 2L) &&
+      !identical(dataset$schema_version, 5L)
+  ) {
+    .abort_category(
+      "unsupported-decoder",
+      "LIBSVM v2 requires manifest schema 5"
+    )
   }
 
-  if (identical(representation$decoder_version, 2L) && !dm_supports_libsvm_v2()) {
-    .abort_category("unsupported-decoder", "LIBSVM v2 requires the updated native core")
+  if (
+    identical(representation$decoder_version, 2L) && !dm_supports_libsvm_v2()
+  ) {
+    .abort_category(
+      "unsupported-decoder",
+      "LIBSVM v2 requires the updated native core"
+    )
   }
 
   roles <- if (identical(decoder, "libsvm-split")) {

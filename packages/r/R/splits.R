@@ -24,21 +24,29 @@
     if (!is.list(split) || !setequal(names(split), fields)) {
       fail("invalid split recipe fields")
     }
-    if (!.is_scalar_character(split$name) || !nzchar(split$name) ||
-        split$name %in% split_names) {
+    if (
+      !.is_scalar_character(split$name) ||
+        !nzchar(split$name) ||
+        split$name %in% split_names
+    ) {
       fail("split names must be nonempty and unique")
     }
     split_names <- c(split_names, split$name)
-    if (!(identical(split$decoder_version, 1L) ||
-        (identical(split$decoder_version, 2L) && identical(split$decoder, "libsvm"))) ||
+    if (
+      !(identical(split$decoder_version, 1L) ||
+        (identical(split$decoder_version, 2L) &&
+          identical(split$decoder, "libsvm"))) ||
         !.is_scalar_character(split$decoder) ||
         !(split$decoder %in% c("delimited-text", "libsvm")) ||
-        !is.list(split$options)) {
+        !is.list(split$options)
+    ) {
       fail("unsupported split decoder recipe")
     }
   }
-  if (!is.list(representation$inputs) ||
-      !setequal(names(representation$inputs), split_names)) {
+  if (
+    !is.list(representation$inputs) ||
+      !setequal(names(representation$inputs), split_names)
+  ) {
     fail("input names must match the declared split names")
   }
   splits
@@ -66,15 +74,25 @@
   switch(
     setup$decoder,
     `delimited-text` = .decode_delimited(
-      paths[[1]], setup$options, setup$compressions[[1]], hash = hash
+      paths[[1]],
+      setup$options,
+      setup$compressions[[1]],
+      hash = hash
     ),
     libsvm = .decode_libsvm(
-      paths[[1]], setup$options, setup$compressions[[1]], hash = hash,
+      paths[[1]],
+      setup$options,
+      setup$compressions[[1]],
+      hash = hash,
       decoder_version = setup$representation$decoder_version
     ),
     `libsvm-split` = .decode_libsvm_split(
-      paths[[1]], paths[[2]], setup$options,
-      setup$compressions[[1]], setup$compressions[[2]], hash = hash,
+      paths[[1]],
+      paths[[2]],
+      setup$options,
+      setup$compressions[[1]],
+      setup$compressions[[2]],
+      hash = hash,
       decoder_version = setup$representation$decoder_version
     )
   )

@@ -1,8 +1,12 @@
 .native_result <- function(result) {
-  if (is.null(result$category)) return(result$value)
+  if (is.null(result$category)) {
+    return(result$value)
+  }
   if (identical(result$category, "interrupted")) {
-    stop(structure(list(message = result$message, call = NULL),
-                   class = c("interrupt", "condition")))
+    stop(structure(
+      list(message = result$message, call = NULL),
+      class = c("interrupt", "condition")
+    ))
   }
   .abort_category(result$category, result$message)
 }

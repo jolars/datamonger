@@ -97,15 +97,26 @@
   )
 }
 
-.decode_delimited <- function(path, options, compression = "none", hash = FALSE) {
+.decode_delimited <- function(
+  path,
+  options,
+  compression = "none",
+  hash = FALSE
+) {
   options <- .validate_delimited_options(options)
   decoded <- .native_result(dm_decode(
-    "delimited-text", path, compression, options, hash
+    "delimited-text",
+    path,
+    compression,
+    options,
+    hash
   ))
   columns <- lapply(decoded$components, .public_vector)
   names(columns) <- vapply(decoded$components, `[[`, character(1), "name")
   decoded$data <- structure(
-    columns, row.names = seq_along(columns[[1]]), class = "data.frame"
+    columns,
+    row.names = seq_along(columns[[1]]),
+    class = "data.frame"
   )
   decoded
 }

@@ -58,8 +58,11 @@ print.datamonger_int64 <- function(x, ...) {
   column_indices,
   values
 ) {
-  if (rows <= .Machine$integer.max && columns <= .Machine$integer.max &&
-      length(values) <= .Machine$integer.max) {
+  if (
+    rows <= .Machine$integer.max &&
+      columns <= .Machine$integer.max &&
+      length(values) <= .Machine$integer.max
+  ) {
     return(Matrix::sparseMatrix(
       p = as.integer(row_offsets),
       j = as.integer(column_indices),

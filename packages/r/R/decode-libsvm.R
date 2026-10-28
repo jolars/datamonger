@@ -35,8 +35,11 @@
   structure(
     list(
       features = .native_sparse_matrix(
-        features$rows, features$columns, features$row_offsets,
-        features$column_indices, features$values
+        features$rows,
+        features$columns,
+        features$row_offsets,
+        features$column_indices,
+        features$values
       ),
       response = .public_vector(components[[2]])
     ),
@@ -44,27 +47,47 @@
   )
 }
 
-.decode_libsvm <- function(path, options, compression = "none", hash = FALSE, decoder_version = 1L) {
-  if (!(identical(decoder_version, 1L) || identical(decoder_version, 2L))) {
-    .abort_category("unsupported-decoder", "unsupported LIBSVM version")
-  }
-  options <- .validate_libsvm_options(options)
-  decoded <- .native_result(dm_decode(if (decoder_version == 2L) "libsvm-v2" else "libsvm", path, compression, options, hash))
-  decoded$data <- .sparse_data(decoded$components)
-  decoded
-}
-
-.decode_libsvm_split <- function(
-  train_path, test_path, options,
-  train_compression = "none", test_compression = "none", hash = FALSE, decoder_version = 1L
+.decode_libsvm <- function(
+  path,
+  options,
+  compression = "none",
+  hash = FALSE,
+  decoder_version = 1L
 ) {
   if (!(identical(decoder_version, 1L) || identical(decoder_version, 2L))) {
     .abort_category("unsupported-decoder", "unsupported LIBSVM version")
   }
   options <- .validate_libsvm_options(options)
   decoded <- .native_result(dm_decode(
-    if (decoder_version == 2L) "libsvm-split-v2" else "libsvm-split", c(train_path, test_path),
-    c(train_compression, test_compression), options, hash
+    if (decoder_version == 2L) "libsvm-v2" else "libsvm",
+    path,
+    compression,
+    options,
+    hash
+  ))
+  decoded$data <- .sparse_data(decoded$components)
+  decoded
+}
+
+.decode_libsvm_split <- function(
+  train_path,
+  test_path,
+  options,
+  train_compression = "none",
+  test_compression = "none",
+  hash = FALSE,
+  decoder_version = 1L
+) {
+  if (!(identical(decoder_version, 1L) || identical(decoder_version, 2L))) {
+    .abort_category("unsupported-decoder", "unsupported LIBSVM version")
+  }
+  options <- .validate_libsvm_options(options)
+  decoded <- .native_result(dm_decode(
+    if (decoder_version == 2L) "libsvm-split-v2" else "libsvm-split",
+    c(train_path, test_path),
+    c(train_compression, test_compression),
+    options,
+    hash
   ))
   decoded$data <- structure(
     list(
