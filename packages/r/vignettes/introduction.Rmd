@@ -54,8 +54,13 @@ label. Datamonger preserves the registered column names, including spaces. Use
 #| label: plot-iris
 #| eval: false
 
-plot(flowers[["petal length"]], flowers[["petal width"]],
-     xlab = "Petal length (cm)", ylab = "Petal width (cm)", pch = 19)
+plot(
+  flowers[["petal length"]],
+  flowers[["petal width"]],
+  xlab = "Petal length (cm)",
+  ylab = "Petal width (cm)",
+  pch = 19
+)
 ```
 
 Datamonger checks both the downloaded files and the decoded values before

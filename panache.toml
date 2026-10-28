@@ -1,3 +1,6 @@
 flavor = "gfm"
 
 extend-exclude = ["AGENTS.md", "TODO.md"]
+
+[formatters]
+r = "arity"
