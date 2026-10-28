@@ -6,7 +6,8 @@ Authors@R:
       "Johan",
       "Larsson",
       email = "johan@jolars.co",
-      role = c("aut", "cre")
+      role = c("aut", "cre"),
+      comment = c(ORCID = "0000-0002-4029-5945")
     ))
 Description: Retrieves public research datasets through immutable registry
     selectors, verifies their exact bytes, and decodes them according to
