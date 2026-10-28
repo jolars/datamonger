@@ -33,9 +33,9 @@ registry_selector(release, index_sha256, index_url; schema_version=1) =
     Registry(release, index_sha256, index_url, schema_version)
 
 const BUNDLED_REGISTRY = Registry(
-    "1.3.0",
-    "94639f8d711d64895689d6da87add0f0f56574070262ec2a04f1f1ad43279f85",
-    "https://github.com/jolars/datamonger/releases/download/registry-v1.3.0/index.json",
+    "1.4.0",
+    "ef83679266af9fcbb9ea194acdfb9bb6c380b440a574fc2ee7292899c5102909",
+    "https://github.com/jolars/datamonger/releases/download/registry-v1.4.0/index.json",
 )
 
 const _SESSION_REGISTRY = Ref{Union{Nothing,Registry}}(nothing)
