@@ -230,11 +230,17 @@ jobs:
         run: uv build
 
   r-quality:
-    runs-on: ${{ matrix.os }}
+    name: R quality (${{ matrix.config.os }}, ${{ matrix.config.r }})
+    runs-on: ${{ matrix.config.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        config:
+          - { os: macos-latest, r: "release" }
+          - { os: windows-latest, r: "release" }
+          - { os: ubuntu-latest, r: "devel", http-user-agent: "release" }
+          - { os: ubuntu-latest, r: "release" }
+          - { os: ubuntu-latest, r: "oldrel-1" }
     defaults:
       run:
         working-directory: packages/r
@@ -248,27 +254,41 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: "1.82.0"
+          components: rustfmt, clippy
           targets: ${{ runner.os == 'Windows' && 'x86_64-pc-windows-gnu' || '' }}
       - name: Set up R
         uses: r-lib/actions/setup-r@v2
         with:
+          r-version: ${{ matrix.config.r }}
+          http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
       - name: Install R dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
           working-directory: packages/r
+          extra-packages: |
+            any::rcmdcheck
+            any::pkgbuild
+          needs: check
       - name: Check shared fixture copies
         run: diff -r ../../tests/conformance tests/testthat/fixtures/conformance
         shell: bash
       - name: Check vendored Rust sources
         working-directory: .
         run: python tools/dm_rust_sources.py --check
-      - name: Build R package
-        run: R CMD build .
-        shell: bash
       - name: Check R package
-        run: R CMD check --no-manual --as-cran datamonger_*.tar.gz
-        shell: bash
+        uses: r-lib/actions/check-r-package@v2
+        with:
+          working-directory: packages/r
+          error-on: '"warning"'
+          upload-snapshots: true
+      - name: Check Rust adapter
+        if: matrix.config.os == 'ubuntu-latest' && matrix.config.r == 'release'
+        env:
+          CARGO_NET_OFFLINE: "false"
+        run: |
+          cargo fmt --manifest-path src/rust/Cargo.toml --check
+          cargo clippy --manifest-path src/rust/Cargo.toml --locked --all-targets -- -D warnings
       - name: Test R adapter against local core
         env:
           CARGO_NET_OFFLINE: "false"
