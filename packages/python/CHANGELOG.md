@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.3.0](https://github.com/jolars/datamonger/compare/datamonger-python-v0.2.0...datamonger-python-v0.3.0) (2026-10-28)
+
+### Features
+- **registry:** add Madelon with LIBSVM decoder v2 ([`9b07dd2`](https://github.com/jolars/datamonger/commit/9b07dd2196037442ea0bbd88ef2c3bed7dc212da))
+- **registry:** add LIBSVM a1a through a9a ([`b915fde`](https://github.com/jolars/datamonger/commit/b915fde44abd117d9ec3ed33a6525219434985e4))
+- bundle registry 1.3.0 (#22) ([`ea697d3`](https://github.com/jolars/datamonger/commit/ea697d377befc316983d3294bb7880de95ace527))
+- support named dataset splits ([`72dbdf9`](https://github.com/jolars/datamonger/commit/72dbdf9f489934218867f5c69d665448363d853e))
+- add searchable dataset catalog ([`7f9a7f8`](https://github.com/jolars/datamonger/commit/7f9a7f8a5ba9ed84fce5a122a26821153b3617e2))
+- migrate Julia decoding to native core (#19) ([`3b7b4c0`](https://github.com/jolars/datamonger/commit/3b7b4c00ba8b785c5e887fa34385c7775d5836ff))
+- **python:** use the native decoding core ([`6985816`](https://github.com/jolars/datamonger/commit/6985816163d93eac2a0246d1d086226e132c052d))
+- **registry:** record preprocessing metadata ([`c10b300`](https://github.com/jolars/datamonger/commit/c10b30057163e9e062e8a78ba534d19f161d1896))
+- add Rust core and migrate R backend ([`510c863`](https://github.com/jolars/datamonger/commit/510c8631bd8c063454d933d3998fe8f878a02dc1))
+
+### Bug Fixes
+- handle optional catalog roles and prose links ([`631bac3`](https://github.com/jolars/datamonger/commit/631bac3afb8f670eb32b53e456a74a174257e886))
+- **r:** compress the bundled catalog ([`2adf7e7`](https://github.com/jolars/datamonger/commit/2adf7e7bcb5f3f8e2882d13d41d1b07e32eddb79))
+- **ci:** preserve R manifest line endings on Windows ([`856d441`](https://github.com/jolars/datamonger/commit/856d441dc9fad9b05385b28a197de314270b2645))
+- **ci:** mark the current registry release as latest ([`9f2d589`](https://github.com/jolars/datamonger/commit/9f2d589640808d2600fb1c41ef48f61fec83d6c0))
+- **ci:** test R against the local core version ([`3cb1637`](https://github.com/jolars/datamonger/commit/3cb163784ae5a1bc174234b4cdbda8347b9d9007))
+- stop generating R dependency license notices ([`e4d904d`](https://github.com/jolars/datamonger/commit/e4d904daa797c4c98d64ab4e0adad9e0f22046ad))
+
 ## [0.2.0](https://github.com/jolars/datamonger/compare/datamonger-python-v0.1.0...datamonger-python-v0.2.0) (2026-10-18)
 
 ### Features
