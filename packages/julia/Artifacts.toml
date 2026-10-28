@@ -1,2 +1,42 @@
-# Release preparation installs the tested manifest from Publish Julia native.
-# Source checkouts use tools/dm_julia_core.jl to build a local artifact.
+[[datamonger_core]]
+arch = "aarch64"
+git-tree-sha1 = "dbe1d083ba796df04eebb75b667f2445f59b2169"
+os = "macos"
+
+    [[datamonger_core.download]]
+    sha256 = "acdf097bb732390b12a06ba1d9704d4c95ef8c44de92d935c8fb72680a791570"
+    url = "https://github.com/jolars/datamonger/releases/download/datamonger-ffi-v0.2.0/datamonger-core.aarch64-apple-darwin.tar.gz"
+[[datamonger_core]]
+arch = "aarch64"
+git-tree-sha1 = "21864609eeebb7ed5c576f9e7ce665a97a1733ea"
+libc = "glibc"
+os = "linux"
+
+    [[datamonger_core.download]]
+    sha256 = "281f72f715dfb3847cd7945aeb82f5387704573190e030dfee925f321279a983"
+    url = "https://github.com/jolars/datamonger/releases/download/datamonger-ffi-v0.2.0/datamonger-core.aarch64-linux-gnu.tar.gz"
+[[datamonger_core]]
+arch = "x86_64"
+git-tree-sha1 = "da201caf66f2e2684194717cf2a71f1e0ad210b6"
+os = "macos"
+
+    [[datamonger_core.download]]
+    sha256 = "10d78bed8260ee130302b93eb32b1c358b5bc18bfaa512cf6e6fd9fd675d5264"
+    url = "https://github.com/jolars/datamonger/releases/download/datamonger-ffi-v0.2.0/datamonger-core.x86_64-apple-darwin.tar.gz"
+[[datamonger_core]]
+arch = "x86_64"
+git-tree-sha1 = "e4107b53949e015e093bc6c98f04e4cea0d43892"
+libc = "glibc"
+os = "linux"
+
+    [[datamonger_core.download]]
+    sha256 = "8396fc83c6d28137d94c78845b3efb5cc46882e45692da1b95a988c66a31d850"
+    url = "https://github.com/jolars/datamonger/releases/download/datamonger-ffi-v0.2.0/datamonger-core.x86_64-linux-gnu.tar.gz"
+[[datamonger_core]]
+arch = "x86_64"
+git-tree-sha1 = "f8dda17fdbc61e2ff3558426a939d452583826f9"
+os = "windows"
+
+    [[datamonger_core.download]]
+    sha256 = "67b67d7ca3fc269e14e7a895e4fc94f56c41d49960f9ac5474afac741213c282"
+    url = "https://github.com/jolars/datamonger/releases/download/datamonger-ffi-v0.2.0/datamonger-core.x86_64-w64-mingw32.tar.gz"
