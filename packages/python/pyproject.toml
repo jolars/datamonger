@@ -9,7 +9,7 @@ description = "Reproducible retrieval and decoding of public research datasets"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
-authors = [{ name = "Johan Larsson" }]
+authors = [{ name = "Johan Larsson", email = "johan@jolars.co" }]
 dependencies = [
   "numpy>=2.0",
   "pandas>=2.2",
@@ -17,11 +17,28 @@ dependencies = [
   "portalocker[win32]>=4.3",
   "scipy>=1.14",
 ]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Developers",
+  "Operating System :: MacOS",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: POSIX",
+  "Operating System :: Unix",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Scientific/Engineering",
+]
 
 [project.urls]
-Documentation = "https://github.com/jolars/datamonger#documentation"
-Issues = "https://github.com/jolars/datamonger/issues"
-Repository = "https://github.com/jolars/datamonger"
+homepage = "https://datamonger.dev"
+tracker = "https://github.com/jolars/datamonger/issues"
+repository = "https://github.com/jolars/datamonger"
+changelog = "https://github.com/jolars/datamonger/blob/main/packages/python/CHANGELOG.md"
 
 [dependency-groups]
 dev = [
