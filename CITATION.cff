@@ -1,16 +1,14 @@
 cff-version: 1.2.0
-message: >-
-  If you use Datamonger in your research, please cite it using this metadata.
+message: If you use this software, please cite the release you used. Use the concept
+  DOI to cite the project as a whole.
 type: software
-title: "jolars/datamonger: datamonger-python-v0.3.0"
+title: 'Datamonger: Reproducible retrieval and decoding of public research datasets'
 authors:
   - family-names: Larsson
     given-names: Johan
     affiliation: University of Copenhagen
     orcid: https://orcid.org/0000-0002-4029-5945
-version: datamonger-python-v0.3.0
-date-released: '2026-10-28'
-doi: 10.5281/zenodo.23732673
+doi: 10.5281/zenodo.23692468
 repository-code: https://github.com/jolars/datamonger
-url: https://datamonger.dev
+url: https://github.com/jolars/datamonger
 license: MIT

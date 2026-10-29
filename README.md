@@ -2,7 +2,8 @@
 
 [![CI](https://github.com/jolars/datamonger/actions/workflows/ci.yml/badge.svg)](https://github.com/jolars/datamonger/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/datamonger.svg?logo=python)](https://pypi.org/project/datamonger/)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23732673.svg)](https://doi.org/10.5281/zenodo.23732673)
+[![Software
+DOI](https://img.shields.io/badge/Software_DOI-10.5281%2Fzenodo.23692468-blue)](https://doi.org/10.5281/zenodo.23692468)
 
 Datamonger retrieves public research datasets in Python, R, and Julia. It
 downloads and caches dataset files, returns native data frames and sparse
@@ -146,6 +147,15 @@ Only the registry index is bundled; dataset files are downloaded separately.
 - [CLI guide](packages/cli/README.md)—commands and verified file downloads.
 - [Specification](spec/README.md) and [architecture](DESIGN.md)—contracts and
   design rationale.
+
+## Citation
+
+If you use Datamonger in your research, please cite the release you used. Select
+that release in the [Zenodo archive](https://doi.org/10.5281/zenodo.23692468)
+and export its citation. To cite Datamonger generally, use the concept DOI
+`10.5281/zenodo.23692468`.
+
+Machine-readable metadata is available in [CITATION.cff](CITATION.cff).
 
 ## Contributing
 
