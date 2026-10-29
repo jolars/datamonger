@@ -33,9 +33,9 @@ commands and live-source checks. Run live checks only when network access and
 upstream availability are expected.
 
 Use `dm-test-r` to test the R adapter against local core edits. Run
-`devenv tasks run r:vendor` after updating published Rust dependencies and
-`dm-document-r` after R binding changes. See `CONTRIBUTING.md` for release
-ordering and MSRV checks.
+`devenv tasks run r:vendor` after updating published Rust dependencies.
+R builds regenerate extendr wrappers automatically. See `CONTRIBUTING.md` for
+release ordering and MSRV checks.
 
 The CLI bundles stable registry assets in `packages/cli/assets`; `devenv test`
 checks them against their selected registry release and `spec/schema`.

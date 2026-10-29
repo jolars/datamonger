@@ -124,14 +124,6 @@ in
     '';
   };
 
-  scripts.dm-document-r = {
-    description = "Regenerate private R wrappers from extendr metadata";
-    exec = ''
-      cd "$DEVENV_ROOT/packages/r"
-      dm-local-r tools/document.R
-    '';
-  };
-
   scripts.dm-bundle-registry = {
     description = "Bundle a published registry release in all clients";
     exec = ''

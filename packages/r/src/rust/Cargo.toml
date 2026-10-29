@@ -7,7 +7,11 @@ publish = false
 
 [lib]
 name = "datamonger_r"
-crate-type = ["staticlib"]
+crate-type = ["rlib", "staticlib"]
+
+[[bin]]
+name = "document"
+path = "document.rs"
 
 [dependencies]
 # Keep Versionary from advancing this dependency before the core is published

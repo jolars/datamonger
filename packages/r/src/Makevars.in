@@ -14,6 +14,7 @@ $(STATLIB):
 		cp rust/vendor-config.toml .cargo/config.toml; \
 	fi
 	@CARGO_HOME@ RUSTC=@RUSTC@ @CARGO@ @CORE_PATCH@ build --manifest-path rust/Cargo.toml --target-dir $(TARGET_DIR) --lib @LOCKED@ @OFFLINE@ -j 2 @PROFILE@
+	@CARGO_HOME@ RUSTC=@RUSTC@ @CARGO@ @CORE_PATCH@ run --manifest-path rust/Cargo.toml --target-dir $(TARGET_DIR) --bin document @LOCKED@ @OFFLINE@ -j 2 @PROFILE@
 
 rust_clean: $(SHLIB)
 	rm -rf .cargo vendor @CLEAN_TARGET@

@@ -143,10 +143,12 @@ Run `python tools/dm_rust_sources.py` after shared conformance changes to update
 the core's fixture copy. `python tools/dm_rust_sources.py --check` checks fixtures
 and vendor metadata. Check changes with Rust 1.82.
 
-Run `dm-document-r` after changing extendr function signatures or Rust wrapper
-documentation. It generates the private R wrappers directly from extendr
-metadata without replacing the package's manually maintained Rd files or
-NAMESPACE. Do not edit the generated wrappers by hand.
+R package builds regenerate `R/extendr-wrappers.R` from extendr metadata using
+the `document` Cargo target introduced in rextendr 0.5.0. After changing Rust
+bindings, rebuild with `dm-test-r` or `pkgbuild::compile_dll(force = TRUE)` through
+`dm-local-r`, and commit the generated wrappers. No separate wrapper-generation
+command or `rextendr::document()` call is needed. The package's Rd files and
+NAMESPACE remain manually maintained. Do not edit the generated wrappers by hand.
 
 Versionary manages core releases independently of the language clients. Merge
 its release PR after CI passes. Versionary creates a published GitHub Release
