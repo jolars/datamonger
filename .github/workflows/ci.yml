@@ -8,6 +8,11 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  # Versionary publishes merged release commits after successful main runs.
+  group: ci-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   yaml-formatting:
     runs-on: ubuntu-latest
