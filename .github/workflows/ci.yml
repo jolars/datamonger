@@ -14,6 +14,55 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  ci-policy:
+    runs-on: ubuntu-latest
+    outputs:
+      run_checks: ${{ steps.policy.outputs.run_checks }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          persist-credentials: false
+      - id: policy
+        uses: jolars/versionary@v1
+        with:
+          command: ci
+
+  release-integrity:
+    needs: ci-policy
+    if: needs.ci-policy.outputs.run_checks == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - name: Verify release versions and lockfiles
+        run: |
+          npx --yes versionary@1 verify
+          uv lock --check --project packages/python
+          for package in crates/datamonger-core crates/datamonger-ffi packages/cli packages/python packages/r/src/rust; do
+            cargo metadata --manifest-path "$package/Cargo.toml" --locked --format-version 1 > /dev/null
+          done
+      - name: Check vendored Rust sources and shared fixtures
+        run: |
+          python tools/dm_rust_sources.py --check
+          diff -r tests/conformance packages/r/tests/testthat/fixtures/conformance
+          diff -r tests/conformance packages/julia/test/fixtures/conformance
+      - name: Check registry snapshots and client bundles
+        env:
+          REGISTRY_RELEASE_PR: ${{ startsWith(github.head_ref, 'versionary/release-registry-') }}
+        run: |
+          uv sync --locked --no-install-project --project packages/python
+          if [[ "$REGISTRY_RELEASE_PR" == true ]]; then
+            uv run --no-sync --project packages/python python tools/dm_registry_release.py check --pending
+          fi
+          uv run --no-sync --project packages/python python tools/dm_bundle_registry.py --check
+
   yaml-formatting:
     runs-on: ubuntu-latest
     steps:
@@ -28,6 +77,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       required: ${{ steps.changes.outputs.required }}
+      r_vendor_changed: ${{ steps.changes.outputs.r_vendor_changed }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -43,6 +93,7 @@ jobs:
         run: |
           # New branches and unavailable history need the full distribution checks.
           required=true
+          r_vendor_changed=true
           if [[ -n "$BASE_SHA" && "$BASE_SHA" != 0000000000000000000000000000000000000000 ]]; then
             if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
               comparison="$BASE_SHA...$HEAD_SHA"
@@ -52,6 +103,9 @@ jobs:
             changed="$RUNNER_TEMP/python-distribution-changes"
             # Include both paths of a move so moving Python files out still runs the builds.
             if git diff --no-renames --name-only -z "$comparison" > "$changed"; then
+              if git diff --quiet "$comparison" -- packages/r/src/rust; then
+                r_vendor_changed=false
+              fi
               required=false
               while IFS= read -r -d '' path; do
                 case "$path" in
@@ -69,16 +123,17 @@ jobs:
           fi
           echo "Python distribution matrix required: $required"
           echo "required=$required" >> "$GITHUB_OUTPUT"
+          echo "r_vendor_changed=$r_vendor_changed" >> "$GITHUB_OUTPUT"
 
   python-distributions:
-    needs: python-distribution-changes
-    if: needs.python-distribution-changes.outputs.required == 'true'
+    needs: [ci-policy, python-distribution-changes]
+    if: ${{ !cancelled() && needs.ci-policy.outputs.run_checks != 'false' && needs.python-distribution-changes.outputs.required == 'true' }}
     uses: ./.github/workflows/python-wheels.yml
 
   python-distributions-status:
     name: Python distributions
     if: always()
-    needs: [python-distribution-changes, python-distributions]
+    needs: [ci-policy, python-distribution-changes, python-distributions]
     runs-on: ubuntu-latest
     steps:
       - name: Check distribution result
@@ -86,8 +141,15 @@ jobs:
           CHANGES_RESULT: ${{ needs.python-distribution-changes.result }}
           DISTRIBUTIONS_REQUIRED: ${{ needs.python-distribution-changes.outputs.required }}
           DISTRIBUTIONS_RESULT: ${{ needs.python-distributions.result }}
+          POLICY_RESULT: ${{ needs.ci-policy.result }}
+          RUN_CHECKS: ${{ needs.ci-policy.outputs.run_checks }}
         run: |
           test "$CHANGES_RESULT" = success
+          test "$POLICY_RESULT" = success
+          if [[ "$RUN_CHECKS" == false && "$DISTRIBUTIONS_RESULT" == skipped ]]; then
+            echo "Versionary release PR; distribution builds will run after merging."
+            exit 0
+          fi
           case "$DISTRIBUTIONS_REQUIRED:$DISTRIBUTIONS_RESULT" in
             true:success)
               echo "Python distribution builds and tests passed."
@@ -102,6 +164,8 @@ jobs:
           esac
 
   core-quality:
+    needs: ci-policy
+    if: ${{ !cancelled() && needs.ci-policy.outputs.run_checks != 'false' }}
     runs-on: ${{ matrix.os }}
     env:
       RUSTUP_TOOLCHAIN: ${{ matrix.rust }}
@@ -144,6 +208,8 @@ jobs:
         run: cargo package --locked
 
   cli-quality:
+    needs: ci-policy
+    if: ${{ !cancelled() && needs.ci-policy.outputs.run_checks != 'false' }}
     strategy:
       fail-fast: false
       matrix:
@@ -181,6 +247,8 @@ jobs:
           done
 
   quality:
+    needs: ci-policy
+    if: ${{ !cancelled() && needs.ci-policy.outputs.run_checks != 'false' }}
     name: Python quality (${{ matrix.python }})
     runs-on: ubuntu-latest
     strategy:
@@ -238,18 +306,17 @@ jobs:
         run: uv build
 
   r-quality:
+    needs: [ci-policy, python-distribution-changes]
+    if: ${{ !cancelled() && (needs.ci-policy.outputs.run_checks != 'false' || needs.python-distribution-changes.outputs.r_vendor_changed != 'false') }}
     name: R quality (${{ matrix.config.os }}, ${{ matrix.config.r }})
     runs-on: ${{ matrix.config.os }}
     strategy:
       fail-fast: false
-      matrix:
-        config:
-          - { os: macos-latest, r: "release" }
-          - { os: windows-latest, r: "release" }
-          - { os: windows-latest, r: "devel", rust: "stable" }
-          - { os: ubuntu-latest, r: "devel", http-user-agent: "release" }
-          - { os: ubuntu-latest, r: "release" }
-          - { os: ubuntu-latest, r: "oldrel-1" }
+      # Release PRs need one build when they change the adapter or vendor archive.
+      matrix: >-
+        ${{ fromJSON(needs.ci-policy.outputs.run_checks == 'false'
+          && '{"config":[{"os":"ubuntu-latest","r":"release"}]}'
+          || '{"config":[{"os":"macos-latest","r":"release"},{"os":"windows-latest","r":"release"},{"os":"windows-latest","r":"devel","rust":"stable"},{"os":"ubuntu-latest","r":"devel","http-user-agent":"release"},{"os":"ubuntu-latest","r":"release"},{"os":"ubuntu-latest","r":"oldrel-1"}]}') }}
     defaults:
       run:
         working-directory: packages/r
@@ -304,4 +371,6 @@ jobs:
         run: python ../../tools/dm_r_local.py -e 'pkgbuild::compile_dll(".", debug = TRUE, force = TRUE); testthat::test_local(".")'
 
   julia-distributions:
+    needs: ci-policy
+    if: ${{ !cancelled() && needs.ci-policy.outputs.run_checks != 'false' }}
     uses: ./.github/workflows/julia-native.yml

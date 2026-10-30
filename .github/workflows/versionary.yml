@@ -37,7 +37,6 @@ jobs:
         uses: jolars/versionary@v1
         with:
           token: ${{ secrets.RELEASE_TOKEN }}
-          versionary-version: 1.4.0
 
       - uses: dtolnay/rust-toolchain@master
         with:

@@ -91,8 +91,13 @@ malformed artifacts, and generated inputs before a backend change can ship.
 CI builds portable wheels for all supported platforms when the Python client,
 shared Rust core, packaging configuration, or shared conformance fixtures change.
 It installs the wheels into fresh environments and tests those distributions.
-The ordinary Linux Python quality checks run on every CI run. The release
-workflow always runs the full wheel matrix. Run `Python distributions` manually
+Versionary release PRs skip the broad build and test matrices and the documentation
+build. They still check release versions, lockfiles, vendored Rust sources, and
+client bundles. Registry release PRs validate their pending snapshots, and release
+PRs run one Linux R check when the Rust adapter or vendor files change.
+Ordinary PRs keep the Linux Python quality checks, and pushes to `main` run the
+full checks before Versionary publishes. The release workflow always runs the
+full wheel matrix. Run `Python distributions` manually
 to check a selected branch, commit, or tag before a release.
 
 Focused commands from `packages/r` are:

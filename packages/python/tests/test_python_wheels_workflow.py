@@ -61,7 +61,7 @@ def repository(tmp_path: Path) -> Path:
     return directory
 
 
-def detect(directory: Path, event: str, base: str, head: str) -> bool:
+def detect_outputs(directory: Path, event: str, base: str, head: str) -> dict[str, str]:
     output = directory.parent / "github-output"
     output.unlink(missing_ok=True)
     result = subprocess.run(
@@ -79,9 +79,14 @@ def detect(directory: Path, event: str, base: str, head: str) -> bool:
         check=False,
     )
     assert result.returncode == 0, result.stderr
-    decision = output.read_text().strip()
-    assert decision in {"required=true", "required=false"}
-    return decision == "required=true"
+    decisions = dict(line.split("=", 1) for line in output.read_text().splitlines())
+    assert set(decisions) == {"required", "r_vendor_changed"}
+    assert set(decisions.values()) <= {"true", "false"}
+    return decisions
+
+
+def detect(directory: Path, event: str, base: str, head: str) -> bool:
+    return detect_outputs(directory, event, base, head)["required"] == "true"
 
 
 @pytest.mark.parametrize(
@@ -176,27 +181,84 @@ def test_force_push_checks_the_previous_tree(repository: Path) -> None:
 @pytest.mark.parametrize("base", ["", "0" * 40, "f" * 40])
 def test_unknown_history_runs_the_full_matrix(repository: Path, base: str) -> None:
     head = commit(repository, "docs/note.md")
-    assert detect(repository, "push", base, head)
+    decisions = detect_outputs(repository, "push", base, head)
+    assert decisions == {"required": "true", "r_vendor_changed": "true"}
 
 
 @pytest.mark.parametrize(
-    ("changes", "required", "distributions", "success"),
+    ("path", "changed"),
     [
-        ("success", "true", "success", True),
-        ("success", "false", "skipped", True),
-        ("success", "true", "failure", False),
-        ("success", "true", "cancelled", False),
-        ("success", "true", "skipped", False),
-        ("success", "false", "failure", False),
-        ("success", "false", "success", False),
-        ("success", "", "skipped", False),
-        ("failure", "false", "skipped", False),
-        ("cancelled", "false", "skipped", False),
-        ("skipped", "false", "skipped", False),
+        ("packages/r/src/rust/vendor.tar.xz", "true"),
+        ("packages/r/src/rust/Cargo.lock", "true"),
+        ("packages/r/src/rust/Cargo.toml", "true"),
+        ("packages/r/src/rust/src/lib.rs", "true"),
+        ("packages/r/DESCRIPTION", "false"),
+        ("packages/python/rust/lib.rs", "false"),
+    ],
+)
+def test_selects_r_build_for_rust_adapter_changes(
+    repository: Path, path: str, changed: str
+) -> None:
+    base = git(repository, "rev-parse", "HEAD")
+    head = commit(repository, path)
+    decisions = detect_outputs(repository, "pull_request", base, head)
+    assert decisions["r_vendor_changed"] == changed
+
+
+@pytest.mark.parametrize("operation", ["delete", "move"])
+def test_removing_rust_adapter_files_still_runs_r(
+    repository: Path, operation: str
+) -> None:
+    base = commit(repository, "packages/r/src/rust/vendor.tar.xz")
+    if operation == "delete":
+        git(repository, "rm", "packages/r/src/rust/vendor.tar.xz")
+    else:
+        git(repository, "mv", "packages/r/src/rust/vendor.tar.xz", "vendor.tar.xz")
+    git(repository, "commit", "-m", "remove vendor archive")
+    head = git(repository, "rev-parse", "HEAD")
+    decisions = detect_outputs(repository, "pull_request", base, head)
+    assert decisions["r_vendor_changed"] == "true"
+
+
+def test_r_build_ignores_vendor_changes_only_on_base_branch(repository: Path) -> None:
+    git(repository, "checkout", "-b", "release")
+    head = commit(repository, "packages/r/DESCRIPTION")
+    git(repository, "checkout", "main")
+    base = commit(repository, "packages/r/src/rust/vendor.tar.xz")
+    decisions = detect_outputs(repository, "pull_request", base, head)
+    assert decisions["r_vendor_changed"] == "false"
+
+
+@pytest.mark.parametrize(
+    ("changes", "required", "distributions", "policy", "run_checks", "success"),
+    [
+        ("success", "true", "success", "success", "true", True),
+        ("success", "false", "skipped", "success", "true", True),
+        ("success", "true", "failure", "success", "true", False),
+        ("success", "true", "cancelled", "success", "true", False),
+        ("success", "true", "skipped", "success", "true", False),
+        ("success", "false", "failure", "success", "true", False),
+        ("success", "false", "success", "success", "true", False),
+        ("success", "", "skipped", "success", "true", False),
+        ("failure", "false", "skipped", "success", "true", False),
+        ("cancelled", "false", "skipped", "success", "true", False),
+        ("skipped", "false", "skipped", "success", "true", False),
+        ("success", "true", "skipped", "success", "false", True),
+        ("success", "false", "skipped", "success", "false", True),
+        ("success", "true", "failure", "success", "false", False),
+        ("success", "true", "cancelled", "success", "false", False),
+        ("failure", "true", "skipped", "success", "false", False),
+        ("success", "true", "success", "failure", "", False),
+        ("success", "true", "skipped", "failure", "", False),
     ],
 )
 def test_status_accepts_only_successful_builds_or_deliberate_skips(
-    changes: str, required: str, distributions: str, success: bool
+    changes: str,
+    required: str,
+    distributions: str,
+    policy: str,
+    run_checks: str,
+    success: bool,
 ) -> None:
     result = subprocess.run(
         ["bash", "-euo", "pipefail", "-c", STATUS],
@@ -204,6 +266,8 @@ def test_status_accepts_only_successful_builds_or_deliberate_skips(
             CHANGES_RESULT=changes,
             DISTRIBUTIONS_REQUIRED=required,
             DISTRIBUTIONS_RESULT=distributions,
+            POLICY_RESULT=policy,
+            RUN_CHECKS=run_checks,
         ),
         capture_output=True,
         text=True,

@@ -14,7 +14,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  ci-policy:
+    runs-on: ubuntu-latest
+    outputs:
+      run_checks: ${{ steps.policy.outputs.run_checks }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          persist-credentials: false
+      - id: policy
+        uses: jolars/versionary@v1
+        with:
+          command: ci
+
   build:
+    needs: ci-policy
+    if: ${{ !cancelled() && needs.ci-policy.outputs.run_checks != 'false' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
