@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.0](https://github.com/jolars/datamonger/compare/datamonger-cli-v0.2.0...datamonger-cli-v0.3.0) (2026-10-30)
+
+### Features
+
+- bundle registry 1.4.0 (#27) ([`cbce1ad`](https://github.com/jolars/datamonger/commit/cbce1ade915e61aede10d65d8d0fa16169e94a11))
+
 ## [0.2.0](https://github.com/jolars/datamonger/compare/datamonger-cli-v0.1.0...datamonger-cli-v0.2.0) (2026-10-27)
 
 ### Features
