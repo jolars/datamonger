@@ -17,7 +17,8 @@ rust_build:
 	mkdir -p .cargo/libgcc_mock
 	$(AR) cr .cargo/libgcc_mock/libgcc_eh.a
 	@CARGO_HOME@ LIBRARY_PATH="$(LIBRARY_PATH);$(CURDIR)/.cargo/libgcc_mock" RUSTC=@RUSTC@ @CARGO@ @CORE_PATCH@ build --manifest-path rust/Cargo.toml --target-dir "$(TARGET_DIR)" --target $(TARGET) --lib @LOCKED@ @OFFLINE@ -j 2 @PROFILE@
-	@CARGO_HOME@ LIBRARY_PATH="$(LIBRARY_PATH);$(CURDIR)/.cargo/libgcc_mock" RUSTC=@RUSTC@ @CARGO@ @CORE_PATCH@ run --manifest-path rust/Cargo.toml --target-dir "$(TARGET_DIR)" --target $(TARGET) --bin document @LOCKED@ @OFFLINE@ -j 2 @PROFILE@
+	# Rust 1.82 ThinLTO leaves unresolved thread-local imports in the helper.
+	@CARGO_HOME@ CARGO_PROFILE_RELEASE_LTO=off LIBRARY_PATH="$(LIBRARY_PATH);$(CURDIR)/.cargo/libgcc_mock" RUSTC=@RUSTC@ @CARGO@ @CORE_PATCH@ run --manifest-path rust/Cargo.toml --target-dir "$(TARGET_DIR)" --target $(TARGET) --bin document @LOCKED@ @OFFLINE@ -j 2 @PROFILE@
 
 rust_clean: $(SHLIB)
 	rm -rf .cargo vendor @CLEAN_TARGET@
