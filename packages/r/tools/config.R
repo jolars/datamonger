@@ -37,7 +37,16 @@ vendored <- !local_core && file.exists("src/rust/vendor.tar.xz")
 if (!vendored && !local_core && !nzchar(Sys.getenv("NOT_CRAN"))) {
   stop("Missing vendored Rust sources. Run devenv tasks run r:vendor before building.")
 }
-template <- if (.Platform$OS.type == "windows") "src/Makevars.win.in" else "src/Makevars.in"
+windows <- .Platform$OS.type == "windows"
+target_dir <- "rust/target"
+if (windows && !debug) {
+  # MinGW cannot link the document helper when object paths exceed MAX_PATH.
+  # Use the session's parent so this directory survives configure's Rscript.
+  target_dir <- tempfile("dm-", tmpdir = normalizePath(
+    dirname(tempdir()), winslash = "/", mustWork = TRUE
+  ))
+}
+template <- if (windows) "src/Makevars.win.in" else "src/Makevars.in"
 text <- readLines(template)
 replacements <- list(
   "@CARGO@" = shQuote(cargo),
@@ -49,8 +58,9 @@ replacements <- list(
   "@NATIVE_LIBS@" = if (grepl("darwin", R.version$os)) "" else "-ldl -lpthread -lm",
   "@PROFILE@" = if (debug) "" else "--release",
   "@LIBDIR@" = if (debug) "debug" else "release",
+  "@TARGET_DIR@" = target_dir,
   "@OFFLINE@" = if (vendored) "--offline" else "",
-  "@CLEAN_TARGET@" = if (debug) "" else "$(TARGET_DIR)"
+  "@CLEAN_TARGET@" = if (debug) "" else '"$(TARGET_DIR)"'
 )
 for (key in names(replacements)) {
   text <- gsub(key, replacements[[key]], text, fixed = TRUE)

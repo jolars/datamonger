@@ -246,6 +246,7 @@ jobs:
         config:
           - { os: macos-latest, r: "release" }
           - { os: windows-latest, r: "release" }
+          - { os: windows-latest, r: "devel", rust: "stable" }
           - { os: ubuntu-latest, r: "devel", http-user-agent: "release" }
           - { os: ubuntu-latest, r: "release" }
           - { os: ubuntu-latest, r: "oldrel-1" }
@@ -256,12 +257,12 @@ jobs:
       R_KEEP_PKG_SOURCE: "yes"
       _R_CHECK_CRAN_INCOMING_REMOTE_: "false"
       CARGO_NET_OFFLINE: "true"
-      RUSTUP_TOOLCHAIN: "1.82.0"
+      RUSTUP_TOOLCHAIN: ${{ matrix.config.rust || '1.82.0' }}
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: "1.82.0"
+          toolchain: ${{ matrix.config.rust || '1.82.0' }}
           components: rustfmt, clippy
           targets: ${{ runner.os == 'Windows' && 'x86_64-pc-windows-gnu' || '' }}
       - name: Set up R

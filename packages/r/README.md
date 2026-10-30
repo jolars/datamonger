@@ -118,7 +118,8 @@ cache_info(cache_dir = "data-cache")
 See the [getting started vignette](vignettes/introduction.Rmd) for more
 examples, or use `?fetch_data`, `?data_info`, and `?cite_data` in R. The
 [project website](https://datamonger.dev) introduces the other Datamonger
-clients, and [CONTRIBUTING.md](../../CONTRIBUTING.md) covers local development.
+clients, and [CONTRIBUTING.md](https://github.com/jolars/datamonger/blob/main/CONTRIBUTING.md)
+covers local development.
 
 ## License
 
