@@ -1,0 +1,61 @@
+name: Publish Rust CLI
+
+on:
+  workflow_call:
+    inputs:
+      plan:
+        required: true
+        type: string
+
+concurrency:
+  group: publish-cli-${{ fromJSON(inputs.plan).announcement_tag }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: release
+      url: https://crates.io/crates/datamonger
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      RELEASE_TAG: ${{ fromJSON(inputs.plan).announcement_tag }}
+    defaults:
+      run:
+        working-directory: packages/cli
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ fromJSON(inputs.plan).announcement_tag }}
+          persist-credentials: false
+
+      - name: Match crate and tag versions
+        run: |
+          python - <<'PY'
+          import os
+          import tomllib
+          from pathlib import Path
+
+          package = tomllib.loads(Path("Cargo.toml").read_text())["package"]
+          expected = f"datamonger-v{package['version']}"
+          if package["name"] != "datamonger" or os.environ["RELEASE_TAG"] != expected:
+              raise SystemExit(f"Expected release tag {expected} for crate datamonger")
+          PY
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Test crate
+        run: cargo test --locked
+
+      - name: Verify crate publication
+        run: cargo publish --locked --dry-run
+
+      - uses: rust-lang/crates-io-auth-action@v1
+        id: auth
+
+      - name: Publish crate
+        run: cargo publish --locked
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}

@@ -1,3 +1,3 @@
 fn main() {
-    std::process::exit(datamonger_cli::run());
+    std::process::exit(datamonger::run());
 }

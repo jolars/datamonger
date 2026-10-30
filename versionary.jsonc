@@ -47,7 +47,7 @@
     },
     "packages/cli": {
       "release-type": "rust",
-      "package-name": "datamonger-cli",
+      "package-name": "datamonger",
       "release-draft": true
     }
   }

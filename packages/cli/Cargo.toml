@@ -1,5 +1,5 @@
 [package]
-name = "datamonger-cli"
+name = "datamonger"
 version = "0.2.0"
 edition = "2024"
 rust-version = "1.89"
@@ -7,6 +7,9 @@ description = "Standalone Datamonger registry and artifact client"
 license = "MIT"
 repository = "https://github.com/jolars/datamonger"
 readme = "README.md"
+keywords = ["datasets", "reproducibility", "cli"]
+categories = ["command-line-utilities", "science"]
+include = ["src/**", "assets/**", "README.md", "LICENSE", "Cargo.toml", "Cargo.lock"]
 
 [[bin]]
 name = "datamonger"

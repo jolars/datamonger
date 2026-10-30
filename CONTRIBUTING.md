@@ -213,6 +213,13 @@ cargo test --locked
 cargo run --locked --example generate_cli_docs -- --check
 ```
 
+The CLI publishes to crates.io as `datamonger`. Its package includes the source,
+bundled registry assets, README, and license. Integration tests use repository
+fixtures and run before publication. To verify the packaged crate locally, run
+`cargo publish --locked --dry-run` from `packages/cli` (add `--allow-dirty` when
+testing uncommitted changes). See `OPERATIONS.md` for the initial publication and
+trusted publisher setup.
+
 The CLI reference is generated from `packages/cli/src/cli.rs` with clapdown.
 After changing commands or help text, run
 `cargo run --locked --example generate_cli_docs` from `packages/cli` and commit

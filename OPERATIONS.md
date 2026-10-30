@@ -47,9 +47,19 @@ configure the repository as follows:
    temporary crates.io token; no Cargo API token secret is required. Configure the
    publisher in the crate's settings using the
    [crates.io trusted publishing instructions](https://crates.io/docs/trusted-publishing).
+5. Bootstrap the `datamonger` CLI crate with an API token before its first
+   automated release. From a clean checkout containing the renamed CLI package,
+   run `cargo login`, then
+   `cargo publish --locked --manifest-path packages/cli/Cargo.toml`.
+   crates.io requires an API token for a crate's first publication. After that,
+   configure a trusted publisher for `datamonger`, repository `jolars/datamonger`,
+   workflow `release.yml`, and environment `release`. The reusable
+   `publish-cli.yml` workflow runs inside `release.yml`; the caller's workflow
+   identity is used for authentication. Revoke the bootstrap token when done.
 
 The explicit Versionary package names produce distinct tag namespaces:
-`datamonger-core-vX.Y.Z`, `datamonger-python-vX.Y.Z`, `datamonger-r-vX.Y.Z`, and
+`datamonger-vX.Y.Z` (CLI), `datamonger-core-vX.Y.Z`,
+`datamonger-python-vX.Y.Z`, `datamonger-r-vX.Y.Z`, and
 `datamonger-julia-vX.Y.Z`. The language clients otherwise use the same package name,
 so the prefixes prevent Git tag collisions. The registry uses `registry-vX.Y.Z`
 and the `simple` strategy with `registry/version.txt`. It creates drafts that
@@ -197,18 +207,26 @@ Dispatch it after these changes reach the default branch; rerunning an old
 workflow run uses that run's original workflow definition.
 
 For a CLI release, merge the Versionary `packages/cli` release PR after CI
-passes. Versionary creates `datamonger-cli-v<version>` and a draft GitHub
+passes. Versionary creates `datamonger-v<version>` and a draft GitHub
 Release. Then dispatch the `Release` workflow with that tag:
 
 ```console
-gh workflow run release.yml --ref datamonger-cli-v<version> \
-  -f tag=datamonger-cli-v<version>
+gh workflow run release.yml --ref datamonger-v<version> \
+  -f tag=datamonger-v<version>
 ```
 
 `dist` builds archives for x64 Linux (musl), x64 and ARM macOS, and x64 Windows
 from that tag, uploads SHA-256 checksums to the existing draft, and publishes
-it. The workflow's pull request run only plans the release. Check the draft tag,
-release, and artifact checksums before dispatching a live release.
+it. For stable releases, it then calls `Publish Rust CLI`, which checks the crate
+name and tag version, runs the CLI tests and a publication dry run, and publishes
+`datamonger` to crates.io through trusted publishing. Prereleases only publish
+GitHub artifacts. The workflow's pull request run only plans the release. Check
+the draft tag, release, and artifact checksums before dispatching a live release.
+
+Historical CLI releases retain their `datamonger-cli-v<version>` tags. The
+Versionary baseline remains unchanged when the package is renamed. Complete the
+one-time crates.io bootstrap above before dispatching the next CLI release; that
+release must have a newer version than the bootstrap publication.
 
 ## Prepare a registry release
 

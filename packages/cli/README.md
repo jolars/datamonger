@@ -4,10 +4,17 @@ The standalone Rust CLI retrieves registered artifact bytes without requiring
 Python. It verifies the selected registry index and each artifact's registered
 size and SHA-256. It does not decode data or verify canonical logical values.
 
-Build with `cargo build --release --locked` from this directory, then install
-`target/release/datamonger` on your `PATH`. Tagged releases use `dist` to provide
-archives and SHA-256 checksums for x64 Linux (static musl), x64 and ARM macOS,
-and x64 Windows in [GitHub Releases](https://github.com/jolars/datamonger/releases).
+Install the CLI from crates.io:
+
+```console
+cargo install datamonger --locked
+```
+
+To build from source, run `cargo build --release --locked` from this directory,
+then install `target/release/datamonger` on your `PATH`. Tagged releases use
+`dist` to provide archives and SHA-256 checksums for x64 Linux (static musl),
+x64 and ARM macOS, and x64 Windows in
+[GitHub Releases](https://github.com/jolars/datamonger/releases).
 
 The CLI bundles a stable registry index. Listing and inspecting
 that registry work offline:
@@ -47,9 +54,9 @@ datamonger --selector .datamonger/selector.json list
 
 A selector fixes an index by SHA-256. Treat a selector obtained through an
 untrusted channel as untrusted; the checksum alone does not authenticate its
-publisher. See [TRUST.md](../../TRUST.md).
+publisher. See [TRUST.md](https://github.com/jolars/datamonger/blob/main/TRUST.md).
 
-See the [command-line reference](../../documentation/pages/cli-reference.md)
+See the [command-line reference](https://github.com/jolars/datamonger/blob/main/documentation/pages/cli-reference.md)
 for every command and option. It is generated from the clap definitions with
-clapdown; see [CONTRIBUTING.md](../../CONTRIBUTING.md#development-environment)
+clapdown; see [CONTRIBUTING.md](https://github.com/jolars/datamonger/blob/main/CONTRIBUTING.md#development-environment)
 for the regeneration command.

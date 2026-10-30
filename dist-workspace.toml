@@ -16,6 +16,8 @@ hosting = "github"
 # Versionary creates the draft release, then this workflow adds binaries.
 create-release = false
 dispatch-releases = true
+publish-jobs = ["./publish-cli"]
+github-custom-job-permissions = { "publish-cli" = { contents = "read", id-token = "write" } }
 
 [dist.github-action-commits]
 "actions/checkout" = "v7"

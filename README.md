@@ -50,8 +50,14 @@ include("tools/dm_julia_core.jl")
 ### CLI
 
 Download a prebuilt binary from [GitHub
-releases](https://github.com/jolars/datamonger/releases), or install from the
-checkout with Rust 1.89 or newer:
+releases](https://github.com/jolars/datamonger/releases), or install from crates.io
+with Rust 1.89 or newer:
+
+```console
+cargo install datamonger --locked
+```
+
+To install from a checkout:
 
 ```console
 cargo install --locked --path packages/cli
