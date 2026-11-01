@@ -4,7 +4,9 @@
 
 The Python client lives in `packages/python`; the R and Julia clients
 live in `packages/r` and `packages/julia`; the standalone Rust CLI lives in
-`packages/cli`. The reusable Rust decoder lives in `crates/datamonger-core`;
+`packages/cli`. The reusable Rust decoder lives in `crates/datamonger-core`.
+The core, FFI, Python bindings, and CLI share the root Cargo workspace, lockfile,
+and target directory; the R adapter is excluded.
 Python binds it through PyO3 and Maturin, and the R adapter vendors its published
 crates.io release and uses extendr bindings. Julia loads native artifacts through
 the C ABI in `crates/datamonger-ffi`; see `CONTRIBUTING.md` for local builds.

@@ -7,8 +7,32 @@ import argparse
 import json
 import subprocess
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
+
+
+def runtime_packages(metadata: dict[str, Any]) -> set[str]:
+    """Select the FFI dependency graph without unrelated workspace or test crates."""
+    root = next(
+        package["id"]
+        for package in metadata["packages"]
+        if package["name"] == "datamonger-ffi"
+    )
+    nodes = {node["id"]: node for node in metadata["resolve"]["nodes"]}
+    selected: set[str] = set()
+    pending = [root]
+    while pending:
+        package_id = pending.pop()
+        if package_id in selected:
+            continue
+        selected.add(package_id)
+        pending.extend(
+            dependency["pkg"]
+            for dependency in nodes[package_id]["deps"]
+            if any(kind["kind"] != "dev" for kind in dependency["dep_kinds"])
+        )
+    return selected
 
 
 def main() -> None:
@@ -28,8 +52,11 @@ def main() -> None:
             text=True,
         )
     )
+    selected = runtime_packages(metadata)
     notices = ["Rust source authorship and licenses\n"]
     for package in sorted(metadata["packages"], key=lambda p: p["name"]):
+        if package["id"] not in selected:
+            continue
         notices.extend(
             [
                 "=" * 72,

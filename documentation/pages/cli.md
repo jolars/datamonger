@@ -15,7 +15,7 @@ Or build from the Datamonger repository root:
 cargo build --release --locked --manifest-path packages/cli/Cargo.toml
 ```
 
-Use the binary at `packages/cli/target/release/datamonger`, or install it on your
+Use the binary at `target/release/datamonger`, or install it on your
 `PATH`. The bundled stable registry supports offline listing and inspection:
 
 ```console

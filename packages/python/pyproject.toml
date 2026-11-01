@@ -57,8 +57,8 @@ dev = [
 [tool.maturin]
 module-name = "datamonger._native"
 python-source = "src"
-locked = true
-include = [{ path = "Cargo.lock", format = "sdist" }]
+# Source builds must prune the shared lockfile after Maturin trims the workspace.
+# Release wheel builds enforce --locked explicitly.
 
 [tool.pytest.ini_options]
 addopts = "-ra --strict-markers"

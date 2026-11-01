@@ -11,7 +11,8 @@ cargo install datamonger --locked
 ```
 
 To build from source, run `cargo build --release --locked` from this directory,
-then install `target/release/datamonger` on your `PATH`. Tagged releases use
+then install the workspace's `../../target/release/datamonger` on your `PATH`.
+Tagged releases use
 `dist` to provide archives and SHA-256 checksums for x64 Linux (static musl),
 x64 and ARM macOS, and x64 Windows in
 [GitHub Releases](https://github.com/jolars/datamonger/releases).

@@ -52,7 +52,7 @@ jobs:
               library: datamonger_ffi.dll,
             }
     env:
-      RUSTUP_TOOLCHAIN: "1.82.0"
+      RUSTUP_TOOLCHAIN: stable
       MACOSX_DEPLOYMENT_TARGET: ${{ matrix.platform.deployment || '' }}
       RUSTFLAGS: ${{ matrix.platform.os == 'windows-latest' && '-C target-feature=+crt-static' || '' }}
       NATIVE_TAG: ${{ inputs.native-tag }}
@@ -68,7 +68,11 @@ jobs:
           ref: ${{ inputs.ref || github.sha }}
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: "1.82.0"
+          toolchain: stable
+      - name: Select minimum Rust compiler
+        run: |
+          rustup toolchain install 1.82.0 --profile minimal
+          echo "RUSTC=$(rustup which --toolchain 1.82.0 rustc)" >> "$GITHUB_ENV"
       - uses: julia-actions/setup-julia@v3
         with:
           version: "1.10"
@@ -76,9 +80,11 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           docker run --rm -v "$PWD:/io" -w /io "$BUILD_IMAGE" bash -ec '
-            curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain 1.82.0
+            curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
             export PATH="/root/.cargo/bin:$PATH"
-            export RUSTUP_TOOLCHAIN=1.82.0
+            export RUSTUP_TOOLCHAIN=stable
+            rustup toolchain install 1.82.0 --profile minimal
+            export RUSTC="$(rustup which --toolchain 1.82.0 rustc)"
             cargo build --release --locked --manifest-path crates/datamonger-ffi/Cargo.toml
           '
       - name: Build native library
@@ -89,8 +95,8 @@ jobs:
         run: |
           cc -Wall -Wextra -Werror -I crates/datamonger-ffi/include \
             crates/datamonger-ffi/tests/abi.c \
-            -L crates/datamonger-ffi/target/release -ldatamonger_ffi \
-            -Wl,-rpath,"$PWD/crates/datamonger-ffi/target/release" -o "$RUNNER_TEMP/abi-test"
+            -L target/release -ldatamonger_ffi \
+            -Wl,-rpath,"$PWD/target/release" -o "$RUNNER_TEMP/abi-test"
           "$RUNNER_TEMP/abi-test" tests/conformance/artifacts/small.libsvm
       - name: Collect native license notices
         run: python tools/dm_ffi_licenses.py COPYRIGHTS
@@ -100,7 +106,7 @@ jobs:
             NATIVE_TAG="$(python -c 'import tomllib; print("datamonger-ffi-v" + tomllib.load(open("crates/datamonger-ffi/Cargo.toml", "rb"))["package"]["version"])')"
           fi
           julia tools/dm_julia_artifacts.jl pack \
-            "$JULIA_PLATFORM" "crates/datamonger-ffi/target/release/$NATIVE_LIBRARY" \
+            "$JULIA_PLATFORM" "target/release/$NATIVE_LIBRARY" \
             COPYRIGHTS native-artifacts \
             "https://github.com/jolars/datamonger/releases/download/$NATIVE_TAG"
       - uses: actions/upload-artifact@v7

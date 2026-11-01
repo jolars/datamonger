@@ -45,9 +45,8 @@ jobs:
         run: |
           npx --yes versionary@1 verify
           uv lock --check --project packages/python
-          for package in crates/datamonger-core crates/datamonger-ffi packages/cli packages/python packages/r/src/rust; do
-            cargo metadata --manifest-path "$package/Cargo.toml" --locked --format-version 1 > /dev/null
-          done
+          cargo metadata --locked --format-version 1 > /dev/null
+          cargo metadata --manifest-path packages/r/src/rust/Cargo.toml --locked --format-version 1 > /dev/null
       - name: Check vendored Rust sources and shared fixtures
         run: |
           python tools/dm_rust_sources.py --check
@@ -168,7 +167,7 @@ jobs:
     if: ${{ !cancelled() && needs.ci-policy.outputs.run_checks != 'false' }}
     runs-on: ${{ matrix.os }}
     env:
-      RUSTUP_TOOLCHAIN: ${{ matrix.rust }}
+      RUSTUP_TOOLCHAIN: stable
     strategy:
       fail-fast: false
       matrix:
@@ -184,28 +183,47 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: ${{ matrix.rust }}
+          toolchain: stable
           components: rustfmt, clippy
+      - name: Select minimum Rust compiler
+        if: matrix.rust != 'stable'
+        shell: bash
+        run: |
+          rustup toolchain install "${{ matrix.rust }}" --profile minimal
+          echo "RUSTC=$(rustup which --toolchain '${{ matrix.rust }}' rustc)" >> "$GITHUB_ENV"
+          echo "RUSTDOC=$(rustup which --toolchain '${{ matrix.rust }}' rustdoc)" >> "$GITHUB_ENV"
       - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: crates/datamonger-core
       - name: Check vendored Rust sources and fixtures
         working-directory: .
         run: python tools/dm_rust_sources.py --check
       - run: cargo fmt --check
+        if: matrix.rust == 'stable'
       - run: cargo clippy --locked --all-targets -- -D warnings
+        if: matrix.rust == 'stable'
       - run: cargo test --locked
       - name: Check C ABI crate
         working-directory: crates/datamonger-ffi
+        shell: bash
         run: |
-          cargo fmt --check
-          cargo clippy --locked --all-targets -- -D warnings
+          if [[ "${{ matrix.rust }}" == stable ]]; then
+            cargo fmt --check
+            cargo clippy --locked --all-targets -- -D warnings
+          fi
           cargo test --locked
       - run: cargo doc --locked --no-deps
         env:
           RUSTDOCFLAGS: -D warnings
       - name: Verify standalone crate package
         run: cargo package --locked
+      - name: Test standalone crate with minimum Cargo
+        if: matrix.rust != 'stable'
+        shell: bash
+        run: |
+          stage="$(mktemp -d)"
+          version="$(python -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["package"]["version"])')"
+          tar -xf "../../target/package/datamonger-core-$version.crate" -C "$stage"
+          rustup run '${{ matrix.rust }}' cargo test --locked \
+            --manifest-path "$stage/datamonger-core-$version/Cargo.toml"
 
   cli-quality:
     needs: ci-policy
@@ -268,8 +286,6 @@ jobs:
           enable-cache: true
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: packages/python
       - name: Install dependencies
         run: uv sync --locked --all-groups
       - name: Check Python binding formatting

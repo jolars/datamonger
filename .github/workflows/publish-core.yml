@@ -20,7 +20,7 @@ jobs:
       id-token: write
     env:
       RELEASE_TAG: ${{ github.event.release.tag_name }}
-      RUSTUP_TOOLCHAIN: "1.82.0"
+      RUSTUP_TOOLCHAIN: stable
     defaults:
       run:
         working-directory: crates/datamonger-core
@@ -45,7 +45,14 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: "1.82.0"
+          toolchain: stable
+
+      - name: Select minimum Rust compiler
+        shell: bash
+        run: |
+          rustup toolchain install 1.82.0 --profile minimal
+          echo "RUSTC=$(rustup which --toolchain 1.82.0 rustc)" >> "$GITHUB_ENV"
+          echo "RUSTDOC=$(rustup which --toolchain 1.82.0 rustdoc)" >> "$GITHUB_ENV"
 
       - name: Test crate
         run: cargo test --locked

@@ -29,8 +29,3 @@ tempfile = "3"
 
 [dev-dependencies]
 clapdown = "0.3.0"
-
-# The profile that 'dist' will build with
-[profile.dist]
-inherits = "release"
-lto = "thin"

@@ -1,0 +1,14 @@
+[workspace]
+members = [
+    "crates/datamonger-core",
+    "crates/datamonger-ffi",
+    "packages/cli",
+    "packages/python",
+]
+exclude = ["packages/r/src/rust"]
+# Cargo preserves this resolver in published crates, which support Rust 1.82.
+resolver = "2"
+
+[profile.dist]
+inherits = "release"
+lto = "thin"

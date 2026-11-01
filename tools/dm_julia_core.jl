@@ -10,7 +10,7 @@ if haskey(ENV, "DM_CORE_RUSTC")
     command = addenv(command, "RUSTC" => ENV["DM_CORE_RUSTC"])
 end
 run(command)
-library = joinpath(dirname(manifest), "target", "release",
+library = joinpath(root, "target", "release",
                    (Sys.iswindows() ? "" : "lib") * "datamonger_ffi.$(Libdl.dlext)")
 hash = create_artifact() do directory
     mkpath(joinpath(directory, "lib"))

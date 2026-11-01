@@ -2,7 +2,8 @@
 
 let
   corePkgs = pkgs.extend (import inputs.rust-overlay);
-  coreRust = corePkgs.rust-bin.fromRustupToolchainFile ./crates/datamonger-core/rust-toolchain.toml;
+  workspaceRust = corePkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
+  coreRust = corePkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain-msrv.toml;
 in
 {
   packages = [
@@ -72,7 +73,7 @@ in
     );
   };
 
-  env.DM_CORE_CARGO = "${coreRust}/bin/cargo";
+  env.DM_CORE_CARGO = "${workspaceRust}/bin/cargo";
   env.DM_CORE_RUSTC = "${coreRust}/bin/rustc";
 
   scripts.dm-core-cargo = {
@@ -81,7 +82,7 @@ in
       export PATH="${coreRust}/bin:$PATH"
       export RUSTC="${coreRust}/bin/rustc"
       export RUSTDOC="${coreRust}/bin/rustdoc"
-      exec "${coreRust}/bin/cargo" "$@"
+      exec "${workspaceRust}/bin/cargo" "$@"
     '';
   };
 
@@ -161,8 +162,8 @@ in
     dm_abi_binary="$(mktemp)"
     cc -Wall -Wextra -Werror -I crates/datamonger-ffi/include \
       crates/datamonger-ffi/tests/abi.c \
-      -L crates/datamonger-ffi/target/release -ldatamonger_ffi \
-      -Wl,-rpath,"$dm_repo_root/crates/datamonger-ffi/target/release" \
+      -L target/release -ldatamonger_ffi \
+      -Wl,-rpath,"$dm_repo_root/target/release" \
       -o "$dm_abi_binary"
     "$dm_abi_binary" tests/conformance/artifacts/small.libsvm
     rm "$dm_abi_binary"

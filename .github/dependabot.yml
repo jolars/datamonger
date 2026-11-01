@@ -12,11 +12,9 @@ updates:
       prefix: ci
 
   - package-ecosystem: cargo
-    directories:
-      - /crates/datamonger-core
-      - /crates/datamonger-ffi
-      - /packages/cli
-      - /packages/python
+    directory: /
+    exclude-paths:
+      - packages/r/src/rust/**
     # The R adapter requires a coordinated lockfile and vendor archive refresh.
     # Update it with `devenv tasks run r:vendor` instead.
     schedule:

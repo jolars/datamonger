@@ -72,8 +72,11 @@ Rust code, run `uv sync --reinstall-package datamonger` before Python tests to
 rebuild the extension. The binding uses the repository's stable Rust toolchain;
 the core and R adapter retain their separate MSRV checks. Python source
 releases include the local core, so they do not require an earlier crates.io
-publication. When changing the core's version, update the Python and C ABI
-bindings' Cargo requirements and lockfiles in the same change.
+publication. Maturin includes the shared Cargo lockfile and trims unrelated
+workspace members from source distributions. Source builds allow Cargo to prune
+that lockfile; release wheel builds pass `--locked` explicitly.
+When changing the core's version, update the Python and C ABI
+bindings' Cargo requirements and the workspace lockfile in the same change.
 
 From `packages/python`, check the bindings and compare them with the independent
 Python implementation retained under `tests/reference`:
@@ -108,8 +111,19 @@ R CMD build .
 R CMD check --as-cran datamonger_*.tar.gz
 ```
 
-The Rust core has MSRV 1.82 and its own toolchain, separate from the CLI. From
-the repository root, use the pinned compiler through devenv:
+The core, C ABI, Python bindings, and CLI belong to the root Cargo workspace.
+They share `Cargo.lock` and `target/`, but retain independent versions, editions,
+and minimum Rust versions. From the repository root, run
+`cargo fmt --all --check` and `cargo test --locked --workspace`, or select packages
+with `cargo test --locked -p datamonger-core -p datamonger-ffi`.
+Dependabot updates the workspace as one dependency graph. The R adapter is
+excluded because it resolves and vendors a published core independently.
+
+Workspace commands use current stable Cargo to read the CLI's edition 2024
+manifest. The core and C ABI still support Rust 1.82. The minimum toolchain is
+recorded in `rust-toolchain-msrv.toml`; `dm-core-cargo` combines current Cargo
+with that toolchain's compiler, documentation generator, and lint tools. CI also
+checks the core and C ABI with Rust 1.82. From the repository root:
 
 ```console
 dm-core-cargo test --locked --manifest-path crates/datamonger-core/Cargo.toml
