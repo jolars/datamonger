@@ -10,3 +10,53 @@ updates:
       interval: weekly
     commit-message:
       prefix: ci
+
+  - package-ecosystem: cargo
+    directories:
+      - /crates/datamonger-core
+      - /crates/datamonger-ffi
+      - /packages/cli
+      - /packages/python
+    # The R adapter requires a coordinated lockfile and vendor archive refresh.
+    # Update it with `devenv tasks run r:vendor` instead.
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+    groups:
+      rust:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: uv
+    directory: /packages/python
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+    groups:
+      python:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: npm
+    directory: /documentation
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+    groups:
+      documentation:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+
+# Dependabot does not support R, Julia, or Nix dependency updates.
