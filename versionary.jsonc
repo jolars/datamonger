@@ -5,10 +5,19 @@
   "release-pr-checks": "skip",
   "release-type": "simple",
   "monorepo-mode": "independent",
+  "allow-stable-major": false,
   "separate-release-prs": true,
   "bootstrap-sha": "ff064bc725ed4795b164315fa74ae0178a9f91d5",
   "release-draft": false,
   "release-reference-comments": "best-effort",
+  // Test and README changes alone should not require package releases.
+  // Paths are relative to each package, including the registry.
+  "exclude-paths": [
+    "README.md",
+    "test",
+    "tests",
+    "tests_live"
+  ],
   "packages": {
     "crates/datamonger-core": {
       "release-type": "rust",
@@ -27,8 +36,7 @@
       "exclude-paths": [
         "releases",
         "catalog.json",
-        "latest.json",
-        "README.md"
+        "latest.json"
       ]
     },
     "packages/python": {
@@ -38,17 +46,20 @@
     "packages/r": {
       "release-type": "r",
       "package-name": "datamonger-r",
-      "release-draft": true
+      "release-draft": true,
+      "exclude-paths": ["cran-comments.md"]
     },
     "packages/julia": {
       "release-type": "julia",
       "package-name": "datamonger-julia",
-      "release-draft": true
+      "release-draft": true,
+      "exclude-paths": ["tutorials"]
     },
     "packages/cli": {
       "release-type": "rust",
       "package-name": "datamonger",
-      "release-draft": true
+      "release-draft": true,
+      "exclude-paths": ["examples"]
     }
   }
 }

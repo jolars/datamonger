@@ -72,8 +72,19 @@ and failure modes directly.
 
 Follow the repository's Conventional Commit history, such as `feat: add ...`,
 `fix: validate ...`, `test: share ...`, and `docs: update ...`. Keep subjects
-short and imperative. Pull requests should explain the behavioral change, link
-relevant issues, note registry or specification effects, and include tests.
+short and imperative. Keep commits atomic by the release areas in
+`versionary.jsonc`; split independent core, FFI, client, and registry changes.
+Versionary routes commit messages by changed paths, not commit scopes. Keep
+independent tooling, CI, and documentation changes separate; include required
+lockfile updates with the package change that owns them.
+
+Versionary owns package and registry release versions, changelogs, release
+commits, and tags. Do not bump release versions or edit generated changelogs by
+hand. See `versionary.jsonc` for path exclusions and `OPERATIONS.md` for release
+and publication procedures.
+
+Pull requests should explain the behavioral change, link relevant issues, note
+registry or specification effects, and include tests.
 Before requesting review, run `devenv test` and report any intentionally skipped
 live-source checks.
 

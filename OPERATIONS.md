@@ -67,10 +67,24 @@ the registry publisher completes after validating and attaching the index.
 
 ## Release client packages
 
-After CI succeeds on `main`, Versionary opens or updates one release PR for each
-releasable client. A commit belongs to a client when it changes files under that
-client's package directory. Merging one release PR does not merge or publish
-either of the others.
+After CI succeeds on `main`, Versionary opens or updates release PRs for the
+releasable packages configured in `versionary.jsonc`. Versionary owns release
+versions, changelogs, commits, and tags; do not update them by hand.
+
+Keep commits atomic by release area: core, FFI, each client, and the registry.
+Versionary applies a commit's message to every package whose included paths it
+touches, regardless of its Conventional Commit scope. Split independent changes
+so one package's feature or breaking-change message does not determine another
+package's bump. Required lockfile changes belong with the affected package.
+
+The configured exclusions are relative to each package. Tests, READMEs, Julia
+tutorials, CLI documentation examples, and CRAN submission notes cannot trigger
+a release on their own. The registry also excludes its published snapshots and
+catalog pointers. Runtime code, native artifacts, package metadata, bundled
+registry data, and CLI schemas remain eligible for releases. Root-level tooling,
+CI, website, curation, and specification paths are outside all configured package
+directories and do not directly trigger a package release. Dependency propagation
+can still require related package releases.
 
 ### Rust core
 
