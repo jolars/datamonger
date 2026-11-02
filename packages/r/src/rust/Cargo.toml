@@ -5,6 +5,9 @@ edition = "2021"
 rust-version = "1.82"
 publish = false
 
+# R CMD check can stage this crate beneath another Cargo workspace.
+[workspace]
+
 [lib]
 name = "datamonger_r"
 crate-type = ["rlib", "staticlib"]
