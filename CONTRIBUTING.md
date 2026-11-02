@@ -39,15 +39,19 @@ root, run:
 
 ```console
 devenv shell
-devenv test
+task test
 ```
 
 Entering the shell installs Git hooks for Ruff, nixfmt, and Prettier. The hooks
-format staged Python and Nix files and YAML under `.github` plus `devenv.yaml`.
+format staged Python and Nix files and YAML under `.github`, plus
+`devenv.yaml` and `Taskfile.yml`.
 Generated registry files and conformance fixtures are outside the YAML formatter's
 scope. Run `prek run --all-files` to check all matching files; formatters may
 update files, so review and stage their changes before committing. `devenv test`
 also runs these hooks, and CI checks YAML formatting with Prettier.
+
+`task --list` lists focused checks and maintenance tasks from `Taskfile.yml`.
+`devenv test` delegates to `task test` after running the Git hooks.
 
 The quality gate checks formatting, lints Python, type-checks the package and
 tools, runs the Rust CLI and all three hermetic language client suites, checks
@@ -149,9 +153,9 @@ debug build; `NOT_CRAN=1` permits development without the vendor archive.
 
 Publish core changes before preparing an R release that needs them. Update the
 R adapter's version requirement when needed, then run
-`devenv tasks run r:vendor`. Its `r:catalog` dependency refreshes the compressed
+`task r:vendor`. Its `r:catalog` dependency refreshes the compressed
 catalog offline from the currently bundled registry release. Run
-`devenv tasks run r:catalog` separately to regenerate only the R catalog. The
+`task r:catalog` separately to regenerate only the R catalog. The
 vendor task resolves the published core, runs `rextendr::vendor_crates()`, and
 records the lockfile digest. Commit the compressed catalog, lockfile, vendor
 archive, vendor configuration, and digest. The core receives the same vendoring
@@ -180,7 +184,7 @@ After the crate is published, update the R lockfile and vendor archive:
 
 ```console
 dm-core-cargo update --manifest-path packages/r/src/rust/Cargo.toml -p datamonger-core
-devenv tasks run r:vendor
+task r:vendor
 ```
 
 The R release continues to use its committed dependency version until this
@@ -337,7 +341,7 @@ The R adapter's published vendor archive currently contains core 0.1.0 and
 supports decoder v1. Use `dm-test-r` to exercise v2 against the local core.
 Before releasing R support for v2, publish the updated core, update the R
 core dependency, enable its v2 dispatch for that dependency, and run
-`devenv tasks run r:vendor`. Julia likewise needs a native artifact containing
+`task r:vendor`. Julia likewise needs a native artifact containing
 the new v2 entry points; `tools/dm_julia_core.jl` builds it locally. Do not
 release a registry selecting v2 until the affected client releases are available.
 

@@ -92,6 +92,7 @@ test('keeps declared defaults until other versions are requested', async ({ page
 
 test('restores shared URLs and filters after navigating to a detail page and back', async ({ page }) => {
   await page.goto('/');
+  await expect(page.locator('.contextual-nav [aria-label="Datasets"]')).toHaveCount(0);
   await page.evaluate(() => { window.catalogNavigationTest = true; });
   await page.locator('.desktop-sections').getByRole('link', { name: 'Datasets', exact: true }).click();
   await expect(page.getByRole('search', { name: 'Dataset filters' })).toBeVisible();
@@ -134,6 +135,11 @@ test('provides catalog navigation, details, and examples without JavaScript', as
   const context = await browser.newContext({ javaScriptEnabled: false, baseURL });
   const page = await context.newPage();
   await page.goto('/datasets/');
+  await expect(page.getByRole('navigation', { name: 'Documentation', exact: true })).toBeHidden();
+  await expect(page.getByRole('navigation', { name: 'On this page', exact: true })).toBeHidden();
+  const contentWidth = await page.locator('.page-content').evaluate(element => element.getBoundingClientRect().width);
+  const mainWidth = await page.locator('main').evaluate(element => element.getBoundingClientRect().width);
+  expect(mainWidth).toBeCloseTo(contentWidth, 0);
   await expect(page.locator('main table').getByRole('link')).toHaveCount(defaults.length);
   await page.locator('main table').getByRole('link', { name: 'Iris', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Iris', exact: true })).toBeVisible();

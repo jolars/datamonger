@@ -1,3 +1,10 @@
+.layout:has(.dataset-page) { grid-template-columns: minmax(0, 1fr); }
+.layout:has(.dataset-page) > nav { display: none; }
+.page-content:has(.dataset-page) { grid-column: 1 / -1; display: block; }
+main.dataset-page { max-width: none; }
+.page-content:has(.dataset-page) > .page-toc { display: none; }
+body:has(.dataset-page) .site-footer { margin-left: 0; padding-left: var(--outer-gutter); }
+
 .catalog-filters {
   display: grid;
   gap: 1rem;
@@ -49,9 +56,6 @@
 .catalog-id { display: block; margin-top: .2rem; color: var(--muted); font-family: var(--font-code); font-size: .7rem; overflow-wrap: anywhere; }
 .catalog-table p { margin: 0; }
 @media (min-width: 1100px) {
-  main.catalog-page { max-width: 70rem; }
-  .page-content:has(.catalog-page) { grid-template-columns: minmax(0, 1fr); }
-  .page-content:has(.catalog-page) > .page-toc { display: none; }
   .catalog-categories { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .catalog-ranges { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }

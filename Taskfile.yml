@@ -1,0 +1,165 @@
+version: "3"
+
+dir: "{{.TASKFILE_DIR}}"
+
+set: [errexit, nounset, pipefail]
+
+tasks:
+  test:
+    desc: Run the complete offline quality gate
+    cmds:
+      - task: test:python
+      - task: test:core
+      - task: test:ffi
+      - task: test:abi
+      - task: test:r:rust
+      - task: test:registry
+      - task: test:cli
+      - task: test:fixtures
+      - task: test:julia
+      - task: test:r:package
+      - task: test:r
+
+  test:python:
+    desc: Check and build the Python client
+    cmds:
+      - |
+        cd packages/python
+        "${DM_RUFF:-ruff}" format --check . ../../tools ../../curation
+        "${DM_RUFF:-ruff}" check . ../../tools ../../curation
+        uv run mypy
+        uv run pytest
+        uv run python ../../tools/dm_index.py check
+        uv run python ../../tools/dm_registry_release.py check
+        uv run python ../../tools/dm_index.py check \
+          tests/registry/releases/test-0001/release.yaml
+        uv run python ../../tools/dm_index.py check \
+          tests/registry/releases/test-0002/release.yaml
+        uv build
+        cargo fmt --check
+        cargo clippy --locked --all-targets -- -D warnings
+
+  test:core:
+    desc: Check the Rust core at its MSRV
+    cmds:
+      - |
+        python tools/dm_rust_sources.py --check
+        dm-core-cargo fmt --manifest-path crates/datamonger-core/Cargo.toml --check
+        dm-core-cargo clippy --manifest-path crates/datamonger-core/Cargo.toml \
+          --locked --all-targets -- -D warnings
+        dm-core-cargo test --manifest-path crates/datamonger-core/Cargo.toml --locked
+
+  test:ffi:
+    desc: Check the C ABI crate at its MSRV
+    cmds:
+      - |
+        dm-core-cargo fmt --manifest-path crates/datamonger-ffi/Cargo.toml --check
+        dm-core-cargo clippy --manifest-path crates/datamonger-ffi/Cargo.toml \
+          --locked --all-targets -- -D warnings
+        dm-core-cargo test --manifest-path crates/datamonger-ffi/Cargo.toml --locked
+
+  test:abi:
+    desc: Build and smoke-test the C ABI
+    cmds:
+      - |
+        dm_repo_root="$PWD"
+        julia tools/dm_julia_core.jl
+        dm_abi_binary="$(mktemp)"
+        trap 'rm -f "$dm_abi_binary"' EXIT
+        cc -Wall -Wextra -Werror -I crates/datamonger-ffi/include \
+          crates/datamonger-ffi/tests/abi.c \
+          -L target/release -ldatamonger_ffi \
+          -Wl,-rpath,"$dm_repo_root/target/release" \
+          -o "$dm_abi_binary"
+        "$dm_abi_binary" tests/conformance/artifacts/small.libsvm
+        rm "$dm_abi_binary"
+
+  test:r:rust:
+    desc: Check the R Rust adapter
+    cmds:
+      - |
+        dm-core-cargo fmt --manifest-path packages/r/src/rust/Cargo.toml --check
+        dm-core-cargo clippy --manifest-path packages/r/src/rust/Cargo.toml \
+          --locked --all-targets -- -D warnings
+
+  test:registry:
+    desc: Validate bundled registry assets and schemas
+    cmds:
+      - |
+        uv run --project packages/python python tools/dm_bundle_registry.py --check
+        for schema in index manifest erratum selector catalog; do
+          diff "spec/schema/${schema}-v1.schema.json" \
+            "packages/cli/assets/${schema}-v1.schema.json"
+        done
+        for version in 2 3 4 5; do
+          for schema in index manifest; do
+            diff "spec/schema/${schema}-v${version}.schema.json" \
+              "packages/cli/assets/${schema}-v${version}.schema.json"
+          done
+        done
+
+  test:cli:
+    desc: Check the standalone CLI and its reference
+    cmds:
+      - |
+        cd packages/cli
+        cargo fmt --check
+        cargo clippy --locked --all-targets -- -D warnings
+        cargo test --locked
+        cargo run --locked --example generate_cli_docs -- --check
+
+  test:fixtures:
+    desc: Check shared conformance fixtures
+    cmds:
+      - |
+        diff -r \
+          tests/conformance packages/r/tests/testthat/fixtures/conformance
+        diff -r \
+          tests/conformance packages/julia/test/fixtures/conformance
+
+  test:julia:
+    desc: Test the Julia client
+    cmds:
+      - |
+        julia --project=packages/julia -e \
+          'using Pkg; Pkg.instantiate(); Pkg.test()'
+
+  test:r:package:
+    desc: Build and check the R distribution
+    cmds:
+      - |
+        dm_repo_root="$PWD"
+        dm_r_check_dir="$(mktemp -d)"
+        trap 'rm -rf "$dm_r_check_dir"' EXIT
+        cd "$dm_r_check_dir"
+        R CMD build "$dm_repo_root/packages/r"
+        _R_CHECK_CRAN_INCOMING_REMOTE_=false \
+          R CMD check --no-manual --as-cran datamonger_*.tar.gz
+
+  test:r:
+    desc: Test R against the local Rust core
+    cmds:
+      - |
+        dm-test-r
+
+  r:catalog:
+    desc: Refresh the compressed R catalog from the bundled registry
+    cmds:
+      - uv run --project packages/python python tools/dm_bundle_registry.py --refresh-r
+
+  r:vendor:
+    desc: Vendor the R package's published Rust dependencies
+    cmds:
+      - task: r:catalog
+      - dm-core-cargo metadata --manifest-path packages/r/src/rust/Cargo.toml --format-version 1 > /dev/null
+      - Rscript -e 'rextendr::vendor_crates("packages/r", overwrite = TRUE, clean = TRUE)'
+      - python tools/dm_rust_sources.py --record-vendor
+
+  docs:serve:
+    desc: Serve the built documentation at http://127.0.0.1:8001
+    vars:
+      PORT: '{{default "8001" .PORT}}'
+    env:
+      DM_DOCS_PORT: "{{.PORT}}"
+    cmds:
+      - python tools/dm_docs.py --serve --port "$DM_DOCS_PORT"

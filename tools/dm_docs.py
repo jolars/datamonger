@@ -39,6 +39,17 @@ def install(documentation: Path) -> None:
         if "</head>" not in html:
             raise ValueError(f"Missing </head> in {page}")
         is_dataset = page.is_relative_to(site / "datasets")
+        html = re.sub(
+            r'<section class="nav-group" role="group" aria-label="Datasets">'
+            r".*?</section>",
+            "",
+            html,
+            flags=re.DOTALL,
+        )
+        if is_dataset:
+            html = html.replace(
+                '<main id="main">', '<main id="main" class="dataset-page">'
+            )
 
         def navigation(match: re.Match[str], is_dataset: bool = is_dataset) -> str:
             links = re.sub(

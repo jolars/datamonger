@@ -27,19 +27,22 @@ Enter the repository's devenv shell before development. The main quality gate
 matches CI:
 
 ```console
-devenv test
+task test
 ```
+
+`devenv test` also runs the Git hooks before delegating to `task test`.
+Use `task --list` for focused checks and maintenance tasks.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md#development-environment) for focused
 commands and live-source checks. Run live checks only when network access and
 upstream availability are expected.
 
 Use `dm-test-r` to test the R adapter against local core edits. Run
-`devenv tasks run r:vendor` after updating published Rust dependencies.
+`task r:vendor` after updating published Rust dependencies.
 R builds regenerate extendr wrappers automatically. See `CONTRIBUTING.md` for
 release ordering and MSRV checks.
 
-The CLI bundles stable registry assets in `packages/cli/assets`; `devenv test`
+The CLI bundles stable registry assets in `packages/cli/assets`; `task test`
 checks them against their selected registry release and `spec/schema`.
 
 ## Coding Style & Naming Conventions
@@ -64,7 +67,7 @@ variant suffixes (for example, `rcv1-binary`). Preserve the provider's spelling 
 Use pytest for Python, testthat for R, and `Test` for Julia. Add regression tests
 beside the affected client, prefer existing fixtures, and keep routine tests
 deterministic and offline. The R and Julia packages copy the small shared corpus
-into their package tests; `devenv test` verifies those copies against
+into their package tests; `task test` verifies those copies against
 `tests/conformance`. No coverage threshold is configured; cover new branches
 and failure modes directly.
 
@@ -85,7 +88,7 @@ and publication procedures.
 
 Pull requests should explain the behavioral change, link relevant issues, note
 registry or specification effects, and include tests.
-Before requesting review, run `devenv test` and report any intentionally skipped
+Before requesting review, run `task test` and report any intentionally skipped
 live-source checks.
 
 ## Maintaining this file

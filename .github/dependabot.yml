@@ -16,7 +16,7 @@ updates:
     exclude-paths:
       - packages/r/src/rust/**
     # The R adapter requires a coordinated lockfile and vendor archive refresh.
-    # Update it with `devenv tasks run r:vendor` instead.
+    # Update it with `task r:vendor` instead.
     schedule:
       interval: weekly
     commit-message:

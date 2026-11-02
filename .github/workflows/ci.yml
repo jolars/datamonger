@@ -70,7 +70,7 @@ jobs:
         with:
           node-version: "24"
       - name: Check YAML formatting
-        run: npx --yes prettier@3.9.6 --check '.github/**/*.yml' '.github/**/*.yaml' devenv.yaml --no-error-on-unmatched-pattern
+        run: npx --yes prettier@3.9.6 --check '.github/**/*.yml' '.github/**/*.yaml' devenv.yaml Taskfile.yml --no-error-on-unmatched-pattern
 
   python-distribution-changes:
     runs-on: ubuntu-latest

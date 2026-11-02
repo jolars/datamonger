@@ -32,10 +32,11 @@ R CMD INSTALL --library=/tmp/datamonger-docs-library packages/r
 python tools/dm_catalog.py
 diplodocus build --config documentation/diplodocus.yaml --output documentation/site
 npm ci --ignore-scripts --prefix documentation
-python tools/dm_docs.py --serve --port 8001
+task docs:serve
 ```
 
-Open <http://127.0.0.1:8001/>. The preview serves the completed files with the
+Open <http://127.0.0.1:8001/>. Use `task docs:serve PORT=8002` to choose
+another port. The preview serves the completed files with the
 same clean page URLs as the deployed site. Diplodocus's built-in `serve` uses
 an in-memory site and cannot include assets installed after rendering.
 Generated snapshots, site files, and npm dependencies are ignored by Git.
