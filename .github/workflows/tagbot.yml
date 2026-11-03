@@ -1,0 +1,24 @@
+name: Julia TagBot
+
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+
+concurrency:
+  group: julia-tagbot
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    if: github.event_name == 'workflow_dispatch' || github.event.comment.user.login == 'JuliaTagBot'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: JuliaRegistries/TagBot@v1
+        with:
+          token: ${{ secrets.RELEASE_TOKEN || github.token }}
+          subdir: packages/julia
+          tag_prefix: datamonger-julia
+          changelog: "{{ custom }}"
