@@ -1,10 +1,3 @@
-.layout:has(.dataset-page) { grid-template-columns: minmax(0, 1fr); }
-.layout:has(.dataset-page) > nav { display: none; }
-.page-content:has(.dataset-page) { grid-column: 1 / -1; display: block; }
-main.dataset-page { max-width: none; }
-.page-content:has(.dataset-page) > .page-toc { display: none; }
-body:has(.dataset-page) .site-footer { margin-left: 0; padding-left: var(--outer-gutter); }
-
 .catalog-filters {
   display: grid;
   gap: 1rem;

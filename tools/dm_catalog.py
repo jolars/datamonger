@@ -261,6 +261,7 @@ def browser_page(entries: Sequence[Entry], selector: Mapping[str, Any]) -> str:
         if entry["default"]
     ]
     return (
+        "---\nlayout: full\n---\n\n"
         "# Datasets\n\n"
         "Find research datasets to use with Datamonger in Python, R, Julia, "
         "or the CLI. Open a dataset for its provenance, variables, citations, "
@@ -355,6 +356,7 @@ def dataset_page(
 ) -> str:
     """Render human-readable metadata without expanding wide variable lists."""
     lines = [
+        "---\nlayout: full\n---",
         f"# {_text(entry['title'])}",
         _link("Browse datasets", "../../index.md", local=True),
         f"`{entry['id']}` · Registry `{selector['release']}`. "

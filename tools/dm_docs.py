@@ -46,10 +46,6 @@ def install(documentation: Path) -> None:
             html,
             flags=re.DOTALL,
         )
-        if is_dataset:
-            html = html.replace(
-                '<main id="main">', '<main id="main" class="dataset-page">'
-            )
 
         def navigation(match: re.Match[str], is_dataset: bool = is_dataset) -> str:
             links = re.sub(

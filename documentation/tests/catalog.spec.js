@@ -10,6 +10,19 @@ const openCatalog = async (page, path = '/datasets/') => {
   await expect(page.getByRole('search', { name: 'Dataset filters' })).toBeVisible();
 };
 
+test('uses the full layout without sidebar shading in either theme', async ({ page }) => {
+  for (const colorScheme of ['light', 'dark']) {
+    await page.emulateMedia({ colorScheme });
+    for (const path of ['/datasets/', '/datasets/uci/iris/1']) {
+      await page.goto(path);
+      await expect(page.locator('body')).toHaveAttribute('data-layout', 'full');
+      await expect(page.locator('body')).toHaveCSS('background-image', 'none');
+      await expect(page.getByRole('navigation', { name: 'Documentation', exact: true })).toBeHidden();
+      await expect(page.getByRole('navigation', { name: 'On this page', exact: true })).toHaveCount(0);
+    }
+  }
+});
+
 test('searches descriptions, exact identifiers, and misspelled names', async ({ page }) => {
   await openCatalog(page);
   await expect(results(page)).toHaveCount(defaults.length);
