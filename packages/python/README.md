@@ -1,362 +1,203 @@
-# Datamonger Python client
+# Datamonger <img src="https://raw.githubusercontent.com/jolars/datamonger/refs/heads/main/assets/logo.png" align="right" width="139" alt="A datamonger carrying a box of data" />
 
-This package is the Python client for Datamonger's stable specification revision 1.
-It uses `datamonger-core` for decoding, artifact decompression, and canonical
-verification. Registry selection, retrieval, caching, metadata, and pandas and
-SciPy return types belong to the Python client.
+[![PyPI](https://img.shields.io/pypi/v/datamonger.svg?logo=python)](https://pypi.org/project/datamonger/)
+[![CI](https://github.com/jolars/datamonger/actions/workflows/ci.yml/badge.svg)](https://github.com/jolars/datamonger/actions/workflows/ci.yml)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.23692468-blue)](https://doi.org/10.5281/zenodo.23692468)
 
-## Installation and status
+Datamonger retrieves public research datasets in Python. It downloads and caches
+dataset files, returns pandas data frames and SciPy sparse matrices, and
+verifies that the decoded values match those in the registry. R and Julia
+clients share the same registry and verification contracts.
 
-The package requires Python 3.11 or newer. Release builds provide stable ABI
-wheels for CPython on Linux (glibc 2.17 or newer) and macOS, on x86_64 and
-ARM64, and Windows on x86_64. Installing a wheel requires no Rust compiler.
+Each dataset has a versioned record describing its source, format, provenance,
+license, and citations. You can pin the registry and dataset version to keep an
+analysis reproducible.
 
-Source builds require a stable Rust toolchain and a C linker. Install from the
-repository root with:
+## Installation
+
+Install from [PyPI](https://pypi.org/project/datamonger/) with Python 3.11 or
+newer:
+
+```console
+python -m pip install datamonger
+```
+
+Prebuilt wheels are available for Linux, macOS, and Windows. Installing a wheel
+requires no Rust compiler. Source builds require a stable Rust toolchain and a C
+linker.
+
+## Usage
+
+Load a dataset by its `source:name` reference:
+
+```python
+from datamonger import fetch_data
+
+iris = fetch_data("uci:iris")
+heart = fetch_data("libsvm:heart_scale")
+```
+
+Delimited datasets return a `pandas.DataFrame`. LIBSVM datasets return a
+`SparseDataset` with a SciPy CSR `features` matrix and a NumPy `response`
+vector:
+
+```python
+print(iris.head())
+print(heart.features.shape, heart.response.shape)
+```
+
+Datasets with train/test splits return a `SparseDatasetSplit` with separate
+`train` and `test` fields. Datasets with provider-named splits return a
+`DatasetSplits` mapping, accessed with keys such as `data["train"]` and
+`data["validation"]`. Datamonger preserves each split's row membership.
+
+Files are downloaded on first use and kept in a verified local cache. The
+registry index is bundled with the package, so you can browse metadata without
+network access. Dataset files are downloaded separately.
+
+Use `list_data()` to browse the registry, `data_info()` to inspect a dataset's
+metadata, and `cite_data()` to retrieve its citations without downloading data:
+
+```python
+from datamonger import cite_data, data_info, list_data
+
+datasets = list_data()
+info = data_info("uci:iris")
+print(info.license)
+print(cite_data("uci:iris"))
+```
+
+To retrieve a verified file without decoding it, use `fetch_artifact()`:
+
+```python
+from datamonger import fetch_artifact
+
+iris_csv = fetch_artifact("uci:iris")
+```
+
+This returns a `pathlib.Path` in the cache. For datasets with several artifacts,
+select one explicitly, for example with `artifact="train"`. Files retain their
+registered format and compression.
+
+## Reproducibility
+
+Select an explicit dataset version and retain the verification metadata with
+your analysis:
+
+```python
+result = fetch_data("uci:iris@1", return_info=True)
+iris = result.data
+print(result.info.dataset_id)
+print(result.info.registry_release, result.info.registry_index_sha256)
+print(result.info.canonical_digest)
+```
+
+`return_info=True` wraps the decoded data with its resolved identity, registry
+selector, artifact digests, and decoded-verification record. Datamonger checks
+artifact sizes and SHA-256 hashes, then verifies decoded shapes and a canonical
+SHA-256 digest.
+
+Dataset operations also accept separate arguments, such as
+`fetch_data("iris", source="uci", version="1")`. Omit `source` for qualified
+references and omit `version` when the reference embeds it. Without a version,
+Datamonger uses the registry's declared default.
+
+Pin a project's registry by checking its selector into
+`.datamonger/selector.json`. To obtain a selector for a published release, use
+an explicit catalog lookup:
+
+```python
+from datamonger import resolve_registry
+
+registry = resolve_registry("1.4.0")
+print(registry.release, registry.index_sha256, registry.index_url)
+iris = fetch_data("uci:iris@1", registry=registry)
+```
+
+A project selector records those fields and a schema version:
+
+```json
+{
+  "schema_version": 1,
+  "release": "<registry.release>",
+  "index_sha256": "<registry.index_sha256>",
+  "index_url": "<registry.index_url>"
+}
+```
+
+Replace the placeholders with the resolved values. Keep that selector with your
+analysis; looking up the release name again is not a cryptographic pin.
+
+Registry selection follows this order: a `registry=` argument, a session setting
+from `set_registry()`, the nearest project selector, and the bundled registry.
+Use `active_registry()` to inspect the current selection and
+`set_registry(None)` to clear a session setting. Registry updates are always
+explicit.
+
+See the [trust model](https://github.com/jolars/datamonger/blob/main/TRUST.md)
+for verification guarantees and their limits.
+
+## Offline use and caching
+
+Once a dataset is cached, reuse it without network access:
+
+```python
+iris = fetch_data("uci:iris@1", offline=True)
+```
+
+Offline mode keeps the same registry selection and requires valid cached files.
+The bundled registry index is always available. Missing or corrupt cached
+artifacts raise `OfflineError`; unavailable registry indexes raise
+`RegistryOfflineError`. Both are exported from `datamonger.errors`.
+
+Inspect the cache or remove the artifacts for a dataset version:
+
+```python
+from datamonger import cache_clean, cache_info
+
+info = cache_info()
+print(info.location, info.total_size)
+cache_clean(dataset="uci:iris@1")
+```
+
+`cache_clean()` also accepts an `older_than` duration. Calling it without
+filters selects the entire cache. Entries in use by another process are skipped,
+and Datamonger never evicts files automatically. Pass `cache_dir=` consistently
+to cache operations to use a custom location.
+
+## Documentation
+
+- [Documentation website](https://datamonger.dev/)—guides and API references.
+- [Dataset catalog](https://datamonger.dev/datasets/)—available datasets and
+  retrieval examples.
+- [Project repository](https://github.com/jolars/datamonger)—R, Julia, and CLI
+  clients, specifications, and architecture.
+- [Changelog](https://github.com/jolars/datamonger/blob/main/packages/python/CHANGELOG.md)—Python
+  client release notes.
+
+## Citation
+
+If you use Datamonger in your research, please cite the release you used. Select
+that release in the [Zenodo archive](https://doi.org/10.5281/zenodo.23692468)
+and export its citation. To cite Datamonger generally, use the concept DOI
+`10.5281/zenodo.23692468`.
+
+Use `cite_data()` for dataset citations. Dataset metadata also preserves
+upstream citation instructions and references.
+
+## Contributing
+
+See the [contributor
+guide](https://github.com/jolars/datamonger/blob/main/CONTRIBUTING.md) for
+development setup and how to add or revise datasets. To install from a
+repository checkout, run this command from the repository root:
 
 ```console
 python -m pip install ./packages/python
 ```
 
-For development, enter the repository's devenv shell and use the locked
-environment documented in the [contributor
-guide](https://github.com/jolars/datamonger/blob/main/CONTRIBUTING.md).
-
-The package requires pandas, NumPy, SciPy, platformdirs, and portalocker. The
-project code is MIT-licensed; datasets retain their own licenses and terms. See
-the repository's [trust
-model](https://github.com/jolars/datamonger/blob/main/TRUST.md) before relying
-on registry license, distribution, or preservation metadata.
-
-## Quick start
-
-The client bundles the immutable stable registry snapshot and verifies it
-against a trusted digest shipped in the package. It is the default registry, so
-the index remains available without network access:
-
-```python
-from datamonger import fetch_data
-
-iris = fetch_data("iris", source="uci")
-heart = fetch_data("heart_scale", source="libsvm")
-```
-
-`fetch_data()`, `data_info()`, and `fetch_artifact()` also accept the dataset
-references used by the CLI:
-
-```python
-iris = fetch_data("uci:iris")
-iris_v1 = fetch_data("uci:iris@1")
-iris_v1 = fetch_data("uci:iris", version="1")
-```
-
-A bare name requires `source`. Omit `source` for qualified references, and omit
-`version` when the reference embeds it. Duplicate arguments raise an error even
-when the values agree. An omitted version selects the registry's declared
-default.
-
-Only the registry index is bundled; retrieving an uncached dataset artifact
-still requires network access. The active registry is selected, in descending
-precedence, by a `registry=` argument, a session setting, the nearest project
-selector, and finally `BUNDLED_REGISTRY`. Updates are always explicit—none of
-these scopes resolves a floating release name.
-
-For a reproducible analysis, pass an explicit dataset `version` and use
-`return_info=True`. Retain the resolved `dataset_id`, `registry_release`,
-`registry_index_sha256`, artifact digests, verification level, canonical-form
-version, and canonical digest.
-
-## Registry selection
-
-To discover a published selector by its bare release name, make an explicit
-catalog lookup:
-
-```python
-from datamonger import fetch_data, resolve_registry
-
-registry = resolve_registry("candidate-0002")
-print(registry.index_sha256)
-iris = fetch_data("iris", source="uci", registry=registry)
-```
-
-`resolve_registry()` reads the mutable catalog over HTTPS and returns a frozen
-`Registry` containing the resolved release, index digest, and index URL. The
-lookup is trusted only as strongly as that TLS session. Record and reuse the
-returned selector when reproducibility matters; looking up the same bare name
-again is not a cryptographic pin. The API accepts a custom HTTPS `catalog_url`
-for alternate registries. It does not support floating aliases such as `latest`.
-
-Pass a `Registry` for one call when the selection belongs to one operation:
-
-```python
-from datamonger import Registry, fetch_data
-
-registry = Registry(
-    release="2026.08",
-    index_sha256="0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-    index_url="https://registry.example/2026.08/index.json",
-)
-iris = fetch_data("iris", source="uci", registry=registry)
-```
-
-Use `set_registry(registry)` to keep that selector active for the Python
-session, and use `set_registry(None)` to clear it. `active_registry()` reports
-the selector that an unqualified call would use:
-
-```python
-from datamonger import active_registry, set_registry
-
-set_registry(registry)
-assert active_registry() == registry
-set_registry(None)
-```
-
-To pin a project, check the selector into `.datamonger/selector.json` at the
-project root:
-
-```json
-{
-  "schema_version": 1,
-  "release": "2026.08",
-  "index_sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-  "index_url": "https://registry.example/2026.08/index.json"
-}
-```
-
-Datamonger searches from the current working directory toward the filesystem
-root and uses the nearest such file. A malformed project selector is an error;
-it never causes a fallback to another registry. The release and digest form the
-strong selector. The URL is only its retrieval location, and possession of a
-digest authenticates nothing beyond the channel from which the selector came.
-
-## Return types and decoded verification
-
-The decoded return type is fixed by the representation:
-
-  | Representation   | Artifact formats                        | Python return type   |
-  | ---------------- | --------------------------------------- | -------------------- |
-  | `delimited-text` | CSV or TSV                              | `pandas.DataFrame`   |
-  | `libsvm`         | LIBSVM or SVMLight                      | `SparseDataset`      |
-  | `libsvm-split`   | LIBSVM or SVMLight                      | `SparseDatasetSplit` |
-  | `named-splits`   | Per-split CSV, TSV, LIBSVM, or SVMLight | `DatasetSplits`      |
-
-Delimited frames use pandas' nullable `Float64`, `Int64`, `string`, and
-`boolean` dtypes, according to the declared logical column types. A frozen
-`SparseDataset` record contains a float64 SciPy CSR `features` matrix and an
-int64 or float64 NumPy `response` vector, according to `label_type`. A frozen
-`SparseDatasetSplit` has separate `train` and `test` fields containing those
-same records, so neither input is concatenated or discarded. The public
-`DatasetData` type alias includes these return types and `DatasetSplits`.
-
-`DatasetSplits` is an ordered mapping using the provider's exact split names.
-For example, `data["train"]`, `data["validation"]`, and `data["test"]` select
-separate tables or sparse datasets. Feature-only test tables have no response
-column. The [named splits contract](../../spec/decoders/named-splits-v1.md)
-requires manifest schema 4 and keeps every split's original row membership.
-
-`return_info=True` wraps the same decoded object in `FetchResult.data`; it does
-not change its representation. Pandas, NumPy, and SciPy are required
-dependencies, so return types never depend on which optional packages happen to
-be installed.
-
-CSV, TSV, LIBSVM, and SVMLight artifacts support manifest-declared `none`,
-`gzip`, and `bzip2` compression. The client verifies and caches the exact
-compressed artifact, then decompresses it for decoding; file names and URLs do
-not determine the compression method.
-
-Use `return_info=True` to receive a `FetchResult` containing the resolved
-dataset identity, registry selector, artifact digests, and decoded-verification
-record. Decoded verification is enabled by default for every representation. It
-checks both the expected component shapes and the canonical SHA-256. For
-diagnostic or performance-sensitive work, `verify_decoded=False` explicitly
-skips those checks while retaining mandatory artifact size and SHA-256
-verification; `FetchInfo.verification` then reports `"artifact"` rather than
-`"decoded"`.
-
-## Metadata and artifact access
-
-Inspect registry metadata without retrieving an artifact with `data_info()`, or
-enumerate every version in the active immutable release with `list_data()`:
-
-```python
-from datamonger import data_info, list_data
-
-iris_info = data_info("iris", source="uci")
-assert iris_info.dataset_id == "uci:iris@1"
-for info in list_data():
-    print(info.dataset_id, info.modality, info.representation["expect"])
-```
-
-Both operations use the same registry selection as `fetch_data()`, and
-`data_info()` uses its default-version resolution. A `DataInfo` includes the
-registry selector, provenance, licensing, artifacts and their distribution and
-preservation records, the full representation, `expected_components`,
-`verification_records`, related datasets, and task metadata. Pass `offline=True`
-to require a bundled or already cached registry index.
-
-`info.preprocessing` and `fetch_data(..., return_info=True).info.preprocessing`
-expose the upstream and Datamonger processing recorded by a version 3 registry.
-Each stage distinguishes `unknown`, `none`, and `documented`. Documented stages
-preserve ordered steps, string parameters, and evidence references. Missing
-metadata is `None`, including in older bundled snapshots. These records describe
-the artifacts; fetching does not apply their transformations. See the
-[preprocessing contract](../../spec/preprocessing.md).
-
-To retrieve verified artifact bytes without decoding them, use
-`fetch_artifact()`:
-
-```python
-from datamonger import fetch_artifact
-
-iris_csv = fetch_artifact("iris", source="uci")
-```
-
-The function returns a `pathlib.Path` in the content-addressed cache. An
-artifact name may be omitted only when the resolved dataset version has one
-artifact; otherwise, pass it explicitly with `artifact="train"`. Retrieval
-locations are tried in manifest order, and size and SHA-256 verification cannot
-be disabled. The cached bytes retain any artifact compression declared by the
-manifest—HTTP content coding is a separate transport detail.
-
-Pass `offline=True` to `fetch_data()` or `fetch_artifact()` when network access
-must not be attempted. The selected registry does not change in offline mode.
-Remote registry indexes and artifacts must already be present and valid in the
-cache; the package's bundled registry index remains available, but its dataset
-artifacts are not bundled. Missing or corrupt cached content raises
-`RegistryOfflineError` for an index and `OfflineError` for an artifact.
-
-## Error taxonomy
-
-Expected failures derive from `DatamongerError` and are exported by
-`datamonger.errors`. The shared semantic categories map to Python as follows:
-
-  | Category               | Python type                |
-  | ---------------------- | -------------------------- |
-  | `unknown-dataset`      | `UnknownDatasetError`      |
-  | `unsupported-registry` | `UnsupportedRegistryError` |
-  | `unsupported-decoder`  | `UnsupportedDecoderError`  |
-  | `artifact-unavailable` | `ArtifactUnavailableError` |
-  | `artifact-offline`     | `OfflineError`             |
-  | `retrieval-exhausted`  | `RetrievalLocationsError`  |
-  | `artifact-integrity`   | `ArtifactIntegrityError`   |
-  | `decoded-integrity`    | `DecodedIntegrityError`    |
-  | `cache`                | `CacheError`               |
-  | `decode`               | `DecodeError`              |
-
-All artifact selection and retrieval failures derive from `RetrievalError`.
-`ArtifactSelectionError` additionally distinguishes an omitted, ambiguous, or
-unknown artifact name. `RegistryError` is the base for `RegistryIntegrityError`,
-`RegistryOfflineError`, `RegistryReleaseError`, and `RegistryRetrievalError`;
-`UnsupportedRegistryError` is also a registry failure.
-
-## Cache management
-
-Inspect the cache with `cache_info()`:
-
-```python
-from datamonger import cache_info
-
-info = cache_info()
-print(info.location, info.total_size)
-for entry in info.entries:
-    print(entry.kind, entry.sha256, entry.size, entry.datasets, entry.valid)
-```
-
-The inventory covers cached registry indexes and artifacts, hashes every entry,
-and associates artifact digests with canonical dataset versions found in the
-bundled and cached indexes. Use `cache_clean(dataset="uci:iris@1")` to remove
-the artifacts referenced by one version, or use `older_than=timedelta(days=30)`
-to remove old entries. The two filters intersect when combined. Calling
-`cache_clean()` without filters selects the entire cache. Its result lists both
-removed entries and entries skipped because another process is publishing or
-reading them. Cache eviction is always explicit; the client never evicts data
-automatically.
-
-Every public operation that reads or changes the cache accepts `cache_dir=`.
-Pass the same private directory consistently to isolate an application or test.
-The platform-default location is reported by `cache_info().location`.
-
-## Cache coordination
-
-The Python client coordinates each cached registry and artifact through an
-operating-system file lease at `.leases/<namespace>/sha256/<digest>.lock`.
-Publishers and readers take shared leases. A cleaner tries the exclusive side
-without waiting and skips the object when that attempt fails. A separate
-`<digest>.publish.lock` serializes the brief validation and commit phases while
-allowing downloads for the same digest to overlap.
-
-Downloads remain in destination-directory `.download-*` files until they have
-been flushed, size-checked, and hash-checked. Publication uses an atomic rename,
-and a publisher rechecks the target under the publication lock so that it does
-not replace a complete object committed by another publisher. Readers retain
-their shared lease through registry parsing or dataset decoding.
-
-Lease files deliberately remain on disk as rendezvous records. Their presence
-does not indicate ownership; the operating system's lock state does. Process
-termination releases that state, and a restarted host has no surviving lock
-owners, so a stale record is immediately reclaimable without a timeout that
-could misclassify a slow but live reader. The cache root is client-private and
-must reside on a filesystem that implements local advisory file locking and
-atomic replacement.
-
-## Public API summary
-
-  | Name                 | Purpose                                                      |
-  | -------------------- | ------------------------------------------------------------ |
-  | `fetch_data()`       | Resolve, retrieve, verify, and decode one dataset.           |
-  | `fetch_artifact()`   | Retrieve one verified artifact without decoding it.          |
-  | `cite_data()`        | Get curated dataset citations without retrieving artifacts.  |
-  | `data_info()`        | Inspect metadata for one resolved dataset version.           |
-  | `list_data()`        | List every version in the selected registry.                 |
-  | `resolve_registry()` | Discover a strong selector through an HTTPS catalog.         |
-  | `active_registry()`  | Report the selector an unqualified call will use.            |
-  | `set_registry()`     | Set or clear the process-local session selector.             |
-  | `cache_info()`       | Inspect cached indexes and artifacts without network access. |
-  | `cache_clean()`      | Explicitly evict matching inactive cache entries.            |
-
-The package also exports these public values and immutable result types:
-
-  | Name                 | Contents                                                                            |
-  | -------------------- | ----------------------------------------------------------------------------------- |
-  | `BUNDLED_REGISTRY`   | The package's default strong selector.                                              |
-  | `Registry`           | A selector's release, index digest, URL, and schema version.                        |
-  | `FetchResult`        | Decoded `data` and its `FetchInfo`.                                                 |
-  | `FetchInfo`          | Resolved identity, selector, artifact digests, and verification record.             |
-  | `DataInfo`           | Provenance, license, artifacts, representation, expectations, relations, and tasks. |
-  | `SparseDataset`      | A CSR feature matrix and response vector.                                           |
-  | `SparseDatasetSplit` | Separate train and test `SparseDataset` records.                                    |
-  | `DatasetSplits`      | Provider-named table or sparse datasets in recipe order.                            |
-  | `DatasetData`        | The union of all decoded return types.                                              |
-  | `CacheEntry`         | One inspected registry or artifact cache object.                                    |
-  | `CacheInfo`          | Cache location, total size, and entries.                                            |
-  | `CacheCleanResult`   | Removed and skipped entries, plus `bytes_removed`.                                  |
-
-Expected public failures are exported from `datamonger.errors`; all derive from
-`DatamongerError`.
-
-## Dataset citations
-
-Retrieve curated citation text without downloading dataset artifacts:
-
-```python
-from datamonger import cite_data
-
-print(cite_data("uci:wine-quality@1"))
-references = cite_data("uci:wine-quality@1", format="records", include_all=True)
-```
-
-A dataset can have several references, with optional `dataset`, `paper`, or
-`collection` roles and explanatory notes. Roles and upstream recommendations are
-independent. By default, `cite_data()` selects references marked as recommended.
-If no recommendation flags are recorded, it returns all references and explains
-that the recommendation is unknown. `include_all=True` includes every reference.
-`format="records"` preserves the citation text and optional fields.
-
-`data_info(...).citations` and
-`fetch_data(..., return_info=True).info.citations` always contain all references
-from the selected registry record. `citation_instructions` preserves upstream
-instructions, including requests to cite several references together. Missing
-citations produce an empty tuple in metadata and an explicit message in text
-output. Legacy single citations remain available with their roles and
-recommendations left unspecified. This API uses only the selected registry; it
-performs no bibliographic lookups.
+## License
+
+Datamonger is licensed under the [MIT
+license](https://github.com/jolars/datamonger/blob/main/LICENSE). Datasets
+retain their own licenses and terms, recorded in their registry metadata.
