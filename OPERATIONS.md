@@ -23,9 +23,10 @@ how maintainers apply them.
 
 ## Configure release automation
 
-Versionary manages the registry, Rust core, and language client versions,
-changelogs, tags, and GitHub Releases. Specification releases remain separately
-tagged. Before enabling
+Versionary manages the registry, Rust core, and language client versions and
+changelogs. It creates tags and GitHub Releases except for the Julia client,
+whose tags and releases come from TagBot after General accepts registration.
+Specification releases remain separately tagged. Before enabling
 [`.github/workflows/versionary.yml`](.github/workflows/versionary.yml),
 configure the repository as follows:
 
@@ -38,9 +39,12 @@ configure the repository as follows:
    `jolars/datamonger`, workflow `publish-python.yml`, and environment `pypi`.
    Use a pending publisher before the first PyPI release if the project does not
    yet exist.
-3. Install the Julia Registrator GitHub App for the repository. Do not install
-   TagBot for this release path—Versionary owns the package tags and GitHub
-   Releases.
+3. Install the Julia Registrator GitHub App for the repository. The
+   `tagbot.yml` workflow creates Julia client tags and GitHub Releases after
+   General accepts registration. It uses the existing `RELEASE_TOKEN`, falling
+   back to `GITHUB_TOKEN`. Use Versionary 1.10.0 or later for package-level
+   `release-mode` and the `external_release_targets` Action output. Remove any empty Julia draft left
+   by the previous tag-first workflow.
 4. Configure a crates.io trusted publisher for `datamonger-core`, repository
    `jolars/datamonger`, workflow `publish-core.yml`, and GitHub environment
    `release`. The workflow exchanges a GitHub OpenID Connect token for a
@@ -69,7 +73,9 @@ the registry publisher completes after validating and attaching the index.
 
 After CI succeeds on `main`, Versionary opens or updates release PRs for the
 releasable packages configured in `versionary.jsonc`. Versionary owns release
-versions, changelogs, commits, and tags; do not update them by hand.
+versions, changelogs, and release commits; do not update them by hand. It also
+creates release tags except for the Julia client, which delegates tagging to
+TagBot with `release-mode: external`.
 
 Keep commits atomic by release area: core, FFI, each client, and the registry.
 Versionary applies a commit's message to every package whose included paths it
@@ -158,23 +164,30 @@ Publish native changes before preparing a Julia client release that adopts them:
    Never commit a local artifact binding from `packages/julia/deps`.
 3. Confirm the Julia client CI passes with those bindings before registering
    the Julia release. The committed manifest must be complete before tagging;
-   General installs the tagged source tree, not a modified release attachment.
+   General installs the registered source tree, not a modified release attachment.
 
 The Julia release then uses General's Registrator handoff:
 
-1. Merge the `datamonger-julia` Versionary release PR. Versionary creates its
-   tag and a draft GitHub Release.
-
-2. Open the tagged release commit on GitHub and add this commit comment:
-
-   ```text
-   @JuliaRegistrator register subdir=packages/julia
-   ```
-
+1. Merge the `datamonger-julia` Versionary release PR. Versionary records the
+   version and reviewed changelog without creating a tag or GitHub Release.
+2. After CI succeeds, the Versionary workflow requests registration on the
+   saved release commit with `@JuliaRegistrator register subdir=packages/julia`
+   and includes the reviewed release notes. Reruns recognize the existing bot
+   comment and do not submit duplicates.
 3. Review the Registrator pull request and wait for it to merge into General.
+   While registration is pending, Versionary preserves that Julia version and
+   commit. Independent packages can continue releasing.
+4. General notifies TagBot, which creates `datamonger-julia-v<version>` and the
+   GitHub Release using the registration's release notes. TagBot can also be
+   dispatched manually after registration. Fetch tags before running Versionary
+   locally so it recognizes the completed release.
 
-4. Publish the existing GitHub draft. Versionary has already created the tag,
-   and Julia's package manager does not require TagBot to create another one.
+To retry an unsuccessful registration request at the saved commit, dispatch
+`versionary.yml` on `main` with `retry-registration` enabled after CI succeeds
+on that commit. A retry does not select a newer trunk commit. If registry review requires source changes, merge
+those changes and explicitly request registration on the corrected commit,
+including the reviewed release notes. TagBot's eventual version tag completes
+Versionary's pending release.
 
 ## Coordinate registry and client releases
 

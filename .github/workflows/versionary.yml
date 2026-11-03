@@ -5,19 +5,28 @@ on:
     workflows: [CI]
     types: [completed]
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      retry-registration:
+        description: Request the pending Julia registration again at its saved commit
+        type: boolean
+        default: false
 
 concurrency:
-  group: versionary-${{ github.event.workflow_run.head_branch }}
+  group: versionary-${{ github.event.workflow_run.head_branch || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
   release:
-    if: github.event.workflow_run.conclusion == 'success'
+    if: >-
+      github.event.workflow_run.conclusion == 'success' ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
       issues: write
+      actions: read
     outputs:
       registry_tag: ${{ steps.registry.outputs.tag }}
     steps:
@@ -25,8 +34,20 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
           token: ${{ secrets.RELEASE_TOKEN || github.token }}
+
+      - name: Require successful CI for manual retries
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          passed="$(gh run list --workflow ci.yml --branch main --commit "$GITHUB_SHA" \
+            --event push --status success --limit 1 --json databaseId --jq 'length')"
+          if [[ "$passed" != 1 ]]; then
+            echo "CI must pass on this main commit before retrying release automation." >&2
+            exit 1
+          fi
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -37,6 +58,25 @@ jobs:
         uses: jolars/versionary@v1
         with:
           token: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: Request Julia registration
+        if: >-
+          steps.versionary.outputs.release_ready == 'true' ||
+          (github.event_name == 'workflow_dispatch' && inputs.retry-registration &&
+           steps.versionary.outputs.external_release_targets != '[]')
+        uses: actions/github-script@v8
+        env:
+          EXTERNAL_RELEASE_TARGETS: ${{ steps.versionary.outputs.external_release_targets }}
+          RETRY_REGISTRATION: ${{ inputs.retry-registration || false }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const request = require('./.github/scripts/request-julia-registration.cjs');
+            await request({
+              github, context, core,
+              targets: JSON.parse(process.env.EXTERNAL_RELEASE_TARGETS),
+              retry: process.env.RETRY_REGISTRATION === 'true',
+            });
 
       - uses: dtolnay/rust-toolchain@master
         with:

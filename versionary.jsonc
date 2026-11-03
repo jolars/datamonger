@@ -52,7 +52,7 @@
     "packages/julia": {
       "release-type": "julia",
       "package-name": "datamonger-julia",
-      "release-draft": true,
+      "release-mode": "external",
       "exclude-paths": ["tutorials"]
     },
     "packages/cli": {
