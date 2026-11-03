@@ -1,183 +1,199 @@
-# Datamonger for Julia
+# Datamonger for Julia <img src="https://raw.githubusercontent.com/jolars/datamonger/refs/heads/main/assets/logo.png" align="right" width="139" alt="A datamonger carrying a box of data" />
 
-This package implements Datamonger specification revision 1. It retrieves
-artifacts through strongly selected immutable registry indexes, verifies their
-bytes, decodes the revision 1 CSV, TSV, LIBSVM, and SVMLight representations,
-and verifies their canonical logical digests.
+[![CI](https://github.com/jolars/datamonger/actions/workflows/ci.yml/badge.svg)](https://github.com/jolars/datamonger/actions/workflows/ci.yml)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.23692468-blue)](https://doi.org/10.5281/zenodo.23692468)
 
-The package is pre-release software and is not yet in Julia's General registry.
-From a repository checkout:
+Datamonger retrieves public research datasets in Julia. It downloads and caches
+dataset files, returns native data frames and sparse matrices, and verifies that
+the decoded values match those in the registry. Python and R clients share the
+same registry and verification contracts.
+
+Each dataset has a versioned record describing its source, format, provenance,
+license, and citations. You can pin the registry and dataset version to keep an
+analysis reproducible.
+
+## Installation
+
+Requires Julia 1.10 or newer. From a repository checkout, run these commands at
+the repository root:
 
 ```julia
 using Pkg
+
 Pkg.activate("packages/julia")
 Pkg.instantiate()
+
 include("tools/dm_julia_core.jl")
 
 using Datamonger
 ```
 
-Decoding, artifact decompression, and canonical hashing use the Rust
-`datamonger-core` library through C ABI 1. Registry resolution, retrieval,
-caching, metadata, and public return types remain in Julia. Source checkouts
-require Rust 1.82 or newer for the build command above; rebuild after native
-edits. The local binding is ignored by Git. Release preparation pins prebuilt
-artifacts for Linux x86-64 and ARM64 (glibc 2.17+), macOS Intel and Apple
-Silicon, and Windows x86-64, so installed releases need no Rust compiler. The
-library is loaded on first decode or canonical operation. Julia installs release
-artifacts during package instantiation; decoding never downloads executable
-code, including in offline calls.
+Building the native decoder from source requires Rust 1.82 or newer. Rebuild it
+after native code changes. See the [contributor
+guide](https://github.com/jolars/datamonger/blob/main/CONTRIBUTING.md) for
+development setup and native builds.
 
-## Tutorials
+## Usage
 
-The [offline data workflow](tutorials/offline-workflow.md) walks through
-verified retrieval, missing values, sparse data, train/test splits, and cache
-management. The [reproducibility guide](tutorials/reproducibility.md) explains
-registry selectors and dataset versions. Diplodocus publishes both articles with
-the [Julia documentation](https://datamonger.dev/packages/julia/).
-
-## Cache
-
-Datamonger uses the platform application cache by default. Passing `cache_dir`
-uses that path for the call instead. For temporary caching, create a process
-directory and pass it consistently:
+Load a dataset by its `source:name` reference:
 
 ```julia
-temporary_cache = mktempdir()
-iris = fetch_data("iris"; source="uci", cache_dir=temporary_cache)
-```
+using Datamonger
 
-Julia manages native libraries in its artifact depot. Datamonger creates its
-dataset cache only when requested. Dataset cache growth is limited to explicitly
-requested registry and artifact retrievals, eviction is manual through
-`cache_clean()`, and `cache_info()` reports every content-addressed entry.
-Datamonger performs no telemetry.
-
-## Use
-
-The bundled stable index is the default trust root. Its artifacts are retrieved
-on first use:
-
-```julia
-iris = fetch_data("iris"; source="uci")
-heart = fetch_data("heart_scale"; source="libsvm")
-```
-
-`fetch_data()`, `data_info()`, and `fetch_artifact()` also accept the dataset
-references used by the CLI:
-
-```julia
 iris = fetch_data("uci:iris")
-iris_v1 = fetch_data("uci:iris@1")
-iris_v1 = fetch_data("uci:iris"; version="1")
+heart = fetch_data("libsvm:heart_scale")
 ```
 
-A bare name requires `source`. Omit `source` for qualified references, and omit
-`version` when the reference embeds it. Duplicate arguments raise an error even
-when the values agree. An omitted version selects the registry's declared
-default.
-
-For reproducible analysis, select an explicit version and retain the returned
-metadata:
+Delimited datasets return a `DataFrame`, with `missing` values where needed.
+LIBSVM datasets return a `SparseDataset` with a sparse `features` matrix and a
+`response` vector:
 
 ```julia
-result = fetch_data(
-    "iris";
-    source="uci",
-    version="1",
-    return_info=true,
-)
-result.info.dataset_id
-result.info.registry_release
-result.info.registry_index_sha256
-result.info.canonical_digest
+first(iris, 5)
+size(heart.features), length(heart.response)
 ```
 
-Delimited representations return a `DataFrame` whose columns use
-`Union{Missing,T}` where missing values occur. `int64` values remain exact Julia
-`Int64`s. LIBSVM returns a `SparseDataset` with a Julia `SparseMatrixCSC` and an
-exact `Int64` or `Float64` response. Representations too wide for a practical
-CSC column-pointer array use the exported, read-only `CSRMatrix` instead.
-`libsvm-split` returns a `SparseDatasetSplit` with separate `train` and `test`
-datasets.
+Sparse features usually use Julia's `SparseMatrixCSC`. Representations too wide
+for a practical column-pointer array use the exported, read-only `CSRMatrix`
+instead. Integer values remain exact `Int64`s.
 
-The `named-splits` assembly returns a `DatasetSplits` mapping in recipe order.
-Access provider splits as `data["train"]`, `data["validation"]`, or
-`data["test"]`. Each value is a table or sparse dataset, and feature-only tables
-omit responses. The [named splits
-contract](../../spec/decoders/named-splits-v1.md) requires manifest schema 4 and
-preserves each split's original name and row membership.
+Datasets with train/test splits return a `SparseDatasetSplit` with separate
+`train` and `test` fields. Datasets with provider-named splits return a
+`DatasetSplits` mapping, accessed with keys such as `data["train"]` and
+`data["validation"]`. Datamonger preserves each split's name and row membership.
 
-`data_info()` and `list_data()` inspect provenance, license, distribution, task,
-and verification metadata without retrieving artifacts. `fetch_artifact()`
-retrieves only verified artifact bytes. `offline=true` forbids network access
-and requires the selected index and artifacts to be bundled or already cached.
-Decoded verification is enabled by default; `verify_decoded=false` disables only
-shape and canonical verification, never artifact verification.
+Files are downloaded on first use and kept in a verified local cache. The
+registry index is bundled with the package, so you can browse metadata without
+network access. Dataset files are downloaded separately.
 
-`data_info(...).preprocessing` and fetch results requested with
-`return_info=true` expose upstream and Datamonger processing in version 3
-registries. Each stage distinguishes `unknown`, `none`, and `documented` and
-preserves known steps, string parameters, and evidence references. Missing
-metadata is `nothing`, including in older bundled snapshots. Fetching does not
-apply the described transformations. See the [preprocessing
-contract](../../spec/preprocessing.md).
-
-## Registry selection
-
-An explicit strong selector fixes a release and exact index bytes:
+Use `list_data()` to browse the registry, `data_info()` to inspect a dataset's
+metadata, and `cite_data()` to retrieve its citations without downloading data:
 
 ```julia
-selected = Datamonger.Registry(
-    "2026.08",
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-    "https://registry.example/2026.08/index.json",
-)
-result = fetch_data("iris"; source="uci", registry=selected)
+datasets = list_data()
+info = data_info("uci:iris")
+println(info.license)
+println(cite_data("uci:iris"))
 ```
 
-Selection precedence is a per-call `registry` keyword, `set_registry!()` for the
-session, the nearest `.datamonger/selector.json`, and the bundled selector.
-`resolve_registry()` discovers a selector by bare release through a mutable
-HTTPS catalog. That lookup is trusted only as strongly as the TLS session; the
-returned release and digest become reproducible when recorded and reused.
+To retrieve a verified file without decoding it, use `fetch_artifact()`:
 
-## Error taxonomy and cache management
+```julia
+iris_csv = fetch_artifact("uci:iris")
+```
 
-Expected failures derive from `DatamongerError`. The public concrete types map
-directly to revision 1 categories: `UnknownDatasetError`,
-`UnsupportedRegistryError`, `UnsupportedDecoderError`,
-`ArtifactUnavailableError`, `OfflineError`, `RetrievalLocationsError`,
-`ArtifactIntegrityError`, `DecodedIntegrityError`, `CacheError`, and
-`DecodeError`. More specific registry and artifact-selection failures are also
-exported.
+This returns a path in the cache. For datasets with several artifacts, select
+one explicitly, for example with `artifact="train"`. Files retain their
+registered format and compression.
 
-`cache_info()` verifies and inventories cached indexes and artifacts.
-`cache_clean(dataset="uci:iris@1")` selects artifacts referenced by one
-canonical dataset version; `older_than=Day(30)` selects old entries, and the
-filters intersect. Calling `cache_clean()` without filters selects the entire
-cache. Active readers and publishers are skipped, and eviction is never
-automatic.
+## Reproducibility
 
-The project code is MIT-licensed. Datasets retain their own licenses and terms;
-registry inclusion is not a license grant or a preservation guarantee.
+Select an explicit dataset version and retain the verification metadata with
+your analysis:
 
-## Dataset citations
+```julia
+result = fetch_data("uci:iris@1"; return_info=true)
+iris = result.data
+println(result.info.dataset_id)
+println(result.info.registry_release, " ", result.info.registry_index_sha256)
+println(result.info.canonical_digest)
+```
 
-`cite_data("uci:wine-quality@1")` returns curated citation text without
-retrieving dataset artifacts. Use `format="records"` for reference records and
-`include_all=true` to include every reference. A reference may have a `dataset`,
-`paper`, or `collection` role, a note, and an upstream recommendation flag.
-Multiple references can be recommended together. Roles do not imply
-recommendations.
+`return_info=true` wraps the decoded data with its resolved identity, registry
+selector, artifact digests, and decoded-verification record. Datamonger checks
+artifact sizes and SHA-256 hashes, then verifies decoded shapes and a canonical
+SHA-256 digest.
 
-By default, references marked as recommended are selected. If no recommendation
-flags are recorded, all references are returned and text output explains that
-the recommendation is unknown. Missing citations produce an empty vector of
-records or an explicit text message. Legacy single citations remain supported.
+Dataset operations also accept separate arguments, such as
+`fetch_data("iris"; source="uci", version="1")`. Omit `source` for qualified
+references and omit `version` when the reference embeds it. Without a version,
+Datamonger uses the registry's declared default.
 
-`data_info(...).citations` and
-`fetch_data(...; return_info=true).info.citations` contain every reference from
-the selected registry record. `citation_instructions` preserves upstream
-instructions, including requests to cite several references together. No
-bibliographic lookups are performed.
+Pass a registry selector for one operation, or set it for the Julia session:
+
+```julia
+registry = BUNDLED_REGISTRY
+iris = fetch_data("uci:iris@1"; registry=registry)
+
+set_registry!(registry)
+selected = active_registry()
+set_registry!(nothing)
+```
+
+Pin a project's registry by checking its selector into
+`.datamonger/selector.json`. Registry selection follows this order: a `registry`
+keyword, a session setting from `set_registry!()`, the nearest project selector,
+and the bundled registry.
+
+Use `resolve_registry()` to discover a published release through the HTTPS
+catalog. Record and reuse its release, index digest, and URL; looking up the
+release name again is not a cryptographic pin. Registry updates are always
+explicit. The [reproducibility guide](tutorials/reproducibility.md) includes a
+project selector example and explains how to retain it with your analysis.
+
+See the [trust model](https://github.com/jolars/datamonger/blob/main/TRUST.md)
+for verification guarantees and their limits.
+
+## Offline use and caching
+
+Once a dataset is cached, reuse it without network access:
+
+```julia
+iris = fetch_data("uci:iris@1"; offline=true)
+```
+
+Offline mode keeps the same registry selection and requires valid cached files.
+The bundled registry index is always available. Missing or corrupt cached
+artifacts raise `OfflineError`; unavailable registry indexes raise
+`RegistryOfflineError`.
+
+Inspect the cache or remove the artifacts for a dataset version:
+
+```julia
+info = cache_info()
+println(info.location, " ", info.total_size)
+cache_clean(dataset="uci:iris@1")
+```
+
+`cache_clean()` also accepts an `older_than` duration, such as `Day(30)` from
+`Dates`. Calling it without filters selects the entire cache. Entries in use by
+another process are skipped, and Datamonger never evicts files automatically.
+Pass `cache_dir` consistently to cache operations to use a custom location.
+
+Julia manages native libraries separately in its artifact depot. Decoding does
+not download executable code.
+
+## Documentation
+
+- [Julia documentation](https://datamonger.dev/packages/julia/)—guides and API
+  reference.
+- [Offline data workflow](tutorials/offline-workflow.md)—retrieval, missing
+  values, sparse data, splits, and cache management.
+- [Registries and reproducibility](tutorials/reproducibility.md)—dataset
+  versions, selectors, and offline runs.
+- [Dataset catalog](https://datamonger.dev/datasets/)—available datasets and
+  retrieval examples.
+- [Project repository](https://github.com/jolars/datamonger)—Python, R, and CLI
+  clients, specifications, and architecture.
+
+## Citation
+
+If you use Datamonger in your research, please cite the release you used. Select
+that release in the [Zenodo archive](https://doi.org/10.5281/zenodo.23692468)
+and export its citation. To cite Datamonger generally, use the concept DOI
+`10.5281/zenodo.23692468`.
+
+Use `cite_data()` for dataset citations. Dataset metadata also preserves
+upstream citation instructions and references.
+
+## Contributing
+
+See the [contributor
+guide](https://github.com/jolars/datamonger/blob/main/CONTRIBUTING.md) for
+development setup and how to add or revise datasets.
+
+## License
+
+Datamonger is licensed under the [MIT
+license](https://github.com/jolars/datamonger/blob/main/LICENSE). Datasets
+retain their own licenses and terms, recorded in their registry metadata.
