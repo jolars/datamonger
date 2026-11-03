@@ -1,15 +1,15 @@
 # Datamonger Python client
 
-This package is the Python client for Datamonger's stable specification
-revision 1. It uses `datamonger-core` for decoding, artifact decompression, and
-canonical verification. Registry selection, retrieval, caching, metadata, and
-pandas and SciPy return types belong to the Python client.
+This package is the Python client for Datamonger's stable specification revision 1.
+It uses `datamonger-core` for decoding, artifact decompression, and canonical
+verification. Registry selection, retrieval, caching, metadata, and pandas and
+SciPy return types belong to the Python client.
 
 ## Installation and status
 
 The package requires Python 3.11 or newer. Release builds provide stable ABI
-wheels for CPython on Linux (glibc 2.17 or newer) and macOS, on x86_64 and ARM64,
-and Windows on x86_64. Installing a wheel requires no Rust compiler.
+wheels for CPython on Linux (glibc 2.17 or newer) and macOS, on x86_64 and
+ARM64, and Windows on x86_64. Installing a wheel requires no Rust compiler.
 
 Source builds require a stable Rust toolchain and a C linker. Install from the
 repository root with:
@@ -19,14 +19,14 @@ python -m pip install ./packages/python
 ```
 
 For development, enter the repository's devenv shell and use the locked
-environment documented in the
-[contributor guide](https://github.com/jolars/datamonger/blob/main/CONTRIBUTING.md).
+environment documented in the [contributor
+guide](https://github.com/jolars/datamonger/blob/main/CONTRIBUTING.md).
 
 The package requires pandas, NumPy, SciPy, platformdirs, and portalocker. The
 project code is MIT-licensed; datasets retain their own licenses and terms. See
-the repository's
-[trust model](https://github.com/jolars/datamonger/blob/main/TRUST.md) before
-relying on registry license, distribution, or preservation metadata.
+the repository's [trust
+model](https://github.com/jolars/datamonger/blob/main/TRUST.md) before relying
+on registry license, distribution, or preservation metadata.
 
 ## Quick start
 
@@ -84,8 +84,7 @@ iris = fetch_data("iris", source="uci", registry=registry)
 lookup is trusted only as strongly as that TLS session. Record and reuse the
 returned selector when reproducibility matters; looking up the same bare name
 again is not a cryptographic pin. The API accepts a custom HTTPS `catalog_url`
-for alternate registries. It does not support floating aliases such as
-`latest`.
+for alternate registries. It does not support floating aliases such as `latest`.
 
 Pass a `Registry` for one call when the selection belongs to one operation:
 
@@ -134,12 +133,12 @@ digest authenticates nothing beyond the channel from which the selector came.
 
 The decoded return type is fixed by the representation:
 
-| Representation | Artifact formats | Python return type |
-| --- | --- | --- |
-| `delimited-text` | CSV or TSV | `pandas.DataFrame` |
-| `libsvm` | LIBSVM or SVMLight | `SparseDataset` |
-| `libsvm-split` | LIBSVM or SVMLight | `SparseDatasetSplit` |
-| `named-splits` | Per-split CSV, TSV, LIBSVM, or SVMLight | `DatasetSplits` |
+  | Representation   | Artifact formats                        | Python return type   |
+  | ---------------- | --------------------------------------- | -------------------- |
+  | `delimited-text` | CSV or TSV                              | `pandas.DataFrame`   |
+  | `libsvm`         | LIBSVM or SVMLight                      | `SparseDataset`      |
+  | `libsvm-split`   | LIBSVM or SVMLight                      | `SparseDatasetSplit` |
+  | `named-splits`   | Per-split CSV, TSV, LIBSVM, or SVMLight | `DatasetSplits`      |
 
 Delimited frames use pandas' nullable `Float64`, `Int64`, `string`, and
 `boolean` dtypes, according to the declared logical column types. A frozen
@@ -157,8 +156,8 @@ requires manifest schema 4 and keeps every split's original row membership.
 
 `return_info=True` wraps the same decoded object in `FetchResult.data`; it does
 not change its representation. Pandas, NumPy, and SciPy are required
-dependencies, so return types never depend on which optional packages happen
-to be installed.
+dependencies, so return types never depend on which optional packages happen to
+be installed.
 
 CSV, TSV, LIBSVM, and SVMLight artifacts support manifest-declared `none`,
 `gzip`, and `bzip2` compression. The client verifies and caches the exact
@@ -167,8 +166,8 @@ not determine the compression method.
 
 Use `return_info=True` to receive a `FetchResult` containing the resolved
 dataset identity, registry selector, artifact digests, and decoded-verification
-record. Decoded verification is enabled by default for every representation.
-It checks both the expected component shapes and the canonical SHA-256. For
+record. Decoded verification is enabled by default for every representation. It
+checks both the expected component shapes and the canonical SHA-256. For
 diagnostic or performance-sensitive work, `verify_decoded=False` explicitly
 skips those checks while retaining mandatory artifact size and SHA-256
 verification; `FetchInfo.verification` then reports `"artifact"` rather than
@@ -192,8 +191,8 @@ Both operations use the same registry selection as `fetch_data()`, and
 `data_info()` uses its default-version resolution. A `DataInfo` includes the
 registry selector, provenance, licensing, artifacts and their distribution and
 preservation records, the full representation, `expected_components`,
-`verification_records`, related datasets, and task metadata. Pass
-`offline=True` to require a bundled or already cached registry index.
+`verification_records`, related datasets, and task metadata. Pass `offline=True`
+to require a bundled or already cached registry index.
 
 `info.preprocessing` and `fetch_data(..., return_info=True).info.preprocessing`
 expose the upstream and Datamonger processing recorded by a version 3 registry.
@@ -231,24 +230,24 @@ artifacts are not bundled. Missing or corrupt cached content raises
 Expected failures derive from `DatamongerError` and are exported by
 `datamonger.errors`. The shared semantic categories map to Python as follows:
 
-| Category | Python type |
-| --- | --- |
-| `unknown-dataset` | `UnknownDatasetError` |
-| `unsupported-registry` | `UnsupportedRegistryError` |
-| `unsupported-decoder` | `UnsupportedDecoderError` |
-| `artifact-unavailable` | `ArtifactUnavailableError` |
-| `artifact-offline` | `OfflineError` |
-| `retrieval-exhausted` | `RetrievalLocationsError` |
-| `artifact-integrity` | `ArtifactIntegrityError` |
-| `decoded-integrity` | `DecodedIntegrityError` |
-| `cache` | `CacheError` |
-| `decode` | `DecodeError` |
+  | Category               | Python type                |
+  | ---------------------- | -------------------------- |
+  | `unknown-dataset`      | `UnknownDatasetError`      |
+  | `unsupported-registry` | `UnsupportedRegistryError` |
+  | `unsupported-decoder`  | `UnsupportedDecoderError`  |
+  | `artifact-unavailable` | `ArtifactUnavailableError` |
+  | `artifact-offline`     | `OfflineError`             |
+  | `retrieval-exhausted`  | `RetrievalLocationsError`  |
+  | `artifact-integrity`   | `ArtifactIntegrityError`   |
+  | `decoded-integrity`    | `DecodedIntegrityError`    |
+  | `cache`                | `CacheError`               |
+  | `decode`               | `DecodeError`              |
 
 All artifact selection and retrieval failures derive from `RetrievalError`.
 `ArtifactSelectionError` additionally distinguishes an omitted, ambiguous, or
-unknown artifact name. `RegistryError` is the base for
-`RegistryIntegrityError`, `RegistryOfflineError`, `RegistryReleaseError`, and
-`RegistryRetrievalError`; `UnsupportedRegistryError` is also a registry failure.
+unknown artifact name. `RegistryError` is the base for `RegistryIntegrityError`,
+`RegistryOfflineError`, `RegistryReleaseError`, and `RegistryRetrievalError`;
+`UnsupportedRegistryError` is also a registry failure.
 
 ## Cache management
 
@@ -280,12 +279,11 @@ The platform-default location is reported by `cache_info().location`.
 ## Cache coordination
 
 The Python client coordinates each cached registry and artifact through an
-operating-system file lease at
-`.leases/<namespace>/sha256/<digest>.lock`. Publishers and readers take shared
-leases. A cleaner tries the exclusive side without waiting and skips the object
-when that attempt fails. A separate `<digest>.publish.lock` serializes the brief
-validation and commit phases while allowing downloads for the same digest to
-overlap.
+operating-system file lease at `.leases/<namespace>/sha256/<digest>.lock`.
+Publishers and readers take shared leases. A cleaner tries the exclusive side
+without waiting and skips the object when that attempt fails. A separate
+`<digest>.publish.lock` serializes the brief validation and commit phases while
+allowing downloads for the same digest to overlap.
 
 Downloads remain in destination-directory `.download-*` files until they have
 been flushed, size-checked, and hash-checked. Publication uses an atomic rename,
@@ -303,35 +301,35 @@ atomic replacement.
 
 ## Public API summary
 
-| Name | Purpose |
-| --- | --- |
-| `fetch_data()` | Resolve, retrieve, verify, and decode one dataset. |
-| `fetch_artifact()` | Retrieve one verified artifact without decoding it. |
-| `cite_data()` | Get curated dataset citations without retrieving artifacts. |
-| `data_info()` | Inspect metadata for one resolved dataset version. |
-| `list_data()` | List every version in the selected registry. |
-| `resolve_registry()` | Discover a strong selector through an HTTPS catalog. |
-| `active_registry()` | Report the selector an unqualified call will use. |
-| `set_registry()` | Set or clear the process-local session selector. |
-| `cache_info()` | Inspect cached indexes and artifacts without network access. |
-| `cache_clean()` | Explicitly evict matching inactive cache entries. |
+  | Name                 | Purpose                                                      |
+  | -------------------- | ------------------------------------------------------------ |
+  | `fetch_data()`       | Resolve, retrieve, verify, and decode one dataset.           |
+  | `fetch_artifact()`   | Retrieve one verified artifact without decoding it.          |
+  | `cite_data()`        | Get curated dataset citations without retrieving artifacts.  |
+  | `data_info()`        | Inspect metadata for one resolved dataset version.           |
+  | `list_data()`        | List every version in the selected registry.                 |
+  | `resolve_registry()` | Discover a strong selector through an HTTPS catalog.         |
+  | `active_registry()`  | Report the selector an unqualified call will use.            |
+  | `set_registry()`     | Set or clear the process-local session selector.             |
+  | `cache_info()`       | Inspect cached indexes and artifacts without network access. |
+  | `cache_clean()`      | Explicitly evict matching inactive cache entries.            |
 
 The package also exports these public values and immutable result types:
 
-| Name | Contents |
-| --- | --- |
-| `BUNDLED_REGISTRY` | The package's default strong selector. |
-| `Registry` | A selector's release, index digest, URL, and schema version. |
-| `FetchResult` | Decoded `data` and its `FetchInfo`. |
-| `FetchInfo` | Resolved identity, selector, artifact digests, and verification record. |
-| `DataInfo` | Provenance, license, artifacts, representation, expectations, relations, and tasks. |
-| `SparseDataset` | A CSR feature matrix and response vector. |
-| `SparseDatasetSplit` | Separate train and test `SparseDataset` records. |
-| `DatasetSplits` | Provider-named table or sparse datasets in recipe order. |
-| `DatasetData` | The union of all decoded return types. |
-| `CacheEntry` | One inspected registry or artifact cache object. |
-| `CacheInfo` | Cache location, total size, and entries. |
-| `CacheCleanResult` | Removed and skipped entries, plus `bytes_removed`. |
+  | Name                 | Contents                                                                            |
+  | -------------------- | ----------------------------------------------------------------------------------- |
+  | `BUNDLED_REGISTRY`   | The package's default strong selector.                                              |
+  | `Registry`           | A selector's release, index digest, URL, and schema version.                        |
+  | `FetchResult`        | Decoded `data` and its `FetchInfo`.                                                 |
+  | `FetchInfo`          | Resolved identity, selector, artifact digests, and verification record.             |
+  | `DataInfo`           | Provenance, license, artifacts, representation, expectations, relations, and tasks. |
+  | `SparseDataset`      | A CSR feature matrix and response vector.                                           |
+  | `SparseDatasetSplit` | Separate train and test `SparseDataset` records.                                    |
+  | `DatasetSplits`      | Provider-named table or sparse datasets in recipe order.                            |
+  | `DatasetData`        | The union of all decoded return types.                                              |
+  | `CacheEntry`         | One inspected registry or artifact cache object.                                    |
+  | `CacheInfo`          | Cache location, total size, and entries.                                            |
+  | `CacheCleanResult`   | Removed and skipped entries, plus `bytes_removed`.                                  |
 
 Expected public failures are exported from `datamonger.errors`; all derive from
 `DatamongerError`.
@@ -354,10 +352,11 @@ If no recommendation flags are recorded, it returns all references and explains
 that the recommendation is unknown. `include_all=True` includes every reference.
 `format="records"` preserves the citation text and optional fields.
 
-`data_info(...).citations` and `fetch_data(..., return_info=True).info.citations`
-always contain all references from the selected registry record.
-`citation_instructions` preserves upstream instructions, including requests to
-cite several references together. Missing citations produce an empty tuple in
-metadata and an explicit message in text output. Legacy single citations remain
-available with their roles and recommendations left unspecified. This API uses
-only the selected registry; it performs no bibliographic lookups.
+`data_info(...).citations` and
+`fetch_data(..., return_info=True).info.citations` always contain all references
+from the selected registry record. `citation_instructions` preserves upstream
+instructions, including requests to cite several references together. Missing
+citations produce an empty tuple in metadata and an explicit message in text
+output. Legacy single citations remain available with their roles and
+recommendations left unspecified. This API uses only the selected registry; it
+performs no bibliographic lookups.
