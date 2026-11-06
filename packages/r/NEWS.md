@@ -1,3 +1,9 @@
+# datamonger 0.1.1
+
+## Bug fixes
+
+- isolate staged R adapter workspace ([`ec130e5`](https://github.com/jolars/datamonger/commit/ec130e56e3ff4c8feabb4b26a9879a05a2190be3))
+
 # datamonger 0.1.0
 
 ## Features
