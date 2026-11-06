@@ -64,7 +64,7 @@ jobs:
           steps.versionary.outputs.release_ready == 'true' ||
           (github.event_name == 'workflow_dispatch' && inputs.retry-registration &&
            steps.versionary.outputs.external_release_targets != '[]')
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           EXTERNAL_RELEASE_TARGETS: ${{ steps.versionary.outputs.external_release_targets }}
           RETRY_REGISTRATION: ${{ inputs.retry-registration || false }}
