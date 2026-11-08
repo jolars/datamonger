@@ -1,0 +1,155 @@
+schema_version: 5
+source: lars
+name: diabetes
+version: '1'
+title: Diabetes
+description: Baseline measurements for 442 diabetes patients and a quantitative measure of
+  disease progression one year later, from Efron et al. (2004). This is the original, unstandardized
+  ten-predictor TSV distributed by NC State, rather than the standardized lars representation
+  used in the SLOPE paper examples. S1 through S6 are serum measurements. No predefined train/test
+  split is supplied. Centering and scaling this file does not exactly reproduce the
+  paper export because BP and S5 differ slightly in precision. All response values and row
+  order agree.
+modality: tabular
+preprocessing:
+  upstream:
+    status: unknown
+    evidence:
+    - https://www4.stat.ncsu.edu/~boos/var.select/diabetes.html
+    notes: The provider identifies this as the original data and distinguishes it from the
+      standardized lars export. Earlier measurement preparation is not fully documented; unstandardized
+      does not imply unprocessed.
+  datamonger:
+    status: none
+    evidence:
+    - spec/decoders/delimited-text-v1.md
+    notes: Datamonger decodes the upstream TSV without scaling or other statistical preprocessing.
+provenance:
+  provider: NC State University, Dennis Boos variable selection resources
+  upstream_name: Diabetes Data
+  landing_page: https://www4.stat.ncsu.edu/~boos/var.select/diabetes.html
+  authors:
+  - Bradley Efron
+  - Trevor Hastie
+  - Iain Johnstone
+  - Robert Tibshirani
+  citation: Efron, B., Hastie, T., Johnstone, I., and Tibshirani, R. (2004). Least Angle Regression.
+    The Annals of Statistics, 32(2), 407–499. https://doi.org/10.1214/009053604000000067.
+  retrieved_at: '2026-11-08'
+license:
+  status: unknown
+  evidence: The NC State landing page attributes the data to the LARS paper and links the
+    original data from Trevor Hastie's LARS software page, but supplies no explicit dataset
+    license. The lars and scikit-learn software licenses are not treated as evidence of a
+    license for these data.
+artifacts:
+- name: data
+  format: tsv
+  compression: none
+  size: 18496
+  sha256: 4733febee697862c22139cdac87478a300ce0d101593deb07ed6c0f3328a99cd
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www4.stat.ncsu.edu/~boos/var.select/diabetes.tab.txt
+representation:
+  decoder: delimited-text
+  decoder_version: 1
+  inputs:
+    data: data
+  options:
+    encoding: utf-8
+    delimiter: "\t"
+    header: true
+    quote: '"'
+    escape: double
+    missing_values: []
+    row_order: source
+    columns:
+    - name: AGE
+      type: int64
+    - name: SEX
+      type: int64
+    - name: BMI
+      type: float64
+    - name: BP
+      type: float64
+    - name: S1
+      type: int64
+    - name: S2
+      type: float64
+    - name: S3
+      type: float64
+    - name: S4
+      type: float64
+    - name: S5
+      type: float64
+    - name: S6
+      type: int64
+    - name: Y
+      type: int64
+  expect:
+    components:
+    - name: AGE
+      kind: vector
+      type: int64
+      length: 442
+    - name: SEX
+      kind: vector
+      type: int64
+      length: 442
+    - name: BMI
+      kind: vector
+      type: float64
+      length: 442
+    - name: BP
+      kind: vector
+      type: float64
+      length: 442
+    - name: S1
+      kind: vector
+      type: int64
+      length: 442
+    - name: S2
+      kind: vector
+      type: float64
+      length: 442
+    - name: S3
+      kind: vector
+      type: float64
+      length: 442
+    - name: S4
+      kind: vector
+      type: float64
+      length: 442
+    - name: S5
+      kind: vector
+      type: float64
+      length: 442
+    - name: S6
+      kind: vector
+      type: int64
+      length: 442
+    - name: Y
+      kind: vector
+      type: int64
+      length: 442
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: b95e89ac02465990b2341abf7eb2d62e16f0bf994bd129e528650eeaaba6c712
+tasks:
+- name: default
+  type: regression
+  target: Y
+  features:
+  - AGE
+  - SEX
+  - BMI
+  - BP
+  - S1
+  - S2
+  - S3
+  - S4
+  - S5
+  - S6

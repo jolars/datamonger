@@ -8,6 +8,7 @@ manifests:
 - registry/datasets/datamonger/koussounadis2014-1.yaml
 - registry/datasets/datamonger/rhee2006-1.yaml
 - registry/datasets/datamonger/scheetz2006-1.yaml
+- registry/datasets/lars/diabetes-1.yaml
 - registry/datasets/libsvm/a1a-1.yaml
 - registry/datasets/libsvm/a2a-1.yaml
 - registry/datasets/libsvm/a3a-1.yaml
@@ -62,6 +63,9 @@ defaults:
   version: '1'
 - source: datamonger
   name: scheetz2006
+  version: '1'
+- source: lars
+  name: diabetes
   version: '1'
 - source: libsvm
   name: a1a
