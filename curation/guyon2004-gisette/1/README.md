@@ -54,8 +54,9 @@ The [named splits extension](../../../spec/decoders/named-splits-v1.md) now
 supports a complete assembly: declare `train` and `validation` with their
 LIBSVM recipes and `test` with its delimited feature-only recipe. The result
 exposes all three provider names and retains the 6,500 test rows without labels.
-This uses manifest schema 4. A future registered representation must use a new
-dataset version because its recipe and logical output differ from version 1.
+The production manifest uses this assembly as `datamonger:guyon2004-gisette@2`
+because its recipe and logical output differ from version 1. See the
+[version 2 registration notes](../2/README.md).
 
 The local manifest uses `metadata-only` artifacts without download locations.
 Do not select it in `registry/collection.yaml`. Production registration still
@@ -78,5 +79,6 @@ the deposited provenance records its updated hash. `preparation.json` retains
 the earlier local review receipt; `zenodo-record.json` records the final
 published file hashes. The source ZIP, local decoding recipes, maintainer
 README, source rights assessment, and repository receipts are not deposited.
-The dataset has not been added to the production collection, and no registry
-release was published.
+The production collection selects registry representation version 2, which
+reuses these deposited files. This deposit remains version 1; registration
+does not publish a registry release.
