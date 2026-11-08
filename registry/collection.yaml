@@ -6,6 +6,7 @@ manifests:
 - registry/datasets/datamonger/guyon2004-gisette-2.yaml
 - registry/datasets/datamonger/guyon2004-madelon-1.yaml
 - registry/datasets/datamonger/koussounadis2014-1.yaml
+- registry/datasets/datamonger/rhee2006-1.yaml
 - registry/datasets/datamonger/scheetz2006-1.yaml
 - registry/datasets/libsvm/a1a-1.yaml
 - registry/datasets/libsvm/a2a-1.yaml
@@ -55,6 +56,9 @@ defaults:
   version: '1'
 - source: datamonger
   name: koussounadis2014
+  version: '1'
+- source: datamonger
+  name: rhee2006
   version: '1'
 - source: datamonger
   name: scheetz2006

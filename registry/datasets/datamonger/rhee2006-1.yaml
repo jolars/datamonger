@@ -1,0 +1,2650 @@
+schema_version: 5
+source: datamonger
+name: rhee2006
+version: '1'
+title: 'Rhee2006: Nelfinavir susceptibility and HIV protease mutations'
+description: Nelfinavir regression dataset prepared directly from Stanford HIVDB's PI_DATA.txt
+  following Iowa Biostatistics' preparation. Contains 842 observations and 361 binary mutation
+  indicators in source row order. The response y is the natural logarithm of NFV susceptibility.
+  Isolate identifiers and other drug responses are excluded. No missing values remain.
+modality: tabular
+preprocessing:
+  upstream:
+    status: unknown
+    notes: Stanford supplies protease residue notation and phenotypic drug susceptibility
+      values; their earlier measurement preprocessing is not established.
+  datamonger:
+    status: documented
+    evidence:
+    - curation/rhee2006/1/DATASET.md
+    - curation/rhee2006/1/read_source.R
+    steps:
+    - kind: sample-selection
+      description: Retain rows whose protease positions P1 through P99 contain valid residue
+        notation.
+    - kind: feature-encoding
+      description: Encode each amino acid, insertion, and deletion as a binary residue indicator.
+        Mixed residues may activate multiple indicators. Keep mutation-major column order.
+    - kind: feature-selection
+      description: Remove mutation indicators absent across all valid sequences before selecting
+        observed NFV responses.
+    - kind: response-transformation
+      description: Compute y as the natural logarithm of NFV susceptibility.
+      parameters:
+        input: NFV
+        output: y
+        function: log
+    - kind: missing-value-removal
+      description: Exclude rows without an observed NFV response.
+    - kind: feature-selection
+      description: Retain the 361 mutation indicators and response y; omit isolate identifiers
+        and susceptibility measurements for other drugs.
+    notes: Preparation follows the pinned Iowa Biostatistics recipe. CSV serialization preserves
+      all prepared binary64 values using 17 significant digits.
+provenance:
+  provider: Datamonger; derived from Stanford HIVDB
+  upstream_name: Rhee2006
+  upstream_version: sha256:b89d2ad33300c0e936cb44292e1aee90644a047cb82a6a29fdca14e9d97af8ef
+  landing_page: https://hivdb.stanford.edu/_wrapper/pages/published_analysis/genophenoPNAS2006/
+  authors:
+  - Rhee S-Y
+  - Taylor J
+  - Wadhera G
+  - Ben-Hur A
+  - Brutlag DL
+  - Shafer RW
+  citations:
+  - citation: Rhee S-Y, Taylor J, Wadhera G, Ben-Hur A, Brutlag DL, and Shafer RW (2006).
+      Genotypic predictors of human immunodeficiency virus type 1 drug resistance. PNAS 103:17355-17360.
+      doi:10.1073/pnas.0607274103.
+    role: paper
+  - citation: Datamonger Rhee2006 portable representation, version 1. https://doi.org/10.5281/zenodo.23398467.
+    role: dataset
+  retrieved_at: '2026-11-08'
+license:
+  status: known
+  url: https://hivdb.stanford.edu/_wrapper/pages/FAQ/FAQ.html
+  evidence: Stanford HIVDB's FAQ describes published data as belonging in the public domain
+    so others can verify and build on results. Johan Larsson reviewed this statement and accepted
+    it as covering redistribution of this dataset. The recorded basis is Stanford's public-domain
+    statement, not a CC0 dedication or the code MIT license.
+  reviewed_by: Johan Larsson
+  reviewed_at: '2026-10-15'
+artifacts:
+- name: data
+  format: csv
+  compression: none
+  size: 626704
+  sha256: 893a104177f8d946fcd7ff429406757aa0d24be890982f0a7ee9cb9540ae00d3
+  distribution: mirror
+  downloads:
+  - kind: mirror
+    url: https://zenodo.org/api/records/23398467/files/data.csv/content
+  preservation:
+    status: durable
+    deposit: https://doi.org/10.5281/zenodo.23398467
+    evidence: Published version-specific Zenodo dataset deposit. All eight files were verified
+      anonymously against their original SHA-256 digests after correcting file visibility.
+      The CSV matches reproduction from pinned Stanford source bytes. Source rights and access
+      correction are recorded in curation/rhee2006/1/RIGHTS.md and zenodo-record.json. This
+      automated review is not an independent registry-release attestation.
+    reviewed_by: Codex (automated deposit verification)
+    reviewed_at: '2026-11-08'
+representation:
+  decoder: delimited-text
+  decoder_version: 1
+  inputs:
+    data: data
+  options:
+    encoding: utf-8
+    delimiter: ','
+    header: true
+    quote: '"'
+    escape: double
+    row_order: source
+    missing_values: []
+    columns:
+    - name: P4.A
+      type: float64
+    - name: P12.A
+      type: float64
+    - name: P13.A
+      type: float64
+    - name: P16.A
+      type: float64
+    - name: P20.A
+      type: float64
+    - name: P22.A
+      type: float64
+    - name: P28.A
+      type: float64
+    - name: P37.A
+      type: float64
+    - name: P51.A
+      type: float64
+    - name: P54.A
+      type: float64
+    - name: P63.A
+      type: float64
+    - name: P71.A
+      type: float64
+    - name: P73.A
+      type: float64
+    - name: P74.A
+      type: float64
+    - name: P79.A
+      type: float64
+    - name: P82.A
+      type: float64
+    - name: P84.A
+      type: float64
+    - name: P91.A
+      type: float64
+    - name: P37.C
+      type: float64
+    - name: P63.C
+      type: float64
+    - name: P67.C
+      type: float64
+    - name: P73.C
+      type: float64
+    - name: P82.C
+      type: float64
+    - name: P84.C
+      type: float64
+    - name: P91.C
+      type: float64
+    - name: P95.C
+      type: float64
+    - name: P4.D
+      type: float64
+    - name: P12.D
+      type: float64
+    - name: P25.D
+      type: float64
+    - name: P34.D
+      type: float64
+    - name: P35.D
+      type: float64
+    - name: P37.D
+      type: float64
+    - name: P60.D
+      type: float64
+    - name: P61.D
+      type: float64
+    - name: P63.D
+      type: float64
+    - name: P65.D
+      type: float64
+    - name: P68.D
+      type: float64
+    - name: P69.D
+      type: float64
+    - name: P79.D
+      type: float64
+    - name: P83.D
+      type: float64
+    - name: P88.D
+      type: float64
+    - name: P98.D
+      type: float64
+    - name: P7.E
+      type: float64
+    - name: P12.E
+      type: float64
+    - name: P16.E
+      type: float64
+    - name: P17.E
+      type: float64
+    - name: P18.E
+      type: float64
+    - name: P20.E
+      type: float64
+    - name: P21.E
+      type: float64
+    - name: P34.E
+      type: float64
+    - name: P35.E
+      type: float64
+    - name: P37.E
+      type: float64
+    - name: P47.E
+      type: float64
+    - name: P58.E
+      type: float64
+    - name: P60.E
+      type: float64
+    - name: P61.E
+      type: float64
+    - name: P63.E
+      type: float64
+    - name: P65.E
+      type: float64
+    - name: P67.E
+      type: float64
+    - name: P68.E
+      type: float64
+    - name: P70.E
+      type: float64
+    - name: P72.E
+      type: float64
+    - name: P92.E
+      type: float64
+    - name: P10.F
+      type: float64
+    - name: P19.F
+      type: float64
+    - name: P23.F
+      type: float64
+    - name: P24.F
+      type: float64
+    - name: P33.F
+      type: float64
+    - name: P38.F
+      type: float64
+    - name: P59.F
+      type: float64
+    - name: P63.F
+      type: float64
+    - name: P66.F
+      type: float64
+    - name: P67.F
+      type: float64
+    - name: P82.F
+      type: float64
+    - name: P95.F
+      type: float64
+    - name: P8.G
+      type: float64
+    - name: P16.G
+      type: float64
+    - name: P21.G
+      type: float64
+    - name: P35.G
+      type: float64
+    - name: P37.G
+      type: float64
+    - name: P52.G
+      type: float64
+    - name: P57.G
+      type: float64
+    - name: P61.G
+      type: float64
+    - name: P67.G
+      type: float64
+    - name: P77.G
+      type: float64
+    - name: P88.G
+      type: float64
+    - name: P7.H
+      type: float64
+    - name: P10.H
+      type: float64
+    - name: P18.H
+      type: float64
+    - name: P37.H
+      type: float64
+    - name: P61.H
+      type: float64
+    - name: P63.H
+      type: float64
+    - name: P69.H
+      type: float64
+    - name: P79.H
+      type: float64
+    - name: P92.H
+      type: float64
+    - name: P3.I
+      type: float64
+    - name: P10.I
+      type: float64
+    - name: P11.I
+      type: float64
+    - name: P12.I
+      type: float64
+    - name: P13.I
+      type: float64
+    - name: P14.I
+      type: float64
+    - name: P15.I
+      type: float64
+    - name: P18.I
+      type: float64
+    - name: P19.I
+      type: float64
+    - name: P20.I
+      type: float64
+    - name: P23.I
+      type: float64
+    - name: P24.I
+      type: float64
+    - name: P32.I
+      type: float64
+    - name: P33.I
+      type: float64
+    - name: P36.I
+      type: float64
+    - name: P37.I
+      type: float64
+    - name: P38.I
+      type: float64
+    - name: P41.I
+      type: float64
+    - name: P46.I
+      type: float64
+    - name: P53.I
+      type: float64
+    - name: P62.I
+      type: float64
+    - name: P64.I
+      type: float64
+    - name: P66.I
+      type: float64
+    - name: P71.I
+      type: float64
+    - name: P72.I
+      type: float64
+    - name: P75.I
+      type: float64
+    - name: P77.I
+      type: float64
+    - name: P82.I
+      type: float64
+    - name: P85.I
+      type: float64
+    - name: P89.I
+      type: float64
+    - name: P93.I
+      type: float64
+    - name: P12.K
+      type: float64
+    - name: P14.K
+      type: float64
+    - name: P20.K
+      type: float64
+    - name: P34.K
+      type: float64
+    - name: P41.K
+      type: float64
+    - name: P43.K
+      type: float64
+    - name: P45.K
+      type: float64
+    - name: P55.K
+      type: float64
+    - name: P57.K
+      type: float64
+    - name: P61.K
+      type: float64
+    - name: P69.K
+      type: float64
+    - name: P70.K
+      type: float64
+    - name: P72.K
+      type: float64
+    - name: P74.K
+      type: float64
+    - name: P85.K
+      type: float64
+    - name: P92.K
+      type: float64
+    - name: P6.L
+      type: float64
+    - name: P10.L
+      type: float64
+    - name: P11.L
+      type: float64
+    - name: P13.L
+      type: float64
+    - name: P15.L
+      type: float64
+    - name: P18.L
+      type: float64
+    - name: P19.L
+      type: float64
+    - name: P20.L
+      type: float64
+    - name: P23.L
+      type: float64
+    - name: P33.L
+      type: float64
+    - name: P36.L
+      type: float64
+    - name: P38.L
+      type: float64
+    - name: P45.L
+      type: float64
+    - name: P46.L
+      type: float64
+    - name: P50.L
+      type: float64
+    - name: P53.L
+      type: float64
+    - name: P54.L
+      type: float64
+    - name: P63.L
+      type: float64
+    - name: P64.L
+      type: float64
+    - name: P66.L
+      type: float64
+    - name: P67.L
+      type: float64
+    - name: P71.L
+      type: float64
+    - name: P72.L
+      type: float64
+    - name: P76.L
+      type: float64
+    - name: P82.L
+      type: float64
+    - name: P85.L
+      type: float64
+    - name: P89.L
+      type: float64
+    - name: P93.L
+      type: float64
+    - name: P95.L
+      type: float64
+    - name: P10.M
+      type: float64
+    - name: P14.M
+      type: float64
+    - name: P15.M
+      type: float64
+    - name: P19.M
+      type: float64
+    - name: P20.M
+      type: float64
+    - name: P33.M
+      type: float64
+    - name: P36.M
+      type: float64
+    - name: P38.M
+      type: float64
+    - name: P48.M
+      type: float64
+    - name: P54.M
+      type: float64
+    - name: P64.M
+      type: float64
+    - name: P72.M
+      type: float64
+    - name: P77.M
+      type: float64
+    - name: P85.M
+      type: float64
+    - name: P89.M
+      type: float64
+    - name: P90.M
+      type: float64
+    - name: P93.M
+      type: float64
+    - name: P12.N
+      type: float64
+    - name: P20.N
+      type: float64
+    - name: P30.N
+      type: float64
+    - name: P34.N
+      type: float64
+    - name: P35.N
+      type: float64
+    - name: P37.N
+      type: float64
+    - name: P43.N
+      type: float64
+    - name: P45.N
+      type: float64
+    - name: P55.N
+      type: float64
+    - name: P60.N
+      type: float64
+    - name: P61.N
+      type: float64
+    - name: P66.N
+      type: float64
+    - name: P69.N
+      type: float64
+    - name: P70.N
+      type: float64
+    - name: P79.N
+      type: float64
+    - name: P85.N
+      type: float64
+    - name: P98.N
+      type: float64
+    - name: P4.P
+      type: float64
+    - name: P9.P
+      type: float64
+    - name: P12.P
+      type: float64
+    - name: P19.P
+      type: float64
+    - name: P26.P
+      type: float64
+    - name: P28.P
+      type: float64
+    - name: P37.P
+      type: float64
+    - name: P39.P
+      type: float64
+    - name: P41.P
+      type: float64
+    - name: P63.P
+      type: float64
+    - name: P69.P
+      type: float64
+    - name: P74.P
+      type: float64
+    - name: P79.P
+      type: float64
+    - name: P89.P
+      type: float64
+    - name: P7.Q
+      type: float64
+    - name: P8.Q
+      type: float64
+    - name: P12.Q
+      type: float64
+    - name: P18.Q
+      type: float64
+    - name: P19.Q
+      type: float64
+    - name: P21.Q
+      type: float64
+    - name: P34.Q
+      type: float64
+    - name: P37.Q
+      type: float64
+    - name: P39.Q
+      type: float64
+    - name: P45.Q
+      type: float64
+    - name: P58.Q
+      type: float64
+    - name: P61.Q
+      type: float64
+    - name: P63.Q
+      type: float64
+    - name: P69.Q
+      type: float64
+    - name: P70.Q
+      type: float64
+    - name: P92.Q
+      type: float64
+    - name: P7.R
+      type: float64
+    - name: P8.R
+      type: float64
+    - name: P10.R
+      type: float64
+    - name: P12.R
+      type: float64
+    - name: P14.R
+      type: float64
+    - name: P18.R
+      type: float64
+    - name: P19.R
+      type: float64
+    - name: P20.R
+      type: float64
+    - name: P41.R
+      type: float64
+    - name: P43.R
+      type: float64
+    - name: P45.R
+      type: float64
+    - name: P55.R
+      type: float64
+    - name: P57.R
+      type: float64
+    - name: P61.R
+      type: float64
+    - name: P63.R
+      type: float64
+    - name: P69.R
+      type: float64
+    - name: P70.R
+      type: float64
+    - name: P72.R
+      type: float64
+    - name: P74.R
+      type: float64
+    - name: P92.R
+      type: float64
+    - name: P4.S
+      type: float64
+    - name: P9.S
+      type: float64
+    - name: P12.S
+      type: float64
+    - name: P37.S
+      type: float64
+    - name: P39.S
+      type: float64
+    - name: P48.S
+      type: float64
+    - name: P52.S
+      type: float64
+    - name: P54.S
+      type: float64
+    - name: P63.S
+      type: float64
+    - name: P67.S
+      type: float64
+    - name: P69.S
+      type: float64
+    - name: P73.S
+      type: float64
+    - name: P74.S
+      type: float64
+    - name: P79.S
+      type: float64
+    - name: P82.S
+      type: float64
+    - name: P88.S
+      type: float64
+    - name: P91.S
+      type: float64
+    - name: P96.S
+      type: float64
+    - name: P3.T
+      type: float64
+    - name: P4.T
+      type: float64
+    - name: P12.T
+      type: float64
+    - name: P14.T
+      type: float64
+    - name: P19.T
+      type: float64
+    - name: P20.T
+      type: float64
+    - name: P26.T
+      type: float64
+    - name: P34.T
+      type: float64
+    - name: P37.T
+      type: float64
+    - name: P43.T
+      type: float64
+    - name: P54.T
+      type: float64
+    - name: P63.T
+      type: float64
+    - name: P66.T
+      type: float64
+    - name: P70.T
+      type: float64
+    - name: P71.T
+      type: float64
+    - name: P72.T
+      type: float64
+    - name: P73.T
+      type: float64
+    - name: P74.T
+      type: float64
+    - name: P77.T
+      type: float64
+    - name: P82.T
+      type: float64
+    - name: P84.T
+      type: float64
+    - name: P88.T
+      type: float64
+    - name: P89.T
+      type: float64
+    - name: P91.T
+      type: float64
+    - name: P96.T
+      type: float64
+    - name: P2.V
+      type: float64
+    - name: P3.V
+      type: float64
+    - name: P10.V
+      type: float64
+    - name: P13.V
+      type: float64
+    - name: P15.V
+      type: float64
+    - name: P19.V
+      type: float64
+    - name: P20.V
+      type: float64
+    - name: P22.V
+      type: float64
+    - name: P23.V
+      type: float64
+    - name: P25.V
+      type: float64
+    - name: P33.V
+      type: float64
+    - name: P34.V
+      type: float64
+    - name: P36.V
+      type: float64
+    - name: P38.V
+      type: float64
+    - name: P45.V
+      type: float64
+    - name: P46.V
+      type: float64
+    - name: P47.V
+      type: float64
+    - name: P48.V
+      type: float64
+    - name: P50.V
+      type: float64
+    - name: P54.V
+      type: float64
+    - name: P62.V
+      type: float64
+    - name: P63.V
+      type: float64
+    - name: P64.V
+      type: float64
+    - name: P66.V
+      type: float64
+    - name: P71.V
+      type: float64
+    - name: P72.V
+      type: float64
+    - name: P75.V
+      type: float64
+    - name: P76.V
+      type: float64
+    - name: P77.V
+      type: float64
+    - name: P84.V
+      type: float64
+    - name: P85.V
+      type: float64
+    - name: P89.V
+      type: float64
+    - name: P6.W
+      type: float64
+    - name: P9.X
+      type: float64
+    - name: P10.X
+      type: float64
+    - name: P14.X
+      type: float64
+    - name: P19.X
+      type: float64
+    - name: P20.X
+      type: float64
+    - name: P35.X
+      type: float64
+    - name: P37.X
+      type: float64
+    - name: P61.X
+      type: float64
+    - name: P63.X
+      type: float64
+    - name: P65.X
+      type: float64
+    - name: P71.X
+      type: float64
+    - name: P72.X
+      type: float64
+    - name: P86.X
+      type: float64
+    - name: P10.Y
+      type: float64
+    - name: P37.Y
+      type: float64
+    - name: P59.Y
+      type: float64
+    - name: P67.Y
+      type: float64
+    - name: P69.Y
+      type: float64
+    - name: P12.Z
+      type: float64
+    - name: P14.Z
+      type: float64
+    - name: P16.Z
+      type: float64
+    - name: P18.Z
+      type: float64
+    - name: P19.Z
+      type: float64
+    - name: P34.Z
+      type: float64
+    - name: P37.Z
+      type: float64
+    - name: P61.Z
+      type: float64
+    - name: P72.Z
+      type: float64
+    - name: P79.Z
+      type: float64
+    - name: P83.Z
+      type: float64
+    - name: P92.Z
+      type: float64
+    - name: y
+      type: float64
+  expect:
+    components:
+    - name: P4.A
+      kind: vector
+      type: float64
+      length: 842
+    - name: P12.A
+      kind: vector
+      type: float64
+      length: 842
+    - name: P13.A
+      kind: vector
+      type: float64
+      length: 842
+    - name: P16.A
+      kind: vector
+      type: float64
+      length: 842
+    - name: P20.A
+      kind: vector
+      type: float64
+      length: 842
+    - name: P22.A
+      kind: vector
+      type: float64
+      length: 842
+    - name: P28.A
+      kind: vector
+      type: float64
+      length: 842
+    - name: P37.A
+      kind: vector
+      type: float64
+      length: 842
+    - name: P51.A
+      kind: vector
+      type: float64
+      length: 842
+    - name: P54.A
+      kind: vector
+      type: float64
+      length: 842
+    - name: P63.A
+      kind: vector
+      type: float64
+      length: 842
+    - name: P71.A
+      kind: vector
+      type: float64
+      length: 842
+    - name: P73.A
+      kind: vector
+      type: float64
+      length: 842
+    - name: P74.A
+      kind: vector
+      type: float64
+      length: 842
+    - name: P79.A
+      kind: vector
+      type: float64
+      length: 842
+    - name: P82.A
+      kind: vector
+      type: float64
+      length: 842
+    - name: P84.A
+      kind: vector
+      type: float64
+      length: 842
+    - name: P91.A
+      kind: vector
+      type: float64
+      length: 842
+    - name: P37.C
+      kind: vector
+      type: float64
+      length: 842
+    - name: P63.C
+      kind: vector
+      type: float64
+      length: 842
+    - name: P67.C
+      kind: vector
+      type: float64
+      length: 842
+    - name: P73.C
+      kind: vector
+      type: float64
+      length: 842
+    - name: P82.C
+      kind: vector
+      type: float64
+      length: 842
+    - name: P84.C
+      kind: vector
+      type: float64
+      length: 842
+    - name: P91.C
+      kind: vector
+      type: float64
+      length: 842
+    - name: P95.C
+      kind: vector
+      type: float64
+      length: 842
+    - name: P4.D
+      kind: vector
+      type: float64
+      length: 842
+    - name: P12.D
+      kind: vector
+      type: float64
+      length: 842
+    - name: P25.D
+      kind: vector
+      type: float64
+      length: 842
+    - name: P34.D
+      kind: vector
+      type: float64
+      length: 842
+    - name: P35.D
+      kind: vector
+      type: float64
+      length: 842
+    - name: P37.D
+      kind: vector
+      type: float64
+      length: 842
+    - name: P60.D
+      kind: vector
+      type: float64
+      length: 842
+    - name: P61.D
+      kind: vector
+      type: float64
+      length: 842
+    - name: P63.D
+      kind: vector
+      type: float64
+      length: 842
+    - name: P65.D
+      kind: vector
+      type: float64
+      length: 842
+    - name: P68.D
+      kind: vector
+      type: float64
+      length: 842
+    - name: P69.D
+      kind: vector
+      type: float64
+      length: 842
+    - name: P79.D
+      kind: vector
+      type: float64
+      length: 842
+    - name: P83.D
+      kind: vector
+      type: float64
+      length: 842
+    - name: P88.D
+      kind: vector
+      type: float64
+      length: 842
+    - name: P98.D
+      kind: vector
+      type: float64
+      length: 842
+    - name: P7.E
+      kind: vector
+      type: float64
+      length: 842
+    - name: P12.E
+      kind: vector
+      type: float64
+      length: 842
+    - name: P16.E
+      kind: vector
+      type: float64
+      length: 842
+    - name: P17.E
+      kind: vector
+      type: float64
+      length: 842
+    - name: P18.E
+      kind: vector
+      type: float64
+      length: 842
+    - name: P20.E
+      kind: vector
+      type: float64
+      length: 842
+    - name: P21.E
+      kind: vector
+      type: float64
+      length: 842
+    - name: P34.E
+      kind: vector
+      type: float64
+      length: 842
+    - name: P35.E
+      kind: vector
+      type: float64
+      length: 842
+    - name: P37.E
+      kind: vector
+      type: float64
+      length: 842
+    - name: P47.E
+      kind: vector
+      type: float64
+      length: 842
+    - name: P58.E
+      kind: vector
+      type: float64
+      length: 842
+    - name: P60.E
+      kind: vector
+      type: float64
+      length: 842
+    - name: P61.E
+      kind: vector
+      type: float64
+      length: 842
+    - name: P63.E
+      kind: vector
+      type: float64
+      length: 842
+    - name: P65.E
+      kind: vector
+      type: float64
+      length: 842
+    - name: P67.E
+      kind: vector
+      type: float64
+      length: 842
+    - name: P68.E
+      kind: vector
+      type: float64
+      length: 842
+    - name: P70.E
+      kind: vector
+      type: float64
+      length: 842
+    - name: P72.E
+      kind: vector
+      type: float64
+      length: 842
+    - name: P92.E
+      kind: vector
+      type: float64
+      length: 842
+    - name: P10.F
+      kind: vector
+      type: float64
+      length: 842
+    - name: P19.F
+      kind: vector
+      type: float64
+      length: 842
+    - name: P23.F
+      kind: vector
+      type: float64
+      length: 842
+    - name: P24.F
+      kind: vector
+      type: float64
+      length: 842
+    - name: P33.F
+      kind: vector
+      type: float64
+      length: 842
+    - name: P38.F
+      kind: vector
+      type: float64
+      length: 842
+    - name: P59.F
+      kind: vector
+      type: float64
+      length: 842
+    - name: P63.F
+      kind: vector
+      type: float64
+      length: 842
+    - name: P66.F
+      kind: vector
+      type: float64
+      length: 842
+    - name: P67.F
+      kind: vector
+      type: float64
+      length: 842
+    - name: P82.F
+      kind: vector
+      type: float64
+      length: 842
+    - name: P95.F
+      kind: vector
+      type: float64
+      length: 842
+    - name: P8.G
+      kind: vector
+      type: float64
+      length: 842
+    - name: P16.G
+      kind: vector
+      type: float64
+      length: 842
+    - name: P21.G
+      kind: vector
+      type: float64
+      length: 842
+    - name: P35.G
+      kind: vector
+      type: float64
+      length: 842
+    - name: P37.G
+      kind: vector
+      type: float64
+      length: 842
+    - name: P52.G
+      kind: vector
+      type: float64
+      length: 842
+    - name: P57.G
+      kind: vector
+      type: float64
+      length: 842
+    - name: P61.G
+      kind: vector
+      type: float64
+      length: 842
+    - name: P67.G
+      kind: vector
+      type: float64
+      length: 842
+    - name: P77.G
+      kind: vector
+      type: float64
+      length: 842
+    - name: P88.G
+      kind: vector
+      type: float64
+      length: 842
+    - name: P7.H
+      kind: vector
+      type: float64
+      length: 842
+    - name: P10.H
+      kind: vector
+      type: float64
+      length: 842
+    - name: P18.H
+      kind: vector
+      type: float64
+      length: 842
+    - name: P37.H
+      kind: vector
+      type: float64
+      length: 842
+    - name: P61.H
+      kind: vector
+      type: float64
+      length: 842
+    - name: P63.H
+      kind: vector
+      type: float64
+      length: 842
+    - name: P69.H
+      kind: vector
+      type: float64
+      length: 842
+    - name: P79.H
+      kind: vector
+      type: float64
+      length: 842
+    - name: P92.H
+      kind: vector
+      type: float64
+      length: 842
+    - name: P3.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P10.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P11.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P12.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P13.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P14.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P15.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P18.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P19.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P20.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P23.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P24.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P32.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P33.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P36.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P37.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P38.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P41.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P46.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P53.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P62.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P64.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P66.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P71.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P72.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P75.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P77.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P82.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P85.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P89.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P93.I
+      kind: vector
+      type: float64
+      length: 842
+    - name: P12.K
+      kind: vector
+      type: float64
+      length: 842
+    - name: P14.K
+      kind: vector
+      type: float64
+      length: 842
+    - name: P20.K
+      kind: vector
+      type: float64
+      length: 842
+    - name: P34.K
+      kind: vector
+      type: float64
+      length: 842
+    - name: P41.K
+      kind: vector
+      type: float64
+      length: 842
+    - name: P43.K
+      kind: vector
+      type: float64
+      length: 842
+    - name: P45.K
+      kind: vector
+      type: float64
+      length: 842
+    - name: P55.K
+      kind: vector
+      type: float64
+      length: 842
+    - name: P57.K
+      kind: vector
+      type: float64
+      length: 842
+    - name: P61.K
+      kind: vector
+      type: float64
+      length: 842
+    - name: P69.K
+      kind: vector
+      type: float64
+      length: 842
+    - name: P70.K
+      kind: vector
+      type: float64
+      length: 842
+    - name: P72.K
+      kind: vector
+      type: float64
+      length: 842
+    - name: P74.K
+      kind: vector
+      type: float64
+      length: 842
+    - name: P85.K
+      kind: vector
+      type: float64
+      length: 842
+    - name: P92.K
+      kind: vector
+      type: float64
+      length: 842
+    - name: P6.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P10.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P11.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P13.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P15.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P18.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P19.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P20.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P23.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P33.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P36.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P38.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P45.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P46.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P50.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P53.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P54.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P63.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P64.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P66.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P67.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P71.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P72.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P76.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P82.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P85.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P89.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P93.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P95.L
+      kind: vector
+      type: float64
+      length: 842
+    - name: P10.M
+      kind: vector
+      type: float64
+      length: 842
+    - name: P14.M
+      kind: vector
+      type: float64
+      length: 842
+    - name: P15.M
+      kind: vector
+      type: float64
+      length: 842
+    - name: P19.M
+      kind: vector
+      type: float64
+      length: 842
+    - name: P20.M
+      kind: vector
+      type: float64
+      length: 842
+    - name: P33.M
+      kind: vector
+      type: float64
+      length: 842
+    - name: P36.M
+      kind: vector
+      type: float64
+      length: 842
+    - name: P38.M
+      kind: vector
+      type: float64
+      length: 842
+    - name: P48.M
+      kind: vector
+      type: float64
+      length: 842
+    - name: P54.M
+      kind: vector
+      type: float64
+      length: 842
+    - name: P64.M
+      kind: vector
+      type: float64
+      length: 842
+    - name: P72.M
+      kind: vector
+      type: float64
+      length: 842
+    - name: P77.M
+      kind: vector
+      type: float64
+      length: 842
+    - name: P85.M
+      kind: vector
+      type: float64
+      length: 842
+    - name: P89.M
+      kind: vector
+      type: float64
+      length: 842
+    - name: P90.M
+      kind: vector
+      type: float64
+      length: 842
+    - name: P93.M
+      kind: vector
+      type: float64
+      length: 842
+    - name: P12.N
+      kind: vector
+      type: float64
+      length: 842
+    - name: P20.N
+      kind: vector
+      type: float64
+      length: 842
+    - name: P30.N
+      kind: vector
+      type: float64
+      length: 842
+    - name: P34.N
+      kind: vector
+      type: float64
+      length: 842
+    - name: P35.N
+      kind: vector
+      type: float64
+      length: 842
+    - name: P37.N
+      kind: vector
+      type: float64
+      length: 842
+    - name: P43.N
+      kind: vector
+      type: float64
+      length: 842
+    - name: P45.N
+      kind: vector
+      type: float64
+      length: 842
+    - name: P55.N
+      kind: vector
+      type: float64
+      length: 842
+    - name: P60.N
+      kind: vector
+      type: float64
+      length: 842
+    - name: P61.N
+      kind: vector
+      type: float64
+      length: 842
+    - name: P66.N
+      kind: vector
+      type: float64
+      length: 842
+    - name: P69.N
+      kind: vector
+      type: float64
+      length: 842
+    - name: P70.N
+      kind: vector
+      type: float64
+      length: 842
+    - name: P79.N
+      kind: vector
+      type: float64
+      length: 842
+    - name: P85.N
+      kind: vector
+      type: float64
+      length: 842
+    - name: P98.N
+      kind: vector
+      type: float64
+      length: 842
+    - name: P4.P
+      kind: vector
+      type: float64
+      length: 842
+    - name: P9.P
+      kind: vector
+      type: float64
+      length: 842
+    - name: P12.P
+      kind: vector
+      type: float64
+      length: 842
+    - name: P19.P
+      kind: vector
+      type: float64
+      length: 842
+    - name: P26.P
+      kind: vector
+      type: float64
+      length: 842
+    - name: P28.P
+      kind: vector
+      type: float64
+      length: 842
+    - name: P37.P
+      kind: vector
+      type: float64
+      length: 842
+    - name: P39.P
+      kind: vector
+      type: float64
+      length: 842
+    - name: P41.P
+      kind: vector
+      type: float64
+      length: 842
+    - name: P63.P
+      kind: vector
+      type: float64
+      length: 842
+    - name: P69.P
+      kind: vector
+      type: float64
+      length: 842
+    - name: P74.P
+      kind: vector
+      type: float64
+      length: 842
+    - name: P79.P
+      kind: vector
+      type: float64
+      length: 842
+    - name: P89.P
+      kind: vector
+      type: float64
+      length: 842
+    - name: P7.Q
+      kind: vector
+      type: float64
+      length: 842
+    - name: P8.Q
+      kind: vector
+      type: float64
+      length: 842
+    - name: P12.Q
+      kind: vector
+      type: float64
+      length: 842
+    - name: P18.Q
+      kind: vector
+      type: float64
+      length: 842
+    - name: P19.Q
+      kind: vector
+      type: float64
+      length: 842
+    - name: P21.Q
+      kind: vector
+      type: float64
+      length: 842
+    - name: P34.Q
+      kind: vector
+      type: float64
+      length: 842
+    - name: P37.Q
+      kind: vector
+      type: float64
+      length: 842
+    - name: P39.Q
+      kind: vector
+      type: float64
+      length: 842
+    - name: P45.Q
+      kind: vector
+      type: float64
+      length: 842
+    - name: P58.Q
+      kind: vector
+      type: float64
+      length: 842
+    - name: P61.Q
+      kind: vector
+      type: float64
+      length: 842
+    - name: P63.Q
+      kind: vector
+      type: float64
+      length: 842
+    - name: P69.Q
+      kind: vector
+      type: float64
+      length: 842
+    - name: P70.Q
+      kind: vector
+      type: float64
+      length: 842
+    - name: P92.Q
+      kind: vector
+      type: float64
+      length: 842
+    - name: P7.R
+      kind: vector
+      type: float64
+      length: 842
+    - name: P8.R
+      kind: vector
+      type: float64
+      length: 842
+    - name: P10.R
+      kind: vector
+      type: float64
+      length: 842
+    - name: P12.R
+      kind: vector
+      type: float64
+      length: 842
+    - name: P14.R
+      kind: vector
+      type: float64
+      length: 842
+    - name: P18.R
+      kind: vector
+      type: float64
+      length: 842
+    - name: P19.R
+      kind: vector
+      type: float64
+      length: 842
+    - name: P20.R
+      kind: vector
+      type: float64
+      length: 842
+    - name: P41.R
+      kind: vector
+      type: float64
+      length: 842
+    - name: P43.R
+      kind: vector
+      type: float64
+      length: 842
+    - name: P45.R
+      kind: vector
+      type: float64
+      length: 842
+    - name: P55.R
+      kind: vector
+      type: float64
+      length: 842
+    - name: P57.R
+      kind: vector
+      type: float64
+      length: 842
+    - name: P61.R
+      kind: vector
+      type: float64
+      length: 842
+    - name: P63.R
+      kind: vector
+      type: float64
+      length: 842
+    - name: P69.R
+      kind: vector
+      type: float64
+      length: 842
+    - name: P70.R
+      kind: vector
+      type: float64
+      length: 842
+    - name: P72.R
+      kind: vector
+      type: float64
+      length: 842
+    - name: P74.R
+      kind: vector
+      type: float64
+      length: 842
+    - name: P92.R
+      kind: vector
+      type: float64
+      length: 842
+    - name: P4.S
+      kind: vector
+      type: float64
+      length: 842
+    - name: P9.S
+      kind: vector
+      type: float64
+      length: 842
+    - name: P12.S
+      kind: vector
+      type: float64
+      length: 842
+    - name: P37.S
+      kind: vector
+      type: float64
+      length: 842
+    - name: P39.S
+      kind: vector
+      type: float64
+      length: 842
+    - name: P48.S
+      kind: vector
+      type: float64
+      length: 842
+    - name: P52.S
+      kind: vector
+      type: float64
+      length: 842
+    - name: P54.S
+      kind: vector
+      type: float64
+      length: 842
+    - name: P63.S
+      kind: vector
+      type: float64
+      length: 842
+    - name: P67.S
+      kind: vector
+      type: float64
+      length: 842
+    - name: P69.S
+      kind: vector
+      type: float64
+      length: 842
+    - name: P73.S
+      kind: vector
+      type: float64
+      length: 842
+    - name: P74.S
+      kind: vector
+      type: float64
+      length: 842
+    - name: P79.S
+      kind: vector
+      type: float64
+      length: 842
+    - name: P82.S
+      kind: vector
+      type: float64
+      length: 842
+    - name: P88.S
+      kind: vector
+      type: float64
+      length: 842
+    - name: P91.S
+      kind: vector
+      type: float64
+      length: 842
+    - name: P96.S
+      kind: vector
+      type: float64
+      length: 842
+    - name: P3.T
+      kind: vector
+      type: float64
+      length: 842
+    - name: P4.T
+      kind: vector
+      type: float64
+      length: 842
+    - name: P12.T
+      kind: vector
+      type: float64
+      length: 842
+    - name: P14.T
+      kind: vector
+      type: float64
+      length: 842
+    - name: P19.T
+      kind: vector
+      type: float64
+      length: 842
+    - name: P20.T
+      kind: vector
+      type: float64
+      length: 842
+    - name: P26.T
+      kind: vector
+      type: float64
+      length: 842
+    - name: P34.T
+      kind: vector
+      type: float64
+      length: 842
+    - name: P37.T
+      kind: vector
+      type: float64
+      length: 842
+    - name: P43.T
+      kind: vector
+      type: float64
+      length: 842
+    - name: P54.T
+      kind: vector
+      type: float64
+      length: 842
+    - name: P63.T
+      kind: vector
+      type: float64
+      length: 842
+    - name: P66.T
+      kind: vector
+      type: float64
+      length: 842
+    - name: P70.T
+      kind: vector
+      type: float64
+      length: 842
+    - name: P71.T
+      kind: vector
+      type: float64
+      length: 842
+    - name: P72.T
+      kind: vector
+      type: float64
+      length: 842
+    - name: P73.T
+      kind: vector
+      type: float64
+      length: 842
+    - name: P74.T
+      kind: vector
+      type: float64
+      length: 842
+    - name: P77.T
+      kind: vector
+      type: float64
+      length: 842
+    - name: P82.T
+      kind: vector
+      type: float64
+      length: 842
+    - name: P84.T
+      kind: vector
+      type: float64
+      length: 842
+    - name: P88.T
+      kind: vector
+      type: float64
+      length: 842
+    - name: P89.T
+      kind: vector
+      type: float64
+      length: 842
+    - name: P91.T
+      kind: vector
+      type: float64
+      length: 842
+    - name: P96.T
+      kind: vector
+      type: float64
+      length: 842
+    - name: P2.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P3.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P10.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P13.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P15.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P19.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P20.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P22.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P23.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P25.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P33.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P34.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P36.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P38.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P45.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P46.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P47.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P48.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P50.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P54.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P62.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P63.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P64.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P66.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P71.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P72.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P75.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P76.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P77.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P84.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P85.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P89.V
+      kind: vector
+      type: float64
+      length: 842
+    - name: P6.W
+      kind: vector
+      type: float64
+      length: 842
+    - name: P9.X
+      kind: vector
+      type: float64
+      length: 842
+    - name: P10.X
+      kind: vector
+      type: float64
+      length: 842
+    - name: P14.X
+      kind: vector
+      type: float64
+      length: 842
+    - name: P19.X
+      kind: vector
+      type: float64
+      length: 842
+    - name: P20.X
+      kind: vector
+      type: float64
+      length: 842
+    - name: P35.X
+      kind: vector
+      type: float64
+      length: 842
+    - name: P37.X
+      kind: vector
+      type: float64
+      length: 842
+    - name: P61.X
+      kind: vector
+      type: float64
+      length: 842
+    - name: P63.X
+      kind: vector
+      type: float64
+      length: 842
+    - name: P65.X
+      kind: vector
+      type: float64
+      length: 842
+    - name: P71.X
+      kind: vector
+      type: float64
+      length: 842
+    - name: P72.X
+      kind: vector
+      type: float64
+      length: 842
+    - name: P86.X
+      kind: vector
+      type: float64
+      length: 842
+    - name: P10.Y
+      kind: vector
+      type: float64
+      length: 842
+    - name: P37.Y
+      kind: vector
+      type: float64
+      length: 842
+    - name: P59.Y
+      kind: vector
+      type: float64
+      length: 842
+    - name: P67.Y
+      kind: vector
+      type: float64
+      length: 842
+    - name: P69.Y
+      kind: vector
+      type: float64
+      length: 842
+    - name: P12.Z
+      kind: vector
+      type: float64
+      length: 842
+    - name: P14.Z
+      kind: vector
+      type: float64
+      length: 842
+    - name: P16.Z
+      kind: vector
+      type: float64
+      length: 842
+    - name: P18.Z
+      kind: vector
+      type: float64
+      length: 842
+    - name: P19.Z
+      kind: vector
+      type: float64
+      length: 842
+    - name: P34.Z
+      kind: vector
+      type: float64
+      length: 842
+    - name: P37.Z
+      kind: vector
+      type: float64
+      length: 842
+    - name: P61.Z
+      kind: vector
+      type: float64
+      length: 842
+    - name: P72.Z
+      kind: vector
+      type: float64
+      length: 842
+    - name: P79.Z
+      kind: vector
+      type: float64
+      length: 842
+    - name: P83.Z
+      kind: vector
+      type: float64
+      length: 842
+    - name: P92.Z
+      kind: vector
+      type: float64
+      length: 842
+    - name: y
+      kind: vector
+      type: float64
+      length: 842
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: 1666c5a63336a4681c026736d0467c8d95aa0464513e2a67704d45bc9bdc9436
+tasks:
+- name: default
+  type: regression
+  target: y
+  features:
+  - P4.A
+  - P12.A
+  - P13.A
+  - P16.A
+  - P20.A
+  - P22.A
+  - P28.A
+  - P37.A
+  - P51.A
+  - P54.A
+  - P63.A
+  - P71.A
+  - P73.A
+  - P74.A
+  - P79.A
+  - P82.A
+  - P84.A
+  - P91.A
+  - P37.C
+  - P63.C
+  - P67.C
+  - P73.C
+  - P82.C
+  - P84.C
+  - P91.C
+  - P95.C
+  - P4.D
+  - P12.D
+  - P25.D
+  - P34.D
+  - P35.D
+  - P37.D
+  - P60.D
+  - P61.D
+  - P63.D
+  - P65.D
+  - P68.D
+  - P69.D
+  - P79.D
+  - P83.D
+  - P88.D
+  - P98.D
+  - P7.E
+  - P12.E
+  - P16.E
+  - P17.E
+  - P18.E
+  - P20.E
+  - P21.E
+  - P34.E
+  - P35.E
+  - P37.E
+  - P47.E
+  - P58.E
+  - P60.E
+  - P61.E
+  - P63.E
+  - P65.E
+  - P67.E
+  - P68.E
+  - P70.E
+  - P72.E
+  - P92.E
+  - P10.F
+  - P19.F
+  - P23.F
+  - P24.F
+  - P33.F
+  - P38.F
+  - P59.F
+  - P63.F
+  - P66.F
+  - P67.F
+  - P82.F
+  - P95.F
+  - P8.G
+  - P16.G
+  - P21.G
+  - P35.G
+  - P37.G
+  - P52.G
+  - P57.G
+  - P61.G
+  - P67.G
+  - P77.G
+  - P88.G
+  - P7.H
+  - P10.H
+  - P18.H
+  - P37.H
+  - P61.H
+  - P63.H
+  - P69.H
+  - P79.H
+  - P92.H
+  - P3.I
+  - P10.I
+  - P11.I
+  - P12.I
+  - P13.I
+  - P14.I
+  - P15.I
+  - P18.I
+  - P19.I
+  - P20.I
+  - P23.I
+  - P24.I
+  - P32.I
+  - P33.I
+  - P36.I
+  - P37.I
+  - P38.I
+  - P41.I
+  - P46.I
+  - P53.I
+  - P62.I
+  - P64.I
+  - P66.I
+  - P71.I
+  - P72.I
+  - P75.I
+  - P77.I
+  - P82.I
+  - P85.I
+  - P89.I
+  - P93.I
+  - P12.K
+  - P14.K
+  - P20.K
+  - P34.K
+  - P41.K
+  - P43.K
+  - P45.K
+  - P55.K
+  - P57.K
+  - P61.K
+  - P69.K
+  - P70.K
+  - P72.K
+  - P74.K
+  - P85.K
+  - P92.K
+  - P6.L
+  - P10.L
+  - P11.L
+  - P13.L
+  - P15.L
+  - P18.L
+  - P19.L
+  - P20.L
+  - P23.L
+  - P33.L
+  - P36.L
+  - P38.L
+  - P45.L
+  - P46.L
+  - P50.L
+  - P53.L
+  - P54.L
+  - P63.L
+  - P64.L
+  - P66.L
+  - P67.L
+  - P71.L
+  - P72.L
+  - P76.L
+  - P82.L
+  - P85.L
+  - P89.L
+  - P93.L
+  - P95.L
+  - P10.M
+  - P14.M
+  - P15.M
+  - P19.M
+  - P20.M
+  - P33.M
+  - P36.M
+  - P38.M
+  - P48.M
+  - P54.M
+  - P64.M
+  - P72.M
+  - P77.M
+  - P85.M
+  - P89.M
+  - P90.M
+  - P93.M
+  - P12.N
+  - P20.N
+  - P30.N
+  - P34.N
+  - P35.N
+  - P37.N
+  - P43.N
+  - P45.N
+  - P55.N
+  - P60.N
+  - P61.N
+  - P66.N
+  - P69.N
+  - P70.N
+  - P79.N
+  - P85.N
+  - P98.N
+  - P4.P
+  - P9.P
+  - P12.P
+  - P19.P
+  - P26.P
+  - P28.P
+  - P37.P
+  - P39.P
+  - P41.P
+  - P63.P
+  - P69.P
+  - P74.P
+  - P79.P
+  - P89.P
+  - P7.Q
+  - P8.Q
+  - P12.Q
+  - P18.Q
+  - P19.Q
+  - P21.Q
+  - P34.Q
+  - P37.Q
+  - P39.Q
+  - P45.Q
+  - P58.Q
+  - P61.Q
+  - P63.Q
+  - P69.Q
+  - P70.Q
+  - P92.Q
+  - P7.R
+  - P8.R
+  - P10.R
+  - P12.R
+  - P14.R
+  - P18.R
+  - P19.R
+  - P20.R
+  - P41.R
+  - P43.R
+  - P45.R
+  - P55.R
+  - P57.R
+  - P61.R
+  - P63.R
+  - P69.R
+  - P70.R
+  - P72.R
+  - P74.R
+  - P92.R
+  - P4.S
+  - P9.S
+  - P12.S
+  - P37.S
+  - P39.S
+  - P48.S
+  - P52.S
+  - P54.S
+  - P63.S
+  - P67.S
+  - P69.S
+  - P73.S
+  - P74.S
+  - P79.S
+  - P82.S
+  - P88.S
+  - P91.S
+  - P96.S
+  - P3.T
+  - P4.T
+  - P12.T
+  - P14.T
+  - P19.T
+  - P20.T
+  - P26.T
+  - P34.T
+  - P37.T
+  - P43.T
+  - P54.T
+  - P63.T
+  - P66.T
+  - P70.T
+  - P71.T
+  - P72.T
+  - P73.T
+  - P74.T
+  - P77.T
+  - P82.T
+  - P84.T
+  - P88.T
+  - P89.T
+  - P91.T
+  - P96.T
+  - P2.V
+  - P3.V
+  - P10.V
+  - P13.V
+  - P15.V
+  - P19.V
+  - P20.V
+  - P22.V
+  - P23.V
+  - P25.V
+  - P33.V
+  - P34.V
+  - P36.V
+  - P38.V
+  - P45.V
+  - P46.V
+  - P47.V
+  - P48.V
+  - P50.V
+  - P54.V
+  - P62.V
+  - P63.V
+  - P64.V
+  - P66.V
+  - P71.V
+  - P72.V
+  - P75.V
+  - P76.V
+  - P77.V
+  - P84.V
+  - P85.V
+  - P89.V
+  - P6.W
+  - P9.X
+  - P10.X
+  - P14.X
+  - P19.X
+  - P20.X
+  - P35.X
+  - P37.X
+  - P61.X
+  - P63.X
+  - P65.X
+  - P71.X
+  - P72.X
+  - P86.X
+  - P10.Y
+  - P37.Y
+  - P59.Y
+  - P67.Y
+  - P69.Y
+  - P12.Z
+  - P14.Z
+  - P16.Z
+  - P18.Z
+  - P19.Z
+  - P34.Z
+  - P37.Z
+  - P61.Z
+  - P72.Z
+  - P79.Z
+  - P83.Z
+  - P92.Z

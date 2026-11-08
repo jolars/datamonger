@@ -6,12 +6,12 @@
   "submitted": true,
   "access": {
     "record": "public",
-    "files": "restricted",
+    "files": "public",
     "embargo": {
       "active": false,
       "reason": null
     },
-    "status": "restricted"
+    "status": "open"
   },
   "rights_review": "accepted",
   "reviewed_by": "Johan Larsson",
@@ -26,5 +26,76 @@
     "RIGHTS.md": "43f1bad09c2007f90dfa3503370793d5de442b73d1a6700a8a274042b8c8cfa7",
     "prepare.py": "4900264a0b84ed2edb6c8f089d668d1aaee3115039732e9ddfd39d099e5532c2",
     "provenance.json": "13facb40c429c558a7573fff02626a8c0079d68a5496227248df52786f05c505"
+  },
+  "rights": [
+    {
+      "title": {
+        "en": "Public domain — Stanford HIVDB published-data statement"
+      },
+      "description": {
+        "en": "Data are redistributed on the basis of Stanford HIVDB's statement that published data belongs in the public domain so others can verify and build on the results. Johan Larsson reviewed and accepted applicability to this dataset on 2026-10-15. This is not a CC0 dedication. See RIGHTS.md."
+      },
+      "link": "https://hivdb.stanford.edu/_wrapper/pages/FAQ/FAQ.html"
+    }
+  ],
+  "verified_files": {
+    "verify.R": {
+      "url": "https://zenodo.org/api/records/23398467/files/verify.R/content",
+      "size": 1172,
+      "sha256": "6a6087da61d3d13955fc3af1229b37a9171c4b7e3c6004b80b397518946da541"
+    },
+    "data.csv": {
+      "url": "https://zenodo.org/api/records/23398467/files/data.csv/content",
+      "size": 626704,
+      "sha256": "893a104177f8d946fcd7ff429406757aa0d24be890982f0a7ee9cb9540ae00d3"
+    },
+    "convert.R": {
+      "url": "https://zenodo.org/api/records/23398467/files/convert.R/content",
+      "size": 1199,
+      "sha256": "5beea54fbe9468c10b55efabcfbc1ba699c85634bffc5e8e0dd07a6b307d0cc2"
+    },
+    "read_source.R": {
+      "url": "https://zenodo.org/api/records/23398467/files/read_source.R/content",
+      "size": 945,
+      "sha256": "65b3245d4fb146498bcbf81aa3939bec14482d1e6b8c97db56838c09fe9b634c"
+    },
+    "prepare.py": {
+      "url": "https://zenodo.org/api/records/23398467/files/prepare.py/content",
+      "size": 7308,
+      "sha256": "4900264a0b84ed2edb6c8f089d668d1aaee3115039732e9ddfd39d099e5532c2"
+    },
+    "RIGHTS.md": {
+      "url": "https://zenodo.org/api/records/23398467/files/RIGHTS.md/content",
+      "size": 847,
+      "sha256": "43f1bad09c2007f90dfa3503370793d5de442b73d1a6700a8a274042b8c8cfa7"
+    },
+    "README.md": {
+      "url": "https://zenodo.org/api/records/23398467/files/README.md/content",
+      "size": 4004,
+      "sha256": "56523e37f26439aca8d7a5812b1c8530bbc43490987335f3a98c4a0b1c399756"
+    },
+    "provenance.json": {
+      "url": "https://zenodo.org/api/records/23398467/files/provenance.json/content",
+      "size": 1536,
+      "sha256": "13facb40c429c558a7573fff02626a8c0079d68a5496227248df52786f05c505"
+    }
+  },
+  "download_verification": "anonymous-public",
+  "verified_at": "2026-11-08T21:05:24.061483+00:00",
+  "verified_by": "Codex (automated publication and download verification)",
+  "access_correction": {
+    "previous_access": {
+      "record": "public",
+      "files": "restricted",
+      "embargo": {
+        "active": false,
+        "reason": null
+      },
+      "status": "restricted"
+    },
+    "corrected_at": "2026-11-08T21:05:24.061483+00:00",
+    "authorization": "User approved making the existing eight deposited files public and registering the dataset in this session.",
+    "change": "Set file visibility from restricted to public. No embargo was active. Preserve the DOI, all file bytes, and all descriptive and rights metadata.",
+    "checks": "All eight anonymous downloads match the original recorded SHA-256 digests. The public CSV also matches reproduction from the pinned Stanford source."
   }
 }

@@ -4,6 +4,13 @@ The dataset is published at [doi:10.5281/zenodo.23398467](https://doi.org/10.528
 `DATASET.md` is the user-facing documentation deposited as `README.md`.
 Keep maintainer workflow instructions in this file, outside the deposit.
 
+The record was originally published with restricted files. On November 8,
+2026, the user approved making the existing eight files public. The access
+correction preserved the DOI, file bytes, and descriptive and rights metadata.
+All eight files were downloaded anonymously and matched their original SHA-256
+digests. `zenodo-record.json` retains the original hashes and records the access
+correction and public download verification.
+
 ## Reproduce and validate
 
 Run in the repository's devenv shell with a new directory outside the repo:
@@ -36,7 +43,12 @@ workflow. Changes to data bytes or the representation require a new dataset
 version. Keep the original publication DOI and the data hash in the publication
 receipt.
 
-Dataset publication does not publish a Datamonger registry release. Create the
-production manifest with `dm-add`, real download locations, and reviewed license
-evidence. Apply the preservation review before claiming `durable`, then follow
-the normal collection validation and independent registry release workflow.
+The production manifest is `registry/datasets/datamonger/rhee2006-1.yaml`.
+It selects the version-specific public Zenodo CSV and records the source rights
+and preservation review. `registry/collection.yaml` selects
+`datamonger:rhee2006@1` as the default for the next registry release.
+
+Re-fetch and validate the production manifest with `dm-add` when auditing the
+deposit. Dataset publication and collection registration do not publish a
+registry release; follow the normal collection validation and independent
+registry release workflow.
