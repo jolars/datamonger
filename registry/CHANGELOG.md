@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.5.0](https://github.com/jolars/datamonger/compare/registry-v1.4.0...registry-v1.5.0) (2026-11-09)
+
+### Features
+
+- **registry:** add YearPredictionMSD dataset ([`9d13a69`](https://github.com/jolars/datamonger/commit/9d13a69efa4c858820e4089219282fbf0759755d))
+- **registry:** add real-sim dataset ([`010df69`](https://github.com/jolars/datamonger/commit/010df69e5dc936e196891c729669b0b865ef946f))
+- **registry:** add LARS diabetes dataset ([`40c0339`](https://github.com/jolars/datamonger/commit/40c03391d8cedaf0e47e19018924686f205d9425))
+- **registry:** add Rhee2006 ([`a18327e`](https://github.com/jolars/datamonger/commit/a18327ee96e49647e5bb1e1f48bad0140c25e50d))
+- **registry:** add unscaled Gisette ([`f59b40a`](https://github.com/jolars/datamonger/commit/f59b40a2b368870e826521ab04fcd19db88de772))
+
 ## [1.4.0](https://github.com/jolars/datamonger/compare/registry-v1.3.0...registry-v1.4.0) (2026-10-27)
 
 ### Features
