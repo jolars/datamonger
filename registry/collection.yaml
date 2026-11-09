@@ -37,6 +37,7 @@ manifests:
 - registry/datasets/libsvm/w6a-1.yaml
 - registry/datasets/libsvm/w7a-1.yaml
 - registry/datasets/libsvm/w8a-1.yaml
+- registry/datasets/libsvm/yearpredictionmsd-1.yaml
 - registry/datasets/uci/abalone-1.yaml
 - registry/datasets/uci/breast-cancer-wisconsin-diagnostic-1.yaml
 - registry/datasets/uci/covertype-1.yaml
@@ -151,6 +152,9 @@ defaults:
   version: '1'
 - source: libsvm
   name: w8a
+  version: '1'
+- source: libsvm
+  name: yearpredictionmsd
   version: '1'
 - source: uci
   name: abalone

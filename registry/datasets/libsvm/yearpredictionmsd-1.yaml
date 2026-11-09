@@ -1,0 +1,116 @@
+schema_version: 5
+source: libsvm
+name: yearpredictionmsd
+version: '1'
+title: Year Prediction MSD
+description: 'Song release-year regression data from the Million Song Dataset, distributed
+  by LIBSVM with 90 audio features: 12 timbre averages and 78 timbre covariances. The predefined
+  training and test sets contain 463715 and 51630 songs, respectively, with no artist shared
+  between the splits.'
+modality: tabular
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - https://archive.ics.uci.edu/dataset/203/yearpredictionmsd
+    - https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/regression.html#YearPredictionMSD
+    steps:
+    - kind: aggregation
+      description: Compute averages and covariances of 12-dimensional Echo Nest timbre vectors
+        over each song's segments, producing 12 average features and 78 covariance features.
+    - kind: split-selection
+      description: Use the first 463715 examples for training and the last 51630 for testing
+        so that no artist appears in both splits.
+    notes: Any additional processing used to prepare LIBSVM's feature values has not been
+      established.
+  datamonger:
+    status: none
+    evidence:
+    - spec/decoders/libsvm-v2.md
+    notes: The LIBSVM v2 decoder omits explicitly stored zeros without changing feature values.
+      Datamonger applies no statistical preprocessing.
+provenance:
+  provider: LIBSVM
+  upstream_name: YearPredictionMSD
+  landing_page: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/regression.html#YearPredictionMSD
+  authors:
+  - T. Bertin-Mahieux
+  citations:
+  - citation: Bertin-Mahieux, T. (2011). Year Prediction MSD [Dataset]. UCI Machine Learning
+      Repository. https://doi.org/10.24432/C50K61.
+    role: dataset
+    note: 'Original dataset and creator as cited by UCI: https://archive.ics.uci.edu/dataset/203/yearpredictionmsd.'
+  retrieved_at: '2026-11-09'
+license:
+  status: unknown
+  evidence: 'UCI licenses the original Year Prediction MSD dataset under CC BY 4.0: https://archive.ics.uci.edu/dataset/203/yearpredictionmsd.
+    LIBSVM identifies UCI as the source but states no license terms for its converted artifacts:
+    https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/regression.html#YearPredictionMSD.
+    The applicability of the original license to these distributed artifacts has not been
+    established.'
+artifacts:
+- name: train
+  format: libsvm
+  compression: bzip2
+  size: 212177525
+  sha256: bd820472d9a6d87ae30d6208dcbfd0e80386e96e6e6832f78c498cd78df6da29
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/regression/YearPredictionMSD.bz2
+- name: test
+  format: libsvm
+  compression: bzip2
+  size: 23639653
+  sha256: 55464ae565abce8c9bbef326b13307ead6850d65b6022d935a2cac0a7f8a073c
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/regression/YearPredictionMSD.t.bz2
+representation:
+  decoder: libsvm-split
+  decoder_version: 2
+  inputs:
+    train: train
+    test: test
+  options:
+    index_base: 1
+    feature_count: 90
+    duplicate_features: error
+    label_type: int64
+    row_order: source
+    target_name: response
+  expect:
+    components:
+    - name: train_features
+      kind: sparse_matrix
+      type: float64
+      rows: 463715
+      columns: 90
+    - name: train_response
+      kind: vector
+      type: int64
+      length: 463715
+    - name: test_features
+      kind: sparse_matrix
+      type: float64
+      rows: 51630
+      columns: 90
+    - name: test_response
+      kind: vector
+      type: int64
+      length: 51630
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: ebe0a4af38623534c21f1ea880fa61ee686826ae6e335325bcf4a7a77991a1ea
+tasks:
+- name: default
+  type: regression
+  splits:
+    train:
+      features: train_features
+      target: train_response
+    test:
+      features: test_features
+      target: test_response
