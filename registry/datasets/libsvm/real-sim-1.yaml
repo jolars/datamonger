@@ -1,0 +1,90 @@
+schema_version: 5
+source: libsvm
+name: real-sim
+version: '1'
+title: Real vs. Simulated
+description: >-
+  LIBSVM's binary text classification dataset for real versus simulated auto
+  and aviation discussions, prepared from Andrew McCallum's SRAA UseNet
+  collection by Vikas Sindhwani for SVMlin. It contains 72,309 articles and
+  20,958 sparse features. Its numeric labels are -1 and 1, and 108 articles
+  have no stored features. The provider supplies one artifact without a
+  predefined training and test split. Feature values, labels, and source row
+  order are preserved.
+modality: tabular
+preprocessing:
+  upstream:
+    status: unknown
+    evidence:
+    - https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#real-sim
+    - https://people.cs.umass.edu/~mccallum/data.html
+    - https://vikas.sindhwani.org/svmlin.html
+    notes: LIBSVM credits Vikas Sindhwani with preprocessing for SVMlin, but does not describe
+      the text feature extraction, weighting, normalization, sample selection, or mapping
+      of the two classes to numeric labels. McCallum describes 73,218 original SRAA articles,
+      whereas the prepared real-sim artifact has 72,309 rows; the selection rule is not established.
+  datamonger:
+    status: none
+    evidence:
+    - spec/decoders/libsvm-v1.md
+    notes: Datamonger decodes the provider artifact without additional statistical preprocessing.
+provenance:
+  provider: LIBSVM
+  upstream_name: real-sim
+  landing_page: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#real-sim
+  authors:
+  - Andrew McCallum
+  - Vikas Sindhwani
+  citation: 'Andrew McCallum. SRAA: Simulated/Real/Aviation/Auto UseNet data. https://people.cs.umass.edu/~mccallum/data.html.
+    Prepared by Vikas Sindhwani for SVMlin, https://vikas.sindhwani.org/svmlin.html. Chih-Chung
+    Chang and Chih-Jen Lin. LIBSVM: A Library for Support Vector Machines. ACM Transactions
+    on Intelligent Systems and Technology, 2:27:1-27:27, 2011. https://www.csie.ntu.edu.tw/~cjlin/libsvm/.'
+  retrieved_at: '2026-11-09'
+license:
+  status: unknown
+  url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#real-sim
+  evidence: The LIBSVM dataset page credits the source and preprocessing but provides no dataset-specific
+    license terms. McCallum's SRAA description also does not state a license. The LIBSVM and
+    SVMlin software licenses do not establish a license for the distributed dataset.
+artifacts:
+- name: data
+  format: libsvm
+  compression: bzip2
+  size: 35214832
+  sha256: 7cd52374f55ce62e803ef33ca1c44689427c23d481eff64026f8ba9f53b8cc27
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/real-sim.bz2
+representation:
+  decoder: libsvm
+  decoder_version: 1
+  inputs:
+    data: data
+  options:
+    index_base: 1
+    feature_count: 20958
+    duplicate_features: error
+    label_type: int64
+    row_order: source
+    target_name: response
+  expect:
+    components:
+    - name: features
+      kind: sparse_matrix
+      type: float64
+      rows: 72309
+      columns: 20958
+    - name: response
+      kind: vector
+      type: int64
+      length: 72309
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: 7ec7738849d2c8593e56a3bf9494d1b14eab4bb80fdb17a99cc98fd7bd4928ee
+tasks:
+- name: default
+  type: classification
+  features: features
+  target: response

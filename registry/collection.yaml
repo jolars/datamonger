@@ -27,6 +27,7 @@ manifests:
 - registry/datasets/libsvm/mushrooms-1.yaml
 - registry/datasets/libsvm/news20-binary-1.yaml
 - registry/datasets/libsvm/rcv1-binary-1.yaml
+- registry/datasets/libsvm/real-sim-1.yaml
 - registry/datasets/libsvm/triazines_scale-1.yaml
 - registry/datasets/libsvm/w1a-1.yaml
 - registry/datasets/libsvm/w2a-1.yaml
@@ -120,6 +121,9 @@ defaults:
   version: '1'
 - source: libsvm
   name: rcv1-binary
+  version: '1'
+- source: libsvm
+  name: real-sim
   version: '1'
 - source: libsvm
   name: triazines_scale
