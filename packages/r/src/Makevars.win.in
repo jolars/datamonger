@@ -1,7 +1,8 @@
 TARGET = $(subst 64,x86_64,$(subst 32,i686,$(WIN)))-pc-windows-gnu
 TARGET_DIR = @TARGET_DIR@
 STATLIB = $(TARGET_DIR)/$(TARGET)/@LIBDIR@/libdatamonger_r.a
-PKG_LIBS = "$(STATLIB)" -lws2_32 -ladvapi32 -luserenv -lbcrypt -lntdll
+# Modern Rust uses WaitOnAddress and WakeByAddress* from synchronization.
+PKG_LIBS = "$(STATLIB)" -lws2_32 -ladvapi32 -luserenv -lbcrypt -lntdll -lsynchronization
 
 all: $(SHLIB) rust_clean
 
