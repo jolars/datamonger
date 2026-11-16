@@ -33,5 +33,3 @@ Use the Python section in the navigation bar to browse the extracted API referen
 
 See the [complete Python client guide](https://github.com/jolars/datamonger/blob/main/packages/python/README.md)
 for return types, registry selection, offline use, and cache management.
-
-Return to the [Datamonger overview](index.md).

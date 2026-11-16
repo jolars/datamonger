@@ -37,4 +37,3 @@ The [command-line reference](cli-reference.md) documents every command and optio
 
 See the [complete CLI guide](https://github.com/jolars/datamonger/blob/main/packages/cli/README.md)
 for artifact selection, JSON output, registry pinning, and cache management.
-Return to the [Datamonger overview](index.md).

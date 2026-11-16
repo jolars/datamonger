@@ -34,5 +34,3 @@ and reuse cached downloads. Its metadata examples run without network access.
 
 See the [complete R client guide](https://github.com/jolars/datamonger/blob/main/packages/r/README.md)
 for return types, registry selection, offline use, and cache management.
-
-Return to the [Datamonger overview](index.md).
