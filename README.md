@@ -15,22 +15,25 @@ analysis reproducible.
 
 ## Installation
 
-From a repository checkout, install the client for your language.
+Install the client for your language directly from GitHub.
 
 ### Python
 
 Requires Python 3.11 or newer:
 
 ```console
-python -m pip install ./packages/python
+python -m pip install "git+https://github.com/jolars/datamonger.git#subdirectory=packages/python"
 ```
+
+Source installation requires Git, a stable Rust toolchain, and a C linker.
 
 ### R
 
-Install the source package from R:
+Install the source package with pak:
 
 ```r
-install.packages("packages/r", repos = NULL, type = "source")
+# install.packages("pak")
+pak::pak("jolars/datamonger/packages/r")
 ```
 
 Source installation requires Cargo, Rust 1.82 or newer, and xz. See the [R
@@ -38,29 +41,27 @@ package guide](packages/r/README.md) for platform requirements.
 
 ### Julia
 
-Activate and instantiate the package environment:
+Requires Julia 1.10 or newer:
 
 ```julia
 using Pkg
-Pkg.activate("packages/julia")
-Pkg.instantiate()
-include("tools/dm_julia_core.jl")
+Pkg.add(url="https://github.com/jolars/datamonger.git", subdir="packages/julia")
 ```
 
 ### CLI
 
 Download a prebuilt binary from [GitHub
-releases](https://github.com/jolars/datamonger/releases), or install from crates.io
-with Rust 1.89 or newer:
+releases](https://github.com/jolars/datamonger/releases), or install from
+crates.io with Rust 1.89 or newer:
 
 ```console
 cargo install datamonger --locked
 ```
 
-To install from a checkout:
+To install from GitHub:
 
 ```console
-cargo install --locked --path packages/cli
+cargo install --locked --git https://github.com/jolars/datamonger datamonger
 ```
 
 ## Usage
