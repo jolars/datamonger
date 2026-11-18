@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::HashSet;
 use std::io::BufRead;
 
@@ -212,33 +213,36 @@ impl<R: BufRead> Records<R> {
     }
 }
 
-fn fields(record: &str, delimiter: u8) -> Result<Vec<String>> {
+fn fields(record: &str, delimiter: u8, width: usize) -> Result<Vec<Cow<'_, str>>> {
     let bytes = record.as_bytes();
-    let mut fields = Vec::new();
+    let mut fields = Vec::with_capacity(width);
     let mut i = 0;
     loop {
-        let mut value = Vec::new();
-        if bytes.get(i) == Some(&b'"') {
+        // ASCII quotes and delimiters are always UTF-8 character boundaries.
+        let value = if bytes.get(i) == Some(&b'"') {
             i += 1;
+            let start = i;
+            let mut escaped = false;
             loop {
                 match bytes.get(i) {
                     None => return Err(decode_error("unterminated quoted field")),
                     Some(b'"') if bytes.get(i + 1) == Some(&b'"') => {
-                        value.push(b'"');
+                        escaped = true;
                         i += 2;
                     }
-                    Some(b'"') => {
-                        i += 1;
-                        break;
-                    }
-                    Some(&byte) => {
-                        value.push(byte);
-                        i += 1;
-                    }
+                    Some(b'"') => break,
+                    Some(_) => i += 1,
                 }
             }
+            let text = &record[start..i];
+            i += 1;
             if i < bytes.len() && bytes[i] != delimiter {
                 return Err(decode_error("closing quote has a trailing suffix"));
+            }
+            if escaped {
+                Cow::Owned(text.replace("\"\"", "\""))
+            } else {
+                Cow::Borrowed(text)
             }
         } else {
             let start = i;
@@ -248,9 +252,9 @@ fn fields(record: &str, delimiter: u8) -> Result<Vec<String>> {
                 }
                 i += 1;
             }
-            value.extend_from_slice(&bytes[start..i]);
-        }
-        fields.push(String::from_utf8(value).map_err(|_| decode_error("invalid field UTF-8"))?);
+            Cow::Borrowed(&record[start..i])
+        };
+        fields.push(value);
         if i == bytes.len() {
             break;
         }
@@ -339,10 +343,11 @@ fn decode_delimited_impl<R: BufRead>(
             .next()?
             .ok_or_else(|| decode_error("delimited artifact is empty"))?,
         options.delimiter,
+        options.columns.len(),
     )?;
     if header
         .iter()
-        .map(String::as_str)
+        .map(AsRef::as_ref)
         .ne(options.columns.iter().map(|c| c.name.as_str()))
     {
         return Err(decode_error(
@@ -361,12 +366,12 @@ fn decode_delimited_impl<R: BufRead>(
         .collect();
     let mut row = 0;
     while let Some(record) = records.next()? {
-        let values = fields(record, options.delimiter)?;
+        let values = fields(record, options.delimiter, components.len())?;
         if values.len() != components.len() {
             return Err(decode_error("data record has the wrong number of fields"));
         }
         for (component, value) in components.iter_mut().zip(values) {
-            let valid = !missing.contains(value.as_str());
+            let valid = !missing.contains(value.as_ref());
             push_value(&mut component.values, &value, valid, false, compatibility).map_err(
                 |e| {
                     decode_error(format!(
