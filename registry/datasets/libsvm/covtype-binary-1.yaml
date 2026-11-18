@@ -1,0 +1,93 @@
+schema_version: 5
+source: libsvm
+name: covtype-binary
+version: '1'
+title: Covertype Binary
+description: The unscaled binary classification variant of UCI Covertype, distributed by LIBSVM
+  as one file. The 54 cartographic features describe 30-meter cells in Colorado's Roosevelt
+  National Forest. Response label 2 denotes lodgepole pine, and label 1 combines the six other
+  cover types.
+modality: tabular
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#covtype.binary
+    - https://doi.org/10.1162/089976602753633402
+    - https://archive.ics.uci.edu/dataset/31/covertype
+    steps:
+    - kind: response-dichotomization
+      description: Keep lodgepole pine as its own class and group the other six cover types.
+      parameters:
+        lodgepole_pine_label: '2'
+        other_cover_types_label: '1'
+    notes: A row-by-row comparison with the original UCI data confirmed the label mapping,
+      unscaled feature values, and source row order.
+  datamonger:
+    status: none
+    evidence:
+    - spec/decoders/libsvm-v1.md
+provenance:
+  provider: LIBSVM
+  upstream_name: covtype.binary
+  landing_page: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#covtype.binary
+  authors:
+  - Jock Blackard
+  citations:
+  - citation: Blackard, J. (1998). Covertype [Dataset]. UCI Machine Learning Repository. https://doi.org/10.24432/C50K5N.
+    role: dataset
+  - citation: Collobert, R., Bengio, S., and Bengio, Y. (2002). A parallel mixture of SVMs
+      for very large scale problems. Neural Computation, 14(5), 1105-1114. https://doi.org/10.1162/089976602753633402.
+    role: paper
+    note: LIBSVM reference RC02a describes the binary classification task.
+  citation_instructions: Retain the copyright notice for Jock A. Blackard and Colorado State
+    University, as requested in covtype.info.
+  retrieved_at: '2026-11-18'
+license:
+  status: unknown
+  evidence: UCI lists CC BY 4.0 for the original Covertype dataset (https://archive.ics.uci.edu/dataset/31/covertype).
+    The source documentation permits reuse with retention of the original copyright notice
+    (https://archive.ics.uci.edu/ml/machine-learning-databases/covtype/covtype.info). License
+    terms for the LIBSVM binary artifact are unverified.
+artifacts:
+- name: data
+  format: libsvm
+  compression: bzip2
+  size: 7020350
+  sha256: fbcdd4f2ab981b598f2d9688860b20556b515770b1ed1b5629178e889cc4e89d
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/covtype.libsvm.binary.bz2
+representation:
+  decoder: libsvm
+  decoder_version: 1
+  inputs:
+    data: data
+  options:
+    index_base: 1
+    feature_count: 54
+    duplicate_features: error
+    label_type: int64
+    row_order: source
+    target_name: response
+  expect:
+    components:
+    - name: features
+      kind: sparse_matrix
+      type: float64
+      rows: 581012
+      columns: 54
+    - name: response
+      kind: vector
+      type: int64
+      length: 581012
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: 316ec7d1c106e093eb5b231e3cf6cfdfc302e5037028e562a3c834c97f057d66
+tasks:
+- name: default
+  type: classification
+  features: features
+  target: response

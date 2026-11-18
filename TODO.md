@@ -14,7 +14,6 @@ Register these catalog entries under the `libsvm` source. See the
 - [ ] `avazu`
 - [ ] `breast-cancer`
 - [ ] `cod-rna`
-- [ ] `covtype.binary`
 - [ ] `criteo`
 - [ ] `criteo_tb`
 - [ ] `diabetes`
