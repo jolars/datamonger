@@ -437,7 +437,18 @@ fn decode_libsvm_impl<R: BufRead>(
                 "LIBSVM records must be nonblank without leading whitespace",
             ));
         }
-        let mut fields = record.split([' ', '\t']).filter(|s| !s.is_empty());
+        // ASCII separators fall on UTF-8 character boundaries.
+        let mut offset = 0;
+        let mut fields = record
+            .as_bytes()
+            .split(|byte| matches!(byte, b' ' | b'\t'))
+            .map(|field| {
+                let end = offset + field.len();
+                let token = &record[offset..end];
+                offset = end + 1;
+                token
+            })
+            .filter(|field| !field.is_empty());
         let label = fields
             .next()
             .ok_or_else(|| decode_error("missing LIBSVM label"))?;

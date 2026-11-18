@@ -503,6 +503,22 @@ fn julia_float_underflow_compatibility_is_explicit() {
 }
 
 #[test]
+fn libsvm_splits_only_on_space_and_tab() {
+    let options = LibsvmOptions {
+        feature_count: 3,
+        label_type: LabelType::Int64,
+        target_name: "response".into(),
+    };
+    let expected = decode_libsvm(&b"+1 1:2 3:4\n-1\n"[..], &options).unwrap();
+    let mixed = decode_libsvm(&b"+1\t1:2  \t3:4 \t\r\n-1\t"[..], &options).unwrap();
+    assert_eq!(mixed, expected);
+
+    for input in ["+1 1:2\u{a0}3:4", "+1 1:2\x0c3:4", "\t+1 1:2"] {
+        assert!(decode_libsvm(input.as_bytes(), &options).is_err());
+    }
+}
+
+#[test]
 fn libsvm_v2_omits_zeros_without_changing_canonical_values() {
     let options = LibsvmOptions {
         feature_count: 5,
