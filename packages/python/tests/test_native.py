@@ -126,13 +126,19 @@ def test_shared_corpus_agrees_with_independent_python(
             compressed[0], case["recipe"], compression=compression
         )
     elif decoder == "libsvm":
-        native = decode_libsvm(compressed[0], case["recipe"], compression=compression)
+        native = decode_libsvm(
+            compressed[0], case["recipe"], compression=compression, compute_digest=True
+        )
+        assert native.canonical_digest == case["expected_sha256"]
         reference = reference_libsvm.decode_libsvm(
             compressed[0], case["recipe"], compression=compression
         )
     else:
         kwargs = {"train_compression": compression, "test_compression": compression}
-        native = decode_libsvm_split(*compressed, case["recipe"], **kwargs)
+        native = decode_libsvm_split(
+            *compressed, case["recipe"], **kwargs, compute_digest=True
+        )
+        assert native.canonical_digest == case["expected_sha256"]
         reference = reference_libsvm.decode_libsvm_split(
             *compressed, case["recipe"], **kwargs
         )

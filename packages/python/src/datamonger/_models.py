@@ -370,6 +370,7 @@ class DecodedSparseDataset:
 
     data: SparseDataset
     components: tuple[LogicalSparseMatrix, LogicalComponent]
+    canonical_digest: str | None = None
 
 
 @dataclass(frozen=True)
@@ -383,6 +384,7 @@ class DecodedSparseDatasetSplit:
         LogicalSparseMatrix,
         LogicalComponent,
     ]
+    canonical_digest: str | None = None
 
 
 @dataclass(frozen=True)

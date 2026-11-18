@@ -179,17 +179,16 @@ fn decode_delimited(
     to_python(py, components)
 }
 
-#[pyfunction(signature = (path, feature_count, label_type, target_name, compression, decoder_version=1))]
+#[pyfunction(signature = (train, test, recipe, decoder_version, compute_digest))]
 fn decode_libsvm(
     py: Python<'_>,
-    path: PathBuf,
-    feature_count: u64,
-    label_type: &str,
-    target_name: String,
-    compression: &str,
+    train: (PathBuf, String),
+    test: Option<(PathBuf, String)>,
+    recipe: (u64, &str, String),
     decoder_version: u32,
-) -> PyResult<Vec<Py<PyAny>>> {
-    let coding = self::compression(compression)?;
+    compute_digest: bool,
+) -> PyResult<(Vec<Py<PyAny>>, Option<String>)> {
+    let (feature_count, label_type, target_name) = recipe;
     let options = core::LibsvmOptions {
         feature_count,
         label_type: match label_type {
@@ -199,19 +198,36 @@ fn decode_libsvm(
         },
         target_name,
     };
-    let components = run(py, |control| {
-        reader(path, coding)
-            .and_then(|reader| {
-                core::decode_libsvm_version_with_control(
-                    reader,
-                    &options,
-                    decoder_version,
-                    &mut || control.checkpoint(),
-                )
-            })
-            .map_err(|error| artifact_error(error, compression))
-    })?;
-    to_python(py, components)
+    let decode = |(path, coding): (PathBuf, String)| {
+        let compression = compression(&coding)?;
+        run(py, |control| {
+            reader(path, compression)
+                .and_then(|reader| {
+                    core::decode_libsvm_version_with_control(
+                        reader,
+                        &options,
+                        decoder_version,
+                        &mut || control.checkpoint(),
+                    )
+                })
+                .map_err(|error| artifact_error(error, &coding))
+        })
+    };
+    let mut components = decode(train)?;
+    if let Some(test) = test {
+        let mut test = decode(test)?;
+        for (prefix, split) in [("train", &mut components), ("test", &mut test)] {
+            for component in split {
+                component.name = format!("{prefix}_{}", component.name);
+            }
+        }
+        components.extend(test);
+    }
+    // Hash before transferring ownership of the arrays to Python.
+    let digest = compute_digest
+        .then(|| hash_components(py, &components))
+        .transpose()?;
+    Ok((to_python(py, components)?, digest))
 }
 
 fn array<T: numpy::Element + Copy>(value: &Bound<'_, PyAny>) -> PyResult<Vec<T>> {
@@ -339,9 +355,12 @@ fn canonical_error(error: PyErr) -> PyErr {
 
 #[pyfunction]
 fn canonical_sha256(py: Python<'_>, components: &Bound<'_, PyAny>) -> PyResult<String> {
-    let components = from_python(components)?;
+    hash_components(py, &from_python(components)?)
+}
+
+fn hash_components(py: Python<'_>, components: &[core::Component]) -> PyResult<String> {
     let digest = run(py, |control| {
-        core::canonical_sha256_with_control(&components, &mut || control.checkpoint())
+        core::canonical_sha256_with_control(components, &mut || control.checkpoint())
     })
     .map_err(canonical_error)?;
     Ok(digest.iter().map(|b| format!("{b:02x}")).collect())

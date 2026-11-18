@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import replace
 from pathlib import Path
 from typing import cast
 
@@ -29,33 +28,29 @@ def decode_libsvm(
     *,
     compression: str = "none",
     decoder_version: int = 1,
+    compute_digest: bool = False,
 ) -> DecodedSparseDataset:
     """Decode a strict LIBSVM or SVMLight version 1 or 2 representation."""
 
-    feature_count, label_type, target_name = libsvm_options(options)
-    matrix, response_component = cast(
-        tuple[LogicalSparseMatrix, LogicalComponent],
-        tuple(
-            _native.decode_libsvm(
-                Path(path),
-                feature_count,
-                label_type,
-                target_name,
-                compression,
-                decoder_version,
-            )
-        ),
+    components, digest = _native.decode_libsvm(
+        (Path(path), compression),
+        None,
+        libsvm_options(options),
+        decoder_version,
+        compute_digest,
     )
+    pair = cast(tuple[LogicalSparseMatrix, LogicalComponent], tuple(components))
+    return DecodedSparseDataset(_sparse_dataset(*pair), pair, digest)
+
+
+def _sparse_dataset(
+    matrix: LogicalSparseMatrix, response: LogicalComponent
+) -> SparseDataset:
     features = sparse.csr_matrix(
         (matrix.values, matrix.column_indices, matrix.row_offsets),
         shape=(matrix.rows, matrix.columns),
     )
-    return DecodedSparseDataset(
-        data=SparseDataset(
-            features=features, response=cast(ResponseArray, response_component.values)
-        ),
-        components=(matrix, response_component),
-    )
+    return SparseDataset(features, cast(ResponseArray, response.values))
 
 
 def decode_libsvm_split(
@@ -66,30 +61,28 @@ def decode_libsvm_split(
     train_compression: str = "none",
     test_compression: str = "none",
     decoder_version: int = 1,
+    compute_digest: bool = False,
 ) -> DecodedSparseDatasetSplit:
     """Decode train and test inputs without concatenating either split."""
 
-    train = decode_libsvm(
-        train_path,
-        options,
-        compression=train_compression,
-        decoder_version=decoder_version,
+    components, digest = _native.decode_libsvm(
+        (Path(train_path), train_compression),
+        (Path(test_path), test_compression),
+        libsvm_options(options),
+        decoder_version,
+        compute_digest,
     )
-    test = decode_libsvm(
-        test_path,
-        options,
-        compression=test_compression,
-        decoder_version=decoder_version,
-    )
-    train_features, train_response = train.components
-    test_features, test_response = test.components
-    components = (
-        replace(train_features, name="train_features"),
-        replace(train_response, name=f"train_{train_response.name}"),
-        replace(test_features, name="test_features"),
-        replace(test_response, name=f"test_{test_response.name}"),
+    split = cast(
+        tuple[
+            LogicalSparseMatrix, LogicalComponent, LogicalSparseMatrix, LogicalComponent
+        ],
+        tuple(components),
     )
     return DecodedSparseDatasetSplit(
-        data=SparseDatasetSplit(train=train.data, test=test.data),
-        components=components,
+        data=SparseDatasetSplit(
+            train=_sparse_dataset(split[0], split[1]),
+            test=_sparse_dataset(split[2], split[3]),
+        ),
+        components=split,
+        canonical_digest=digest,
     )

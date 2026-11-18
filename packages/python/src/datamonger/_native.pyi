@@ -11,12 +11,11 @@ def decode_delimited(
     compression: str,
 ) -> list[LogicalValueComponent]: ...
 def decode_libsvm(
-    path: Path,
-    feature_count: int,
-    label_type: str,
-    target_name: str,
-    compression: str,
-    decoder_version: int = 1,
-) -> list[LogicalValueComponent]: ...
+    train: tuple[Path, str],
+    test: tuple[Path, str] | None,
+    recipe: tuple[int, str, str],
+    decoder_version: int,
+    compute_digest: bool,
+) -> tuple[list[LogicalValueComponent], str | None]: ...
 def canonical_bytes(components: Sequence[LogicalValueComponent]) -> bytes: ...
 def canonical_sha256(components: Sequence[LogicalValueComponent]) -> str: ...

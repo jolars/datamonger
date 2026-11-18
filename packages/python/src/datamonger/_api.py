@@ -573,6 +573,8 @@ def _decode_leaf(
     options: Mapping[str, Any],
     compressions: Sequence[str],
     decoder_version: int = 1,
+    *,
+    compute_digest: bool = False,
 ) -> DecodedTable | DecodedSparseDataset | DecodedSparseDatasetSplit:
     if decoder == "delimited-text":
         return decode_delimited_text(paths[0], options, compression=compressions[0])
@@ -582,6 +584,7 @@ def _decode_leaf(
             options,
             compression=compressions[0],
             decoder_version=decoder_version,
+            compute_digest=compute_digest,
         )
     return decode_libsvm_split(
         paths[0],
@@ -590,6 +593,7 @@ def _decode_leaf(
         train_compression=compressions[0],
         test_compression=compressions[1],
         decoder_version=decoder_version,
+        compute_digest=compute_digest,
     )
 
 
@@ -709,6 +713,8 @@ def fetch_data(
                     (recipes[child_index] if recipes else representation)[
                         "decoder_version"
                     ],
+                    # Named splits qualify component names after leaf decoding.
+                    compute_digest=verify_decoded and not recipes,
                 )
             )
         decoded: (
@@ -737,7 +743,10 @@ def fetch_data(
         record = _verification_record(index, dataset, expect)
         canonical_form = _integer(record.get("canonical_form"), "canonical form")
         expected_digest = _string(record.get("digest"), "canonical digest")
-        canonical_digest = canonical_sha256(decoded.components)
+        if isinstance(decoded, (DecodedSparseDataset, DecodedSparseDatasetSplit)):
+            canonical_digest = decoded.canonical_digest
+        if canonical_digest is None:
+            canonical_digest = canonical_sha256(decoded.components)
         if canonical_digest != expected_digest:
             raise DecodedIntegrityError(
                 f"decoded SHA-256 mismatch: expected {expected_digest}, "
