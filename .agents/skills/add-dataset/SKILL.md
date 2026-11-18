@@ -11,10 +11,8 @@ For a conversion or deposit trial, complete the requested stage without adding
 an unpublished or inaccessible artifact to the production collection.
 Run commands from the repository root in its devenv shell.
 
-Read [the dataset contribution workflow](../../../CONTRIBUTING.md#adding-or-revising-a-dataset),
-[the manifest schema](../../../spec/schema/manifest-v1.schema.json), and
-[the identity contract](../../../spec/identity.md). These own the requirements;
-use existing manifests as examples rather than copying their claims or digests.
+Find the recommended manifest schema and check client compatibility notes in
+the [dataset contribution workflow](../../../CONTRIBUTING.md#adding-or-revising-a-dataset).
 
 ## Establish the source and identity
 
@@ -25,7 +23,8 @@ use existing manifests as examples rather than copying their claims or digests.
 - Search existing manifests and published indexes before choosing
   `(source, name, version)`. Quote YAML versions as strings. Artifact bytes,
   artifact format or compression, and the complete representation recipe are
-  immutable for a published identity; changes require a new dataset version.
+  immutable for a published identity. Changes require a new dataset version.
+  See the [identity contract](../../../spec/identity.md).
 - For new curated names under `datamonger`, follow the
   [curated dataset naming policy](../../../CONTRIBUTING.md#curated-dataset-names):
   use the first author's lowercase ASCII surname and publication year, letters
@@ -48,20 +47,19 @@ use existing manifests as examples rather than copying their claims or digests.
 Keep drafts and downloaded or converted artifacts in temporary storage outside
 the working tree. Commit recipes and documentation, not dataset artifacts.
 
-Choose an existing version 1 decoder and read its contract:
+Choose a `decoder` and `decoder_version` that fit the artifact format and
+preserve the provider's split names and membership. Check that the manifest
+schema allows the recipe and that `dm-add` supports it. Read the matching
+contract in `spec/decoders/` and check for applicable extensions in the
+[specification overview](../../../spec/README.md).
 
-- [Delimited text](../../../spec/decoders/delimited-text-v1.md): CSV or TSV with
-  a UTF-8 header that exactly matches the declared, ordered columns. Declare
-  logical types and missing tokens explicitly. The decoder does not infer
-  types, trim fields, or accept arbitrary separators.
-- [LIBSVM](../../../spec/decoders/libsvm-v1.md): use `libsvm` for one artifact or
-  `libsvm-split` for predefined train/test artifacts. Derive `feature_count`
-  from the documented feature space and inspect both splits. Preserve splits
-  and the provider's representation, including any scaling already applied.
+- For delimited text, match declared columns to the header in order. Declare
+  logical types and missing tokens explicitly.
+- For LIBSVM, derive `feature_count` from the documented feature space. Inspect
+  every split and preserve any scaling already applied.
 
-Useful examples are `registry/datasets/uci/iris-1.yaml`,
-`registry/datasets/libsvm/heart_scale-1.yaml`, and
-`registry/datasets/libsvm/dna_scale-1.yaml`.
+Look in `registry/datasets/` for structural examples using the selected schema
+and decoder version.
 
 If the available artifact cannot satisfy an existing decoder, explain the
 specific incompatibility and look for an official supported representation.
@@ -74,6 +72,9 @@ make an ordinary registry addition pass.
 
 Supply identity, descriptive metadata, provenance, license, artifacts and their
 download locations, representation inputs and options, and appropriate tasks.
+Record upstream and Datamonger preparation separately using the
+[preprocessing specification](../../../spec/preprocessing.md).
+
 For a new draft, omit artifact `size` and `sha256`, `representation.expect`,
 and an unknown `provenance.retrieved_at`; let `dm-add` derive them. Do not copy
 these values from another dataset.

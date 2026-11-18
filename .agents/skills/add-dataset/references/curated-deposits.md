@@ -11,9 +11,8 @@ release.
 ## Source, identity, and rights
 
 - Prefer an original, documented source over a secondary binary export when
-  it supplies the required data. Document preprocessing explicitly; different
-  selections or transformations are different representations. Compare with
-  the secondary export when equivalence matters.
+  it supplies the required data. Compare with the secondary export when
+  equivalence matters.
 - Pin source bytes by size and SHA-256. Use full Git commit URLs when relevant.
   Git LFS raw URLs can serve pointer files; retrieve actual content and verify
   its digest. Check responses even after HTTP 200, which can contain an HTML
@@ -41,12 +40,20 @@ the conversion or require the
 source language's runtime. An unsupported source format does not by itself
 justify extending every client decoder.
 
-Preserve values, names, ordering, missingness, labels, and documented splits.
-Decide explicitly how IDs and sample or feature annotations are retained or
-omitted. Record transformations and exclusions. Verify numeric precision and
-repeatability, decode the result using the existing contract, and compare
-canonical digests across implementations where available. Retain the normal
-independent release-review requirement.
+For ordinary curation, preserve source values, names, order, missingness,
+labels, sample and feature membership, and documented splits. Record how the
+recipe handles IDs and annotations. Leave analysis-specific preprocessing
+such as scaling and imputation to downstream modeling.
+
+Apply a scientific transformation only when a documented dataset definition
+requires it, for example to reproduce a paper's cohort or feature-selection
+rule. Give the derived representation a distinct dataset identity and a
+reproducible recipe. Explain the rationale, parameters, and any exclusions in
+`DATASET.md`.
+
+Verify numeric precision and repeatability, decode the result using the
+existing contract, and compare canonical digests across implementations where
+available. Retain the normal independent release-review requirement.
 
 The [Rhee2006 workflow](../../../../curation/rhee2006/1/README.md) is an
 example, not a universal format: it prepares a single numeric CSV from Stanford
