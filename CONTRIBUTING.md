@@ -258,6 +258,52 @@ Live-source tests and canaries require network access and healthy upstreams.
 They are not substitutes for deterministic tests and are not part of the routine
 hermetic gate.
 
+## Decoder benchmarks
+
+Run the LIBSVM benchmarks from the repository root in the development shell.
+Prepare the inputs in a directory outside the working tree. Preparation uses
+the bundled registry and verifies the downloaded artifacts against their
+registered digests. It stages the training splits of `a9a` and `rcv1-binary`
+and the complete `cadata` dataset as uncompressed files.
+
+```sh
+bench_dir="$HOME/.cache/datamonger-bench"
+uv run --project packages/python python tools/dm_bench_libsvm.py prepare "$bench_dir"
+```
+
+Preparation prints the path, feature count, and label type for each case. Pass
+those arguments to both harnesses. For example, use `cadata` with these commands.
+
+```sh
+cargo bench --locked -p datamonger-core --bench libsvm -- "$bench_dir/cadata.libsvm" 8 float64 7
+uv run --project packages/python --with scikit-learn --with libsvm-official \
+  python tools/dm_bench_libsvm.py read "$bench_dir/cadata.libsvm" 8 float64 --repeats 7
+```
+
+The Rust harness preloads the file and times parsing into the core's CSR and
+label components. The Python runner times local file reads through SciPy CSR
+and labels, with one warmup per reader. It checks normalized CSR values and
+labels after timing and records stored entries, index widths, dependency
+versions, and process peak RSS, including imports. The runner uses Unix
+resource accounting and supports Linux and macOS. If LIBSVM builds from source
+on Linux, use a C++ compiler with OpenMP support, such as `CC=gcc CXX=g++`.
+For inputs with explicit zeros, select Datamonger decoder v2 by appending
+`2` to the Rust arguments and passing `--decoder-version 2` to `read`.
+
+To measure the public fetch path, prepare with `--seed-fetch` to cache all
+required splits, then run `fetch`. The fetch runner uses the cache offline
+and reports timings with canonical verification enabled and disabled.
+
+```sh
+uv run --project packages/python python tools/dm_bench_libsvm.py prepare "$bench_dir" --dataset cadata --seed-fetch
+uv run --project packages/python python tools/dm_bench_libsvm.py fetch "$bench_dir" --dataset cadata
+```
+
+Omit `--dataset` to select all three cases. Seeding the fetch cache for
+`rcv1-binary` also retrieves its roughly 433 MiB compressed test split.
+For comparisons across revisions, reuse the prepared files and record the
+Git revisions, compiler, and machine. Timing runs are opt-in.
+
 ## Code changes
 
 Prefer test-driven changes. Put deterministic tests under the affected client,

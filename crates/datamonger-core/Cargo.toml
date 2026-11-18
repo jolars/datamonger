@@ -10,7 +10,7 @@ description = "Strict research dataset decoding and canonical verification"
 readme = "README.md"
 keywords = ["datasets", "reproducibility", "libsvm", "verification"]
 categories = ["encoding", "science"]
-include = ["src/**", "tests/**", "README.md", "LICENSE", "Cargo.toml", "Cargo.lock"]
+include = ["src/**", "benches/**", "tests/**", "README.md", "LICENSE", "Cargo.toml", "Cargo.lock"]
 
 [dependencies]
 bzip2 = "0.6.1"
@@ -22,3 +22,7 @@ serde_json = "1.0"
 
 [lints.rust]
 unsafe_code = "forbid"
+
+[[bench]]
+name = "libsvm"
+harness = false
