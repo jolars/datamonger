@@ -1,0 +1,186 @@
+schema_version: 5
+source: libsvm
+name: duke
+version: '1'
+title: Duke Breast Cancer
+description: 'Normalized gene expression profiles from human breast tumors for binary classification
+  of estrogen receptor status. LIBSVM provides a 44-row dataset and a benchmark with 38 training
+  and four validation rows drawn from it.
+
+  '
+modality: tabular
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#duke%20breast-cancer
+    steps:
+    - kind: sample-selection
+      description: Five of the original 49 samples had discordant receptor status across two
+        assays and were omitted from the full LIBSVM file.
+    - kind: normalization
+      description: Normalize each sample to mean zero and variance one.
+      parameters:
+        axis: rows
+        mean: '0'
+        variance: '1'
+    - kind: normalization
+      description: Then normalize each feature to mean zero and variance one.
+      parameters:
+        axis: columns
+        mean: '0'
+        variance: '1'
+    notes: LIBSVM reports two additional exclusions for failed array hybridization before
+      the benchmark split. The full file includes two rows outside both benchmark partitions.
+  datamonger:
+    status: none
+    evidence:
+    - spec/decoders/named-splits-v1.md
+    - spec/decoders/libsvm-v1.md
+provenance:
+  provider: LIBSVM
+  upstream_name: duke breast-cancer
+  landing_page: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#duke%20breast-cancer
+  authors:
+  - Mike West
+  - Carrie Blanchette
+  - Holly Dressman
+  - Erich Huang
+  - Seiichi Ishida
+  - Rainer Spang
+  - Harry Zuzan
+  - John A. Olson Jr.
+  - Jeffrey R. Marks
+  - Joseph R. Nevins
+  citations:
+  - citation: West et al. (2001). Predicting the clinical status of human breast cancer by
+      using gene expression profiles. PNAS 98(20), 11462–11467. https://doi.org/10.1073/pnas.201162998.
+    role: paper
+  - citation: Shevade and Keerthi (2003). A simple and efficient algorithm for gene selection
+      using sparse logistic regression. Bioinformatics 19(17), 2246–2253.
+    role: paper
+    note: LIBSVM cites this paper for preprocessing and the benchmark split.
+  retrieved_at: '2026-11-18'
+license:
+  status: unknown
+  evidence: 'The LIBSVM catalog provides downloads without dataset-specific license terms.
+    The original article carries a National Academy of Sciences copyright notice and does
+    not establish a license for the LIBSVM files.
+
+    '
+artifacts:
+- name: full
+  format: libsvm
+  compression: bzip2
+  size: 1639022
+  sha256: 6a09dc55c7c5d5745a546d48d780c6dd448f2ead885d107031926f0045e1cede
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/duke.bz2
+- name: tr
+  format: libsvm
+  compression: bzip2
+  size: 1419283
+  sha256: f28e32c51bbbba03900d71a976da48088106fbf2528d1d0e6f2797d28cec033b
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/duke.tr.bz2
+- name: val
+  format: libsvm
+  compression: bzip2
+  size: 151528
+  sha256: 2ff42596f3150b24022a99e3edf576091e90b024b03bbae8567bb7d0b1bd036d
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/duke.val.bz2
+representation:
+  decoder: named-splits
+  decoder_version: 1
+  inputs:
+    full: full
+    tr: tr
+    val: val
+  options:
+    splits:
+    - name: full
+      decoder: libsvm
+      decoder_version: 1
+      options:
+        index_base: 1
+        feature_count: 7129
+        duplicate_features: error
+        label_type: float64
+        row_order: source
+        target_name: response
+    - name: tr
+      decoder: libsvm
+      decoder_version: 1
+      options:
+        index_base: 1
+        feature_count: 7129
+        duplicate_features: error
+        label_type: float64
+        row_order: source
+        target_name: response
+    - name: val
+      decoder: libsvm
+      decoder_version: 1
+      options:
+        index_base: 1
+        feature_count: 7129
+        duplicate_features: error
+        label_type: float64
+        row_order: source
+        target_name: response
+  expect:
+    components:
+    - name: full/features
+      kind: sparse_matrix
+      type: float64
+      rows: 44
+      columns: 7129
+    - name: full/response
+      kind: vector
+      type: float64
+      length: 44
+    - name: tr/features
+      kind: sparse_matrix
+      type: float64
+      rows: 38
+      columns: 7129
+    - name: tr/response
+      kind: vector
+      type: float64
+      length: 38
+    - name: val/features
+      kind: sparse_matrix
+      type: float64
+      rows: 4
+      columns: 7129
+    - name: val/response
+      kind: vector
+      type: float64
+      length: 4
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: fc633bf79119ec9b4398c4321450182b2f911124ec712623c9327c238a7bb27f
+tasks:
+- name: default
+  type: classification
+  splits:
+    full:
+      features: full/features
+      target: full/response
+- name: benchmark
+  type: classification
+  splits:
+    tr:
+      features: tr/features
+      target: tr/response
+    val:
+      features: val/features
+      target: val/response

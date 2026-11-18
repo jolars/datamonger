@@ -23,6 +23,7 @@ manifests:
 - registry/datasets/libsvm/covtype-1.yaml
 - registry/datasets/libsvm/covtype-binary-1.yaml
 - registry/datasets/libsvm/dna_scale-1.yaml
+- registry/datasets/libsvm/duke-1.yaml
 - registry/datasets/libsvm/e2006-log1p-1.yaml
 - registry/datasets/libsvm/e2006-tfidf-1.yaml
 - registry/datasets/libsvm/glass_scale-1.yaml
@@ -114,6 +115,9 @@ defaults:
   version: '1'
 - source: libsvm
   name: dna_scale
+  version: '1'
+- source: libsvm
+  name: duke
   version: '1'
 - source: libsvm
   name: e2006-log1p

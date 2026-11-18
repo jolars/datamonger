@@ -17,7 +17,7 @@ Register these catalog entries under the `libsvm` source. See the
 - [ ] `criteo`
 - [ ] `criteo_tb`
 - [ ] `diabetes`
-- [ ] `duke breast-cancer`
+- [x] `duke breast-cancer`
 - [ ] `epsilon`
 - [ ] `fourclass`
 - [ ] `german.numer`
