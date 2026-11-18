@@ -67,6 +67,31 @@ fn unsigned_decimal(bytes: &[u8]) -> bool {
         && (bytes.len() == 1 || bytes[0] != b'0')
 }
 
+fn feature_index(text: &str) -> Result<u64> {
+    let digits = text.as_bytes();
+    if digits.is_empty() || (digits.len() > 1 && digits[0] == b'0') {
+        return Err(decode_error("invalid feature index"));
+    }
+    // Every 19-digit decimal fits in u64, and recipes cap indices at 2^53 - 1.
+    // Check longer tokens for syntax so malformed indices retain their diagnostic.
+    if digits.len() > 19 {
+        return Err(decode_error(if unsigned_decimal(digits) {
+            "feature index is out of range"
+        } else {
+            "invalid feature index"
+        }));
+    }
+    let mut index = 0;
+    for &byte in digits {
+        let digit = byte.wrapping_sub(b'0');
+        if digit > 9 {
+            return Err(decode_error("invalid feature index"));
+        }
+        index = index * 10 + u64::from(digit);
+    }
+    Ok(index)
+}
+
 fn integer(value: &str, allow_plus: bool) -> Result<i64> {
     let bytes = value.as_bytes();
     let digits = match bytes.first() {
@@ -459,12 +484,7 @@ fn decode_libsvm_impl<R: BufRead>(
             let (index, value) = field
                 .split_once(':')
                 .ok_or_else(|| decode_error("invalid feature token"))?;
-            if !unsigned_decimal(index.as_bytes()) {
-                return Err(decode_error("invalid feature index"));
-            }
-            let index: u64 = index
-                .parse()
-                .map_err(|_| decode_error("feature index is out of range"))?;
+            let index = feature_index(index)?;
             if index == 0 || index > options.feature_count {
                 return Err(decode_error("feature index is out of range"));
             }

@@ -519,6 +519,31 @@ fn libsvm_splits_only_on_space_and_tab() {
 }
 
 #[test]
+fn libsvm_checks_feature_index_syntax_and_range() {
+    let options = LibsvmOptions {
+        feature_count: (1 << 53) - 1,
+        label_type: LabelType::Int64,
+        target_name: "response".into(),
+    };
+    let decoded = decode_libsvm(&b"1 9007199254740991:2\n"[..], &options).unwrap();
+    let Shape::Sparse { column_indices, .. } = &decoded[0].shape else {
+        panic!("expected sparse features");
+    };
+    assert_eq!(column_indices, &[options.feature_count - 1]);
+
+    for index in ["", "00", "+1", "-1", "١", "99999999999999999999x"] {
+        let row = format!("1 {index}:2\n");
+        let error = decode_libsvm(row.as_bytes(), &options).unwrap_err();
+        assert_eq!(error.to_string(), "invalid feature index");
+    }
+    for index in ["0", "9007199254740992", "18446744073709551616"] {
+        let row = format!("1 {index}:2\n");
+        let error = decode_libsvm(row.as_bytes(), &options).unwrap_err();
+        assert_eq!(error.to_string(), "feature index is out of range");
+    }
+}
+
+#[test]
 fn libsvm_v2_omits_zeros_without_changing_canonical_values() {
     let options = LibsvmOptions {
         feature_count: 5,
