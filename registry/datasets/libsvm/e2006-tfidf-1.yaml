@@ -1,0 +1,132 @@
+schema_version: 5
+source: libsvm
+name: e2006-tfidf
+version: '1'
+title: E2006-tfidf
+description: Stock return volatility regression from annual 10-K reports by publicly traded
+  U.S. companies. The features combine prior 12-month log volatility with TF-IDF-weighted
+  unigrams. The response is log volatility in the 12 months after the report. The training
+  split covers reports from 2001 through 2005 and the test split covers 2006.
+modality: tabular
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/regression.html#E2006-tfidf
+    - https://aclanthology.org/N09-1031.pdf
+    - https://www.jmlr.org/papers/volume13/ho12a/ho12a.pdf
+    - https://www.cs.cmu.edu/~ark/10K/data/README
+    steps:
+    - kind: feature-encoding
+      description: Tokenize the Management's Discussion and Analysis sections of the reports
+        and encode unigrams as TF-IDF. Use log volatility for the 12 months preceding the
+        report as the first feature.
+      parameters:
+        terms: unigrams
+        term_weight: TF-IDF
+    - kind: response-transformation
+      description: Use the logarithm of stock return volatility for the 12 months following
+        the report as the response.
+    - kind: split-selection
+      description: Train on reports from 2001 through 2005 and test on reports from 2006.
+      parameters:
+        train_years: 2001-2005
+        test_year: '2006'
+  datamonger:
+    status: none
+    evidence:
+    - spec/decoders/libsvm-v1.md
+provenance:
+  provider: LIBSVM
+  upstream_name: E2006-tfidf
+  landing_page: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/regression.html#E2006-tfidf
+  authors:
+  - Shimon Kogan
+  - Dimitry Levin
+  - Bryan R. Routledge
+  - Jacob S. Sagi
+  - Noah A. Smith
+  citations:
+  - citation: Kogan, S., Levin, D., Routledge, B. R., Sagi, J. S., and Smith, N. A. (2009).
+      Predicting Risk from Financial Reports with Regression. NAACL-HLT, 272-280. https://aclanthology.org/N09-1031/.
+    role: paper
+    recommended: true
+    note: The 10-K Corpus providers request this citation for research using the data.
+  - citation: Ho, C.-H., and Lin, C.-J. (2012). Large-scale Linear Support Vector Regression.
+      Journal of Machine Learning Research, 13, 3323-3348. https://www.jmlr.org/papers/v13/ho12a.html.
+    role: paper
+    note: Section 4.1 describes the TFIDF-2006 representation and its train/test split.
+  retrieved_at: '2026-11-18'
+license:
+  status: unknown
+  url: https://www.cs.cmu.edu/~ark/10K/
+  evidence: Carnegie Mellon University describes the source 10-K Corpus as available for academic
+    research and requests citation of Kogan et al. (2009). The LIBSVM catalog directs users
+    to the source copyrights (https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/). License
+    terms for the prepared E2006-tfidf files are unverified.
+artifacts:
+- name: train
+  format: libsvm
+  compression: bzip2
+  size: 188848529
+  sha256: 944066984ed3b6c9c3b137a4968afead81dc80f6b77f16f1988b0ecb591c4683
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/regression/E2006.train.bz2
+- name: test
+  format: libsvm
+  compression: bzip2
+  size: 43558264
+  sha256: 163fbf13fa3ec0759934989b3e78287e2b2e2461a05f038a5990b44980f7143c
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/regression/E2006.test.bz2
+representation:
+  decoder: libsvm-split
+  decoder_version: 1
+  inputs:
+    train: train
+    test: test
+  options:
+    index_base: 1
+    feature_count: 150360
+    duplicate_features: error
+    label_type: float64
+    row_order: source
+    target_name: response
+  expect:
+    components:
+    - name: train_features
+      kind: sparse_matrix
+      type: float64
+      rows: 16087
+      columns: 150360
+    - name: train_response
+      kind: vector
+      type: float64
+      length: 16087
+    - name: test_features
+      kind: sparse_matrix
+      type: float64
+      rows: 3308
+      columns: 150360
+    - name: test_response
+      kind: vector
+      type: float64
+      length: 3308
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: d04d0194ece451f2ba14e66c9ed7879df575a18274c5015511b853c2b8ad72bd
+tasks:
+- name: default
+  type: regression
+  splits:
+    train:
+      features: train_features
+      target: train_response
+    test:
+      features: test_features
+      target: test_response
