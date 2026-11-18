@@ -85,7 +85,6 @@ Register these catalog entries under the `libsvm` source. See the
 - [ ] `abalone`
 - [ ] `bodyfat`
 - [ ] `cpusmall`
-- [ ] `E2006-log1p`
 - [ ] `E2006-tfidf`
 - [ ] `eunite2001`
 - [ ] `housing`

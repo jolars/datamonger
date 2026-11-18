@@ -22,6 +22,7 @@ manifests:
 - registry/datasets/libsvm/colon-cancer-1.yaml
 - registry/datasets/libsvm/covtype-binary-1.yaml
 - registry/datasets/libsvm/dna_scale-1.yaml
+- registry/datasets/libsvm/e2006-log1p-1.yaml
 - registry/datasets/libsvm/glass_scale-1.yaml
 - registry/datasets/libsvm/heart_scale-1.yaml
 - registry/datasets/libsvm/madelon-1.yaml
@@ -108,6 +109,9 @@ defaults:
   version: '1'
 - source: libsvm
   name: dna_scale
+  version: '1'
+- source: libsvm
+  name: e2006-log1p
   version: '1'
 - source: libsvm
   name: glass_scale
