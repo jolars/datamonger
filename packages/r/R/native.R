@@ -16,6 +16,8 @@
   if (identical(component$logical_type, "int64")) {
     return(.new_int64(values, component$valid))
   }
-  values[!component$valid] <- NA
+  if (!isTRUE(all(component$valid))) {
+    values[!component$valid] <- NA
+  }
   values
 }
