@@ -61,5 +61,10 @@
       "release-draft": true,
       "exclude-paths": ["examples"]
     }
+  },
+  "commit-overrides": {
+    "73026e8a139bdbbb3d2a426ca151541cb85bebc1": {
+      "skip": true
+    }
   }
 }
