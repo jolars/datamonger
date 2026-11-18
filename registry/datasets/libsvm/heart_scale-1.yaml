@@ -46,6 +46,8 @@ artifacts:
     downloads:
       - kind: upstream
         url: https://raw.githubusercontent.com/cjlin1/libsvm/6b907139084abf2da4d6d3cb10dc3b7eaffa2fbb/heart_scale
+      - kind: upstream
+        url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/heart_scale
 
 representation:
   decoder: libsvm
