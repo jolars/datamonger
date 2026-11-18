@@ -20,6 +20,7 @@ manifests:
 - registry/datasets/libsvm/a9a-1.yaml
 - registry/datasets/libsvm/cadata-1.yaml
 - registry/datasets/libsvm/colon-cancer-1.yaml
+- registry/datasets/libsvm/covtype-1.yaml
 - registry/datasets/libsvm/covtype-binary-1.yaml
 - registry/datasets/libsvm/dna_scale-1.yaml
 - registry/datasets/libsvm/e2006-log1p-1.yaml
@@ -103,6 +104,9 @@ defaults:
   version: '1'
 - source: libsvm
   name: colon-cancer
+  version: '1'
+- source: libsvm
+  name: covtype
   version: '1'
 - source: libsvm
   name: covtype-binary

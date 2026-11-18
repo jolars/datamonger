@@ -49,7 +49,6 @@ Register these catalog entries under the `libsvm` source. See the
 - [ ] `aloi`
 - [ ] `cifar10`
 - [ ] `connect-4`
-- [ ] `covtype`
 - [ ] `imdb-rating`
 - [ ] `iris`
 - [ ] `LEDGAR (LexGLUE)`

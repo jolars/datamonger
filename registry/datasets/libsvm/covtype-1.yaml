@@ -1,0 +1,97 @@
+schema_version: 5
+source: libsvm
+name: covtype
+version: '1'
+title: Covertype
+description: LIBSVM's unscaled, seven-class representation of UCI Covertype. The 54 cartographic
+  features describe 30-meter cells in Colorado's Roosevelt National Forest. Labels 1 through
+  7 denote spruce/fir, lodgepole pine, ponderosa pine, cottonwood/willow, aspen, Douglas-fir,
+  and krummholz, respectively.
+modality: tabular
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass.html#covtype
+    - https://archive.ics.uci.edu/ml/machine-learning-databases/covtype/covtype.info
+    - https://archive.ics.uci.edu/ml/machine-learning-databases/covtype/covtype.data.gz
+    steps:
+    - kind: feature-encoding
+      description: UCI represents wilderness area and soil type with four and 40 binary indicator
+        columns, respectively.
+    notes: A row-by-row comparison with the original UCI data confirmed the unscaled feature
+      values, seven class labels, and source row order. LIBSVM provides one complete file.
+  datamonger:
+    status: none
+    evidence:
+    - spec/decoders/libsvm-v1.md
+provenance:
+  provider: LIBSVM
+  upstream_name: covtype
+  landing_page: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass.html#covtype
+  authors:
+  - Jock Blackard
+  citations:
+  - citation: Blackard, J. (1998). Covertype [Dataset]. UCI Machine Learning Repository. https://doi.org/10.24432/C50K5N.
+    role: dataset
+  - citation: >-
+      Chang, C.-C., and Lin, C.-J. (2011). LIBSVM: A Library for Support Vector Machines.
+      ACM Transactions on Intelligent Systems and Technology, 2(3), article 27.
+      https://www.csie.ntu.edu.tw/~cjlin/papers/libsvm.pdf
+    role: collection
+  citation_instructions: Cite the UCI dataset DOI and retain the copyright notice for Jock
+    A. Blackard and Colorado State University, as requested in covtype.info.
+  retrieved_at: '2026-11-18'
+license:
+  status: known
+  identifier: CC-BY-4.0
+  url: https://creativecommons.org/licenses/by/4.0/
+  evidence: UCI licenses the Covertype dataset under CC BY 4.0 (https://archive.ics.uci.edu/dataset/31/covertype).
+    The LIBSVM file is a lossless sparse encoding of the UCI data. The original covtype.info
+    also permits unlimited reuse with retention of the copyright notice for Jock A. Blackard
+    and Colorado State University (https://archive.ics.uci.edu/ml/machine-learning-databases/covtype/covtype.info).
+artifacts:
+- name: data
+  format: libsvm
+  compression: bzip2
+  size: 6706926
+  sha256: 695d94f57cfebd4cd222cbf3c1eb9deabeaa96a7ddac5f448496b57c17f813e6
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/covtype.bz2
+representation:
+  decoder: libsvm
+  decoder_version: 1
+  inputs:
+    data: data
+  options:
+    index_base: 1
+    feature_count: 54
+    duplicate_features: error
+    label_type: int64
+    row_order: source
+    target_name: response
+  expect:
+    components:
+    - name: features
+      kind: sparse_matrix
+      type: float64
+      rows: 581012
+      columns: 54
+    - name: response
+      kind: vector
+      type: int64
+      length: 581012
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: 80f96ed6c72dd1883c8ea9f69dacfb8f182712502a0bc0a3b442a09e2392c9d8
+tasks:
+- name: default
+  type: classification
+  features: features
+  target: response
+related:
+- id: uci:covertype@1
+  relation: same_upstream
