@@ -49,6 +49,7 @@ manifests:
 - registry/datasets/uci/iris-1.yaml
 - registry/datasets/uci/wholesale-customers-1.yaml
 - registry/datasets/uci/wine-quality-1.yaml
+- registry/datasets/uci/wine-quality-red-1.yaml
 defaults:
 - source: datamonger
   name: brca1
@@ -193,4 +194,7 @@ defaults:
   version: '1'
 - source: uci
   name: wine-quality
+  version: '1'
+- source: uci
+  name: wine-quality-red
   version: '1'

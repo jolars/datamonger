@@ -1,0 +1,154 @@
+schema_version: 5
+source: uci
+name: wine-quality-red
+version: '1'
+title: Wine Quality (Red)
+description: Physicochemical measurements and sensory quality scores for red vinho verde wines
+  from northern Portugal.
+modality: tabular
+preprocessing:
+  upstream:
+    status: unknown
+    notes: The preprocessing history has not been established for this representation.
+  datamonger:
+    status: none
+    evidence:
+    - spec/decoders/delimited-text-v2.md
+    notes: Datamonger decodes the provider artifacts without additional statistical preprocessing.
+provenance:
+  provider: UCI Machine Learning Repository
+  upstream_name: Wine Quality
+  upstream_id: '186'
+  landing_page: https://archive.ics.uci.edu/dataset/186/wine+quality
+  authors:
+  - Paulo Cortez
+  - A. Cerdeira
+  - F. Almeida
+  - T. Matos
+  - J. Reis
+  citation: Cortez, P., Cerdeira, A., Almeida, F., Matos, T., and Reis, J. (2009). Wine Quality.
+    UCI Machine Learning Repository. https://doi.org/10.24432/C56S3T.
+  retrieved_at: '2026-11-19'
+license:
+  status: known
+  identifier: CC-BY-4.0
+  url: https://creativecommons.org/licenses/by/4.0/
+  evidence: The UCI dataset page states that the dataset is licensed under CC BY 4.0.
+artifacts:
+- name: data
+  format: csv
+  compression: none
+  size: 84199
+  sha256: 4a402cf041b025d4566d954c3b9ba8635a3a8a01e039005d97d6a710278cf05e
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv
+representation:
+  decoder: delimited-text
+  decoder_version: 2
+  inputs:
+    data: data
+  options:
+    encoding: utf-8
+    delimiter: ;
+    header: true
+    quote: '"'
+    escape: double
+    missing_values: []
+    row_order: source
+    columns:
+    - name: fixed acidity
+      type: float64
+    - name: volatile acidity
+      type: float64
+    - name: citric acid
+      type: float64
+    - name: residual sugar
+      type: float64
+    - name: chlorides
+      type: float64
+    - name: free sulfur dioxide
+      type: float64
+    - name: total sulfur dioxide
+      type: float64
+    - name: density
+      type: float64
+    - name: pH
+      type: float64
+    - name: sulphates
+      type: float64
+    - name: alcohol
+      type: float64
+    - name: quality
+      type: int64
+  expect:
+    components:
+    - name: fixed acidity
+      kind: vector
+      type: float64
+      length: 1599
+    - name: volatile acidity
+      kind: vector
+      type: float64
+      length: 1599
+    - name: citric acid
+      kind: vector
+      type: float64
+      length: 1599
+    - name: residual sugar
+      kind: vector
+      type: float64
+      length: 1599
+    - name: chlorides
+      kind: vector
+      type: float64
+      length: 1599
+    - name: free sulfur dioxide
+      kind: vector
+      type: float64
+      length: 1599
+    - name: total sulfur dioxide
+      kind: vector
+      type: float64
+      length: 1599
+    - name: density
+      kind: vector
+      type: float64
+      length: 1599
+    - name: pH
+      kind: vector
+      type: float64
+      length: 1599
+    - name: sulphates
+      kind: vector
+      type: float64
+      length: 1599
+    - name: alcohol
+      kind: vector
+      type: float64
+      length: 1599
+    - name: quality
+      kind: vector
+      type: int64
+      length: 1599
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: 6b18104782c650ce8385b9ab17dd8c5c9b36a188b2df077f71a85ac1490a1dc2
+tasks:
+- name: default
+  type: regression
+  target: quality
+  features:
+  - fixed acidity
+  - volatile acidity
+  - citric acid
+  - residual sugar
+  - chlorides
+  - free sulfur dioxide
+  - total sulfur dioxide
+  - density
+  - pH
+  - sulphates
+  - alcohol
