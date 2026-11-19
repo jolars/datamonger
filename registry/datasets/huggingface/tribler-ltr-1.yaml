@@ -1,0 +1,169 @@
+schema_version: 7
+source: huggingface
+name: tribler-ltr
+version: '1'
+title: Tribler Learning-to-Rank
+description: Binary relevance judgments and normalized query-document features derived from
+  Tribler search interactions.
+modality: tabular
+provenance:
+  provider: Marcel Gregoriadis
+  upstream_name: DART-LTR
+  landing_page: https://huggingface.co/datasets/mg98/DART-LTR
+  authors:
+  - Quinten Stokkink
+  - Marcel Gregoriadis
+  citations:
+  - role: dataset
+    citation: Stokkink, Q. and Gregoriadis, M. I. (2025). Tribler Learning-to-Rank Dataset.
+      doi:10.4121/17091504-6005-4AE0-8A30-468675F09D3C.
+  - role: paper
+    citation: Gregoriadis, M., Stokkink, Q., and Pouwelse, J. (2025). Decentralized Adaptive
+      Ranking using Transformers. doi:10.1145/3721146.3721945.
+  retrieved_at: '2026-11-19'
+license:
+  status: known
+  identifier: Apache-2.0
+  url: https://www.apache.org/licenses/LICENSE-2.0.html
+  evidence: The author-published Hugging Face dataset card specifies Apache-2.0.
+preprocessing:
+  upstream:
+    status: unknown
+    notes: TU Delft describes the published features as normalized. The normalization procedure
+      is unverified.
+    evidence:
+    - https://research.tudelft.nl/en/datasets/tribler-learning-to-rank-dataset/
+  datamonger:
+    status: none
+    notes: Datamonger decodes the published files and preserves their row order and split
+      membership.
+    evidence:
+    - spec/decoders/svmlight-ranking-v1.md
+artifacts:
+- name: train
+  format: svmlight
+  compression: none
+  size: 286366063
+  sha256: 80fae748f4843e7aa99b14b93ef4fee8dcfed46be1304964cf558c7be477a5fd
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://huggingface.co/datasets/mg98/DART-LTR/resolve/21ce32f904c11b5971a20db96cacb3ca989b1cc9/train.txt?download=true
+- name: vali
+  format: svmlight
+  compression: none
+  size: 70922164
+  sha256: 8bd37adeade02ad20ee4f599e54325a589965eefc226f8176824be79c3db55d0
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://huggingface.co/datasets/mg98/DART-LTR/resolve/21ce32f904c11b5971a20db96cacb3ca989b1cc9/vali.txt?download=true
+- name: test
+  format: svmlight
+  compression: none
+  size: 42307441
+  sha256: ef7b2f1ea65495ec82015cd98adb08167ac81507c49385a47d320459d77e85be
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://huggingface.co/datasets/mg98/DART-LTR/resolve/21ce32f904c11b5971a20db96cacb3ca989b1cc9/test.txt?download=true
+representation:
+  decoder: named-splits
+  decoder_version: 1
+  inputs:
+    train: train
+    vali: vali
+    test: test
+  options:
+    splits:
+    - name: train
+      decoder: svmlight-ranking
+      decoder_version: 1
+      options:
+        index_base: 0
+        feature_count: 31
+        duplicate_features: error
+        label_type: int64
+        row_order: source
+        target_name: relevance
+    - name: vali
+      decoder: svmlight-ranking
+      decoder_version: 1
+      options:
+        index_base: 0
+        feature_count: 31
+        duplicate_features: error
+        label_type: int64
+        row_order: source
+        target_name: relevance
+    - name: test
+      decoder: svmlight-ranking
+      decoder_version: 1
+      options:
+        index_base: 0
+        feature_count: 31
+        duplicate_features: error
+        label_type: int64
+        row_order: source
+        target_name: relevance
+  expect:
+    components:
+    - name: train/features
+      kind: sparse_matrix
+      type: float64
+      rows: 416959
+      columns: 31
+    - name: train/relevance
+      kind: vector
+      type: int64
+      length: 416959
+    - name: train/query_id
+      kind: vector
+      type: int64
+      length: 416959
+    - name: vali/features
+      kind: sparse_matrix
+      type: float64
+      rows: 103289
+      columns: 31
+    - name: vali/relevance
+      kind: vector
+      type: int64
+      length: 103289
+    - name: vali/query_id
+      kind: vector
+      type: int64
+      length: 103289
+    - name: test/features
+      kind: sparse_matrix
+      type: float64
+      rows: 61601
+      columns: 31
+    - name: test/relevance
+      kind: vector
+      type: int64
+      length: 61601
+    - name: test/query_id
+      kind: vector
+      type: int64
+      length: 61601
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: bb02737516a8efb8e1e9ad964c7e8b6b1c0ee9da59b9412598e5a510f0d89594
+tasks:
+- name: default
+  type: ranking
+  splits:
+    train:
+      features: train/features
+      target: train/relevance
+      query_id: train/query_id
+    vali:
+      features: vali/features
+      target: vali/relevance
+      query_id: vali/query_id
+    test:
+      features: test/features
+      target: test/relevance
+      query_id: test/query_id
