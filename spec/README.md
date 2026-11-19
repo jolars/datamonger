@@ -37,3 +37,6 @@ The [LIBSVM zero normalization extension](decoders/libsvm-v2.md) adds manifest
 and index schema version 5 and LIBSVM decoder version 2. It accepts explicit
 zero-valued features and omits them from decoded sparse storage while preserving
 canonical-form version 1 and all earlier decoder and schema contracts.
+
+[Delimited text version 2](decoders/delimited-text-v2.md) uses manifest schema
+version 5 and accepts semicolon-delimited CSV.

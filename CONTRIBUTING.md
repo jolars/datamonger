@@ -404,6 +404,14 @@ core dependency, enable its v2 dispatch for that dependency, and run
 the new v2 entry points; `tools/dm_julia_core.jl` builds it locally. Do not
 release a registry selecting v2 until the affected client releases are available.
 
+### Semicolon-delimited CSV
+
+Use manifest schema 5, `decoder: delimited-text`, `decoder_version: 2`, and
+`delimiter: ';'` for semicolon-delimited CSV. The R adapter needs a published
+core with semicolon support and a refreshed vendor archive. Julia needs a
+native artifact built with that core. Use `dm-test-r` and
+`tools/dm_julia_core.jl` to exercise local builds.
+
 ### Curated dataset names
 
 For new datasets curated and distributed under the `datamonger` source

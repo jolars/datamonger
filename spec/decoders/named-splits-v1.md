@@ -24,6 +24,9 @@ must dispatch child versions before interpreting their options. Invalid assembly
 recipes or unsupported child versions fail as `unsupported-decoder`. Unknown
 artifact references remain `unsupported-registry` errors.
 
+Manifest schema version 5 also allows
+[delimited-text version 2](delimited-text-v2.md) as a child decoder.
+
 For example, the outline below assembles two labeled sparse inputs and a table
 containing only test features. Replace each options placeholder with the
 complete child recipe:
