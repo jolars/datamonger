@@ -14,8 +14,8 @@ defines the profile and its versioned contract inventory:
   generated records.
 
 Specification release [`spec-v1`](revision-1.md#stable-release) freezes this
-inventory and pairs it with the strongly selected `2026.09` registry. Python,
-R, and Julia pass the shared conformance corpus and reproduce every registry
+inventory and pairs it with the strongly selected `2026.09` registry. Python, R,
+and Julia pass the shared conformance corpus and reproduce every registry
 verification record. Any change that alters logical output or reinterprets
 existing bytes requires a later specification revision and a new decoder,
 canonical-form, schema, or behavioral-contract version as appropriate.
@@ -28,9 +28,10 @@ The [preprocessing metadata extension](preprocessing.md) adds manifest and index
 schema version 3. It records upstream and Datamonger preparation separately,
 including known steps, parameters, evidence, and explicit unknown history.
 
-The [named splits extension](decoders/named-splits-v1.md) adds manifest and index
-schema version 4 and the `named-splits` version 1 assembly. It preserves provider
-split names and membership and supports feature-only splits without labels.
+The [named splits extension](decoders/named-splits-v1.md) adds manifest and
+index schema version 4 and the `named-splits` version 1 assembly. It preserves
+provider split names and membership and supports feature-only splits without
+labels.
 
 The [LIBSVM zero normalization extension](decoders/libsvm-v2.md) adds manifest
 and index schema version 5 and LIBSVM decoder version 2. It accepts explicit

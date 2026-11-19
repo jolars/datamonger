@@ -55,12 +55,12 @@ but do not require a new dataset version.
 ## Registry compatibility
 
 Index version 1 continues to accept only manifest version 1. Index version 2
-accepts manifests of versions 1 and 2. The registry builder emits index version 2
-when any selected manifest uses version 2; otherwise it retains version 1.
-Release-source version 1 continues to identify manifests by path and needs no new
-fields. Selectors and catalogs retain version 1 independently of index versions.
-Clients must reject unsupported schema versions before interpreting their fields.
-Published indexes and selectors remain immutable.
+accepts manifests of versions 1 and 2. The registry builder emits index version
+2 when any selected manifest uses version 2; otherwise it retains version 1.
+Release-source version 1 continues to identify manifests by path and needs no
+new fields. Selectors and catalogs retain version 1 independently of index
+versions. Clients must reject unsupported schema versions before interpreting
+their fields. Published indexes and selectors remain immutable.
 
 ## Client behavior
 
@@ -82,9 +82,10 @@ reference records with optional fields preserved, including the distinction
 between an absent recommendation and `false`. Bibliography export is outside
 this extension.
 
-`data_info()` and fetch results requested with `return_info` expose all reference
-records as `citations` and upstream instructions as `citation_instructions`.
-Missing instructions are `None`, `NULL`, or `nothing`. The enclosing metadata
-identifies the resolved dataset version and exact registry release and digest.
-Fetch metadata comes from the same record used for retrieval, without a second
-registry lookup. The default data return types remain unchanged.
+`data_info()` and fetch results requested with `return_info` expose all
+reference records as `citations` and upstream instructions as
+`citation_instructions`. Missing instructions are `None`, `NULL`, or `nothing`.
+The enclosing metadata identifies the resolved dataset version and exact
+registry release and digest. Fetch metadata comes from the same record used for
+retrieval, without a second registry lookup. The default data return types
+remain unchanged.

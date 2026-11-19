@@ -36,10 +36,10 @@ one means valid. Unused high bits must be zero.
 
 ## Dense matrix
 
-A dense matrix has rank `2`, followed by row and column counts as `uint64`.
-The element count is their mathematical product and must fit `uint64`. A
-validity bitmap covers elements in row-major order, followed by values in the
-same order. Empty dimensions use an empty bitmap and value sequence.
+A dense matrix has rank `2`, followed by row and column counts as `uint64`. The
+element count is their mathematical product and must fit `uint64`. A validity
+bitmap covers elements in row-major order, followed by values in the same order.
+Empty dimensions use an empty bitmap and value sequence.
 
 ## Sparse matrix
 
@@ -56,8 +56,8 @@ Duplicates, missing values, and stored positive or negative zero are invalid.
 ## Values
 
 - `float64` is an IEEE 754 binary64 word in little-endian order. Negative zero
-  becomes positive zero, and every NaN becomes quiet NaN
-  `0x7ff8000000000000`. Invalid dense or vector storage is positive zero.
+  becomes positive zero, and every NaN becomes quiet NaN `0x7ff8000000000000`.
+  Invalid dense or vector storage is positive zero.
 - `int64` is a signed two's-complement little-endian word. Invalid storage is
   zero.
 - `string` is a `uint64` UTF-8 byte length followed by the bytes. An invalid
@@ -72,6 +72,6 @@ value encodings use row-major logical order regardless of host layout.
 
 A verification record identifies this version, digest algorithm `sha256`, and
 the lowercase digest of the complete stream. Records are append-only. A client
-uses a supported non-revoked record and reports the version and digest used.
-An approved erratum may revoke an incorrect record and append a replacement;
-it never changes earlier release bytes or dataset identity.
+uses a supported non-revoked record and reports the version and digest used. An
+approved erratum may revoke an incorrect record and append a replacement; it
+never changes earlier release bytes or dataset identity.

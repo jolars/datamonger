@@ -56,9 +56,9 @@ identity.
 
 If all locations fail, diagnostics must retain each attempted location and
 classify the result as an integrity failure when any location returned complete
-but incorrectly sized or hashed bytes; otherwise it is an availability
-failure. `metadata-only` artifacts fail before network access. Artifact
-verification can never be disabled.
+but incorrectly sized or hashed bytes; otherwise it is an availability failure.
+`metadata-only` artifacts fail before network access. Artifact verification can
+never be disabled.
 
 ## Cache semantics
 
@@ -73,16 +73,16 @@ the new complete object—never a partial file. A corrupt existing object is
 quarantined or removed before replacement.
 
 Each client must implement per-object publisher, reader, and cleaner leases.
-Publication excludes cleaners; an active reader excludes cleaners; cleaners
-skip active objects. Lease recovery must distinguish a live owner from a stale
-record after process or host failure. Client-specific paths and primitives may
-differ, but these observable guarantees may not.
+Publication excludes cleaners; an active reader excludes cleaners; cleaners skip
+active objects. Lease recovery must distinguish a live owner from a stale record
+after process or host failure. Client-specific paths and primitives may differ,
+but these observable guarantees may not.
 
 Offline retrieval uses verified cached indexes and artifacts only. It must not
 silently select a different release or dataset version. Cache eviction is
-manual, never automatic, and must report which objects were skipped because
-they were active.
+manual, never automatic, and must report which objects were skipped because they
+were active.
 
 Decoded verification is enabled by default after retrieval and decoding. A
-caller may explicitly disable only decoded verification; returned metadata
-must then label the result as artifact-verified rather than decoded-verified.
+caller may explicitly disable only decoded verification; returned metadata must
+then label the result as artifact-verified rather than decoded-verified.

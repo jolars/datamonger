@@ -17,11 +17,11 @@ reflected in the registered artifacts. It has two required stage records:
 Each stage requires `status`:
 
 - `unknown`: processing has not been established. Omit `steps`.
-- `none`: evidence establishes that this stage applies no preprocessing.
-  Omit `steps` and supply nonempty `evidence`.
-- `documented`: at least one known step is recorded. Supply nonempty `steps`
-  and `evidence` arrays. This records known processing, without claiming that
-  the history is exhaustive.
+- `none`: evidence establishes that this stage applies no preprocessing. Omit
+  `steps` and supply nonempty `evidence`.
+- `documented`: at least one known step is recorded. Supply nonempty `steps` and
+  `evidence` arrays. This records known processing, without claiming that the
+  history is exhaustive.
 
 Optional `notes` supply nonempty text, including limitations of the available
 history. `evidence` is an array of nonempty reference strings, such as provider
@@ -38,10 +38,11 @@ applicable. Other identifiers are allowed. Clients must preserve unfamiliar
 kinds as descriptive metadata.
 
 An optional `parameters` object maps nonempty names to nonempty strings. Record
-methods, affected axes or columns, thresholds, class mappings, and the population
-used to fit a transformation when known. Quote numeric and boolean parameters
-as strings to preserve their documented precision without changing registry
-number serialization. Omit unknown parameters rather than guessing them.
+methods, affected axes or columns, thresholds, class mappings, and the
+population used to fit a transformation when known. Quote numeric and boolean
+parameters as strings to preserve their documented precision without changing
+registry number serialization. Omit unknown parameters rather than guessing
+them.
 
 The `steps` array preserves the documented order. Combine operations in one
 description if their internal order is unknown. Statistical transformations,
@@ -100,12 +101,12 @@ version 1. Unsupported index and manifest versions remain errors.
 
 ## Client behavior
 
-Python, R, and Julia expose `preprocessing` through `data_info()`, `list_data()`,
-and fetch metadata requested with `return_info`. Missing metadata is `None`,
-`NULL`, or `nothing`. Explicit unknown stages and every recorded step, parameter,
-note, and evidence reference are preserved. Metadata describes the same registry
-record used for retrieval and requires no additional lookup. The CLI preserves
-the field in its dataset metadata output.
+Python, R, and Julia expose `preprocessing` through `data_info()`,
+`list_data()`, and fetch metadata requested with `return_info`. Missing metadata
+is `None`, `NULL`, or `nothing`. Explicit unknown stages and every recorded
+step, parameter, note, and evidence reference are preserved. Metadata describes
+the same registry record used for retrieval and requires no additional lookup.
+The CLI preserves the field in its dataset metadata output.
 
 Clients reject malformed preprocessing records as unsupported registry metadata.
 They must not execute the steps, transform decoded data, infer missing history,

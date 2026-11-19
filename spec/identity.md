@@ -1,7 +1,7 @@
 # Dataset Identity Version 1
 
-This document is normative. The key words **must**, **must not**, **should**, and
-**may** describe requirements on registry tooling and clients.
+This document is normative. The key words **must**, **must not**, **should**,
+and **may** describe requirements on registry tooling and clients.
 
 ## Identifier
 
@@ -14,16 +14,16 @@ A dataset identifier is the ordered triple `(source, name, version)`.
 - The canonical serialization is `source:name@version`, with no escaping or
   additional whitespace.
 
-`source` identifies a provenance collection. It is not an artifact location.
-The serialized identifier is used in logs, lockfiles, relations, and returned
+`source` identifies a provenance collection. It is not an artifact location. The
+serialized identifier is used in logs, lockfiles, relations, and returned
 metadata; user-facing APIs may accept the three components separately.
 
 ## Resolution
 
 Resolution always occurs within one strongly selected registry index. An
-explicit version selects the exactly matching triple. If the version is
-omitted, the index must contain exactly one matching entry in `defaults`; that
-entry supplies the version. A missing or ambiguous match is an unknown-dataset
+explicit version selects the exactly matching triple. If the version is omitted,
+the index must contain exactly one matching entry in `defaults`; that entry
+supplies the version. A missing or ambiguous match is an unknown-dataset
 failure.
 
 An omitted version is a convenience query, not a reproducible identifier. A
@@ -64,17 +64,16 @@ For a dataset identifier present in an earlier and a later release:
 A dataset may be absent from a later release without changing the earlier
 release. Default selections may change between releases.
 
-An incorrect component expectation or verification record may be corrected
-only by a later release containing an approved erratum. A verification erratum
-retains and revokes the original record and appends its replacement. A
-component erratum identifies the exact original record and permits the later
-record to contain its exact replacement. Earlier releases remain unchanged.
+An incorrect component expectation or verification record may be corrected only
+by a later release containing an approved erratum. A verification erratum
+retains and revokes the original record and appends its replacement. A component
+erratum identifies the exact original record and permits the later record to
+contain its exact replacement. Earlier releases remain unchanged.
 
-Published decoder versions are immutable. A logical-output change requires a
-new decoder version and therefore a new dataset version. A canonical-form
-version is verification framing rather than dataset identity; a later release
-may append a digest for a newer canonical-form version without changing the
-dataset version.
+Published decoder versions are immutable. A logical-output change requires a new
+decoder version and therefore a new dataset version. A canonical-form version is
+verification framing rather than dataset identity; a later release may append a
+digest for a newer canonical-form version without changing the dataset version.
 
 For each `(canonical_form, algorithm)` pair, a dataset must have exactly one
 non-revoked verification record. Multiple records with that pair are valid only
@@ -89,6 +88,5 @@ and regression tasks require a `target` at the top level or in every split;
 `features` is optional. Unsupervised tasks require `features` at the top level
 or in every split and must not declare a `target`. Feature-array order is
 semantic. Split names are unique. Within one top-level or split role record,
-component references must be unique, must resolve to the decoded
-representation, and must not name the same component as both a feature and the
-target.
+component references must be unique, must resolve to the decoded representation,
+and must not name the same component as both a feature and the target.

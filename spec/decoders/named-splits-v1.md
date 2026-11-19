@@ -17,12 +17,12 @@ JSON object key order has no meaning. The array defines split and component
 order. Multiple splits may explicitly select the same artifact.
 
 Each child selects `delimited-text` version `1` or `libsvm` version `1` and
-supplies that decoder's complete options. Nested assemblies are unsupported.
-The artifact format, compression, accepted bytes, row order, logical types,
+supplies that decoder's complete options. Nested assemblies are unsupported. The
+artifact format, compression, accepted bytes, row order, logical types,
 missingness, and errors follow the selected single-artifact contract. Clients
-must dispatch child versions before interpreting their options. Invalid
-assembly recipes or unsupported child versions fail as `unsupported-decoder`.
-Unknown artifact references remain `unsupported-registry` errors.
+must dispatch child versions before interpreting their options. Invalid assembly
+recipes or unsupported child versions fail as `unsupported-decoder`. Unknown
+artifact references remain `unsupported-registry` errors.
 
 For example, the outline below assembles two labeled sparse inputs and a table
 containing only test features. Replace each options placeholder with the
@@ -53,19 +53,19 @@ options:
 
 ## Logical output and verification
 
-Decode each child independently. Preserve every row, its original order, and
-its split membership. Do not concatenate, shuffle, rebalance, or discard rows.
-A feature-only table has no response component. Do not invent labels, add a
-column of missing labels, or require a target column to decode it. Version 1
-LIBSVM continues to require labels; use a delimited feature-only artifact when
-the provider has no labels.
+Decode each child independently. Preserve every row, its original order, and its
+split membership. Do not concatenate, shuffle, rebalance, or discard rows. A
+feature-only table has no response component. Do not invent labels, add a column
+of missing labels, or require a target column to decode it. Version 1 LIBSVM
+continues to require labels; use a delimited feature-only artifact when the
+provider has no labels.
 
-The assembly's logical output concatenates the child component sequences in
-the declared split order. Qualify each component name as
+The assembly's logical output concatenates the child component sequences in the
+declared split order. Qualify each component name as
 `escape(split_name)/escape(child_component_name)`, where `escape` replaces `~`
-with `~0`, then `/` with `~1`. This escaping is injective and performs no Unicode
-normalization. Thus `train/features` and `validation/response` are ordinary
-qualified names, and split `Test / α~` and column `signal/~` produce
+with `~0`, then `/` with `~1`. This escaping is injective and performs no
+Unicode normalization. Thus `train/features` and `validation/response` are
+ordinary qualified names, and split `Test / α~` and column `signal/~` produce
 `Test ~1 α~0/signal~1~0`. Native tables retain the original column names.
 
 Component values, types, dimensions, validity, and sparse structure remain
@@ -78,9 +78,9 @@ Component or digest mismatches fail as `decoded-integrity`.
 Clients return a mapping of exact split names to native table or sparse
 datasets, with iteration in recipe order: Python and Julia expose
 `DatasetSplits`, and R exposes the named list `datamonger_dataset_splits`.
-`data["validation"]` in Python and Julia, or `data[["validation"]]` in R, selects
-that provider split. `return_info` wraps this same mapping and records all
-consumed artifact digests. Disabling decoded verification does not disable
+`data["validation"]` in Python and Julia, or `data[["validation"]]` in R,
+selects that provider split. `return_info` wraps this same mapping and records
+all consumed artifact digests. Disabling decoded verification does not disable
 artifact verification or recipe validation.
 
 ## Task metadata and schema version 4
@@ -94,11 +94,11 @@ existing identity rules, even when it reuses the same artifact bytes.
 For schema version `4`, classification and regression tasks may declare
 feature-only split roles. Every split must declare features, a target, or both,
 and at least one split in a supervised task must declare a target. Unsupervised
-tasks still require features and forbid targets in every split. Top-level
-roles retain the earlier requirements. A `named-splits` task must use split
-roles whose keys select declared provider splits. Each role must refer to
-components within that same split, using qualified names. Feature-array order
-remains semantic. Task metadata never adds, removes, or transforms data.
+tasks still require features and forbid targets in every split. Top-level roles
+retain the earlier requirements. A `named-splits` task must use split roles
+whose keys select declared provider splits. Each role must refer to components
+within that same split, using qualified names. Feature-array order remains
+semantic. Task metadata never adds, removes, or transforms data.
 
 The shared extension cases in
 [`tests/conformance/named-splits.json`](../../tests/conformance/named-splits.json)

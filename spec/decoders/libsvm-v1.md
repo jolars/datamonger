@@ -25,9 +25,9 @@ it never concatenates or discards a split.
 
 The artifact is UTF-8 without a byte-order mark. Records use LF or CRLF, and the
 final terminator may be omitted. An empty artifact produces zero rows. Blank
-records and leading ASCII whitespace are invalid. Fields are separated by one
-or more ASCII spaces or tabs; trailing separators are allowed. Unicode
-whitespace, comments, and SVMLight `qid` fields are unsupported.
+records and leading ASCII whitespace are invalid. Fields are separated by one or
+more ASCII spaces or tabs; trailing separators are allowed. Unicode whitespace,
+comments, and SVMLight `qid` fields are unsupported.
 
 Each record contains a label followed by zero or more `index:value` fields.
 Indices use `(0|[1-9][0-9]*)`, fall within `1..feature_count`, and strictly

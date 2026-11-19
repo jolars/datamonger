@@ -14,11 +14,11 @@ contains:
 - `datasets`, an array of unique manifest records; and
 - when nonempty, `errata`, an array of approved erratum records.
 
-Every default must identify a dataset in the same index, and each `(source,
-name)` has at most one default. Dataset records use the manifest schema version
-declared in the record. Unknown index, manifest, canonical-form, or decoder
-versions are errors rather than extension points. A missing version is not
-version 1.
+Every default must identify a dataset in the same index, and each
+`(source, name)` has at most one default. Dataset records use the manifest
+schema version declared in the record. Unknown index, manifest, canonical-form,
+or decoder versions are errors rather than extension points. A missing version
+is not version 1.
 
 ## Deterministic generation
 
@@ -38,8 +38,8 @@ The generated index is serialized as follows:
    append-only semantics;
 3. sort every JSON object key by Unicode code point;
 4. emit strings and integers using JSON syntax: escape quotation mark and
-   reverse solidus, use `\b`, `\t`, `\n`, `\f`, and `\r` for those controls,
-   use lowercase `\u00xx` for other controls, never escape solidus, and emit
+   reverse solidus, use `\b`, `\t`, `\n`, `\f`, and `\r` for those controls, use
+   lowercase `\u00xx` for other controls, never escape solidus, and emit
    non-ASCII Unicode as UTF-8 rather than ASCII escapes;
 5. emit no insignificant whitespace; and
 6. append exactly one LF byte.
@@ -57,8 +57,8 @@ integers.
 
 The distributed selector contains `schema_version`, equal to `1`, plus
 `release`, `index_sha256`, and `index_url`. The URL is an absolute HTTP or HTTPS
-URL. The digest is SHA-256 over the complete generated index including its
-final LF. `schema_version` is not part of the strong `(release, index_sha256)`
+URL. The digest is SHA-256 over the complete generated index including its final
+LF. `schema_version` is not part of the strong `(release, index_sha256)`
 identity. The selector is serialized by the same JSON rules.
 
 Generated indexes and selectors are never edited manually. Creating an absent

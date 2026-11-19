@@ -1,8 +1,8 @@
 # Delimited Text Decoder Version 1
 
-This document is normative for CSV and TSV artifacts decoded by
-`delimited-text` version `1`. Every listed option is required except
-`missing_values`, whose default is an empty array. Unknown options are errors.
+This document is normative for CSV and TSV artifacts decoded by `delimited-text`
+version `1`. Every listed option is required except `missing_values`, whose
+default is an empty array. Unknown options are errors.
 
 ## Recipe
 
@@ -16,8 +16,8 @@ This document is normative for CSV and TSV artifacts decoded by
 - `missing_values` is an array of unique strings matched exactly after CSV
   unquoting and before lexical conversion.
 
-The representation has exactly one input named `data`. The input artifact
-format and delimiter must agree. Components are ordered exactly as `columns`.
+The representation has exactly one input named `data`. The input artifact format
+and delimiter must agree. Components are ordered exactly as `columns`.
 
 ## Record grammar
 
@@ -37,10 +37,10 @@ produces zero-length components; an empty artifact is invalid.
 ## Lexical conversion
 
 - `int64` accepts `-?(0|[1-9][0-9]*)` in the signed 64-bit range.
-- `float64` accepts
-  `-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?`. The mathematical value is
-  rounded to binary64 using round-to-nearest, ties-to-even. Overflow and a
-  non-finite result are invalid; underflow and signed zero are permitted.
+- `float64` accepts `-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?`. The
+  mathematical value is rounded to binary64 using round-to-nearest,
+  ties-to-even. Overflow and a non-finite result are invalid; underflow and
+  signed zero are permitted.
 - `bool` accepts only `true` and `false`.
 - `string` preserves the decoded Unicode scalar sequence exactly.
 

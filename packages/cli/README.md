@@ -12,13 +12,12 @@ cargo install datamonger --locked
 
 To build from source, run `cargo build --release --locked` from this directory,
 then install the workspace's `../../target/release/datamonger` on your `PATH`.
-Tagged releases use
-`dist` to provide archives and SHA-256 checksums for x64 Linux (static musl),
-x64 and ARM macOS, and x64 Windows in
-[GitHub Releases](https://github.com/jolars/datamonger/releases).
+Tagged releases use `dist` to provide archives and SHA-256 checksums for x64
+Linux (static musl), x64 and ARM macOS, and x64 Windows in [GitHub
+Releases](https://github.com/jolars/datamonger/releases).
 
-The CLI bundles a stable registry index. Listing and inspecting
-that registry work offline:
+The CLI bundles a stable registry index. Listing and inspecting that registry
+work offline:
 
 ```console
 datamonger list --source uci
@@ -28,9 +27,9 @@ datamonger registry show
 
 `fetch` retrieves every artifact in a dataset by default. Select one with
 `--artifact`. Files go into a private content-addressed cache; `--output-dir`
-also exports verified raw bytes under `SOURCE/NAME/VERSION/ARTIFACT.FORMAT`.
-The CLI preserves an artifact's registered compression. It refuses to overwrite
-an existing export.
+also exports verified raw bytes under `SOURCE/NAME/VERSION/ARTIFACT.FORMAT`. The
+CLI preserves an artifact's registered compression. It refuses to overwrite an
+existing export.
 
 ```console
 datamonger fetch libsvm:dna_scale --output-dir ./data
@@ -55,9 +54,12 @@ datamonger --selector .datamonger/selector.json list
 
 A selector fixes an index by SHA-256. Treat a selector obtained through an
 untrusted channel as untrusted; the checksum alone does not authenticate its
-publisher. See [TRUST.md](https://github.com/jolars/datamonger/blob/main/TRUST.md).
+publisher. See
+[TRUST.md](https://github.com/jolars/datamonger/blob/main/TRUST.md).
 
-See the [command-line reference](https://github.com/jolars/datamonger/blob/main/documentation/pages/cli-reference.md)
+See the [command-line
+reference](https://github.com/jolars/datamonger/blob/main/documentation/pages/cli-reference.md)
 for every command and option. It is generated from the clap definitions with
-clapdown; see [CONTRIBUTING.md](https://github.com/jolars/datamonger/blob/main/CONTRIBUTING.md#development-environment)
+clapdown; see
+[CONTRIBUTING.md](https://github.com/jolars/datamonger/blob/main/CONTRIBUTING.md#development-environment)
 for the regeneration command.
