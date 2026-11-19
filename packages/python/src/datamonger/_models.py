@@ -127,6 +127,15 @@ class MultilabelSparseDataset:
 
 
 @dataclass(frozen=True)
+class RankingSparseDataset:
+    """Sparse features, relevance scores, and row-aligned query IDs."""
+
+    features: sparse.csr_matrix
+    response: ResponseArray
+    query_id: npt.NDArray[np.int64]
+
+
+@dataclass(frozen=True)
 class SparseDatasetSplit:
     """Separate training and test sparse datasets from one representation."""
 
@@ -138,7 +147,10 @@ class SparseDatasetSplit:
 
 @dataclass(frozen=True)
 class DatasetSplits(
-    Mapping[str, pd.DataFrame | SparseDataset | MultilabelSparseDataset]
+    Mapping[
+        str,
+        pd.DataFrame | SparseDataset | MultilabelSparseDataset | RankingSparseDataset,
+    ]
 ):
     """Provider-named splits in recipe order, accessed as ``data["validation"]``.
 
@@ -146,11 +158,14 @@ class DatasetSplits(
     when the provider does not supply labels for that split.
     """
 
-    splits: Mapping[str, pd.DataFrame | SparseDataset | MultilabelSparseDataset]
+    splits: Mapping[
+        str,
+        pd.DataFrame | SparseDataset | MultilabelSparseDataset | RankingSparseDataset,
+    ]
 
     def __getitem__(
         self, name: str
-    ) -> pd.DataFrame | SparseDataset | MultilabelSparseDataset:
+    ) -> pd.DataFrame | SparseDataset | MultilabelSparseDataset | RankingSparseDataset:
         return self.splits[name]
 
     def __iter__(self) -> Iterator[str]:
@@ -164,6 +179,7 @@ DatasetData: TypeAlias = (
     pd.DataFrame
     | SparseDataset
     | MultilabelSparseDataset
+    | RankingSparseDataset
     | SparseDatasetSplit
     | DatasetSplits
 )
@@ -418,4 +434,13 @@ class DecodedMultilabelSparseDataset:
 
     data: MultilabelSparseDataset
     components: tuple[LogicalSparseMatrix, LogicalSparseMatrix]
+    canonical_digest: str | None = None
+
+
+@dataclass(frozen=True)
+class DecodedRankingSparseDataset:
+    """Ranking data and its ordered logical components."""
+
+    data: RankingSparseDataset
+    components: tuple[LogicalSparseMatrix, LogicalComponent, LogicalComponent]
     canonical_digest: str | None = None

@@ -19,6 +19,7 @@ from datamonger._decode_libsvm import (
     decode_libsvm,
     decode_libsvm_multilabel,
     decode_libsvm_split,
+    decode_svmlight_ranking,
 )
 from datamonger._errors import (
     ArtifactIntegrityError,
@@ -35,6 +36,7 @@ from datamonger._models import (
     DataInfo,
     DatasetData,
     DecodedMultilabelSparseDataset,
+    DecodedRankingSparseDataset,
     DecodedSparseDataset,
     DecodedSparseDatasetSplit,
     DecodedSplits,
@@ -533,6 +535,7 @@ def _prepare_representation(
             "libsvm",
             "libsvm-split",
             "libsvm-multilabel",
+            "svmlight-ranking",
         }
     ):
         raise UnsupportedDecoderError(
@@ -540,16 +543,23 @@ def _prepare_representation(
             "LIBSVM split versions 1 and 2"
         )
 
-    if decoder_version == 2 and dataset.get("schema_version") not in (5, 6):
+    if decoder_version == 2 and dataset.get("schema_version") not in (5, 6, 7):
         raise UnsupportedDecoderError(
             "decoder version 2 requires manifest schema 5 or 6"
         )
 
     if decoder == "libsvm-multilabel" and (
-        decoder_version != 1 or dataset.get("schema_version") != 6
+        decoder_version != 1 or dataset.get("schema_version") not in (6, 7)
     ):
         raise UnsupportedDecoderError(
             "multilabel LIBSVM version 1 requires manifest schema 6"
+        )
+
+    if decoder == "svmlight-ranking" and (
+        decoder_version != 1 or dataset.get("schema_version") != 7
+    ):
+        raise UnsupportedDecoderError(
+            "SVMLight ranking version 1 requires manifest schema 7"
         )
 
     roles = ("train", "test") if decoder == "libsvm-split" else ("data",)
@@ -596,9 +606,17 @@ def _decode_leaf(
     | DecodedSparseDataset
     | DecodedSparseDatasetSplit
     | DecodedMultilabelSparseDataset
+    | DecodedRankingSparseDataset
 ):
     if decoder == "delimited-text":
         return decode_delimited_text(paths[0], options, compression=compressions[0])
+    if decoder == "svmlight-ranking":
+        return decode_svmlight_ranking(
+            paths[0],
+            options,
+            compression=compressions[0],
+            compute_digest=compute_digest,
+        )
     if decoder == "libsvm-multilabel":
         return decode_libsvm_multilabel(
             paths[0],
@@ -702,7 +720,7 @@ def fetch_data(
     representation = _object(dataset.get("representation"), "dataset.representation")
     recipes: tuple[Mapping[str, Any], ...] = ()
     if representation.get("decoder") == "named-splits":
-        if dataset.get("schema_version") not in (4, 5, 6):
+        if dataset.get("schema_version") not in (4, 5, 6, 7):
             raise UnsupportedDecoderError("named-splits requires manifest schema 4")
         recipes = split_recipes(representation)
         inputs = _object(representation.get("inputs"), "representation.inputs")
@@ -749,6 +767,7 @@ def fetch_data(
             DecodedTable
             | DecodedSparseDataset
             | DecodedMultilabelSparseDataset
+            | DecodedRankingSparseDataset
             | DecodedSparseDatasetSplit
             | DecodedSplits
         )
@@ -761,6 +780,7 @@ def fetch_data(
                         DecodedTable,
                         DecodedSparseDataset,
                         DecodedMultilabelSparseDataset,
+                        DecodedRankingSparseDataset,
                     ),
                 )
                 single_children.append(child)
@@ -785,6 +805,7 @@ def fetch_data(
                 DecodedSparseDataset,
                 DecodedSparseDatasetSplit,
                 DecodedMultilabelSparseDataset,
+                DecodedRankingSparseDataset,
             ),
         ):
             canonical_digest = decoded.canonical_digest

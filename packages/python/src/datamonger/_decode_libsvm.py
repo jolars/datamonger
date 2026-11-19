@@ -6,18 +6,23 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import cast
 
+import numpy as np
+import numpy.typing as npt
 from scipy import sparse
 
 from datamonger import _native
 from datamonger._decoder_options import libsvm_multilabel_options, libsvm_options
+from datamonger._errors import UnsupportedDecoderError
 from datamonger._models import (
     DecodedMultilabelSparseDataset,
+    DecodedRankingSparseDataset,
     DecodedSparseDataset,
     DecodedSparseDatasetSplit,
     LogicalComponent,
     LogicalSparseMatrix,
     MultilabelSparseDataset,
     Pathish,
+    RankingSparseDataset,
     ResponseArray,
     SparseDataset,
     SparseDatasetSplit,
@@ -107,4 +112,38 @@ def decode_libsvm_multilabel(
     pair = cast(tuple[LogicalSparseMatrix, LogicalSparseMatrix], tuple(components))
     return DecodedMultilabelSparseDataset(
         MultilabelSparseDataset(_csr(pair[0]), _csr(pair[1]), recipe[2]), pair, digest
+    )
+
+
+def decode_svmlight_ranking(
+    path: Pathish,
+    options: Mapping[str, object],
+    *,
+    compression: str = "none",
+    compute_digest: bool = False,
+) -> DecodedRankingSparseDataset:
+    base = options.get("index_base")
+    if (
+        type(base) is not int
+        or base not in (0, 1)
+        or options.get("target_name") == "query_id"
+    ):
+        raise UnsupportedDecoderError("invalid SVMLight ranking options")
+    count, label_type, target = libsvm_options({**options, "index_base": 1})
+    components, digest = _native.decode_svmlight_ranking(
+        Path(path), compression, (count, base, label_type, target), compute_digest
+    )
+    logical = cast(
+        tuple[LogicalSparseMatrix, LogicalComponent, LogicalComponent],
+        tuple(components),
+    )
+    matrix, label, query = logical
+    return DecodedRankingSparseDataset(
+        RankingSparseDataset(
+            _csr(matrix),
+            cast(ResponseArray, label.values),
+            cast(npt.NDArray[np.int64], query.values),
+        ),
+        logical,
+        digest,
     )

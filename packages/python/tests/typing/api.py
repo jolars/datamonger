@@ -12,6 +12,7 @@ from datamonger import (
     DatasetSplits,
     FetchResult,
     MultilabelSparseDataset,
+    RankingSparseDataset,
     Registry,
     SparseDataset,
     SparseDatasetSplit,
@@ -70,7 +71,8 @@ def check_metadata_return_types(registry: Registry) -> None:
 
 def check_named_split_structure(data: DatasetSplits) -> None:
     assert_type(
-        data["validation"], pd.DataFrame | SparseDataset | MultilabelSparseDataset
+        data["validation"],
+        pd.DataFrame | SparseDataset | MultilabelSparseDataset | RankingSparseDataset,
     )
 
 

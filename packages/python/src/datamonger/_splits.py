@@ -10,6 +10,7 @@ from datamonger._errors import UnsupportedDecoderError
 from datamonger._models import (
     DatasetSplits,
     DecodedMultilabelSparseDataset,
+    DecodedRankingSparseDataset,
     DecodedSparseDataset,
     DecodedSplits,
     DecodedTable,
@@ -50,7 +51,8 @@ def split_recipes(representation: Mapping[str, Any]) -> tuple[Mapping[str, Any],
             raise fail("split names must be nonempty and unique")
         names.add(name)
         if (
-            split["decoder"] not in ("delimited-text", "libsvm", "libsvm-multilabel")
+            split["decoder"]
+            not in ("delimited-text", "libsvm", "libsvm-multilabel", "svmlight-ranking")
             or type(split["decoder_version"]) is not int
             or split["decoder_version"] not in (1, 2)
             or not isinstance(split["options"], Mapping)
@@ -64,7 +66,10 @@ def split_recipes(representation: Mapping[str, Any]) -> tuple[Mapping[str, Any],
 def assemble_splits(
     recipes: Sequence[Mapping[str, Any]],
     decoded: Sequence[
-        DecodedTable | DecodedSparseDataset | DecodedMultilabelSparseDataset
+        DecodedTable
+        | DecodedSparseDataset
+        | DecodedMultilabelSparseDataset
+        | DecodedRankingSparseDataset
     ],
 ) -> DecodedSplits:
     pairs = tuple(zip(recipes, decoded, strict=True))

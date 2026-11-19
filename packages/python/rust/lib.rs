@@ -262,6 +262,43 @@ fn decode_libsvm_multilabel(
     Ok((to_python(py, components)?, digest))
 }
 
+#[pyfunction]
+fn decode_svmlight_ranking(
+    py: Python<'_>,
+    path: PathBuf,
+    coding: &str,
+    recipe: (u64, u64, String, String),
+    compute_digest: bool,
+) -> PyResult<(Vec<Py<PyAny>>, Option<String>)> {
+    let (feature_count, index_base, label_type, target_name) = recipe;
+    let options = core::LibsvmOptions {
+        feature_count,
+        label_type: match label_type.as_str() {
+            "int64" => core::LabelType::Int64,
+            "float64" => core::LabelType::Float64,
+            _ => return Err(UnsupportedDecoderError::new_err("unsupported label_type")),
+        },
+        target_name,
+    };
+    let compression = compression(coding)?;
+    let components = run(py, |control| {
+        reader(path, compression)
+            .and_then(|reader| {
+                core::decode_svmlight_ranking_with_control(
+                    reader,
+                    &options,
+                    index_base,
+                    &mut || control.checkpoint(),
+                )
+            })
+            .map_err(|error| artifact_error(error, coding))
+    })?;
+    let digest = compute_digest
+        .then(|| hash_components(py, &components))
+        .transpose()?;
+    Ok((to_python(py, components)?, digest))
+}
+
 fn array<T: numpy::Element + Copy>(value: &Bound<'_, PyAny>) -> PyResult<Vec<T>> {
     // Iterate in logical order so sliced and noncontiguous arrays stay valid.
     Ok(value
@@ -402,6 +439,7 @@ fn hash_components(py: Python<'_>, components: &[core::Component]) -> PyResult<S
 fn _native(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(decode_delimited, module)?)?;
     module.add_function(wrap_pyfunction!(decode_libsvm, module)?)?;
+    module.add_function(wrap_pyfunction!(decode_svmlight_ranking, module)?)?;
     module.add_function(wrap_pyfunction!(decode_libsvm_multilabel, module)?)?;
     module.add_function(wrap_pyfunction!(canonical_bytes, module)?)?;
     module.add_function(wrap_pyfunction!(canonical_sha256, module)?)?;

@@ -279,3 +279,25 @@ def test_multilabel_single_artifact(tmp_path: Path) -> None:
     assert isinstance(data, MultilabelSparseDataset)
     assert data.response.shape == (3, 4)
     assert data.response.nnz == 3
+
+
+def test_ranking_named_splits(tmp_path: Path) -> None:
+    from datamonger import RankingSparseDataset
+
+    case = json.loads((CORPUS / "svmlight-ranking.json").read_bytes())
+    dm_index.validate_manifest(case["manifest"])
+    registry = seed(case, tmp_path, "gzip")
+    data = fetch_data(
+        "conformance:ranking@1", registry=registry, cache_dir=tmp_path, offline=True
+    )
+    assert isinstance(data, DatasetSplits)
+    assert list(data) == ["train", "test"]
+    train = data["train"]
+    assert isinstance(train, RankingSparseDataset)
+    assert train.query_id.tolist() == [7, 2**63 - 1, 7]
+    assert train.response.tolist() == [1, 0, 2]
+    assert train.features.toarray().tolist() == [[2, 0], [0, 0], [0, -3]]
+    older = copy.deepcopy(case["manifest"])
+    older["schema_version"] = 6
+    with pytest.raises(ValueError, match="manifest"):
+        dm_index.validate_manifest(older)
