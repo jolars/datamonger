@@ -264,7 +264,7 @@ def _validate_dataset(dataset: Mapping[str, Any]) -> None:
     inputs = _mapping(representation.get("inputs"), "representation.inputs")
     options = _mapping(representation.get("options"), "representation.options")
     if (
-        decoder in {"libsvm", "libsvm-split"}
+        decoder in {"libsvm", "libsvm-split", "libsvm-multilabel"}
         and options.get("target_name") == "features"
     ):
         raise ValueError("LIBSVM target_name must be distinct from features")
@@ -338,20 +338,26 @@ def _validate_dataset(dataset: Mapping[str, Any]) -> None:
         lengths = {component.get("length") for component in component_records}
         if len(lengths) != 1:
             raise ValueError("delimited-text components must have equal lengths")
-    elif decoder == "libsvm":
+    elif decoder in {"libsvm", "libsvm-multilabel"}:
         target = cast(str, options["target_name"])
         expected_names = ["features", target]
         if list(component_by_name) != expected_names:
             raise ValueError("LIBSVM components have the wrong names or order")
         features = component_by_name["features"]
         response = component_by_name[target]
+        multilabel = decoder == "libsvm-multilabel"
+        expected_target = (
+            ("sparse_matrix", "float64", response.get("rows"))
+            if multilabel
+            else ("vector", options.get("label_type"), response.get("length"))
+        )
         if (
             features.get("kind") != "sparse_matrix"
             or features.get("type") != "float64"
             or features.get("columns") != options.get("feature_count")
-            or response.get("kind") != "vector"
-            or response.get("type") != options.get("label_type")
-            or response.get("length") != features.get("rows")
+            or (response.get("kind"), response.get("type"), features.get("rows"))
+            != expected_target
+            or (multilabel and response.get("columns") != options.get("label_count"))
         ):
             raise ValueError("LIBSVM component shapes disagree with decoder options")
     elif decoder == "libsvm-split":
@@ -468,7 +474,7 @@ def _validate_named_splits(dataset: Mapping[str, Any]) -> None:
 
 def _versioned_schema(record: Mapping[str, Any], name: str) -> str:
     version = record.get("schema_version")
-    if type(version) is not int or version not in (1, 2, 3, 4, 5):
+    if type(version) is not int or version not in (1, 2, 3, 4, 5, 6):
         raise ValueError(f"unsupported {name} schema_version {version!r}")
     return f"{name}-v{version}.schema.json"
 

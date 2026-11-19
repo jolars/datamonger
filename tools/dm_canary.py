@@ -21,8 +21,6 @@ from datamonger._api import (
 )
 from datamonger._cache import DownloadedFile, download_unverified
 from datamonger._canonical import canonical_sha256
-from datamonger._decode import decode_delimited_text
-from datamonger._decode_libsvm import decode_libsvm, decode_libsvm_split
 from datamonger._errors import (
     DatamongerError,
     DecodedIntegrityError,
@@ -32,6 +30,7 @@ from datamonger._errors import (
     UnsupportedRegistryError,
 )
 from datamonger._models import (
+    DecodedMultilabelSparseDataset,
     DecodedSparseDataset,
     DecodedSparseDatasetSplit,
     DecodedSplits,
@@ -45,7 +44,11 @@ ROOT = Path(__file__).resolve().parents[1]
 
 CheckKind = Literal["registry", "location", "dataset"]
 Decoded = (
-    DecodedTable | DecodedSparseDataset | DecodedSparseDatasetSplit | DecodedSplits
+    DecodedTable
+    | DecodedMultilabelSparseDataset
+    | DecodedSparseDataset
+    | DecodedSparseDatasetSplit
+    | DecodedSplits
 )
 
 
@@ -181,7 +184,7 @@ def _read_index(path: Path, registry: Registry, root: Path) -> Mapping[str, Any]
         )
     if type(index.get("schema_version")) is not int or index.get(
         "schema_version"
-    ) not in (1, 2, 3, 4, 5):
+    ) not in (1, 2, 3, 4, 5, 6):
         raise UnsupportedRegistryError(
             f"unsupported registry schema {index.get('schema_version')!r}"
         )
@@ -198,7 +201,7 @@ def _read_index(path: Path, registry: Registry, root: Path) -> Mapping[str, Any]
         schema = dataset.get("schema_version")
         if (
             type(schema) is not int
-            or schema not in (1, 2, 3, 4, 5)
+            or schema not in (1, 2, 3, 4, 5, 6)
             or schema > index["schema_version"]
         ):
             raise UnsupportedRegistryError(
@@ -284,7 +287,7 @@ def _decode_dataset(
     decoder = representation.get("decoder")
     decoded: Decoded
     if decoder == "named-splits":
-        if dataset.get("schema_version") not in (4, 5):
+        if dataset.get("schema_version") not in (4, 5, 6):
             raise UnsupportedDecoderError("named-splits requires manifest schema 4")
         recipes = split_recipes(representation)
         children = []
@@ -311,81 +314,25 @@ def _decode_dataset(
             child = _decode_leaf(
                 child_decoder, paths, options, compressions, recipe["decoder_version"]
             )
-            assert isinstance(child, (DecodedTable, DecodedSparseDataset))
+            assert isinstance(
+                child,
+                (DecodedTable, DecodedSparseDataset, DecodedMultilabelSparseDataset),
+            )
             children.append(child)
         decoded = assemble_splits(recipes, children)
     else:
-        if representation.get("decoder_version") not in (
-            (1, 2) if decoder in {"libsvm", "libsvm-split"} else (1,)
-        ) or decoder not in {
-            "delimited-text",
-            "libsvm",
-            "libsvm-split",
-        }:
-            raise UnsupportedDecoderError(
-                f"unsupported decoder {decoder!r} version "
-                f"{representation.get('decoder_version')!r}"
-            )
-        roles = ("train", "test") if decoder == "libsvm-split" else ("data",)
-        inputs = _mapping(representation.get("inputs"), "representation inputs")
-        if set(inputs) != set(roles):
-            raise UnsupportedRegistryError(
-                f"representation inputs must be exactly {list(roles)!r}"
-            )
-        artifacts = {
-            _string(artifact.get("name"), "artifact name"): artifact
-            for artifact in _artifact_records(dataset)
-        }
-        selected: list[tuple[Path, Mapping[str, Any]]] = []
-        for role in roles:
-            artifact_name = _string(inputs.get(role), f"representation input {role}")
-            if artifact_name not in artifacts:
-                raise UnsupportedRegistryError(
-                    f"representation input {role!r} refers to unknown artifact "
-                    f"{artifact_name!r}"
-                )
-            if artifact_name not in artifact_paths:
-                raise DecodedIntegrityError(
-                    "no location supplied verified bytes for artifact "
-                    f"{artifact_name!r}"
-                )
-            selected.append((artifact_paths[artifact_name], artifacts[artifact_name]))
-
-        options = _mapping(representation.get("options"), "representation options")
-        if decoder == "delimited-text":
-            path, artifact = selected[0]
-            decoded = decode_delimited_text(
-                path,
-                options,
-                compression=_string(
-                    artifact.get("compression"), "artifact compression"
-                ),
-            )
-        elif decoder == "libsvm":
-            path, artifact = selected[0]
-            decoded = decode_libsvm(
-                path,
-                options,
-                decoder_version=representation["decoder_version"],
-                compression=_string(
-                    artifact.get("compression"), "artifact compression"
-                ),
-            )
-        else:
-            train_path, train_artifact = selected[0]
-            test_path, test_artifact = selected[1]
-            decoded = decode_libsvm_split(
-                train_path,
-                test_path,
-                options,
-                decoder_version=representation["decoder_version"],
-                train_compression=_string(
-                    train_artifact.get("compression"), "train artifact compression"
-                ),
-                test_compression=_string(
-                    test_artifact.get("compression"), "test artifact compression"
-                ),
-            )
+        decoder, artifacts, options, compressions = _prepare_representation(
+            dataset, representation
+        )
+        try:
+            paths = [artifact_paths[artifact["name"]] for artifact in artifacts]
+        except KeyError as error:
+            raise DecodedIntegrityError(
+                "no location supplied verified bytes for artifact"
+            ) from error
+        decoded = _decode_leaf(
+            decoder, paths, options, compressions, representation["decoder_version"]
+        )
 
     expect = _mapping(representation.get("expect"), "representation expectation")
     _validate_components(

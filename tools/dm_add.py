@@ -19,12 +19,12 @@ import dm_index
 import numpy as np
 import yaml
 
+from datamonger._api import _decode_leaf, _prepare_representation
 from datamonger._cache import DownloadedFile, download_unverified
 from datamonger._canonical import canonical_sha256
-from datamonger._decode import decode_delimited_text
-from datamonger._decode_libsvm import decode_libsvm, decode_libsvm_split
 from datamonger._errors import DatamongerError
 from datamonger._models import (
+    DecodedMultilabelSparseDataset,
     DecodedSparseDataset,
     DecodedSparseDatasetSplit,
     DecodedSplits,
@@ -39,13 +39,23 @@ from datamonger._splits import assemble_splits, split_recipes
 ROOT = Path(__file__).resolve().parents[1]
 _DERIVED_ARTIFACT_FIELDS = ("size", "sha256")
 _SUPPORTED_COMPRESSIONS = {"none", "gzip", "bzip2"}
-_SUPPORTED_DECODERS = {"delimited-text", "libsvm", "libsvm-split", "named-splits"}
+_SUPPORTED_DECODERS = {
+    "delimited-text",
+    "libsvm",
+    "libsvm-split",
+    "libsvm-multilabel",
+    "named-splits",
+}
 _SAMPLE_ROWS = 3
 _SPARSE_SAMPLE_VALUES = 8
 _SCALAR_LIMIT = 80
 
 Decoded = (
-    DecodedTable | DecodedSparseDataset | DecodedSparseDatasetSplit | DecodedSplits
+    DecodedTable
+    | DecodedMultilabelSparseDataset
+    | DecodedSparseDataset
+    | DecodedSparseDatasetSplit
+    | DecodedSplits
 )
 
 
@@ -153,16 +163,19 @@ def _prepare_draft(source: Mapping[str, Any], retrieved_at: date) -> dict[str, A
         decoder not in _SUPPORTED_DECODERS
         or type(representation["decoder_version"]) is not int
         or representation["decoder_version"] not in (1, 2)
-        or (decoder == "named-splits" and representation["decoder_version"] != 1)
+        or (
+            decoder in {"named-splits", "libsvm-multilabel"}
+            and representation["decoder_version"] != 1
+        )
     ):
         raise ValueError(
             "dm-add supports delimited-text, libsvm, and libsvm-split "
-            "versions 1 and 2, and named-splits version 1"
+            "versions 1 and 2, and named-splits and libsvm-multilabel version 1"
         )
     inputs = _mapping(representation["inputs"], "representation.inputs")
     roles = {"train", "test"} if decoder == "libsvm-split" else {"data"}
     if decoder == "named-splits":
-        if manifest["schema_version"] not in (4, 5):
+        if manifest["schema_version"] not in (4, 5, 6):
             raise ValueError("named-splits requires manifest schema 4")
         roles = {split["name"] for split in split_recipes(representation)}
     if set(inputs) != roles:
@@ -295,66 +308,40 @@ def _decode(
 ) -> Decoded:
     representation = _mapping(manifest["representation"], "representation")
     decoder = _string(representation["decoder"], "representation.decoder")
-    inputs = _mapping(representation["inputs"], "representation.inputs")
-    options = _mapping(representation["options"], "representation.options")
 
-    def selected(role: str) -> tuple[Path, str]:
-        artifact_name = _string(inputs[role], f"representation.inputs.{role}")
-        artifact_records = _sequence(manifest["artifacts"], "artifacts")
-        artifact = next(
-            _mapping(raw, "artifact")
-            for raw in artifact_records
-            if _mapping(raw, "artifact").get("name") == artifact_name
+    def decode(
+        recipe: Mapping[str, Any],
+    ) -> (
+        DecodedTable
+        | DecodedSparseDataset
+        | DecodedSparseDatasetSplit
+        | DecodedMultilabelSparseDataset
+    ):
+        leaf, selected, leaf_options, compressions = _prepare_representation(
+            manifest, recipe
         )
-        compression = _string(
-            artifact["compression"], f"artifact {artifact_name} compression"
+        return _decode_leaf(
+            leaf,
+            [artifacts[artifact["name"]].path for artifact in selected],
+            leaf_options,
+            compressions,
+            recipe["decoder_version"],
         )
-        return artifacts[artifact_name].path, compression
 
     if decoder == "named-splits":
         recipes = split_recipes(representation)
         children = []
         for recipe in recipes:
-            path, compression = selected(recipe["name"])
-            decode = (
-                decode_delimited_text
-                if recipe["decoder"] == "delimited-text"
-                else decode_libsvm
+            child = decode(
+                {
+                    **recipe,
+                    "inputs": {"data": representation["inputs"][recipe["name"]]},
+                },
             )
-            children.append(
-                decode(
-                    path,
-                    recipe["options"],
-                    compression=compression,
-                    **(
-                        {"decoder_version": recipe["decoder_version"]}
-                        if recipe["decoder"] == "libsvm"
-                        else {}
-                    ),
-                )
-            )
+            assert not isinstance(child, DecodedSparseDatasetSplit)
+            children.append(child)
         return assemble_splits(recipes, children)
-    if decoder == "delimited-text":
-        path, compression = selected("data")
-        return decode_delimited_text(path, options, compression=compression)
-    if decoder == "libsvm":
-        path, compression = selected("data")
-        return decode_libsvm(
-            path,
-            options,
-            compression=compression,
-            decoder_version=representation["decoder_version"],
-        )
-    train_path, train_compression = selected("train")
-    test_path, test_compression = selected("test")
-    return decode_libsvm_split(
-        train_path,
-        test_path,
-        options,
-        train_compression=train_compression,
-        test_compression=test_compression,
-        decoder_version=representation["decoder_version"],
-    )
+    return decode(representation)
 
 
 def _component_record(component: LogicalValueComponent) -> dict[str, Any]:
