@@ -80,7 +80,7 @@ def detect_outputs(directory: Path, event: str, base: str, head: str) -> dict[st
     )
     assert result.returncode == 0, result.stderr
     decisions = dict(line.split("=", 1) for line in output.read_text().splitlines())
-    assert set(decisions) == {"required", "r_vendor_changed"}
+    assert set(decisions) == {"required", "julia_release_changed", "r_vendor_changed"}
     assert set(decisions.values()) <= {"true", "false"}
     return decisions
 
@@ -182,7 +182,28 @@ def test_force_push_checks_the_previous_tree(repository: Path) -> None:
 def test_unknown_history_runs_the_full_matrix(repository: Path, base: str) -> None:
     head = commit(repository, "docs/note.md")
     decisions = detect_outputs(repository, "push", base, head)
-    assert decisions == {"required": "true", "r_vendor_changed": "true"}
+    assert decisions == {
+        "required": "true",
+        "julia_release_changed": "true",
+        "r_vendor_changed": "true",
+    }
+
+
+@pytest.mark.parametrize(
+    ("path", "changed"),
+    [
+        ("packages/julia/Artifacts.toml", "true"),
+        ("packages/julia/Project.toml", "true"),
+        ("packages/julia/src/Datamonger.jl", "false"),
+    ],
+)
+def test_detects_julia_release_changes(
+    repository: Path, path: str, changed: str
+) -> None:
+    base = git(repository, "rev-parse", "HEAD")
+    head = commit(repository, path)
+    decisions = detect_outputs(repository, "pull_request", base, head)
+    assert decisions["julia_release_changed"] == changed
 
 
 @pytest.mark.parametrize(
