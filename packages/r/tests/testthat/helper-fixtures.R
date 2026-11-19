@@ -61,10 +61,7 @@ seed_conformance_cache <- function(cache_dir) {
     digest <- digest::digest(raw, algo = "sha256", serialize = FALSE)
     file.copy(path, file.path(object_dir, digest))
   }
-  list(
-    selector = do.call(registry_selector, selector),
-    index = index
-  )
+  list(selector = do.call(registry_selector, selector), index = index)
 }
 
 reseal_index <- function(index, cache_dir, transform = identity) {
@@ -80,9 +77,5 @@ reseal_index <- function(index, cache_dir, transform = identity) {
   directory <- file.path(cache_dir, "registries", "sha256")
   dir.create(directory, recursive = TRUE, showWarnings = FALSE)
   writeBin(contents, file.path(directory, digest))
-  registry_selector(
-    index$release,
-    digest,
-    "https://example.com/index.json"
-  )
+  registry_selector(index$release, digest, "https://example.com/index.json")
 }

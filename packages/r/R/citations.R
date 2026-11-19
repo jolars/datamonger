@@ -1,7 +1,9 @@
 .citation_metadata <- function(dataset) {
   provenance <- .require_object(dataset$provenance %||% list(), "provenance")
   fields <- names(provenance)
-  fail <- function(message) .abort_category("unsupported-registry", message)
+  fail <- function(message) {
+    .abort_category("unsupported-registry", message)
+  }
   nonempty <- function(value, field) {
     value <- .require_string(value, field)
     if (!nzchar(value)) fail(paste0(field, " must not be empty"))
@@ -61,18 +63,54 @@
   list(citations = records, citation_instructions = instructions)
 }
 
-#' Get curated citations without retrieving dataset artifacts
+#' Get Curated Dataset Citations
 #'
-#' @inheritParams fetch_artifact
-#' @param include_all Return every reference, including those not recommended.
+#' Retrieve curated citations from the selected registry without downloading
+#' artifacts or looking up bibliographic identifiers. Multiple references can be
+#' recommended together. Optional roles describe a dataset, paper, or
+#' collection; roles do not imply recommendations.
+#'
+#' @param name A bare dataset name, `source:name`, or `source:name@version`.
+#' @param source Dataset source. Required for bare names; omit for qualified
+#'   references.
+#' @param version Exact dataset version. Omit when embedded in `name`. An
+#'   omitted version selects the registry default.
+#' @param registry A strong selector, or `NULL` for the active selector.
+#' @param cache_dir An explicit cache directory, or `NULL` for the platform
+#'   default.
+#' @param offline Whether to use only bundled or verified cached registry bytes.
+#' @param include_all Whether to include every reference regardless of
+#'   recommendation.
 #' @param format Either `"text"` or `"records"`.
-#' @return
-#' A character string, or a list of citation records. By default, select
-#' references marked as recommended by upstream. If no recommendation flags are
-#' recorded, return all references and explain the unknown recommendation in
-#' text output. Records preserve optional roles, notes, and recommendation
-#' flags. Full records and upstream instructions are available in `data_info()`
-#' and fetch metadata with `return_info = TRUE`.
+#' @details
+#' By default, return references explicitly marked as recommended by upstream.
+#' If no reference carries a recommendation flag, return all references and
+#' explain the unknown recommendation in text output. If flags exist but none is
+#' true, return an empty selection. Missing citation metadata produces an
+#' explicit text message or an empty list. The legacy single citation remains
+#' supported.
+#'
+#' All references and upstream instructions are also available as `citations`
+#' and `citation_instructions` in `data_info()` and fetch metadata from
+#' `fetch_data(return_info = TRUE)`. An absent recommendation flag means
+#' unknown, whereas `FALSE` records that the reference is not recommended.
+#'
+#' @returns
+#' A character string with role labels, notes, and upstream instructions, or a
+#' list of citation records with optional `role`, `note`, and `recommended`
+#' fields preserved.
+#'
+#' @seealso [data_info()], [fetch_data()]
+#'
+#' @examples
+#' cat(cite_data(
+#'   "uci:iris",
+#'   registry = active_registry(tempdir()),
+#'   cache_dir = tempfile("datamonger-cache-"),
+#'   offline = TRUE
+#' ))
+#'
+#' @rdname cite-data
 #' @export
 cite_data <- function(
   name,

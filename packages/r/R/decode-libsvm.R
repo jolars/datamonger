@@ -99,14 +99,14 @@
   decoded
 }
 
-
 .validate_libsvm_multilabel_options <- function(options) {
   counts <- c("label_count", "label_index_base")
   scalar <- options[setdiff(names(options), counts)]
   if (
     "label_type" %in% names(scalar) ||
       !.is_exact_number(options$label_count, minimum = 1) ||
-      !(identical(options$label_index_base, 0L) || identical(options$label_index_base, 1L))
+      !(identical(options$label_index_base, 0L) ||
+        identical(options$label_index_base, 1L))
   ) {
     .abort_category("unsupported-decoder", "invalid multilabel LIBSVM options")
   }
@@ -117,29 +117,50 @@
 
 .decode_libsvm_multilabel <- function(path, options, compression, hash) {
   options <- .validate_libsvm_multilabel_options(options)
-  decoded <- .native_result(dm_decode("libsvm-multilabel", path, compression, options, hash))
+  decoded <- .native_result(dm_decode(
+    "libsvm-multilabel",
+    path,
+    compression,
+    options,
+    hash
+  ))
   matrices <- lapply(decoded$components, function(component) {
     .native_sparse_matrix(
-      component$rows, component$columns, component$row_offsets,
-      component$column_indices, component$values
+      component$rows,
+      component$columns,
+      component$row_offsets,
+      component$column_indices,
+      component$values
     )
   })
   decoded$data <- structure(
-    list(features = matrices[[1]], response = matrices[[2]], label_index_base = options$label_index_base),
+    list(
+      features = matrices[[1]],
+      response = matrices[[2]],
+      label_index_base = options$label_index_base
+    ),
     class = "datamonger_multilabel_sparse_dataset"
   )
   decoded
 }
 
 .decode_svmlight_ranking <- function(path, options, compression, hash) {
-  if (!(identical(options$index_base, 0L) || identical(options$index_base, 1L)) ||
-      identical(options$target_name, "query_id")) {
+  if (
+    !(identical(options$index_base, 0L) || identical(options$index_base, 1L)) ||
+      identical(options$target_name, "query_id")
+  ) {
     .abort_category("unsupported-decoder", "invalid SVMLight ranking options")
   }
   scalar <- options
   scalar$index_base <- 1L
   .validate_libsvm_options(scalar)
-  decoded <- .native_result(dm_decode("svmlight-ranking", path, compression, options, hash))
+  decoded <- .native_result(dm_decode(
+    "svmlight-ranking",
+    path,
+    compression,
+    options,
+    hash
+  ))
   data <- .sparse_data(decoded$components)
   data$query_id <- .public_vector(decoded$components[[3]])
   class(data) <- "datamonger_ranking_sparse_dataset"

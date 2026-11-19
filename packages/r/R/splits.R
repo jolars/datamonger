@@ -6,7 +6,9 @@
 }
 
 .split_recipes <- function(representation) {
-  fail <- function(message) .abort_category("unsupported-decoder", message)
+  fail <- function(message) {
+    .abort_category("unsupported-decoder", message)
+  }
   if (!identical(representation$decoder_version, 1L)) {
     fail("unsupported named-splits version")
   }
@@ -36,7 +38,13 @@
       !(identical(split$decoder_version, 1L) ||
         identical(split$decoder_version, 2L)) ||
         !.is_scalar_character(split$decoder) ||
-        !(split$decoder %in% c("delimited-text", "libsvm", "libsvm-multilabel", "svmlight-ranking")) ||
+        !(split$decoder %in%
+          c(
+            "delimited-text",
+            "libsvm",
+            "libsvm-multilabel",
+            "svmlight-ranking"
+          )) ||
         !is.list(split$options)
     ) {
       fail("unsupported split decoder recipe")
@@ -79,10 +87,16 @@
       hash = hash
     ),
     `svmlight-ranking` = .decode_svmlight_ranking(
-      paths[[1]], setup$options, setup$compressions[[1]], hash
+      paths[[1]],
+      setup$options,
+      setup$compressions[[1]],
+      hash
     ),
     `libsvm-multilabel` = .decode_libsvm_multilabel(
-      paths[[1]], setup$options, setup$compressions[[1]], hash
+      paths[[1]],
+      setup$options,
+      setup$compressions[[1]],
+      hash
     ),
     libsvm = .decode_libsvm(
       paths[[1]],

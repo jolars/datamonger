@@ -1,4 +1,6 @@
-`%||%` <- function(left, right) if (is.null(left)) right else left
+`%||%` <- function(left, right) {
+  if (is.null(left)) right else left
+}
 
 .sha256_pattern <- "^[0-9a-f]{64}$"
 .identifier_pattern <- "^[a-z0-9][a-z0-9._-]*$"
@@ -87,7 +89,9 @@
   identical(left, right)
 }
 
-.is_object <- function(value) is.list(value) && !is.null(names(value))
+.is_object <- function(value) {
+  is.list(value) && !is.null(names(value))
+}
 
 .require_object <- function(
   value,

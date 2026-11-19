@@ -335,7 +335,7 @@ fn envelope(result: core::Result<Robj>) -> List {
     }
 }
 
-/// Decode verified artifact paths and optionally hash before converting buffers.
+// Decode verified artifact paths and optionally hash before converting buffers.
 #[extendr]
 fn dm_decode(
     decoder: &str,
@@ -432,7 +432,7 @@ fn dm_decode(
     })())
 }
 
-/// Encode or hash supplied logical components for conformance and diagnostics.
+// Encode or hash supplied logical components for conformance and diagnostics.
 #[extendr]
 fn dm_canonical(components: List, hash: bool) -> List {
     envelope((|| {
@@ -454,7 +454,7 @@ fn dm_canonical(components: List, hash: bool) -> List {
     })())
 }
 
-/// Remove a single HTTP gzip content coding.
+// Remove a single HTTP gzip content coding.
 #[extendr]
 fn dm_http_gzip(bytes: Raw) -> List {
     envelope((|| {
@@ -464,25 +464,25 @@ fn dm_http_gzip(bytes: Raw) -> List {
     })())
 }
 
-/// Parse a decimal for the R client's rounding regression checks.
+// Parse a decimal for the R client's rounding regression checks.
 #[extendr]
 fn dm_parse_binary64(value: &str) -> List {
     envelope(core::parse_binary64(value, true).map(Robj::from))
 }
 
-/// Report whether this build includes the updated core decoder API.
+// Report whether this build includes the updated core decoder API.
 #[extendr]
 fn dm_supports_libsvm_v2() -> bool {
     cfg!(local_core_v2)
 }
 
-/// Report whether this build includes the multilabel decoder.
+// Report whether this build includes the multilabel decoder.
 #[extendr]
 fn dm_supports_libsvm_multilabel() -> bool {
     cfg!(local_core_v2)
 }
 
-/// Report whether this build includes the SVMLight ranking decoder.
+// Report whether this build includes the SVMLight ranking decoder.
 #[extendr]
 fn dm_supports_svmlight_ranking() -> bool {
     cfg!(local_core_v2)

@@ -49,16 +49,43 @@
   invisible(registry)
 }
 
-#' Construct a strong registry selector
+#' Select an Immutable Registry Release
 #'
-#' The release and SHA-256 digest form the strong identity. The URL is only a
-#' retrieval location.
+#' Construct, discover, set, or inspect a strong registry selector. A catalog
+#' lookup is TLS-trusted discovery; recording and reusing its returned release
+#' and digest creates the reproducible selector.
 #'
-#' @param release Registry release identifier.
-#' @param index_sha256 Lowercase SHA-256 of the exact index bytes.
-#' @param index_url Absolute HTTP or HTTPS index URL.
-#' @param schema_version Selector schema version. Revision 1 requires `1`.
-#' @return A `datamonger_registry` selector.
+#' @param release A registry release identifier.
+#' @param index_sha256 The lowercase SHA-256 of the exact index bytes.
+#' @param index_url An absolute HTTP or HTTPS retrieval URL.
+#' @param schema_version The selector schema version.
+#' @param catalog_url An HTTPS catalog URL. The package default is used when
+#'   this is `NULL`.
+#' @param registry A strong registry selector, or `NULL` to clear the session
+#'   setting.
+#' @param project_dir The directory from which to search upward for a project
+#'   selector.
+#' @returns
+#' `registry_selector()`, `resolve_registry()`, and `active_registry()` return a
+#' `datamonger_registry`. The setter returns `NULL` invisibly.
+#'
+#' @examples
+#' registry <- active_registry(project_dir = tempdir())
+#' selector <- registry_selector(
+#'   release = registry$release,
+#'   index_sha256 = registry$index_sha256,
+#'   index_url = registry$index_url
+#' )
+#' set_registry(selector)
+#' active_registry()
+#' set_registry(NULL)
+#'
+#' \dontrun{
+#' # This call contacts the HTTPS release catalog.
+#' resolve_registry(registry$release)
+#' }
+#'
+#' @rdname registry
 #' @export
 registry_selector <- function(
   release,
@@ -103,14 +130,7 @@ registry_selector <- function(
   )
 }
 
-#' Resolve a release through the mutable HTTPS catalog
-#'
-#' This is a TLS-trusted convenience lookup, not a cryptographic pin. Record and
-#' reuse the returned strong selector when reproducibility matters.
-#'
-#' @param release Bare release identifier.
-#' @param catalog_url Absolute HTTPS release-catalog URL.
-#' @return A `datamonger_registry` selector.
+#' @rdname registry
 #' @export
 resolve_registry <- function(release, catalog_url = NULL) {
   if (
@@ -173,10 +193,7 @@ resolve_registry <- function(release, catalog_url = NULL) {
   selectors[[match]]
 }
 
-#' Set the session registry selector
-#'
-#' @param registry A strong selector, or `NULL` to clear the session setting.
-#' @return `NULL`, invisibly.
+#' @rdname registry
 #' @export
 set_registry <- function(registry) {
   if (!is.null(registry)) {
@@ -218,14 +235,7 @@ set_registry <- function(registry) {
   .selector_from_list(selector, paste0("project selector ", path))
 }
 
-#' Return the active registry selector
-#'
-#' Selection precedence is the session setting, the nearest project selector,
-#' and the bundled immutable selector.
-#'
-#' @param project_dir Directory from which to search upward for
-#'   `.datamonger/selector.json`.
-#' @return A `datamonger_registry` selector.
+#' @rdname registry
 #' @export
 active_registry <- function(project_dir = getwd()) {
   if (!is.null(.session_state$registry)) {

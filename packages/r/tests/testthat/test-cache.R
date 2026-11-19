@@ -50,36 +50,42 @@ test_that("cleaners skip objects held by a reader or publisher", {
   expect_true(file.exists(object$path))
 })
 
-test_that("publication falls back after bad bytes and caches only valid bytes", {
-  cache_dir <- tempfile("datamonger-cache-")
-  expected <- charToRaw("expected")
-  digest <- digest::digest(expected, algo = "sha256", serialize = FALSE)
-  requested <- character()
-  testthat::local_mocked_bindings(
-    .download_url_to_file = function(url, path, require_https = FALSE) {
-      requested <<- c(requested, url)
-      writeBin(if (endsWith(url, "bad")) charToRaw("bad") else expected, path)
-      invisible(path)
-    },
-    .package = "datamonger"
-  )
+test_that(
+  "publication falls back after bad bytes and caches only valid bytes",
+  {
+    cache_dir <- tempfile("datamonger-cache-")
+    expected <- charToRaw("expected")
+    digest <- digest::digest(expected, algo = "sha256", serialize = FALSE)
+    requested <- character()
+    testthat::local_mocked_bindings(
+      .download_url_to_file = function(url, path, require_https = FALSE) {
+        requested <<- c(requested, url)
+        writeBin(if (endsWith(url, "bad")) charToRaw("bad") else expected, path)
+        invisible(path)
+      },
+      .package = "datamonger"
+    )
 
-  leased <- dm_internal(".retrieve_cached_object")(
-    cache_dir,
-    "objects",
-    digest,
-    length(expected),
-    c("https://example.com/bad", "https://example.com/good"),
-    FALSE,
-    "datamonger_artifact_integrity",
-    "datamonger_artifact_offline",
-    "datamonger_retrieval_exhausted"
-  )
-  on.exit(dm_internal(".release_lock")(leased$lease), add = TRUE)
+    leased <- dm_internal(".retrieve_cached_object")(
+      cache_dir,
+      "objects",
+      digest,
+      length(expected),
+      c("https://example.com/bad", "https://example.com/good"),
+      FALSE,
+      "datamonger_artifact_integrity",
+      "datamonger_artifact_offline",
+      "datamonger_retrieval_exhausted"
+    )
+    on.exit(dm_internal(".release_lock")(leased$lease), add = TRUE)
 
-  expect_identical(requested, c("https://example.com/bad", "https://example.com/good"))
-  expect_identical(readBin(leased$path, "raw", n = 100), expected)
-})
+    expect_identical(
+      requested,
+      c("https://example.com/bad", "https://example.com/good")
+    )
+    expect_identical(readBin(leased$path, "raw", n = 100), expected)
+  }
+)
 
 test_that("complete mismatched downloads end as artifact-integrity failures", {
   cache_dir <- tempfile("datamonger-cache-")
@@ -157,10 +163,7 @@ test_that("HTTP gzip decoding rejects concatenated content", {
   second <- compress_fixture(write_text("second"), "gzip")
   first_bytes <- readBin(first, "raw", n = file.info(first)$size)
   expect_identical(
-    dm_internal(".decode_http_gzip")(
-      first_bytes,
-      "https://example.com/data"
-    ),
+    dm_internal(".decode_http_gzip")(first_bytes, "https://example.com/data"),
     charToRaw("first")
   )
   concatenated <- c(
@@ -171,10 +174,7 @@ test_that("HTTP gzip decoding rejects concatenated content", {
     dm_internal(".decode_http_gzip")(concatenated, "https://example.com/data"),
     class = "datamonger_retrieval_exhausted"
   )
-  identical_members <- c(
-    first_bytes,
-    first_bytes
-  )
+  identical_members <- c(first_bytes, first_bytes)
   expect_error(
     dm_internal(".decode_http_gzip")(
       identical_members,
@@ -188,7 +188,10 @@ test_that("HTTP gzip decoding rejects concatenated content", {
     class = "datamonger_retrieval_exhausted"
   )
   expect_error(
-    dm_internal(".decode_http_gzip")(head(first_bytes, -1L), "https://example.com/data"),
+    dm_internal(".decode_http_gzip")(
+      head(first_bytes, -1L),
+      "https://example.com/data"
+    ),
     class = "datamonger_retrieval_exhausted"
   )
 })

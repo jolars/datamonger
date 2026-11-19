@@ -7,21 +7,30 @@ test_that("fetch_data verifies native results without serializing them in R", {
     {
       for (case in cases) {
         result <- fetch_data(
-          case$dataset, registry = seeded$selector, cache_dir = cache_dir,
-          offline = TRUE, return_info = TRUE
+          case$dataset,
+          registry = seeded$selector,
+          cache_dir = cache_dir,
+          offline = TRUE,
+          return_info = TRUE
         )
         expect_identical(result$info$canonical_digest, case$expected_sha256)
         expect_identical(result$info$verification, "decoded")
         unverified <- fetch_data(
-          case$dataset, registry = seeded$selector, cache_dir = cache_dir,
-          offline = TRUE, verify_decoded = FALSE, return_info = TRUE
+          case$dataset,
+          registry = seeded$selector,
+          cache_dir = cache_dir,
+          offline = TRUE,
+          verify_decoded = FALSE,
+          return_info = TRUE
         )
         expect_identical(unverified$info$verification, "artifact")
         expect_null(unverified$info$canonical_digest)
       }
     },
     .canonical_bytes = function(...) stop("Production must hash in Rust"),
-    .canonical_sha256 = function(...) stop("Production must hash before conversion"),
+    .canonical_sha256 = function(...) {
+      stop("Production must hash before conversion")
+    },
     .package = "datamonger"
   )
 })
@@ -31,7 +40,8 @@ test_that("native gzip failures retain retrieval error classes", {
   on.exit(unlink(path), add = TRUE)
   contents <- readBin(path, "raw", n = file.info(path)$size)
   contents[[length(contents) - 7L]] <- as.raw(bitwXor(
-    as.integer(contents[[length(contents) - 7L]]), 1L
+    as.integer(contents[[length(contents) - 7L]]),
+    1L
   ))
   expect_error(
     dm_internal(".decode_http_gzip")(contents, "https://example.com/data"),
@@ -49,7 +59,8 @@ test_that("inaccessible artifact files retain the cache error class", {
 test_that("native cancellation becomes an interrupt after returning to R", {
   condition <- tryCatch(
     dm_internal(".native_result")(list(
-      category = "interrupted", message = "interrupted"
+      category = "interrupted",
+      message = "interrupted"
     )),
     interrupt = identity
   )

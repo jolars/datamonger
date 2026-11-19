@@ -8,10 +8,12 @@ test_that("all delimited and LIBSVM cases match shared golden digests", {
     decoded <- switch(
       case$decoder,
       `delimited-text` = dm_internal(".decode_delimited")(
-        fixture_path("conformance", case$input), recipe
+        fixture_path("conformance", case$input),
+        recipe
       ),
       libsvm = dm_internal(".decode_libsvm")(
-        fixture_path("conformance", case$input), recipe
+        fixture_path("conformance", case$input),
+        recipe
       ),
       `libsvm-split` = dm_internal(".decode_libsvm_split")(
         fixture_path("conformance", case$input$train),
@@ -45,10 +47,12 @@ test_that("shared malformed and fuzz cases are decode errors", {
       switch(
         case$decoder,
         `delimited-text` = dm_internal(".decode_delimited")(
-          fixture_path("conformance", case$input), case$recipe
+          fixture_path("conformance", case$input),
+          case$recipe
         ),
         libsvm = dm_internal(".decode_libsvm")(
-          fixture_path("conformance", case$input), case$recipe
+          fixture_path("conformance", case$input),
+          case$recipe
         ),
         `libsvm-split` = dm_internal(".decode_libsvm_split")(
           fixture_path("conformance", case$input$train),

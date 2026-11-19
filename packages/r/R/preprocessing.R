@@ -2,7 +2,9 @@
   if (!("preprocessing" %in% names(dataset))) {
     return(NULL)
   }
-  fail <- function(message) .abort_category("unsupported-registry", message)
+  fail <- function(message) {
+    .abort_category("unsupported-registry", message)
+  }
   nonempty <- function(value, field) {
     text <- .require_string(value, field)
     if (!nzchar(text)) fail(paste0(field, " must not be empty"))

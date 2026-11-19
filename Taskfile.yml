@@ -142,6 +142,11 @@ tasks:
       - |
         dm-test-r
 
+  r:document:
+    desc: Regenerate the R help pages and NAMESPACE with roxygen2
+    cmds:
+      - Rscript -e 'roxygen2::roxygenise("packages/r")'
+
   r:catalog:
     desc: Refresh the compressed R catalog from the bundled registry
     cmds:

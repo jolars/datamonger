@@ -27,12 +27,18 @@ test_that("delimited decoding has strict lexical and record grammars", {
   )
 })
 
-test_that("decimal float conversion is correctly rounded instead of R-truncated", {
-  parsed <- dm_internal(".parse_binary64")("-0.179743")
+test_that(
+  "decimal float conversion is correctly rounded instead of R-truncated",
+  {
+    parsed <- dm_internal(".parse_binary64")("-0.179743")
 
-  expect_identical(sprintf("%a", parsed), "-0x1.701d19157abb9p-3")
-  expect_identical(sprintf("%a", dm_internal(".parse_binary64")("-0")), "-0x0p+0")
-})
+    expect_identical(sprintf("%a", parsed), "-0x1.701d19157abb9p-3")
+    expect_identical(
+      sprintf("%a", dm_internal(".parse_binary64")("-0")),
+      "-0x0p+0"
+    )
+  }
+)
 
 test_that("delimited decoding supports CRLF, exact int64, and no final LF", {
   recipe <- conformance_recipe(1)
@@ -86,7 +92,11 @@ test_that("declared gzip and bzip2 compression are decoded strictly", {
     bytes <- readBin(truncated, "raw", n = file.info(truncated)$size)
     writeBin(head(bytes, -1L), truncated)
     expect_error(
-      dm_internal(".decode_delimited")(truncated, cases[[1]]$recipe, compression),
+      dm_internal(".decode_delimited")(
+        truncated,
+        cases[[1]]$recipe,
+        compression
+      ),
       class = "datamonger_decode"
     )
   }
@@ -138,9 +148,7 @@ test_that("LIBSVM retains exact dimensions beyond the Matrix integer limit", {
 })
 
 test_that("canonical sparse NaNs normalize while infinities and zeros fail", {
-  sparse <- dm_internal(".sparse_component")(
-    "x", 1, 1, c(0, 1), 0, NaN
-  )
+  sparse <- dm_internal(".sparse_component")("x", 1, 1, c(0, 1), 0, NaN)
   expect_identical(
     tail(dm_internal(".canonical_bytes")(list(sparse)), 8L),
     as.raw(c(0, 0, 0, 0, 0, 0, 0xf8, 0x7f))
@@ -171,10 +179,17 @@ test_that("LIBSVM v2 normalizes zeros with the updated local core", {
   split <- dm_internal(".decode_libsvm_split")
   actual_split <- split(explicit, explicit, recipe, decoder_version = 2L)
   expected_split <- split(implicit, implicit, recipe)
-  expect_identical(digest(actual_split$components), digest(expected_split$components))
+  expect_identical(
+    digest(actual_split$components),
+    digest(expected_split$components)
+  )
   for (fields in c("1:0 1:2", "2:0 1:1", "0:0")) {
     expect_error(
-      decode(write_text(paste0("1 ", fields, "\n")), recipe, decoder_version = 2L),
+      decode(
+        write_text(paste0("1 ", fields, "\n")),
+        recipe,
+        decoder_version = 2L
+      ),
       class = "datamonger_decode"
     )
   }
@@ -184,34 +199,56 @@ test_that("LIBSVM v2 matches the shared canonical digest", {
   skip_if(!dm_internal("dm_supports_libsvm_v2")(), "Requires the updated core.")
   case <- read_fixture_json("conformance", "libsvm-v2.json")
   decoded <- dm_internal(".decode_libsvm")(
-    write_text(case$input), case$recipe, decoder_version = 2L
+    write_text(case$input),
+    case$recipe,
+    decoder_version = 2L
   )
-  expect_identical(dm_internal(".canonical_sha256")(decoded$components), case$expected_sha256)
+  expect_identical(
+    dm_internal(".canonical_sha256")(decoded$components),
+    case$expected_sha256
+  )
 })
 
 test_that("LIBSVM v2 capability is checked before artifact retrieval", {
-  dataset <- read_fixture_json("conformance", "named-splits.json")$cases[[1]]$manifest
+  dataset <- read_fixture_json("conformance", "named-splits.json")$cases[[
+    1
+  ]]$manifest
   dataset$schema_version <- 5L
   dataset$representation$options$splits[[1]]$decoder_version <- 2L
   validate <- dm_internal(".validate_representation")
   if (dm_internal("dm_supports_libsvm_v2")()) {
-    expect_identical(validate(dataset)$children[[1]]$representation$decoder_version, 2L)
+    expect_identical(
+      validate(dataset)$children[[1]]$representation$decoder_version,
+      2L
+    )
   } else {
-    expect_error(validate(dataset), "updated native core", class = "datamonger_unsupported_decoder")
+    expect_error(
+      validate(dataset),
+      "updated native core",
+      class = "datamonger_unsupported_decoder"
+    )
   }
 })
 
-
 test_that("multilabel LIBSVM uses declared indicator columns", {
-  skip_if(!dm_internal("dm_supports_libsvm_multilabel")(), "Requires the updated core.")
+  skip_if(
+    !dm_internal("dm_supports_libsvm_multilabel")(),
+    "Requires the updated core."
+  )
   recipe <- conformance_recipe(3)
   recipe$label_type <- NULL
   recipe$label_count <- 4L
   recipe$label_index_base <- 0L
   decoded <- dm_internal(".decode_libsvm_multilabel")(
-    write_text("2,0 1:0 3:2\n 2:4\n1"), recipe, "none", FALSE
+    write_text("2,0 1:0 3:2\n 2:4\n1"),
+    recipe,
+    "none",
+    FALSE
   )
   expect_s3_class(decoded$data, "datamonger_multilabel_sparse_dataset")
   expect_identical(decoded$data$label_index_base, 0L)
-  expect_equal(as.matrix(decoded$data$response), rbind(c(1, 0, 1, 0), rep(0, 4), c(0, 1, 0, 0)))
+  expect_equal(
+    as.matrix(decoded$data$response),
+    rbind(c(1, 0, 1, 0), rep(0, 4), c(0, 1, 0, 0))
+  )
 })

@@ -89,15 +89,7 @@
   )
 }
 
-#' Inspect the private R cache
-#'
-#' This operation does not access the network. It rehashes each object and
-#' associates artifacts with dataset versions referenced by bundled and cached
-#' registry indexes.
-#'
-#' @param cache_dir Explicit cache directory, or `NULL` for the platform
-#'   default.
-#' @return A `datamonger_cache_info` record.
+#' @rdname cache
 #' @export
 cache_info <- function(cache_dir = NULL) {
   cache_dir <- .selected_cache_dir(cache_dir)
@@ -152,18 +144,7 @@ cache_info <- function(cache_dir = NULL) {
   dataset_match && age_match
 }
 
-#' Manually remove objects from the private R cache
-#'
-#' Active objects are skipped. With no filters, all registry indexes and
-#' artifacts are selected. When both filters are supplied, they intersect.
-#'
-#' @param dataset Canonical `source:name@version` identifier, or `NULL`.
-#' @param older_than A nonnegative `difftime` or number of seconds, or `NULL`.
-#' @param cache_dir Explicit cache directory, or `NULL` for the platform
-#'   default.
-#' @return
-#' A `datamonger_cache_clean_result` containing removed and skipped entries and
-#' `bytes_removed`.
+#' @rdname cache
 #' @export
 cache_clean <- function(dataset = NULL, older_than = NULL, cache_dir = NULL) {
   if (

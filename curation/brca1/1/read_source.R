@@ -14,22 +14,41 @@ read_source <- function(directory) {
   read_sample <- function(path) {
     header <- readLines(path, n = 2L, warn = FALSE)
     stopifnot(
-      identical(header[[1]], paste(
-        "Hybridization REF", sub("[.]txt$", "", basename(path)), sep = "\t"
-      )),
-      identical(header[[2]], paste(
-        "Composite Element REF",
-        "log2 lowess normalized (cy5/cy3) collapsed by gene symbol", sep = "\t"
-      ))
+      identical(
+        header[[1]],
+        paste(
+          "Hybridization REF",
+          sub("[.]txt$", "", basename(path)),
+          sep = "\t"
+        )
+      ),
+      identical(
+        header[[2]],
+        paste(
+          "Composite Element REF",
+          "log2 lowess normalized (cy5/cy3) collapsed by gene symbol",
+          sep = "\t"
+        )
+      )
     )
     read.delim(
-      path, skip = 2L, header = FALSE, col.names = c("gene", "value"),
-      colClasses = c("character", "numeric"), na.strings = "null",
-      quote = "", comment.char = "", check.names = FALSE
+      path,
+      skip = 2L,
+      header = FALSE,
+      col.names = c("gene", "value"),
+      colClasses = c("character", "numeric"),
+      na.strings = "null",
+      quote = "",
+      comment.char = "",
+      check.names = FALSE
     )
   }
   first <- read_sample(paths[[1]])
-  stopifnot(nrow(first) == 17814L, !anyDuplicated(first$gene), all(nzchar(first$gene)))
+  stopifnot(
+    nrow(first) == 17814L,
+    !anyDuplicated(first$gene),
+    all(nzchar(first$gene))
+  )
   measurements <- matrix(NA_real_, nrow = nrow(first), ncol = length(paths))
   measurements[, 1L] <- first$value
   for (column in seq.int(2L, length(paths))) {

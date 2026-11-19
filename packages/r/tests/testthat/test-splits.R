@@ -5,62 +5,114 @@ seed_split_case <- function(case, cache_dir, compression = "none") {
   for (i in seq_along(dataset$artifacts)) {
     artifact <- dataset$artifacts[[i]]
     path <- fixture_path("conformance", case$artifact_paths[[artifact$name]])
-    if (!identical(compression, "none")) path <- compress_fixture(path, compression)
+    if (!identical(compression, "none")) {
+      path <- compress_fixture(path, compression)
+    }
     contents <- readBin(path, "raw", n = file.info(path)$size)
     artifact$compression <- compression
     artifact$size <- length(contents)
-    artifact$sha256 <- digest::digest(contents, algo = "sha256", serialize = FALSE)
+    artifact$sha256 <- digest::digest(
+      contents,
+      algo = "sha256",
+      serialize = FALSE
+    )
     writeBin(contents, file.path(directory, artifact$sha256))
     dataset$artifacts[[i]] <- artifact
   }
-  index <- list(schema_version = dataset$schema_version, release = "named-splits-test", datasets = list(dataset), defaults = list())
+  index <- list(
+    schema_version = dataset$schema_version,
+    release = "named-splits-test",
+    datasets = list(dataset),
+    defaults = list()
+  )
   reseal_index(index, cache_dir)
 }
 
-test_that("named splits preserve provider names, membership, and absent labels", {
-  document <- read_fixture_json("conformance", "named-splits.json")
-  for (case in document$cases) {
-    for (compression in c("none", "gzip", "bzip2")) {
-      cache_dir <- tempfile("datamonger-splits-")
-      registry <- seed_split_case(case, cache_dir, compression)
-      result <- fetch_data(paste0("conformance:", case$id, "@1"), registry = registry,
-        cache_dir = cache_dir, offline = TRUE, return_info = TRUE)
-      expect_s3_class(result$data, "datamonger_dataset_splits")
-      expect_identical(names(result$data), vapply(case$expected_splits, `[[`, character(1), "name"))
-      expected_bytes <- as.raw(strtoi(substring(case$expected_hex,
-        seq(1L, nchar(case$expected_hex), 2L), seq(2L, nchar(case$expected_hex), 2L)), 16L))
-      expect_identical(result$info$canonical_digest,
-        digest::digest(expected_bytes, algo = "sha256", serialize = FALSE))
-      expect_identical(result$info$verification, "decoded")
-      expect_setequal(names(result$info$artifact_digests), names(case$artifact_paths))
-      unchecked <- fetch_data(paste0("conformance:", case$id, "@1"), registry = registry,
-        cache_dir = cache_dir, offline = TRUE, verify_decoded = FALSE, return_info = TRUE)
-      expect_identical(unchecked$data, result$data)
-      expect_identical(unchecked$info$verification, "artifact")
-      expect_null(unchecked$info$canonical_digest)
-      for (expected in case$expected_splits) {
-        split <- result$data[[expected$name]]
-        if (identical(expected$kind, "sparse")) {
-          expect_s3_class(split, "datamonger_sparse_dataset")
-          expect_equal(unname(as.matrix(split$features)), do.call(rbind, lapply(expected$features, unlist)))
-          expect_equal(as.numeric(split$response), unlist(expected$response))
-        } else {
-          expect_s3_class(split, "data.frame")
-          expect_identical(names(split), unlist(expected$columns))
-          for (column in names(split)) {
-            expect_equal(as.numeric(split[[column]]), as.numeric(unlist(expected$values[[column]])))
+test_that(
+  "named splits preserve provider names, membership, and absent labels",
+  {
+    document <- read_fixture_json("conformance", "named-splits.json")
+    for (case in document$cases) {
+      for (compression in c("none", "gzip", "bzip2")) {
+        cache_dir <- tempfile("datamonger-splits-")
+        registry <- seed_split_case(case, cache_dir, compression)
+        result <- fetch_data(
+          paste0("conformance:", case$id, "@1"),
+          registry = registry,
+          cache_dir = cache_dir,
+          offline = TRUE,
+          return_info = TRUE
+        )
+        expect_s3_class(result$data, "datamonger_dataset_splits")
+        expect_identical(
+          names(result$data),
+          vapply(case$expected_splits, `[[`, character(1), "name")
+        )
+        expected_bytes <- as.raw(strtoi(
+          substring(
+            case$expected_hex,
+            seq(1L, nchar(case$expected_hex), 2L),
+            seq(2L, nchar(case$expected_hex), 2L)
+          ),
+          16L
+        ))
+        expect_identical(
+          result$info$canonical_digest,
+          digest::digest(expected_bytes, algo = "sha256", serialize = FALSE)
+        )
+        expect_identical(result$info$verification, "decoded")
+        expect_setequal(
+          names(result$info$artifact_digests),
+          names(case$artifact_paths)
+        )
+        unchecked <- fetch_data(
+          paste0("conformance:", case$id, "@1"),
+          registry = registry,
+          cache_dir = cache_dir,
+          offline = TRUE,
+          verify_decoded = FALSE,
+          return_info = TRUE
+        )
+        expect_identical(unchecked$data, result$data)
+        expect_identical(unchecked$info$verification, "artifact")
+        expect_null(unchecked$info$canonical_digest)
+        for (expected in case$expected_splits) {
+          split <- result$data[[expected$name]]
+          if (identical(expected$kind, "sparse")) {
+            expect_s3_class(split, "datamonger_sparse_dataset")
+            expect_equal(
+              unname(as.matrix(split$features)),
+              do.call(rbind, lapply(expected$features, unlist))
+            )
+            expect_equal(as.numeric(split$response), unlist(expected$response))
+          } else {
+            expect_s3_class(split, "data.frame")
+            expect_identical(names(split), unlist(expected$columns))
+            for (column in names(split)) {
+              expect_equal(
+                as.numeric(split[[column]]),
+                as.numeric(unlist(expected$values[[column]]))
+              )
+            }
           }
         }
+        setup <- dm_internal(".validate_representation")(case$manifest)
+        paths <- vapply(
+          case$manifest$artifacts,
+          function(artifact) {
+            fixture_path("conformance", case$artifact_paths[[artifact$name]])
+          },
+          character(1)
+        )
+        decoded <- dm_internal(".decode_setup")(setup, paths, FALSE)
+        expect_identical(
+          dm_internal(".canonical_bytes")(decoded$components),
+          expected_bytes
+        )
       }
-      setup <- dm_internal(".validate_representation")(case$manifest)
-      paths <- vapply(case$manifest$artifacts, function(artifact) {
-        fixture_path("conformance", case$artifact_paths[[artifact$name]])
-      }, character(1))
-      decoded <- dm_internal(".decode_setup")(setup, paths, FALSE)
-      expect_identical(dm_internal(".canonical_bytes")(decoded$components), expected_bytes)
     }
   }
-})
+)
 
 test_that("invalid named split recipes use the shared failure category", {
   document <- read_fixture_json("conformance", "named-splits.json")
@@ -69,8 +121,16 @@ test_that("invalid named split recipes use the shared failure category", {
     case$manifest$representation <- invalid$representation
     cache_dir <- tempfile("datamonger-invalid-split-")
     registry <- seed_split_case(case, cache_dir)
-    expect_error(fetch_data("conformance:three-provider-splits@1", registry = registry,
-      cache_dir = cache_dir, offline = TRUE), class = "datamonger_unsupported_decoder", info = invalid$id)
+    expect_error(
+      fetch_data(
+        "conformance:three-provider-splits@1",
+        registry = registry,
+        cache_dir = cache_dir,
+        offline = TRUE
+      ),
+      class = "datamonger_unsupported_decoder",
+      info = invalid$id
+    )
   }
 })
 
@@ -78,43 +138,75 @@ test_that("named split verification detects reassigned membership and order", {
   for (mutation in c("order", "membership")) {
     case <- read_fixture_json("conformance", "named-splits.json")$cases[[1]]
     if (identical(mutation, "order")) {
-      case$manifest$representation$options$splits <- rev(case$manifest$representation$options$splits)
+      case$manifest$representation$options$splits <- rev(
+        case$manifest$representation$options$splits
+      )
     } else {
       case$manifest$representation$inputs$validation <- case$manifest$representation$inputs$train
     }
     cache_dir <- tempfile("datamonger-changed-split-")
     registry <- seed_split_case(case, cache_dir)
-    expect_error(fetch_data("conformance:three-provider-splits@1", registry = registry,
-      cache_dir = cache_dir, offline = TRUE), class = "datamonger_decoded_integrity")
+    expect_error(
+      fetch_data(
+        "conformance:three-provider-splits@1",
+        registry = registry,
+        cache_dir = cache_dir,
+        offline = TRUE
+      ),
+      class = "datamonger_decoded_integrity"
+    )
   }
 })
 
 test_that("multilabel public fetch verifies both splits", {
-  skip_if(!dm_internal("dm_supports_libsvm_multilabel")(), "Requires the updated core.")
+  skip_if(
+    !dm_internal("dm_supports_libsvm_multilabel")(),
+    "Requires the updated core."
+  )
   case <- read_fixture_json("conformance", "libsvm-multilabel.json")
   cache_dir <- tempfile("datamonger-multilabel-")
   registry <- seed_split_case(case, cache_dir, "bzip2")
-  result <- fetch_data("conformance:multilabel@1", registry = registry,
-    cache_dir = cache_dir, offline = TRUE, return_info = TRUE)
+  result <- fetch_data(
+    "conformance:multilabel@1",
+    registry = registry,
+    cache_dir = cache_dir,
+    offline = TRUE,
+    return_info = TRUE
+  )
   expect_identical(names(result$data), c("train", "test"))
-  expect_equal(as.matrix(result$data$test$response), matrix(c(0, 0, 1, 0), nrow = 1L))
-  expect_identical(result$info$canonical_digest,
-    case$manifest$representation$expect$verification[[1]]$digest)
+  expect_equal(
+    as.matrix(result$data$test$response),
+    matrix(c(0, 0, 1, 0), nrow = 1L)
+  )
+  expect_identical(
+    result$info$canonical_digest,
+    case$manifest$representation$expect$verification[[1]]$digest
+  )
 })
 
 test_that("ranking public fetch verifies row-aligned query IDs", {
-  skip_if(!dm_internal("dm_supports_svmlight_ranking")(), "Requires the updated core.")
+  skip_if(
+    !dm_internal("dm_supports_svmlight_ranking")(),
+    "Requires the updated core."
+  )
   case <- read_fixture_json("conformance", "svmlight-ranking.json")
   cache_dir <- tempfile("datamonger-ranking-")
   registry <- seed_split_case(case, cache_dir, "gzip")
-  result <- fetch_data("conformance:ranking@1", registry = registry,
-    cache_dir = cache_dir, offline = TRUE, return_info = TRUE)
+  result <- fetch_data(
+    "conformance:ranking@1",
+    registry = registry,
+    cache_dir = cache_dir,
+    offline = TRUE,
+    return_info = TRUE
+  )
   expect_identical(names(result$data), c("train", "test"))
   train <- result$data$train
   expect_s3_class(train, "datamonger_ranking_sparse_dataset")
   expect_identical(format(train$query_id), c("7", "9223372036854775807", "7"))
   expect_equal(as.numeric(train$response), c(1, 0, 2))
   expect_equal(as.matrix(train$features), matrix(c(2, 0, 0, 0, 0, -3), 3L))
-  expect_identical(result$info$canonical_digest,
-    case$manifest$representation$expect$verification[[1]]$digest)
+  expect_identical(
+    result$info$canonical_digest,
+    case$manifest$representation$expect$verification[[1]]$digest
+  )
 })

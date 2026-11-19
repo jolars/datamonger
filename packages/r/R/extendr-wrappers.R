@@ -5,25 +5,18 @@
 #' @useDynLib datamonger, .registration = TRUE
 NULL
 
-#' Decode verified artifact paths and optionally hash before converting buffers.
 dm_decode <- function(decoder, paths, compressions, options, hash) .Call(wrap__dm_decode, decoder, paths, compressions, options, hash)
 
-#' Report whether this build includes the updated core decoder API.
 dm_supports_libsvm_v2 <- function() .Call(wrap__dm_supports_libsvm_v2)
 
-#' Report whether this build includes the multilabel decoder.
 dm_supports_libsvm_multilabel <- function() .Call(wrap__dm_supports_libsvm_multilabel)
 
-#' Report whether this build includes the SVMLight ranking decoder.
 dm_supports_svmlight_ranking <- function() .Call(wrap__dm_supports_svmlight_ranking)
 
-#' Encode or hash supplied logical components for conformance and diagnostics.
 dm_canonical <- function(components, hash) .Call(wrap__dm_canonical, components, hash)
 
-#' Remove a single HTTP gzip content coding.
 dm_http_gzip <- function(bytes) .Call(wrap__dm_http_gzip, bytes)
 
-#' Parse a decimal for the R client's rounding regression checks.
 dm_parse_binary64 <- function(value) .Call(wrap__dm_parse_binary64, value)
 
 # nolint end

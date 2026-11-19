@@ -69,6 +69,7 @@ in
           testthat
           devtools
           rextendr
+          roxygen2
         ];
       }
     );

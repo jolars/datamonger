@@ -9,13 +9,16 @@ read_source <- function(path) {
   gene <- gene[valid, ]
 
   # Match Iowa's mutation-major column order and treatment of mixed residues.
-  X <- do.call(cbind, lapply(c(LETTERS, "i", "d"), function(mutation) {
-    block <- sapply(gene[, positions], function(column) {
-      as.numeric(grepl(mutation, column, fixed = TRUE))
+  X <- do.call(
+    cbind,
+    lapply(c(LETTERS, "i", "d"), function(mutation) {
+      block <- sapply(gene[, positions], function(column) {
+        as.numeric(grepl(mutation, column, fixed = TRUE))
+      })
+      colnames(block) <- paste(names(gene)[positions], mutation, sep = ".")
+      block
     })
-    colnames(block) <- paste(names(gene)[positions], mutation, sep = ".")
-    block
-  }))
+  )
   # Iowa removes globally absent mutations before selecting observed NFV outcomes.
   X <- X[, colSums(X) != 0]
   y <- log(gene$NFV)

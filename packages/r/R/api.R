@@ -1,6 +1,10 @@
-.selected_registry <- function(registry) registry %||% active_registry()
+.selected_registry <- function(registry) {
+  registry %||% active_registry()
+}
 
-.selected_cache_dir <- function(cache_dir) datamonger_cache_dir(cache_dir)
+.selected_cache_dir <- function(cache_dir) {
+  datamonger_cache_dir(cache_dir)
+}
 
 .dataset_artifacts <- function(dataset) {
   artifacts <- .require_array(dataset$artifacts, "dataset artifacts")
@@ -156,21 +160,7 @@
   )
 }
 
-#' Retrieve one verified artifact without decoding it
-#'
-#' @param name Bare dataset name, `source:name`, or `source:name@version`.
-#' @param source Dataset source. Required for bare names; omit it for qualified
-#'   references, even if the values would agree.
-#' @param version Exact dataset version. Omit it when the reference embeds a
-#'   version, even if the values would agree. If neither form supplies a
-#'   version, resolve the registry default.
-#' @param artifact Artifact name. It may be omitted for a single-artifact
-#'   dataset.
-#' @param registry Strong registry selector, or `NULL` for the active selector.
-#' @param cache_dir Explicit cache directory, or `NULL` for the platform
-#'   default.
-#' @param offline If `TRUE`, use verified cached bytes without network access.
-#' @return The path to verified artifact bytes in the R client's private cache.
+#' @rdname data
 #' @export
 fetch_artifact <- function(
   name,
@@ -248,14 +238,7 @@ fetch_artifact <- function(
   )
 }
 
-#' Inspect one registered dataset without retrieving artifacts
-#'
-#' @inheritParams fetch_artifact
-#' @return
-#' A `datamonger_data_info` record with identity, provenance, license,
-#' representation, task, verification, and preprocessing metadata. Preprocessing
-#' separates upstream processing from Datamonger preparation and is `NULL` when
-#' unrecorded. Fetching does not apply the described transformations.
+#' @rdname data
 #' @export
 data_info <- function(
   name,
@@ -276,13 +259,7 @@ data_info <- function(
   .data_info(.resolve_dataset(index, source, name, version), registry)
 }
 
-#' List dataset versions in the selected registry
-#'
-#' @param registry Strong registry selector, or `NULL` for the active selector.
-#' @param cache_dir Explicit cache directory, or `NULL` for the platform
-#'   default.
-#' @param offline If `TRUE`, use a bundled or verified cached registry only.
-#' @return A list of `datamonger_data_info` records.
+#' @rdname data
 #' @export
 list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
   cache_dir <- .selected_cache_dir(cache_dir)
@@ -433,7 +410,14 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
   if (
     !(identical(representation$decoder_version, 1L) ||
       identical(representation$decoder_version, 2L)) ||
-      !(decoder %in% c("delimited-text", "libsvm", "libsvm-split", "libsvm-multilabel", "svmlight-ranking"))
+      !(decoder %in%
+        c(
+          "delimited-text",
+          "libsvm",
+          "libsvm-split",
+          "libsvm-multilabel",
+          "svmlight-ranking"
+        ))
   ) {
     .abort_category(
       "unsupported-decoder",
@@ -463,19 +447,37 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
   }
 
   if (identical(decoder, "svmlight-ranking")) {
-    if (!identical(representation$decoder_version, 1L) || !identical(dataset$schema_version, 7L)) {
-      .abort_category("unsupported-decoder", "SVMLight ranking requires manifest schema 7 and decoder version 1")
+    if (
+      !identical(representation$decoder_version, 1L) ||
+        !identical(dataset$schema_version, 7L)
+    ) {
+      .abort_category(
+        "unsupported-decoder",
+        "SVMLight ranking requires manifest schema 7 and decoder version 1"
+      )
     }
     if (!dm_supports_svmlight_ranking()) {
-      .abort_category("unsupported-decoder", "SVMLight ranking requires an updated native core")
+      .abort_category(
+        "unsupported-decoder",
+        "SVMLight ranking requires an updated native core"
+      )
     }
   }
   if (identical(decoder, "libsvm-multilabel")) {
-    if (!identical(representation$decoder_version, 1L) || !(dataset$schema_version %in% c(6L, 7L))) {
-      .abort_category("unsupported-decoder", "multilabel LIBSVM version 1 requires manifest schema 6")
+    if (
+      !identical(representation$decoder_version, 1L) ||
+        !(dataset$schema_version %in% c(6L, 7L))
+    ) {
+      .abort_category(
+        "unsupported-decoder",
+        "multilabel LIBSVM version 1 requires manifest schema 6"
+      )
     }
     if (!dm_supports_libsvm_multilabel()) {
-      .abort_category("unsupported-decoder", "multilabel LIBSVM requires an updated native core")
+      .abort_category(
+        "unsupported-decoder",
+        "multilabel LIBSVM requires an updated native core"
+      )
     }
   }
 
@@ -550,18 +552,70 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
   )
 }
 
-#' Retrieve, verify, and decode one registered dataset
+#' Retrieve or Inspect Registered Data
 #'
-#' @inheritParams fetch_artifact
-#' @param verify_decoded Whether to verify expected shape and the canonical
-#'   logical digest. Artifact verification cannot be disabled.
+#' Resolve a dataset within one strongly selected registry. Artifact size and
+#' SHA-256 verification cannot be disabled. Decoded verification is enabled by
+#' default and may be disabled only explicitly.
+#'
+#' @param name A bare dataset name, `source:name`, or `source:name@version`.
+#' @param source The dataset source. Required for bare names; omit it for
+#'   qualified references, even if the values would agree.
+#' @param version An exact version. Omit it when the reference embeds a version,
+#'   even if the values would agree. If neither form supplies a version, resolve
+#'   the registry default.
+#' @param artifact An artifact name. It may be omitted for a single-artifact
+#'   dataset.
+#' @param registry A strong selector, or `NULL` for the active selector.
+#' @param cache_dir An explicit cache path, or `NULL` for the platform default.
+#' @param offline Whether to forbid all network access.
+#' @param verify_decoded Whether to verify expected shape and canonical digest.
 #' @param return_info Whether to return reproducibility metadata with the data.
-#' @return
-#' An R data frame, `datamonger_sparse_dataset`, or
-#' `datamonger_sparse_dataset_split`, `datamonger_multilabel_sparse_dataset`,
-#' `datamonger_ranking_sparse_dataset`, or a provider-named
-#' `datamonger_dataset_splits` list. With `return_info = TRUE`, returns a
-#' `datamonger_fetch_result` containing `data` and `info`.
+#' @details
+#' Named splits use manifest schema 4. Access them with `data[["validation"]]`.
+#' Each value is a table or sparse dataset, and a feature-only test table has no
+#' response column. Split names and row membership are preserved exactly.
+#'
+#' Multilabel results have sparse `features` and `response` matrices and a
+#' `label_index_base`. Source label `k` maps to column
+#' `k - label_index_base + 1`.
+#'
+#' Ranking results have class `datamonger_ranking_sparse_dataset` and contain
+#' sparse `features`, a relevance vector `response`, and a row-aligned int64
+#' vector `query_id`.
+#'
+#' Metadata records expose `preprocessing` when recorded in a version 3
+#' registry. Upstream processing and Datamonger preparation have separate
+#' stages, with status `unknown`, `none`, or `documented`. Known steps retain
+#' their order, string parameters, and evidence references. Missing history is
+#' `NULL`. These records describe the registered artifacts; fetching does not
+#' apply the transformations.
+#'
+#' @returns
+#' `fetch_data()` returns a data frame, a Datamonger sparse result, or a
+#' `datamonger_dataset_splits` named list in provider split order; with
+#' `return_info = TRUE`, it returns a `datamonger_fetch_result`.
+#' `fetch_artifact()` returns a cache path. Metadata functions return one or a
+#' list of `datamonger_data_info` records. Sparse features use a row-compressed
+#' `Matrix`, or an exact `datamonger_csr_matrix` when a declared dimension
+#' exceeds the `Matrix` integer limit.
+#'
+#' @examples
+#' cache <- tempfile("datamonger-cache-")
+#' registry <- active_registry(project_dir = tempdir())
+#' datasets <- list_data(registry = registry, cache_dir = cache, offline = TRUE)
+#' length(datasets)
+#' data_info("uci:iris", registry = registry, cache_dir = cache, offline = TRUE)
+#'
+#' \dontrun{
+#' # These calls may download the dataset.
+#' path <- fetch_artifact("uci:iris", registry = registry, cache_dir = cache)
+#' head(fetch_data("uci:iris", registry = registry, cache_dir = cache))
+#' }
+#' unlink(cache, recursive = TRUE)
+#'
+#' @rdname data
+#' @order 1
 #' @export
 fetch_data <- function(
   name,

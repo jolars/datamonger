@@ -5,13 +5,17 @@ read_source <- function(path) {
   stopifnot(!is.na(start), !is.na(end), start < end)
   values <- read.delim(
     textConnection(lines[seq.int(start + 1L, end - 1L)]),
-    row.names = 1L, check.names = FALSE, colClasses = c("character", rep("numeric", 120L))
+    row.names = 1L,
+    check.names = FALSE,
+    colClasses = c("character", rep("numeric", 120L))
   )
   values <- as.matrix(values)
   stopifnot(
     identical(dim(values), c(31099L, 120L)),
-    !anyDuplicated(rownames(values)), !anyDuplicated(colnames(values)),
-    all(is.finite(values)), all(grepl("^GSM[0-9]+$", colnames(values)))
+    !anyDuplicated(rownames(values)),
+    !anyDuplicated(colnames(values)),
+    all(is.finite(values)),
+    all(grepl("^GSM[0-9]+$", colnames(values)))
   )
   controls <- grepl("^AFFX", rownames(values))
   stopifnot(sum(controls) == 57L)

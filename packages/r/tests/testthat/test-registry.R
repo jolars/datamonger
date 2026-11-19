@@ -12,7 +12,11 @@ test_that("registry selectors validate their strong identity", {
     class = "datamonger_registry_integrity"
   )
   expect_error(
-    registry_selector("candidate", paste(rep("a", 64), collapse = ""), "file:///tmp/index"),
+    registry_selector(
+      "candidate",
+      paste(rep("a", 64), collapse = ""),
+      "file:///tmp/index"
+    ),
     class = "datamonger_registry"
   )
   expect_error(
@@ -80,7 +84,8 @@ test_that("the bundled registry is a verified offline trust root", {
       "uci:iris@1",
       "uci:wholesale-customers@1",
       "uci:wine-quality@1"
-    ) %in% vapply(listed, `[[`, character(1), "dataset_id")
+    ) %in%
+      vapply(listed, `[[`, character(1), "dataset_id")
   ))
 })
 

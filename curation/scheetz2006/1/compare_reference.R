@@ -10,12 +10,20 @@ stopifnot(
 )
 values <- prepared$X[, colnames(reference$X), drop = FALSE]
 # Identify rows with several probes, then verify all values after that mapping.
-mapping <- vapply(seq_len(nrow(reference$X)), function(row) {
-  errors <- apply(abs(sweep(values[, 1:5], 2L, reference$X[row, 1:5])), 1L, max)
-  candidates <- which(errors <= 0.000501)
-  stopifnot(length(candidates) == 1L)
-  candidates[[1]]
-}, integer(1))
+mapping <- vapply(
+  seq_len(nrow(reference$X)),
+  function(row) {
+    errors <- apply(
+      abs(sweep(values[, 1:5], 2L, reference$X[row, 1:5])),
+      1L,
+      max
+    )
+    candidates <- which(errors <= 0.000501)
+    stopifnot(length(candidates) == 1L)
+    candidates[[1]]
+  },
+  integer(1)
+)
 stopifnot(!anyDuplicated(mapping))
 difference <- max(
   abs(values[mapping, ] - reference$X),

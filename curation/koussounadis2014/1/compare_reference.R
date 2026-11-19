@@ -21,5 +21,7 @@ message(sprintf(
   "All 101 samples and 34,694 predictors match Iowa; max absolute error %.12g.",
   difference
 ))
-message(sprintf("The log2 response agrees within %.12g; treatment and day match exactly.",
-                response_difference))
+message(sprintf(
+  "The log2 response agrees within %.12g; treatment and day match exactly.",
+  response_difference
+))

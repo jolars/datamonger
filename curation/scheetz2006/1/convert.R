@@ -11,7 +11,10 @@ connection <- file(args[[2]], open = "wt", encoding = "UTF-8")
 writeLines(paste(header, collapse = ","), connection, useBytes = TRUE)
 # Seventeen significant digits preserve the submitted binary64 measurements.
 for (row in seq_len(nrow(values))) {
-  fields <- c(paste0('"', prepared$sample_id[[row]], '"'), sprintf("%.17g", values[row, ]))
+  fields <- c(
+    paste0('"', prepared$sample_id[[row]], '"'),
+    sprintf("%.17g", values[row, ])
+  )
   writeLines(paste(fields, collapse = ","), connection)
 }
 close(connection)
