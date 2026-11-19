@@ -42,6 +42,11 @@ function _supports_libsvm_multilabel()
     return Libdl.dlsym_e(_NATIVE_LIBRARY[], :dm_decode_libsvm_multilabel) != C_NULL
 end
 
+function _supports_svmlight_ranking()
+    _native_symbol(:dm_abi_version)
+    return Libdl.dlsym_e(_NATIVE_LIBRARY[], :dm_decode_svmlight_ranking) != C_NULL
+end
+
 struct _NativeArtifact
     path::_NativeBytes
     compression::UInt32

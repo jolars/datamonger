@@ -101,10 +101,17 @@ struct MultilabelSparseDataset{F<:AbstractMatrix{Float64},R<:AbstractMatrix{Floa
     label_index_base::Int
 end
 
+"""Sparse features, relevance scores, and row-aligned query IDs."""
+struct RankingSparseDataset{T<:Union{Int64,Float64},M<:AbstractMatrix{Float64}}
+    features::M
+    response::Vector{T}
+    query_id::Vector{Int64}
+end
+
 """Provider-named table or sparse splits in recipe order, accessed with `data["validation"]`."""
-struct DatasetSplits <: AbstractDict{String,Union{DataFrame,SparseDataset,MultilabelSparseDataset}}
+struct DatasetSplits <: AbstractDict{String,Union{DataFrame,SparseDataset,MultilabelSparseDataset,RankingSparseDataset}}
     names::Vector{String}
-    splits::Dict{String,Union{DataFrame,SparseDataset,MultilabelSparseDataset}}
+    splits::Dict{String,Union{DataFrame,SparseDataset,MultilabelSparseDataset,RankingSparseDataset}}
 end
 
 Base.length(data::DatasetSplits) = length(data.names)

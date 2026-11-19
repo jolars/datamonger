@@ -96,3 +96,22 @@ end
         @test result.info.canonical_digest == bytes2hex(sha256(hex2bytes(case["expected_hex"])))
     end
 end
+
+@testset "Ranking public fetch" begin
+    if Datamonger._supports_svmlight_ranking()
+        case = read_json("conformance", "svmlight-ranking.json")
+        mktempdir() do cache_dir
+            registry = seed_split_case(case, cache_dir, "gzip")
+            result = fetch_data("conformance:ranking@1"; registry, cache_dir, offline=true, return_info=true)
+            @test collect(keys(result.data)) == ["train", "test"]
+            train = result.data["train"]
+            @test train isa RankingSparseDataset
+            @test train.query_id == [7, typemax(Int64), 7]
+            @test train.response == [1, 0, 2]
+            @test Matrix(train.features) == [2 0; 0 0; 0 -3]
+            @test result.info.canonical_digest == only(case["manifest"]["representation"]["expect"]["verification"])["digest"]
+        end
+    else
+        @test_skip Datamonger._supports_svmlight_ranking()
+    end
+end

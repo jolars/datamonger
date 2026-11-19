@@ -17,7 +17,7 @@ function _split_recipes(representation)
         name isa String && !isempty(name) && !(name in names) ||
             fail("split names must be nonempty and unique")
         push!(names, name)
-        typeof(split["decoder_version"]) === Int && split["decoder_version"] in (1, 2) && split["decoder"] in ("delimited-text", "libsvm", "libsvm-multilabel") &&
+        typeof(split["decoder_version"]) === Int && split["decoder_version"] in (1, 2) && split["decoder"] in ("delimited-text", "libsvm", "libsvm-multilabel", "svmlight-ranking") &&
             split["options"] isa AbstractDict || fail("unsupported split decoder recipe")
     end
     inputs = get(representation, "inputs", nothing)
@@ -33,7 +33,7 @@ _rename_component(c::LogicalSparseMatrix, name) = LogicalSparseMatrix(
 function _decode_setup(setup, paths)
     if setup.decoder == "named-splits"
         names = String[]
-        data = Dict{String,Union{DataFrame,SparseDataset,MultilabelSparseDataset}}()
+        data = Dict{String,Union{DataFrame,SparseDataset,MultilabelSparseDataset,RankingSparseDataset}}()
         components = LogicalComponent[]
         for (i, child_setup) in enumerate(setup.children)
             child = _decode_setup(child_setup, paths[i:i])
@@ -45,6 +45,8 @@ function _decode_setup(setup, paths)
         return Decoded(DatasetSplits(names, data), Tuple(components))
     elseif setup.decoder == "delimited-text"
         return decode_delimited(paths[1], setup.options; compression=setup.compressions[1])
+    elseif setup.decoder == "svmlight-ranking"
+        return decode_svmlight_ranking(paths[1], setup.options; compression=setup.compressions[1])
     elseif setup.decoder == "libsvm-multilabel"
         return decode_libsvm_multilabel(paths[1], setup.options; compression=setup.compressions[1])
     elseif setup.decoder == "libsvm"

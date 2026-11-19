@@ -168,3 +168,20 @@ function decode_libsvm_multilabel(path, options; compression="none")
         return Decoded(data, components)
     end
 end
+
+function decode_svmlight_ranking(path, options; compression="none")
+    base = get(options, "index_base", nothing)
+    typeof(base) === Int && base in (0, 1) && get(options, "target_name", nothing) != "query_id" ||
+        throw(UnsupportedDecoderError("invalid SVMLight ranking options"))
+    features, label_type, target = _validate_libsvm_options(merge(options, Dict("index_base" => 1)))
+    path = String(path)
+    GC.@preserve path target begin
+        artifact = _native_artifact(path, compression)
+        recipe = _NativeLibsvmOptions(features, _NATIVE_TYPES[label_type], _NativeBytes(target))
+        result = ccall(_native_symbol(:dm_decode_svmlight_ranking), Ptr{Cvoid},
+            (_NativeArtifact, _NativeLibsvmOptions, UInt64), artifact, recipe, base)
+        components = _with_native_result(_native_components, result)
+        data = RankingSparseDataset(_sparse_matrix(components[1]), components[2].values, components[3].values)
+        return Decoded(data, components)
+    end
+end
