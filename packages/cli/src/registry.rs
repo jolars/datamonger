@@ -12,7 +12,15 @@ use crate::error::{Error, Result};
 
 pub const BUNDLED_INDEX: &[u8] = include_bytes!("../assets/index.json");
 const BUNDLED_SELECTOR: &[u8] = include_bytes!("../assets/selector.json");
-const SCHEMAS: [(&str, &str); 13] = [
+const SCHEMAS: [(&str, &str); 15] = [
+    (
+        "https://datamonger.dev/spec/schema/index-v6.schema.json",
+        include_str!("../assets/index-v6.schema.json"),
+    ),
+    (
+        "https://datamonger.dev/spec/schema/manifest-v6.schema.json",
+        include_str!("../assets/manifest-v6.schema.json"),
+    ),
     (
         "https://datamonger.dev/spec/schema/index-v5.schema.json",
         include_str!("../assets/index-v5.schema.json"),
@@ -378,6 +386,24 @@ mod tests {
         assert!(validate_schema(&index, "index").is_err());
         index["datasets"][position]["schema_version"] = json!(5);
         index["datasets"][position]["representation"]["decoder_version"] = json!(3);
+        assert!(validate_schema(&index, "index").is_err());
+    }
+
+    #[test]
+    fn multilabel_requires_schema_6() {
+        let mut index: Value = serde_json::from_slice(BUNDLED_INDEX).unwrap();
+        let case: Value = serde_json::from_str(include_str!(
+            "../../../tests/conformance/libsvm-multilabel.json"
+        ))
+        .unwrap();
+        index["schema_version"] = json!(6);
+        index["datasets"]
+            .as_array_mut()
+            .unwrap()
+            .push(case["manifest"].clone());
+        validate_schema(&index, "index").unwrap();
+
+        index["schema_version"] = json!(5);
         assert!(validate_schema(&index, "index").is_err());
     }
 
