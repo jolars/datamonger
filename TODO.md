@@ -4,7 +4,7 @@
 
 - [x] Support comma-separated multilabel targets in LIBSVM files.
 - [ ] Support the LIBSVM string format used by MNIST.
-- [ ] Support SVMLight ranking files with `qid` fields.
+- [x] Support SVMLight ranking files with `qid` fields.
 - [ ] Support Excel workbooks (`.xlsx`) such as UCI's Online Retail dataset.
 
 ## Datasets

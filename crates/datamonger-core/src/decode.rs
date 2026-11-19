@@ -521,7 +521,14 @@ pub fn decode_libsvm_version_with_control<R: BufRead>(
     version: u32,
     control: &mut impl Control,
 ) -> Result<Vec<Component>> {
-    decode_libsvm_impl(reader, options, version, DecodeOptions::default(), control)
+    decode_libsvm_impl(
+        reader,
+        options,
+        version,
+        DecodeOptions::default(),
+        None,
+        control,
+    )
 }
 
 /// Decode a declared LIBSVM version with numeric compatibility options.
@@ -531,7 +538,31 @@ pub fn decode_libsvm_version_with_options<R: BufRead>(
     version: u32,
     compatibility: DecodeOptions,
 ) -> Result<Vec<Component>> {
-    decode_libsvm_impl(reader, options, version, compatibility, &mut || Ok(()))
+    decode_libsvm_impl(
+        reader,
+        options,
+        version,
+        compatibility,
+        None,
+        &mut || Ok(()),
+    )
+}
+
+/// Decode a ranking artifact and retain each row’s query ID.
+pub fn decode_svmlight_ranking_with_control<R: BufRead>(
+    reader: R,
+    options: &LibsvmOptions,
+    index_base: u64,
+    control: &mut impl Control,
+) -> Result<Vec<Component>> {
+    decode_libsvm_impl(
+        reader,
+        options,
+        2,
+        DecodeOptions::default(),
+        Some(index_base),
+        control,
+    )
 }
 
 fn decode_libsvm_impl<R: BufRead>(
@@ -539,16 +570,20 @@ fn decode_libsvm_impl<R: BufRead>(
     options: &LibsvmOptions,
     version: u32,
     compatibility: DecodeOptions,
+    ranking_base: Option<u64>,
     control: &mut impl Control,
 ) -> Result<Vec<Component>> {
     control.checkpoint()?;
     if !matches!(version, 1 | 2) {
         return Err(unsupported("unsupported LIBSVM version"));
     }
-    if options.feature_count == 0
+    let index_base = ranking_base.unwrap_or(1);
+    if index_base > 1
+        || options.feature_count == 0
         || options.feature_count > (1_u64 << 53) - 1
         || options.target_name.is_empty()
         || options.target_name == "features"
+        || (ranking_base.is_some() && options.target_name == "query_id")
     {
         return Err(unsupported("invalid LIBSVM recipe"));
     }
@@ -560,7 +595,16 @@ fn decode_libsvm_impl<R: BufRead>(
         LabelType::Int64 => DataType::Int64,
         LabelType::Float64 => DataType::Float64,
     });
+    let mut query_ids = Vec::new();
     while let Some(record) = records.next()? {
+        let record = if ranking_base.is_some() {
+            if record.trim_start_matches([' ', '\t']).starts_with('#') {
+                continue;
+            }
+            record.split_once('#').map_or(record, |(data, _)| data)
+        } else {
+            record
+        };
         if record.is_empty() || record.starts_with([' ', '\t']) {
             return Err(decode_error(
                 "LIBSVM records must be nonblank without leading whitespace",
@@ -583,10 +627,24 @@ fn decode_libsvm_impl<R: BufRead>(
             .ok_or_else(|| decode_error("missing LIBSVM label"))?;
         push_value(&mut labels, label, true, true, compatibility)
             .map_err(|e| decode_error(format!("invalid LIBSVM label: {e}")))?;
+        if ranking_base.is_some() {
+            let qid = fields
+                .next()
+                .and_then(|field| field.strip_prefix("qid:"))
+                .ok_or_else(|| decode_error("missing ranking query ID"))?;
+            if !unsigned_decimal(qid.as_bytes()) {
+                return Err(decode_error("invalid ranking query ID"));
+            }
+            query_ids.push(
+                qid.parse::<i64>()
+                    .map_err(|_| decode_error("query ID exceeds int64"))?,
+            );
+        }
         libsvm_features(
             fields,
             options.feature_count,
             version,
+            index_base,
             compatibility,
             &mut column_indices,
             &mut values,
@@ -598,7 +656,7 @@ fn decode_libsvm_impl<R: BufRead>(
     }
     control.checkpoint()?;
     let rows = labels.len();
-    Ok(vec![
+    let mut components = vec![
         Component {
             name: "features".into(),
             shape: Shape::Sparse {
@@ -616,7 +674,16 @@ fn decode_libsvm_impl<R: BufRead>(
             values: labels,
             valid: vec![true; rows],
         },
-    ])
+    ];
+    if ranking_base.is_some() {
+        components.push(Component {
+            name: "query_id".into(),
+            shape: Shape::Vector,
+            values: Values::Int64(query_ids),
+            valid: vec![true; rows],
+        });
+    }
+    Ok(components)
 }
 
 /// Decode train and test independently and retain decoder-defined split order.
@@ -685,11 +752,11 @@ fn decode_libsvm_split_impl<R: BufRead, S: BufRead>(
     compatibility: DecodeOptions,
     control: &mut impl Control,
 ) -> Result<Vec<Component>> {
-    let mut components = decode_libsvm_impl(train, options, version, compatibility, control)?;
+    let mut components = decode_libsvm_impl(train, options, version, compatibility, None, control)?;
     for component in &mut components {
         component.name = format!("train_{}", component.name);
     }
-    let mut test = decode_libsvm_impl(test, options, version, compatibility, control)?;
+    let mut test = decode_libsvm_impl(test, options, version, compatibility, None, control)?;
     for component in &mut test {
         component.name = format!("test_{}", component.name);
     }
@@ -701,23 +768,24 @@ fn libsvm_features<'a>(
     fields: impl Iterator<Item = &'a str>,
     feature_count: u64,
     version: u32,
+    index_base: u64,
     compatibility: DecodeOptions,
     column_indices: &mut Vec<u64>,
     values: &mut Vec<f64>,
 ) -> Result<()> {
-    let mut previous = 0;
+    let mut previous = None;
     for field in fields {
         let (index, value) = field
             .split_once(':')
             .ok_or_else(|| decode_error("invalid feature token"))?;
         let index = feature_index(index)?;
-        if index == 0 || index > feature_count {
+        if index < index_base || index - index_base >= feature_count {
             return Err(decode_error("feature index is out of range"));
         }
-        if index == previous {
+        if Some(index) == previous {
             return Err(decode_error("duplicate feature index"));
         }
-        if index < previous {
+        if Some(index) < previous {
             return Err(decode_error("feature indices must be strictly increasing"));
         }
         let value = parse_binary64_with_options(
@@ -730,14 +798,14 @@ fn libsvm_features<'a>(
             },
         )
         .map_err(|e| decode_error(format!("invalid feature value: {e}")))?;
-        previous = index;
+        previous = Some(index);
         if value == 0.0 {
             if version == 1 {
                 return Err(decode_error("stored sparse zero is invalid"));
             }
             continue;
         }
-        column_indices.push(index - 1);
+        column_indices.push(index - index_base);
         values.push(value);
     }
     Ok(())
@@ -807,6 +875,7 @@ pub fn decode_libsvm_multilabel_with_control<R: BufRead>(
             fields,
             options.feature_count,
             2,
+            1,
             DecodeOptions::default(),
             &mut feature_indices,
             &mut values,

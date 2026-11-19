@@ -701,3 +701,76 @@ fn multilabel_targets_use_declared_columns() {
         }
     }
 }
+
+#[test]
+fn ranking_preserves_query_ids_and_normalizes_index_base() {
+    use datamonger_core::{
+        decode_libsvm, decode_svmlight_ranking_with_control, LabelType, LibsvmOptions, Values,
+    };
+    let options = LibsvmOptions {
+        feature_count: 2,
+        label_type: LabelType::Int64,
+        target_name: "relevance".into(),
+    };
+    let zero = b"# metadata\r\n1 qid:9223372036854775807 0:2 1:-0 # comment\r\n0 qid:0";
+    let one = b"1 qid:9223372036854775807 1:2\n0 qid:0";
+    let read = |bytes: &[u8], base| {
+        decode_svmlight_ranking_with_control(bytes, &options, base, &mut || Ok(()))
+    };
+    let output = read(zero, 0).unwrap();
+    assert_eq!(output, read(one, 1).unwrap());
+    assert_eq!(output[2].values, Values::Int64(vec![i64::MAX, 0]));
+    assert!(decode_libsvm(&one[..], &options).is_err());
+    for bytes in [
+        &b"1 0:2"[..],
+        &b"1 qid:2 qid:3"[..],
+        &b"1 qid:-1"[..],
+        &b"1 qid:9223372036854775808"[..],
+        &b"1 qid:2 0:0 0:2"[..],
+        &b"1 qid:2 1:1 0:2"[..],
+        &b"1 qid:2 2:1"[..],
+    ] {
+        assert!(read(bytes, 0).is_err());
+    }
+}
+
+#[test]
+fn ranking_named_splits_match_the_canonical_digest() {
+    let case: serde_json::Value =
+        serde_json::from_str(include_str!("fixtures/conformance/svmlight-ranking.json")).unwrap();
+    let options = LibsvmOptions {
+        feature_count: 2,
+        label_type: LabelType::Int64,
+        target_name: "relevance".into(),
+    };
+    let mut components = Vec::new();
+    for (name, base, bytes) in [
+        (
+            "train",
+            0,
+            &include_bytes!("fixtures/conformance/artifacts/ranking-train.svmlight")[..],
+        ),
+        (
+            "test",
+            1,
+            &include_bytes!("fixtures/conformance/artifacts/ranking-test.svmlight")[..],
+        ),
+    ] {
+        let decoded = datamonger_core::decode_svmlight_ranking_with_control(
+            bytes,
+            &options,
+            base,
+            &mut || Ok(()),
+        )
+        .unwrap();
+        components.extend(decoded.into_iter().map(|mut component| {
+            component.name = format!("{name}/{}", component.name);
+            component
+        }));
+    }
+    let actual = canonical_sha256(&components).unwrap();
+    let expected = case["manifest"]["representation"]["expect"]["verification"][0]["digest"]
+        .as_str()
+        .unwrap();
+    assert_eq!(hex(&actual), expected);
+}
