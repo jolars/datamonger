@@ -40,3 +40,7 @@ of citation records with optional \code{role}, \code{note}, and
 \code{recommended} fields preserved.
 }
 \seealso{\code{\link{data_info}}, \code{\link{fetch_data}}}
+\examples{
+cat(cite_data("uci:iris", registry = active_registry(tempdir()),
+              cache_dir = tempfile("datamonger-cache-"), offline = TRUE))
+}

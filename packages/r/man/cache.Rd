@@ -24,3 +24,10 @@ manual, and active objects are skipped.
 \value{\code{datamonger_cache_dir()} returns a path without creating it.
 \code{cache_info()} returns a cache inventory. \code{cache_clean()} reports
 removed and skipped objects and the number of bytes removed.}
+\examples{
+cache <- datamonger_cache_dir(tempfile("datamonger-cache-"))
+dir.create(cache)
+cache_info(cache_dir = cache)
+cache_clean(cache_dir = cache)
+unlink(cache, recursive = TRUE)
+}

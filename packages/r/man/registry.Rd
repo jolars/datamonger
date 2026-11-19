@@ -33,3 +33,19 @@ digest creates the reproducible selector.
 \value{\code{registry_selector()}, \code{resolve_registry()}, and
 \code{active_registry()} return a \code{datamonger_registry}. The setter
 returns \code{NULL} invisibly.}
+\examples{
+registry <- active_registry(project_dir = tempdir())
+selector <- registry_selector(
+  release = registry$release,
+  index_sha256 = registry$index_sha256,
+  index_url = registry$index_url
+)
+set_registry(selector)
+active_registry()
+set_registry(NULL)
+
+\dontrun{
+# This call contacts the HTTPS release catalog.
+resolve_registry(registry$release)
+}
+}

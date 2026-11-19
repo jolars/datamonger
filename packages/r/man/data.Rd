@@ -66,3 +66,17 @@ their order, string parameters, and evidence references. Missing history is
 \code{NULL}. These records describe the registered artifacts; fetching does
 not apply the transformations.
 }
+\examples{
+cache <- tempfile("datamonger-cache-")
+registry <- active_registry(project_dir = tempdir())
+datasets <- list_data(registry = registry, cache_dir = cache, offline = TRUE)
+length(datasets)
+data_info("uci:iris", registry = registry, cache_dir = cache, offline = TRUE)
+
+\dontrun{
+# These calls may download the dataset.
+path <- fetch_artifact("uci:iris", registry = registry, cache_dir = cache)
+head(fetch_data("uci:iris", registry = registry, cache_dir = cache))
+}
+unlink(cache, recursive = TRUE)
+}
