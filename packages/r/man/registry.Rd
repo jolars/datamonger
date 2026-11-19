@@ -51,7 +51,8 @@ selector <- registry_selector(
 )
 set_registry(selector)
 active_registry()
-set_registry(NULL)
+no_registry <- NULL
+set_registry(no_registry)
 
 \dontrun{
 # This call contacts the HTTPS release catalog.
