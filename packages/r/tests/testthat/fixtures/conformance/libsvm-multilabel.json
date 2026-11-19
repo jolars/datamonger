@@ -1,0 +1,152 @@
+{
+  "id": "multilabel",
+  "manifest": {
+    "schema_version": 6,
+    "source": "conformance",
+    "name": "multilabel",
+    "version": "1",
+    "title": "Multilabel fixture",
+    "description": "Synthetic sparse features and multilabel targets for offline verification.",
+    "modality": "tabular",
+    "provenance": {
+      "provider": "Datamonger conformance corpus",
+      "upstream_name": "multilabel",
+      "landing_page": "https://example.invalid/multilabel",
+      "retrieved_at": "2026-11-19"
+    },
+    "license": {
+      "status": "unknown",
+      "evidence": "Synthetic conformance fixture."
+    },
+    "artifacts": [
+      {
+        "name": "train",
+        "format": "libsvm",
+        "compression": "none",
+        "size": 18,
+        "sha256": "8488f7cb801546a74a66c9c3c4ce85dde4f11f645d1170b69a1532e506e10cf9",
+        "distribution": "upstream-only",
+        "downloads": [
+          {
+            "kind": "upstream",
+            "url": "https://example.invalid/train"
+          }
+        ]
+      },
+      {
+        "name": "test",
+        "format": "libsvm",
+        "compression": "none",
+        "size": 6,
+        "sha256": "9f8a90680b59567af8ac85f2c8d6f46b567d77b55e6c82390fcd3e5cc3e6a157",
+        "distribution": "upstream-only",
+        "downloads": [
+          {
+            "kind": "upstream",
+            "url": "https://example.invalid/test"
+          }
+        ]
+      }
+    ],
+    "representation": {
+      "decoder": "named-splits",
+      "decoder_version": 1,
+      "inputs": {
+        "train": "train",
+        "test": "test"
+      },
+      "options": {
+        "splits": [
+          {
+            "name": "train",
+            "decoder": "libsvm-multilabel",
+            "decoder_version": 1,
+            "options": {
+              "index_base": 1,
+              "feature_count": 3,
+              "duplicate_features": "error",
+              "label_count": 4,
+              "label_index_base": 0,
+              "row_order": "source",
+              "target_name": "response"
+            }
+          },
+          {
+            "name": "test",
+            "decoder": "libsvm-multilabel",
+            "decoder_version": 1,
+            "options": {
+              "index_base": 1,
+              "feature_count": 3,
+              "duplicate_features": "error",
+              "label_count": 4,
+              "label_index_base": 0,
+              "row_order": "source",
+              "target_name": "response"
+            }
+          }
+        ]
+      },
+      "expect": {
+        "components": [
+          {
+            "name": "train/features",
+            "kind": "sparse_matrix",
+            "type": "float64",
+            "rows": 3,
+            "columns": 3
+          },
+          {
+            "name": "train/response",
+            "kind": "sparse_matrix",
+            "type": "float64",
+            "rows": 3,
+            "columns": 4
+          },
+          {
+            "name": "test/features",
+            "kind": "sparse_matrix",
+            "type": "float64",
+            "rows": 1,
+            "columns": 3
+          },
+          {
+            "name": "test/response",
+            "kind": "sparse_matrix",
+            "type": "float64",
+            "rows": 1,
+            "columns": 4
+          }
+        ],
+        "verification": [
+          {
+            "canonical_form": 1,
+            "algorithm": "sha256",
+            "digest": "d74470be1d1456369aa91bc48a47f79c72417c5acabc06da34d7c06f8c76dbfe"
+          }
+        ]
+      }
+    },
+    "tasks": [
+      {
+        "name": "default",
+        "type": "classification",
+        "splits": {
+          "train": {
+            "features": "train/features",
+            "target": "train/response"
+          },
+          "test": {
+            "features": "test/features",
+            "target": "test/response"
+          }
+        }
+      }
+    ]
+  },
+  "artifact_paths": {
+    "train": "artifacts/multilabel-train.libsvm",
+    "test": "artifacts/multilabel-test.libsvm"
+  },
+  "expected_hex": "444d43460100040000000e000000747261696e2f6665617475726573020102030000000000000003000000000000000200000000000000000000000000000001000000000000000200000000000000020000000000000002000000000000000100000000000000000000000000004000000000000010400e000000747261696e2f726573706f6e73650201020300000000000000040000000000000003000000000000000000000000000000020000000000000002000000000000000300000000000000000000000000000002000000000000000100000000000000000000000000f03f000000000000f03f000000000000f03f0d000000746573742f6665617475726573020102010000000000000003000000000000000100000000000000000000000000000001000000000000000000000000000000000000000000f03f0d000000746573742f726573706f6e7365020102010000000000000004000000000000000100000000000000000000000000000001000000000000000200000000000000000000000000f03f"
+}

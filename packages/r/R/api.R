@@ -404,7 +404,7 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
   decoder <- representation$decoder
 
   if (identical(decoder, "named-splits")) {
-    if (!(dataset$schema_version %in% c(4L, 5L))) {
+    if (!(dataset$schema_version %in% c(4L, 5L, 6L))) {
       .abort_category(
         "unsupported-decoder",
         "named-splits requires manifest schema 4"
@@ -433,7 +433,7 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
   if (
     !(identical(representation$decoder_version, 1L) ||
       identical(representation$decoder_version, 2L)) ||
-      !(decoder %in% c("delimited-text", "libsvm", "libsvm-split"))
+      !(decoder %in% c("delimited-text", "libsvm", "libsvm-split", "libsvm-multilabel"))
   ) {
     .abort_category(
       "unsupported-decoder",
@@ -443,11 +443,11 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
 
   if (
     identical(representation$decoder_version, 2L) &&
-      !identical(dataset$schema_version, 5L)
+      !(dataset$schema_version %in% c(5L, 6L))
   ) {
     .abort_category(
       "unsupported-decoder",
-      "decoder version 2 requires manifest schema 5"
+      "decoder version 2 requires manifest schema 5 or 6"
     )
   }
 
@@ -460,6 +460,15 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
       "unsupported-decoder",
       "LIBSVM v2 requires the updated native core"
     )
+  }
+
+  if (identical(decoder, "libsvm-multilabel")) {
+    if (!identical(representation$decoder_version, 1L) || !identical(dataset$schema_version, 6L)) {
+      .abort_category("unsupported-decoder", "multilabel LIBSVM version 1 requires manifest schema 6")
+    }
+    if (!dm_supports_libsvm_multilabel()) {
+      .abort_category("unsupported-decoder", "multilabel LIBSVM requires an updated native core")
+    }
   }
 
   roles <- if (identical(decoder, "libsvm-split")) {
@@ -541,7 +550,8 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
 #' @param return_info Whether to return reproducibility metadata with the data.
 #' @return
 #' An R data frame, `datamonger_sparse_dataset`, or
-#' `datamonger_sparse_dataset_split`, or a provider-named
+#' `datamonger_sparse_dataset_split`, a `datamonger_multilabel_sparse_dataset`,
+#' or a provider-named
 #' `datamonger_dataset_splits` list. With `return_info = TRUE`, returns a
 #' `datamonger_fetch_result` containing `data` and `info`.
 #' @export

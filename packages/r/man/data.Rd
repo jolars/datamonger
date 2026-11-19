@@ -51,6 +51,10 @@ Named splits use manifest schema 4. Access them with
 feature-only test table has no response column. Split names and row membership
 are preserved exactly.
 
+Multilabel results have sparse \code{features} and \code{response} matrices and
+a \code{label_index_base}. Source label \code{k} maps to column
+\code{k - label_index_base + 1}.
+
 Metadata records expose \code{preprocessing} when recorded in a version 3
 registry. Upstream processing and Datamonger preparation have separate stages,
 with status \code{unknown}, \code{none}, or \code{documented}. Known steps retain

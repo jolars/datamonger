@@ -367,6 +367,20 @@ fn dm_decode(
                 &mut control,
             )?,
             #[cfg(local_core_v2)]
+            "libsvm-multilabel" => {
+                let options = core::LibsvmMultilabelOptions {
+                    feature_count: dimension(&options, "feature_count")?,
+                    label_count: dimension(&options, "label_count")?,
+                    label_index_base: dimension(&options, "label_index_base")?,
+                    target_name: string(&field(&options, "target_name")?)?,
+                };
+                core::decode_libsvm_multilabel_with_control(
+                    reader(&paths[0], &compressions[0])?,
+                    &options,
+                    &mut control,
+                )?
+            }
+            #[cfg(local_core_v2)]
             "libsvm-v2" => core::decode_libsvm_version_with_control(
                 reader(&paths[0], &compressions[0])?,
                 &libsvm_options(&options)?,
@@ -455,10 +469,17 @@ fn dm_supports_libsvm_v2() -> bool {
     cfg!(local_core_v2)
 }
 
+/// Report whether this build includes the multilabel decoder.
+#[extendr]
+fn dm_supports_libsvm_multilabel() -> bool {
+    cfg!(local_core_v2)
+}
+
 extendr_module! {
     mod datamonger;
     fn dm_decode;
     fn dm_supports_libsvm_v2;
+    fn dm_supports_libsvm_multilabel;
     fn dm_canonical;
     fn dm_http_gzip;
     fn dm_parse_binary64;

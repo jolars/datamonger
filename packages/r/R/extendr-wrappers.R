@@ -11,6 +11,9 @@ dm_decode <- function(decoder, paths, compressions, options, hash) .Call(wrap__d
 #' Report whether this build includes the updated core decoder API.
 dm_supports_libsvm_v2 <- function() .Call(wrap__dm_supports_libsvm_v2)
 
+#' Report whether this build includes the multilabel decoder.
+dm_supports_libsvm_multilabel <- function() .Call(wrap__dm_supports_libsvm_multilabel)
+
 #' Encode or hash supplied logical components for conformance and diagnostics.
 dm_canonical <- function(components, hash) .Call(wrap__dm_canonical, components, hash)
 

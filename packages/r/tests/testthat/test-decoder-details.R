@@ -200,3 +200,18 @@ test_that("LIBSVM v2 capability is checked before artifact retrieval", {
     expect_error(validate(dataset), "updated native core", class = "datamonger_unsupported_decoder")
   }
 })
+
+
+test_that("multilabel LIBSVM uses declared indicator columns", {
+  skip_if(!dm_internal("dm_supports_libsvm_multilabel")(), "Requires the updated core.")
+  recipe <- conformance_recipe(3)
+  recipe$label_type <- NULL
+  recipe$label_count <- 4L
+  recipe$label_index_base <- 0L
+  decoded <- dm_internal(".decode_libsvm_multilabel")(
+    write_text("2,0 1:0 3:2\n 2:4\n1"), recipe, "none", FALSE
+  )
+  expect_s3_class(decoded$data, "datamonger_multilabel_sparse_dataset")
+  expect_identical(decoded$data$label_index_base, 0L)
+  expect_equal(as.matrix(decoded$data$response), rbind(c(1, 0, 1, 0), rep(0, 4), c(0, 1, 0, 0)))
+})

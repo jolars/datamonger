@@ -13,7 +13,7 @@ seed_split_case <- function(case, cache_dir, compression = "none") {
     writeBin(contents, file.path(directory, artifact$sha256))
     dataset$artifacts[[i]] <- artifact
   }
-  index <- list(schema_version = 4L, release = "named-splits-test", datasets = list(dataset), defaults = list())
+  index <- list(schema_version = dataset$schema_version, release = "named-splits-test", datasets = list(dataset), defaults = list())
   reseal_index(index, cache_dir)
 }
 
@@ -87,4 +87,17 @@ test_that("named split verification detects reassigned membership and order", {
     expect_error(fetch_data("conformance:three-provider-splits@1", registry = registry,
       cache_dir = cache_dir, offline = TRUE), class = "datamonger_decoded_integrity")
   }
+})
+
+test_that("multilabel public fetch verifies both splits", {
+  skip_if(!dm_internal("dm_supports_libsvm_multilabel")(), "Requires the updated core.")
+  case <- read_fixture_json("conformance", "libsvm-multilabel.json")
+  cache_dir <- tempfile("datamonger-multilabel-")
+  registry <- seed_split_case(case, cache_dir, "bzip2")
+  result <- fetch_data("conformance:multilabel@1", registry = registry,
+    cache_dir = cache_dir, offline = TRUE, return_info = TRUE)
+  expect_identical(names(result$data), c("train", "test"))
+  expect_equal(as.matrix(result$data$test$response), matrix(c(0, 0, 1, 0), nrow = 1L))
+  expect_identical(result$info$canonical_digest,
+    case$manifest$representation$expect$verification[[1]]$digest)
 })
