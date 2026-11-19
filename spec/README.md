@@ -43,3 +43,6 @@ version 5 and accepts semicolon-delimited CSV.
 
 [Multilabel LIBSVM version 1](decoders/libsvm-multilabel-v1.md) uses manifest
 and index schema 6 and represents targets as sparse class indicators.
+
+[SVMLight ranking version 1](decoders/svmlight-ranking-v1.md) uses manifest
+and index schema 7 and preserves query IDs alongside relevance and features.
