@@ -30,6 +30,18 @@ struct _NativeLibsvmOptions
     label_type::UInt32
     target_name::_NativeBytes
 end
+struct _NativeLibsvmMultilabelOptions
+    feature_count::UInt64
+    label_count::UInt64
+    label_index_base::UInt64
+    target_name::_NativeBytes
+end
+
+function _supports_libsvm_multilabel()
+    _native_symbol(:dm_abi_version)
+    return Libdl.dlsym_e(_NATIVE_LIBRARY[], :dm_decode_libsvm_multilabel) != C_NULL
+end
+
 struct _NativeArtifact
     path::_NativeBytes
     compression::UInt32

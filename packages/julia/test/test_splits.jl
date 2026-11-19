@@ -12,7 +12,7 @@ function seed_split_case(case, cache_dir, compression="none")
         artifact["sha256"] = bytes2hex(sha256(bytes))
         write(joinpath(directory, artifact["sha256"]), bytes)
     end
-    index = Dict("schema_version" => 4, "release" => "named-splits-test",
+    index = Dict("schema_version" => dataset["schema_version"], "release" => "named-splits-test",
                  "datasets" => [dataset], "defaults" => Any[])
     return reseal_index(index, cache_dir)
 end
@@ -83,5 +83,16 @@ end
         registry = seed_split_case(case, cache_dir)
         @test_throws DecodedIntegrityError fetch_data("conformance:three-provider-splits@1";
             registry, cache_dir, offline=true)
+    end
+end
+
+@testset "Multilabel public fetch" begin
+    case = read_json("conformance", "libsvm-multilabel.json")
+    mktempdir() do cache_dir
+        registry = seed_split_case(case, cache_dir, "bzip2")
+        result = fetch_data("conformance:multilabel@1"; registry, cache_dir, offline=true, return_info=true)
+        @test collect(keys(result.data)) == ["train", "test"]
+        @test Matrix(result.data["test"].response) == [0 0 1 0]
+        @test result.info.canonical_digest == bytes2hex(sha256(hex2bytes(case["expected_hex"])))
     end
 end

@@ -90,8 +90,8 @@ function decode_delimited(path, options::AbstractDict; compression="none")
     end
 end
 
-function _sparse_dataset(features, response)
-    matrix = if features.columns <= 10_000_000
+function _sparse_matrix(features)
+    return if features.columns <= 10_000_000
         rows = Int[]
         for row in 1:features.rows
             append!(rows, fill(row, features.row_offsets[row + 1] - features.row_offsets[row]))
@@ -101,8 +101,9 @@ function _sparse_dataset(features, response)
         CSRMatrix(features.rows, features.columns, features.row_offsets,
                   features.column_indices, features.values)
     end
-    return SparseDataset(matrix, response.values)
 end
+
+_sparse_dataset(features, response) = SparseDataset(_sparse_matrix(features), response.values)
 
 function decode_libsvm(path, options::AbstractDict;
                        compression="none", prefix="", decoder_version=1)
@@ -136,6 +137,34 @@ function decode_libsvm_split(train_path, test_path, options::AbstractDict;
             (_NativeArtifact, _NativeArtifact, _NativeLibsvmOptions), train, test, recipe)
         components = _with_native_result(_native_components, result)
         data = SparseDatasetSplit(_sparse_dataset(components[1:2]...), _sparse_dataset(components[3:4]...))
+        return Decoded(data, components)
+    end
+end
+
+
+function _validate_libsvm_multilabel_options(options)
+    scalar = Dict(k => v for (k, v) in options if k ∉ ("label_count", "label_index_base"))
+    haskey(scalar, "label_type") && throw(UnsupportedDecoderError("invalid multilabel LIBSVM options"))
+    scalar["label_type"] = "int64"
+    feature_count, _, target_name = _validate_libsvm_options(scalar)
+    count = get(options, "label_count", nothing)
+    base = get(options, "label_index_base", nothing)
+    count isa Integer && !(count isa Bool) && 1 <= count <= 9007199254740991 &&
+        base isa Integer && !(base isa Bool) && base in (0, 1) ||
+        throw(UnsupportedDecoderError("invalid multilabel LIBSVM class range"))
+    return feature_count, Int(count), Int(base), target_name
+end
+
+function decode_libsvm_multilabel(path, options; compression="none")
+    features, count, base, target = _validate_libsvm_multilabel_options(options)
+    path = String(path)
+    GC.@preserve path target begin
+        artifact = _native_artifact(path, compression)
+        recipe = _NativeLibsvmMultilabelOptions(features, count, base, _NativeBytes(target))
+        result = ccall(_native_symbol(:dm_decode_libsvm_multilabel), Ptr{Cvoid},
+            (_NativeArtifact, _NativeLibsvmMultilabelOptions), artifact, recipe)
+        components = _with_native_result(_native_components, result)
+        data = MultilabelSparseDataset(_sparse_matrix(components[1]), _sparse_matrix(components[2]), base)
         return Decoded(data, components)
     end
 end

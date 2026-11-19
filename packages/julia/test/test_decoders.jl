@@ -189,3 +189,18 @@ end
     setup = Datamonger._validate_representation(dataset)
     @test setup.children[1].representation["decoder_version"] == 2
 end
+
+
+@testset "Multilabel LIBSVM indicators" begin
+    recipe = Dict{String,Any}("index_base" => 1, "feature_count" => 3,
+        "duplicate_features" => "error", "row_order" => "source",
+        "label_count" => 4, "label_index_base" => 0, "target_name" => "response")
+    mktemp() do path, io
+        write(io, "2,0 1:0 3:2\n 2:4\n1")
+        close(io)
+        data = Datamonger.decode_libsvm_multilabel(path, recipe).data
+        @test data isa MultilabelSparseDataset
+        @test data.label_index_base == 0
+        @test Matrix(data.response) == [1 0 1 0; 0 0 0 0; 0 1 0 0]
+    end
+end

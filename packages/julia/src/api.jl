@@ -216,7 +216,7 @@ function _validate_representation(dataset)
     representation = _require_object(get(dataset, "representation", nothing), "representation")
     decoder = get(representation, "decoder", nothing)
     if decoder == "named-splits"
-        get(dataset, "schema_version", nothing) in (4, 5) ||
+        get(dataset, "schema_version", nothing) in (4, 5, 6) ||
             throw(UnsupportedDecoderError("named-splits requires manifest schema 4"))
         recipes = _split_recipes(representation)
         children = map(recipes) do recipe
@@ -233,12 +233,18 @@ function _validate_representation(dataset)
     end
     decoder_version = get(representation, "decoder_version", nothing)
     decoder_version isa Integer && !(decoder_version isa Bool) && decoder_version in (1, 2) &&
-        decoder in ("delimited-text", "libsvm", "libsvm-split") ||
+        decoder in ("delimited-text", "libsvm", "libsvm-split", "libsvm-multilabel") ||
         throw(UnsupportedDecoderError(
             "Julia supports delimited-text, LIBSVM, and LIBSVM split versions 1 and 2",
         ))
-    decoder_version == 2 && get(dataset, "schema_version", nothing) != 5 &&
-        throw(UnsupportedDecoderError("decoder version 2 requires manifest schema 5"))
+    decoder_version == 2 && !(get(dataset, "schema_version", nothing) in (5, 6)) &&
+        throw(UnsupportedDecoderError("decoder version 2 requires manifest schema 5 or 6"))
+    if decoder == "libsvm-multilabel"
+        decoder_version == 1 && get(dataset, "schema_version", nothing) == 6 ||
+            throw(UnsupportedDecoderError("multilabel LIBSVM version 1 requires manifest schema 6"))
+        _supports_libsvm_multilabel() ||
+            throw(UnsupportedDecoderError("multilabel LIBSVM requires an updated native artifact"))
+    end
     decoder_version == 2 && decoder != "delimited-text" && !_supports_libsvm_v2() &&
         throw(UnsupportedDecoderError("LIBSVM v2 requires an updated native artifact"))
     roles = decoder == "libsvm-split" ? ["train", "test"] : ["data"]

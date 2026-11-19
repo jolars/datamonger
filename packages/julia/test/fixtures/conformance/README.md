@@ -41,3 +41,8 @@ according to `spec/decoders/named-splits-v1.md`.
 small LIBSVM fixture. All four decoders must reproduce the existing fixture's
 canonical-form 1 digest after omitting these entries. Decoder v1 continues to
 reject this input. The version 1 fixture and its digest remain unchanged.
+
+`libsvm-multilabel.json` describes a schema 6 dataset with train and test
+splits, unordered labels, empty label sets, and a class absent from both
+splits. The expected bytes encode the two pairs of hand-specified sparse
+matrices under canonical form 1.
