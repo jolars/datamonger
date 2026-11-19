@@ -164,6 +164,7 @@ fn decode_delimited(
             .collect::<PyResult<_>>()?,
         delimiter: match delimiter {
             "," => b',',
+            ";" => b';',
             "\t" => b'\t',
             _ => return Err(UnsupportedDecoderError::new_err("unsupported delimiter")),
         },

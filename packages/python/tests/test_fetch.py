@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import bz2
+import csv
 import gzip
 import hashlib
+import io
 import json
 import threading
 from collections.abc import Iterator, Mapping
@@ -1240,6 +1242,47 @@ def test_fetch_data_decodes_compressed_delimited_artifact_after_caching(
     assert (tmp_path / "objects" / "sha256" / digest).read_bytes() == compressed
 
 
+@pytest.mark.parametrize("decoder_version", [1, 2])
+def test_fetch_semicolon_delimited_csv(
+    local_server: tuple[str, ServerState], tmp_path: Path, decoder_version: int
+) -> None:
+    base_url, state = local_server
+    make_registry(base_url, state)
+    index = json.loads(state.bodies["/index.json"])
+    index["schema_version"] = 5
+    dataset = index["datasets"][0]
+    dataset["schema_version"] = 5
+    representation = dataset["representation"]
+    representation["decoder_version"] = decoder_version
+    representation["options"]["delimiter"] = ";"
+
+    buffer = io.StringIO(newline="")
+    with FIXTURE.open(encoding="utf-8", newline="") as source:
+        csv.writer(buffer, delimiter=";", quoting=csv.QUOTE_ALL).writerows(
+            csv.reader(source)
+        )
+    raw = buffer.getvalue().encode()
+    state.bodies["/mixed.csv"] = raw
+    dataset["artifacts"][0].update(
+        size=len(raw), sha256=hashlib.sha256(raw).hexdigest()
+    )
+    registry = _reseal_index(base_url, state, index)
+
+    if decoder_version == 1:
+        with pytest.raises(UnsupportedDecoderError, match="format and delimiter"):
+            fetch_data("mixed", source="fixture", registry=registry, cache_dir=tmp_path)
+        assert [path for path, _ in state.requests] == ["/index.json"]
+    else:
+        result = fetch_data(
+            "mixed",
+            source="fixture",
+            registry=registry,
+            cache_dir=tmp_path,
+            return_info=True,
+        )
+        assert result.info.canonical_digest == EXPECTED_DIGEST
+
+
 @pytest.mark.parametrize(
     ("field", "value", "message"),
     [
@@ -1500,16 +1543,20 @@ def test_unsupported_dataset_record_schema_is_rejected(
         )
 
 
+@pytest.mark.parametrize(
+    ("version", "message"),
+    [(2, "requires manifest schema 5"), (3, "versions 1 and 2")],
+)
 def test_unsupported_decoder_version_is_classified_before_artifact_retrieval(
-    local_server: tuple[str, ServerState], tmp_path: Path
+    local_server: tuple[str, ServerState], tmp_path: Path, version: int, message: str
 ) -> None:
     base_url, state = local_server
     make_registry(base_url, state)
     index = json.loads(state.bodies["/index.json"])
-    index["datasets"][0]["representation"]["decoder_version"] = 2
+    index["datasets"][0]["representation"]["decoder_version"] = version
     registry = _reseal_index(base_url, state, index)
 
-    with pytest.raises(UnsupportedDecoderError, match="version 1"):
+    with pytest.raises(UnsupportedDecoderError, match=message):
         fetch_data(
             "mixed",
             source="fixture",

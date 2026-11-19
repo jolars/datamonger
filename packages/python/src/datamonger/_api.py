@@ -521,8 +521,7 @@ def _prepare_representation(
     decoder_version = representation.get("decoder_version")
     if (
         type(decoder_version) is not int
-        or decoder_version
-        not in ((1, 2) if decoder in {"libsvm", "libsvm-split"} else (1,))
+        or decoder_version not in (1, 2)
         or decoder
         not in {
             "delimited-text",
@@ -531,12 +530,12 @@ def _prepare_representation(
         }
     ):
         raise UnsupportedDecoderError(
-            "the Python client supports delimited-text version 1 and "
-            "LIBSVM and LIBSVM split versions 1 and 2"
+            "the Python client supports delimited-text, LIBSVM, and "
+            "LIBSVM split versions 1 and 2"
         )
 
     if decoder_version == 2 and dataset.get("schema_version") != 5:
-        raise UnsupportedDecoderError("LIBSVM v2 requires manifest schema 5")
+        raise UnsupportedDecoderError("decoder version 2 requires manifest schema 5")
 
     roles = ("train", "test") if decoder == "libsvm-split" else ("data",)
     artifacts = _artifacts_for_representation(dataset, representation, roles)
@@ -550,8 +549,10 @@ def _prepare_representation(
             raise UnsupportedDecoderError(
                 "delimited-text requires a CSV or TSV artifact"
             )
-        expected_delimiter = "," if artifact_format == "csv" else "\t"
-        if options.get("delimiter") != expected_delimiter:
+        delimiters: tuple[str, ...] = (",",) if artifact_format == "csv" else ("\t",)
+        if artifact_format == "csv" and decoder_version == 2:
+            delimiters = (",", ";")
+        if options.get("delimiter") not in delimiters:
             raise UnsupportedDecoderError("artifact format and delimiter disagree")
         if not isinstance(compression, str) or compression not in {
             "none",

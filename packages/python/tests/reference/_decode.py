@@ -1,4 +1,4 @@
-"""Delimited-text version 1 decoding."""
+"""Delimited-text decoding."""
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ _INT64_MIN = -(2**63)
 _INT64_MAX = 2**63 - 1
 _QUOTE = '"'
 _SUPPORTED_COMPRESSIONS = {"none", "gzip", "bzip2"}
-_SUPPORTED_DELIMITERS = {",", "\t"}
+_SUPPORTED_DELIMITERS = {",", ";", "\t"}
 _SUPPORTED_OPTIONS = {
     "encoding",
     "delimiter",
@@ -268,7 +268,7 @@ def decode_delimited_text(
     *,
     compression: str = "none",
 ) -> DecodedTable:
-    """Decode a delimited-text version 1 representation."""
+    """Decode a delimited-text representation."""
 
     columns, missing_values, delimiter = _validate_options(options)
     values = [_accumulator(logical_type) for _, logical_type in columns]

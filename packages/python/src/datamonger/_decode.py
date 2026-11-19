@@ -1,4 +1,4 @@
-"""Delimited-text version 1 decoding through datamonger-core."""
+"""Delimited-text decoding through datamonger-core."""
 
 from __future__ import annotations
 
@@ -45,7 +45,7 @@ def decode_delimited_text(
     *,
     compression: str = "none",
 ) -> DecodedTable:
-    """Decode a delimited-text version 1 representation."""
+    """Decode a delimited-text representation."""
 
     columns, missing_values, delimiter = delimited_options(options)
     components = cast(

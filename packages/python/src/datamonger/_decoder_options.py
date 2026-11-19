@@ -12,7 +12,7 @@ from datamonger._validate import require_array
 LabelType = Literal["float64", "int64"]
 
 _QUOTE = '"'
-_SUPPORTED_DELIMITERS = {",", "\t"}
+_SUPPORTED_DELIMITERS = {",", ";", "\t"}
 _SUPPORTED_OPTIONS = {
     "encoding",
     "delimiter",
