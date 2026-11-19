@@ -232,14 +232,14 @@ function _validate_representation(dataset)
                 children=children, artifacts=vcat([child.artifacts for child in children]...))
     end
     decoder_version = get(representation, "decoder_version", nothing)
-    decoder_version isa Integer && !(decoder_version isa Bool) && decoder_version in (decoder in ("libsvm", "libsvm-split") ? (1, 2) : (1,)) &&
+    decoder_version isa Integer && !(decoder_version isa Bool) && decoder_version in (1, 2) &&
         decoder in ("delimited-text", "libsvm", "libsvm-split") ||
         throw(UnsupportedDecoderError(
-            "Julia supports delimited-text version 1 and LIBSVM and LIBSVM split versions 1 and 2",
+            "Julia supports delimited-text, LIBSVM, and LIBSVM split versions 1 and 2",
         ))
     decoder_version == 2 && get(dataset, "schema_version", nothing) != 5 &&
-        throw(UnsupportedDecoderError("LIBSVM v2 requires manifest schema 5"))
-    decoder_version == 2 && !_supports_libsvm_v2() &&
+        throw(UnsupportedDecoderError("decoder version 2 requires manifest schema 5"))
+    decoder_version == 2 && decoder != "delimited-text" && !_supports_libsvm_v2() &&
         throw(UnsupportedDecoderError("LIBSVM v2 requires an updated native artifact"))
     roles = decoder == "libsvm-split" ? ["train", "test"] : ["data"]
     artifacts = _representation_artifacts(dataset, representation, roles)
@@ -256,8 +256,8 @@ function _validate_representation(dataset)
     if decoder == "delimited-text"
         only(formats) in ("csv", "tsv") ||
             throw(UnsupportedDecoderError("delimited-text requires CSV or TSV"))
-        expected_delimiter = only(formats) == "csv" ? "," : "\t"
-        get(options, "delimiter", nothing) == expected_delimiter ||
+        delimiters = only(formats) == "csv" ? (decoder_version == 2 ? (",", ";") : (",",)) : ("\t",)
+        get(options, "delimiter", nothing) in delimiters ||
             throw(UnsupportedDecoderError("artifact format and delimiter disagree"))
     else
         all(format -> format in ("libsvm", "svmlight"), formats) ||

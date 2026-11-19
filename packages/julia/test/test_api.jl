@@ -146,7 +146,7 @@ end
     )
 
     index = deepcopy(seeded.index)
-    index["datasets"][1]["representation"]["decoder_version"] = 2
+    index["datasets"][1]["representation"]["decoder_version"] = 3
     unsupported_decoder = reseal_index(index, cache_dir)
     @test_throws UnsupportedDecoderError fetch_data(
         "mixed_csv";

@@ -9,7 +9,7 @@ function _validate_delimited_options(options::AbstractDict)
         options["row_order"] == "source" ||
         throw(UnsupportedDecoderError("unsupported delimited-text options"))
     delimiter_string = options["delimiter"]
-    delimiter_string in (",", "\t") ||
+    delimiter_string in (",", ";", "\t") ||
         throw(UnsupportedDecoderError("unsupported delimiter"))
     columns = options["columns"]
     columns isa AbstractVector && !isempty(columns) ||
@@ -35,7 +35,7 @@ function _validate_delimited_options(options::AbstractDict)
         throw(UnsupportedDecoderError("missing_values must be an array of strings"))
     length(unique(missing_values)) == length(missing_values) ||
         throw(UnsupportedDecoderError("missing values must be unique"))
-    return (UInt8(delimiter_string == "," ? ',' : '\t'), names, types, Set(String.(missing_values)))
+    return (only(codeunits(delimiter_string)), names, types, Set(String.(missing_values)))
 end
 
 function _validate_libsvm_options(options::AbstractDict)

@@ -17,7 +17,7 @@ function _split_recipes(representation)
         name isa String && !isempty(name) && !(name in names) ||
             fail("split names must be nonempty and unique")
         push!(names, name)
-        typeof(split["decoder_version"]) === Int && split["decoder_version"] in (split["decoder"] == "libsvm" ? (1, 2) : (1,)) && split["decoder"] in ("delimited-text", "libsvm") &&
+        typeof(split["decoder_version"]) === Int && split["decoder_version"] in (1, 2) && split["decoder"] in ("delimited-text", "libsvm") &&
             split["options"] isa AbstractDict || fail("unsupported split decoder recipe")
     end
     inputs = get(representation, "inputs", nothing)
