@@ -83,6 +83,14 @@ pub struct DmLibsvmOptions {
 }
 #[repr(C)]
 #[derive(Clone, Copy)]
+pub struct DmLibsvmMultilabelOptions {
+    pub feature_count: u64,
+    pub label_count: u64,
+    pub label_index_base: u64,
+    pub target_name: DmBytes,
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
 pub struct DmArtifact {
     pub path: DmBytes,
     pub compression: u32,
@@ -383,6 +391,27 @@ pub unsafe extern "C" fn dm_decode_libsvm_split_v2(
             2,
             JULIA_NUMBERS,
         )?))
+    })
+}
+#[no_mangle]
+pub unsafe extern "C" fn dm_decode_libsvm_multilabel(
+    artifact: DmArtifact,
+    options: DmLibsvmMultilabelOptions,
+) -> *mut DmResult {
+    boundary(|| {
+        let options = datamonger_core::LibsvmMultilabelOptions {
+            feature_count: options.feature_count,
+            label_count: options.label_count,
+            label_index_base: options.label_index_base,
+            target_name: unsafe { text(options.target_name, ErrorKind::UnsupportedDecoder)? },
+        };
+        Ok(DmResult::new(
+            datamonger_core::decode_libsvm_multilabel_with_control(
+                unsafe { reader(artifact)? },
+                &options,
+                &mut || Ok(()),
+            )?,
+        ))
     })
 }
 unsafe fn component(view: &DmComponent) -> Result<Component> {

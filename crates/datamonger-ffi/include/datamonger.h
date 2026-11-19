@@ -34,6 +34,12 @@ typedef struct {
     uint32_t label_type;
     DmBytes target_name;
 } DmLibsvmOptions;
+typedef struct {
+    uint64_t feature_count;
+    uint64_t label_count;
+    uint64_t label_index_base;
+    DmBytes target_name;
+} DmLibsvmMultilabelOptions;
 /* Compression: 0=none, 1=gzip, 2=bzip2. Paths are UTF-8 on all platforms. */
 typedef struct { DmBytes path; uint32_t compression; } DmArtifact;
 typedef struct {
@@ -57,6 +63,7 @@ DM_API DmResult *dm_decode_libsvm_split(DmArtifact train, DmArtifact test, DmLib
 /* Version 2 omits feature values that round to zero. */
 DM_API DmResult *dm_decode_libsvm_v2(DmArtifact, DmLibsvmOptions, DmBytes prefix);
 DM_API DmResult *dm_decode_libsvm_split_v2(DmArtifact train, DmArtifact test, DmLibsvmOptions);
+DM_API DmResult *dm_decode_libsvm_multilabel(DmArtifact, DmLibsvmMultilabelOptions);
 /* emit_bytes=0 streams the digest without allocating a canonical byte buffer;
  * emit_bytes=1 also returns canonical bytes. Components are copied for the call. */
 DM_API DmResult *dm_canonical(const DmComponent *, size_t count, uint32_t emit_bytes);
