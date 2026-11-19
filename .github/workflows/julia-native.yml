@@ -11,6 +11,9 @@ on:
         required: false
         type: string
         default: ""
+      test-committed-artifacts:
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -179,7 +182,9 @@ jobs:
           unset DM_JULIA_CORE_LIBRARY
           cd "$RUNNER_TEMP"
           julia --project=Datamonger -e 'using Pkg; Pkg.instantiate(); Pkg.test()'
+      # Native releases must publish before the Julia package can pin their artifacts.
       - name: Test committed release artifacts
+        if: inputs.test-committed-artifacts
         run: |
           julia tools/dm_julia_artifacts.jl stage-release packages/julia "$RUNNER_TEMP/DatamongerReleased"
           if [[ -d "$RUNNER_TEMP/DatamongerReleased" ]]; then

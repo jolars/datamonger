@@ -87,6 +87,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       required: ${{ steps.changes.outputs.required }}
+      julia_release_changed: ${{ steps.changes.outputs.julia_release_changed }}
       r_vendor_changed: ${{ steps.changes.outputs.r_vendor_changed }}
     steps:
       - uses: actions/checkout@v7
@@ -103,6 +104,7 @@ jobs:
         run: |
           # New branches and unavailable history need the full distribution checks.
           required=true
+          julia_release_changed=true
           r_vendor_changed=true
           if [[ -n "$BASE_SHA" && "$BASE_SHA" != 0000000000000000000000000000000000000000 ]]; then
             if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
@@ -113,6 +115,9 @@ jobs:
             changed="$RUNNER_TEMP/python-distribution-changes"
             # Include both paths of a move so moving Python files out still runs the builds.
             if git diff --no-renames --name-only -z "$comparison" > "$changed"; then
+              if git diff --quiet "$comparison" -- packages/julia/Artifacts.toml packages/julia/Project.toml; then
+                julia_release_changed=false
+              fi
               if git diff --quiet "$comparison" -- packages/r/src/rust; then
                 r_vendor_changed=false
               fi
@@ -132,8 +137,11 @@ jobs:
             fi
           fi
           echo "Python distribution matrix required: $required"
-          echo "required=$required" >> "$GITHUB_OUTPUT"
-          echo "r_vendor_changed=$r_vendor_changed" >> "$GITHUB_OUTPUT"
+          {
+            echo "required=$required"
+            echo "julia_release_changed=$julia_release_changed"
+            echo "r_vendor_changed=$r_vendor_changed"
+          } >> "$GITHUB_OUTPUT"
 
   python-distributions:
     needs: [ci-policy, python-distribution-changes]
@@ -398,6 +406,8 @@ jobs:
         run: python ../../tools/dm_r_local.py -e 'pkgbuild::compile_dll(".", debug = TRUE, force = TRUE); testthat::test_local(".")'
 
   julia-distributions:
-    needs: ci-policy
-    if: ${{ !cancelled() && needs.ci-policy.outputs.run_checks != 'false' }}
+    needs: [ci-policy, python-distribution-changes]
+    if: ${{ !cancelled() && (needs.ci-policy.outputs.run_checks != 'false' || needs.python-distribution-changes.outputs.julia_release_changed != 'false') }}
     uses: ./.github/workflows/julia-native.yml
+    with:
+      test-committed-artifacts: ${{ needs.python-distribution-changes.outputs.julia_release_changed != 'false' }}
