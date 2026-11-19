@@ -114,6 +114,7 @@ pub fn parse_binary64(value: &str, allow_plus: bool) -> Result<f64> {
     parse_binary64_with_options(value, allow_plus, DecodeOptions::default())
 }
 
+#[inline]
 fn parse_binary64_with_options(
     value: &str,
     allow_plus: bool,
@@ -186,31 +187,80 @@ impl<R: BufRead> Records<R> {
             number: 0,
         }
     }
-    fn next(&mut self) -> Result<Option<&str>> {
+    fn read_next(&mut self) -> Result<bool> {
         self.buffer.clear();
         if self.reader.read_until(b'\n', &mut self.buffer)? == 0 {
-            return Ok(None);
+            return Ok(false);
         }
         self.number += 1;
-        if self.buffer.last() == Some(&b'\n') {
-            self.buffer.pop();
-            if self.buffer.last() == Some(&b'\r') {
-                self.buffer.pop();
+        Ok(true)
+    }
+
+    fn next(&mut self) -> Result<Option<&str>> {
+        if !self.read_next()? {
+            return Ok(None);
+        }
+        record_text::<false>(&self.buffer, self.number).map(|(text, _)| Some(text))
+    }
+
+    fn for_each(&mut self, mut decode: impl FnMut(&str, bool) -> Result<()>) -> Result<()> {
+        loop {
+            let buffer = match self.reader.fill_buf() {
+                Ok([]) => return Ok(()),
+                Ok(buffer) => buffer,
+                Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+                Err(error) => return Err(error.into()),
+            };
+
+            // Borrow complete records and keep a scratch buffer for lines
+            // that cross a buffer boundary.
+            let mut start = 0;
+            for end in memchr::memchr_iter(b'\n', buffer) {
+                self.number += 1;
+                let result = record_text::<true>(&buffer[start..=end], self.number)
+                    .and_then(|(text, quoted)| decode(text, quoted));
+                start = end + 1;
+                if let Err(error) = result {
+                    self.reader.consume(start);
+                    return Err(error);
+                }
+            }
+            let has_partial_record = start < buffer.len();
+            self.reader.consume(start);
+            if has_partial_record && self.read_next()? {
+                let (text, quoted) = record_text::<true>(&self.buffer, self.number)?;
+                decode(text, quoted)?;
             }
         }
-        if self.buffer.contains(&b'\r') {
-            return Err(decode_error(format!(
-                "bare carriage return at record {}",
-                self.number
-            )));
-        }
-        if self.number == 1 && self.buffer.starts_with(&[0xef, 0xbb, 0xbf]) {
-            return Err(decode_error("artifact has a UTF-8 byte-order mark"));
-        }
-        std::str::from_utf8(&self.buffer)
-            .map(Some)
-            .map_err(|_| decode_error(format!("invalid UTF-8 at record {}", self.number)))
     }
+}
+
+#[inline]
+fn record_text<const FIND_QUOTES: bool>(bytes: &[u8], number: usize) -> Result<(&str, bool)> {
+    let record = match bytes.strip_suffix(b"\n") {
+        Some(line) => line.strip_suffix(b"\r").unwrap_or(line),
+        None => bytes,
+    };
+    let (quoted, has_bare_cr) = if FIND_QUOTES {
+        match memchr::memchr2(b'\r', b'"', record) {
+            None => (false, false),
+            Some(index) if record[index] == b'"' => (true, record[index + 1..].contains(&b'\r')),
+            Some(_) => (false, true),
+        }
+    } else {
+        (false, record.contains(&b'\r'))
+    };
+    if has_bare_cr {
+        return Err(decode_error(format!(
+            "bare carriage return at record {number}"
+        )));
+    }
+    if number == 1 && record.starts_with(&[0xef, 0xbb, 0xbf]) {
+        return Err(decode_error("artifact has a UTF-8 byte-order mark"));
+    }
+    std::str::from_utf8(record)
+        .map(|text| (text, quoted))
+        .map_err(|_| decode_error(format!("invalid UTF-8 at record {number}")))
 }
 
 fn fields(record: &str, delimiter: u8, width: usize) -> Result<Vec<Cow<'_, str>>> {
@@ -263,6 +313,7 @@ fn fields(record: &str, delimiter: u8, width: usize) -> Result<Vec<Cow<'_, str>>
     Ok(fields)
 }
 
+#[inline]
 fn push_value(
     values: &mut Values,
     text: &str,
@@ -287,6 +338,41 @@ fn push_value(
                 _ => return Err(decode_error(format!("invalid bool value '{text}'"))),
             }
         }),
+    }
+    Ok(())
+}
+
+#[inline]
+fn decode_delimited_row(
+    components: &mut [Component],
+    mut fields: impl Iterator<Item = impl AsRef<str>>,
+    missing: &HashSet<&str>,
+    compatibility: DecodeOptions,
+    row: usize,
+) -> Result<()> {
+    let width_error = || decode_error("data record has the wrong number of fields");
+    let mut components = components.iter_mut();
+    while let Some(component) = components.next() {
+        let field = fields.next().ok_or_else(width_error)?;
+        let text = field.as_ref();
+        let valid = missing.is_empty() || !missing.contains(text);
+        if let Err(error) = push_value(&mut component.values, text, valid, false, compatibility) {
+            // Report a malformed width before any invalid value in the row.
+            if fields.count() != components.len() {
+                return Err(width_error());
+            }
+            return Err(decode_error(format!(
+                "{error} at row {}, column '{}'",
+                row + 1,
+                component.name
+            )));
+        }
+        if !missing.is_empty() {
+            component.valid.push(valid);
+        }
+    }
+    if fields.next().is_some() {
+        return Err(width_error());
     }
     Ok(())
 }
@@ -365,27 +451,40 @@ fn decode_delimited_impl<R: BufRead>(
         })
         .collect();
     let mut row = 0;
-    while let Some(record) = records.next()? {
-        let values = fields(record, options.delimiter, components.len())?;
-        if values.len() != components.len() {
-            return Err(decode_error("data record has the wrong number of fields"));
-        }
-        for (component, value) in components.iter_mut().zip(values) {
-            let valid = !missing.contains(value.as_ref());
-            push_value(&mut component.values, &value, valid, false, compatibility).map_err(
-                |e| {
-                    decode_error(format!(
-                        "{e} at row {}, column '{}'",
-                        row + 1,
-                        component.name
-                    ))
-                },
+    records.for_each(|record, quoted| {
+        if quoted {
+            let values = fields(record, options.delimiter, components.len())?;
+            decode_delimited_row(
+                &mut components,
+                values.into_iter(),
+                &missing,
+                compatibility,
+                row,
             )?;
-            component.valid.push(valid);
+        } else {
+            // The ASCII delimiter always falls on a UTF-8 character boundary.
+            let mut remaining = Some(record);
+            let values = std::iter::from_fn(|| {
+                let text = remaining.take()?;
+                match memchr::memchr(options.delimiter, text.as_bytes()) {
+                    Some(end) => {
+                        remaining = Some(&text[end + 1..]);
+                        Some(&text[..end])
+                    }
+                    None => Some(text),
+                }
+            });
+            decode_delimited_row(&mut components, values, &missing, compatibility, row)?;
         }
         row += 1;
         if row % 1024 == 0 {
             control.checkpoint()?;
+        }
+        Ok(())
+    })?;
+    if missing.is_empty() {
+        for component in &mut components {
+            component.valid.resize(row, true);
         }
     }
     control.checkpoint()?;

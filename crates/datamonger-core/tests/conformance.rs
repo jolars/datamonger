@@ -267,6 +267,38 @@ fn short_reads_and_compressed_inputs_agree() {
 }
 
 #[test]
+fn delimited_reports_wrong_width_before_invalid_values() {
+    let options = DelimitedOptions {
+        delimiter: b',',
+        columns: ["x", "y"]
+            .map(|name| Column {
+                name: name.into(),
+                data_type: DataType::Int64,
+            })
+            .into(),
+        missing_values: Vec::new(),
+    };
+    for input in [
+        "x,y\ninvalid",
+        "x,y\ninvalid,2,",
+        "x,y\n\"invalid\"",
+        "x,y\n\"invalid\",2,",
+    ] {
+        let error = decode_delimited(input.as_bytes(), &options).unwrap_err();
+        assert!(error
+            .to_string()
+            .contains("data record has the wrong number of fields"));
+    }
+
+    let mut input = &b"x,y\r\n\"1\",2\r3\n4,5\n"[..];
+    let error = decode_delimited(&mut input, &options).unwrap_err();
+    assert!(error
+        .to_string()
+        .contains("bare carriage return at record 2"));
+    assert_eq!(input, b"4,5\n");
+}
+
+#[test]
 fn http_gzip_requires_one_complete_member() {
     let mut encoder = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
     encoder.write_all(b"verified bytes").unwrap();

@@ -260,6 +260,19 @@ hermetic gate.
 
 ## Decoder benchmarks
 
+Run the Criterion CSV comparison from the repository root in the development shell.
+
+```console
+cargo bench --locked -p datamonger-core --bench csv
+```
+
+The benchmark compares Datamonger's decoder with the Rust `csv` crate on
+generated numeric tables of 100,000 × 4 and 10,000 × 40 rows by columns. Both
+readers decode the same in-memory bytes, use Datamonger's float parser, and
+produce matching typed columns with validity bits. Criterion reports elapsed
+time and byte throughput. Input generation and the output comparison happen
+before timing.
+
 Run the LIBSVM benchmarks from the repository root in the development shell.
 Prepare the inputs in a directory outside the working tree. Preparation uses
 the bundled registry and verifies the downloaded artifacts against their
