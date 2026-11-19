@@ -2,7 +2,7 @@
 
 ## Decoders
 
-- [ ] Support comma-separated multilabel targets in LIBSVM files.
+- [x] Support comma-separated multilabel targets in LIBSVM files.
 - [ ] Support the LIBSVM string format used by MNIST.
 - [ ] Support SVMLight ranking files with `qid` fields.
 - [ ] Support Excel workbooks (`.xlsx`) such as UCI's Online Retail dataset.
@@ -119,7 +119,7 @@ Register these catalog entries under the `libsvm` source. See the
 - [ ] `rcv1v2 (topics; full sets)`
 - [ ] `rcv1v2 (industries; full sets)`
 - [ ] `rcv1v2 (regions; full sets)`
-- [ ] `scene-classification`
+- [x] `scene-classification`
 - [ ] `siam-competition2007`
 - [ ] `UNFAIR-ToS (LexGLUE)`
 - [ ] `Wiki10-31K`

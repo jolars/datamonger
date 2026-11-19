@@ -1,0 +1,124 @@
+schema_version: 6
+source: libsvm
+name: scene-classification
+version: '1'
+title: Scene Classification
+description: Numeric image descriptors for multilabel classification of outdoor scenes. The
+  response columns represent LIBSVM label IDs 0 through 5 in order.
+modality: tabular
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multilabel.html#scene-classification
+    - https://doi.org/10.1016/j.patcog.2004.03.009
+    steps:
+    - kind: feature-extraction
+      description: Represent images using color moments computed over image regions.
+  datamonger:
+    status: none
+    evidence:
+    - spec/decoders/libsvm-multilabel-v1.md
+provenance:
+  provider: LIBSVM
+  upstream_name: scene-classification
+  landing_page: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multilabel.html#scene-classification
+  authors:
+  - Matthew R. Boutell
+  - Jiebo Luo
+  - Xipeng Shen
+  - Christopher M. Brown
+  citations:
+  - citation: Boutell et al. (2004). Learning multi-label scene classification. Pattern Recognition
+      37(9), 1757–1771. https://doi.org/10.1016/j.patcog.2004.03.009.
+    role: paper
+  retrieved_at: '2026-11-19'
+license:
+  status: unknown
+  evidence: The LIBSVM catalog lists the files and cites the original paper. The reviewed
+    sources provide no dataset-specific license for the LIBSVM artifacts.
+artifacts:
+- name: train
+  format: libsvm
+  compression: bzip2
+  size: 1471840
+  sha256: 98598c90c08e33fcc2f0604180dc97cdd2f4f42610d0067a2a30905332400510
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multilabel/scene_train.bz2
+- name: test
+  format: libsvm
+  compression: bzip2
+  size: 1454269
+  sha256: 4c2547d554d1a5cde5fd5e6216b385e2d6760f9b325db359603da7343d047a37
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multilabel/scene_test.bz2
+representation:
+  decoder: named-splits
+  decoder_version: 1
+  inputs:
+    train: train
+    test: test
+  options:
+    splits:
+    - name: train
+      decoder: libsvm-multilabel
+      decoder_version: 1
+      options:
+        index_base: 1
+        feature_count: 294
+        duplicate_features: error
+        label_count: 6
+        label_index_base: 0
+        row_order: source
+        target_name: response
+    - name: test
+      decoder: libsvm-multilabel
+      decoder_version: 1
+      options:
+        index_base: 1
+        feature_count: 294
+        duplicate_features: error
+        label_count: 6
+        label_index_base: 0
+        row_order: source
+        target_name: response
+  expect:
+    components:
+    - name: train/features
+      kind: sparse_matrix
+      type: float64
+      rows: 1211
+      columns: 294
+    - name: train/response
+      kind: sparse_matrix
+      type: float64
+      rows: 1211
+      columns: 6
+    - name: test/features
+      kind: sparse_matrix
+      type: float64
+      rows: 1196
+      columns: 294
+    - name: test/response
+      kind: sparse_matrix
+      type: float64
+      rows: 1196
+      columns: 6
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: 2f91993d6140638cffa00a759a549b9d76f696a85931788cf98c3390139fde7d
+tasks:
+- name: default
+  type: classification
+  splits:
+    train:
+      features: train/features
+      target: train/response
+    test:
+      features: test/features
+      target: test/response
