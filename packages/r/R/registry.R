@@ -1,9 +1,9 @@
 .bundled_registry <- .new_registry(
-  release = "1.4.0",
-  index_sha256 = "ef83679266af9fcbb9ea194acdfb9bb6c380b440a574fc2ee7292899c5102909",
+  release = "1.5.0",
+  index_sha256 = "e787cd53fcac962a158762dc43b32fc91a2a17241a2f7167509d5c2fbec62448",
   index_url = paste0(
     "https://github.com/jolars/datamonger/releases/download/",
-    "registry-v1.4.0/index.json"
+    "registry-v1.5.0/index.json"
   )
 )
 .default_catalog_url <- paste0(
