@@ -148,3 +148,21 @@ def libsvm_options(
             "target_name must be nonempty and distinct from 'features'"
         )
     return feature_count, label_type, target_name
+
+
+def libsvm_multilabel_options(
+    options: Mapping[str, object],
+) -> tuple[int, int, int, str]:
+    required = (_LIBSVM_OPTIONS - {"label_type"}) | {"label_count", "label_index_base"}
+    if set(options) != required or type(options["index_base"]) is not int:
+        raise UnsupportedDecoderError("invalid multilabel LIBSVM option fields")
+    label_count = options["label_count"]
+    base = options["label_index_base"]
+    if type(label_count) is not int or not 1 <= label_count <= _MAX_EXACT_JSON_INTEGER:
+        raise UnsupportedDecoderError("invalid label_count")
+    if type(base) is not int or base not in (0, 1):
+        raise UnsupportedDecoderError("invalid label_index_base")
+    scalar_options = {k: v for k, v in options.items() if k in _LIBSVM_OPTIONS}
+    scalar_options["label_type"] = "int64"
+    feature_count, _, target_name = libsvm_options(scalar_options)
+    return feature_count, label_count, base, target_name

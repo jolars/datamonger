@@ -11,6 +11,7 @@ from datamonger import (
     DatasetData,
     DatasetSplits,
     FetchResult,
+    MultilabelSparseDataset,
     Registry,
     SparseDataset,
     SparseDatasetSplit,
@@ -68,7 +69,9 @@ def check_metadata_return_types(registry: Registry) -> None:
 
 
 def check_named_split_structure(data: DatasetSplits) -> None:
-    assert_type(data["validation"], pd.DataFrame | SparseDataset)
+    assert_type(
+        data["validation"], pd.DataFrame | SparseDataset | MultilabelSparseDataset
+    )
 
 
 def check_citation_return_types(registry: Registry) -> None:

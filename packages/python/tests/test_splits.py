@@ -214,3 +214,68 @@ def test_named_splits_can_select_libsvm_v2(tmp_path: Path) -> None:
         result.info.canonical_digest
         == case["manifest"]["representation"]["expect"]["verification"][0]["digest"]
     )
+
+
+def test_multilabel_public_fetch(tmp_path: Path) -> None:
+    from datamonger import MultilabelSparseDataset
+
+    case = json.loads((CORPUS / "libsvm-multilabel.json").read_bytes())
+    dm_index.validate_manifest(case["manifest"])
+    registry = seed(case, tmp_path, "bzip2")
+    result = fetch_data(
+        "conformance:multilabel@1",
+        registry=registry,
+        cache_dir=tmp_path,
+        offline=True,
+        return_info=True,
+    )
+    assert isinstance(result.data, DatasetSplits)
+    train = result.data["train"]
+    assert isinstance(train, MultilabelSparseDataset)
+    assert train.label_index_base == 0
+    assert train.response.toarray().tolist() == [
+        [1, 0, 1, 0],
+        [0, 0, 0, 0],
+        [0, 1, 0, 0],
+    ]
+    assert (
+        result.info.canonical_digest
+        == hashlib.sha256(bytes.fromhex(case["expected_hex"])).hexdigest()
+    )
+
+    case["manifest"]["representation"]["expect"]["verification"][0]["digest"] = "0" * 64
+    registry = seed(case, tmp_path)
+    with pytest.raises(DecodedIntegrityError):
+        fetch_data(
+            "conformance:multilabel@1",
+            registry=registry,
+            cache_dir=tmp_path,
+            offline=True,
+        )
+
+
+def test_multilabel_single_artifact(tmp_path: Path) -> None:
+    from datamonger import MultilabelSparseDataset
+
+    case = json.loads((CORPUS / "libsvm-multilabel.json").read_bytes())
+    manifest = case["manifest"]
+    assembled = manifest["representation"]
+    options = assembled["options"]["splits"][0]["options"]
+    manifest["representation"] = {
+        "decoder": "libsvm-multilabel",
+        "decoder_version": 1,
+        "inputs": {"data": "train"},
+        "options": options,
+    }
+    manifest["artifacts"] = manifest["artifacts"][:1]
+    registry = seed(case, tmp_path)
+    data = fetch_data(
+        "conformance:multilabel@1",
+        registry=registry,
+        cache_dir=tmp_path,
+        offline=True,
+        verify_decoded=False,
+    )
+    assert isinstance(data, MultilabelSparseDataset)
+    assert data.response.shape == (3, 4)
+    assert data.response.nnz == 3

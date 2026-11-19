@@ -9,12 +9,14 @@ from typing import cast
 from scipy import sparse
 
 from datamonger import _native
-from datamonger._decoder_options import libsvm_options
+from datamonger._decoder_options import libsvm_multilabel_options, libsvm_options
 from datamonger._models import (
+    DecodedMultilabelSparseDataset,
     DecodedSparseDataset,
     DecodedSparseDatasetSplit,
     LogicalComponent,
     LogicalSparseMatrix,
+    MultilabelSparseDataset,
     Pathish,
     ResponseArray,
     SparseDataset,
@@ -46,11 +48,14 @@ def decode_libsvm(
 def _sparse_dataset(
     matrix: LogicalSparseMatrix, response: LogicalComponent
 ) -> SparseDataset:
-    features = sparse.csr_matrix(
+    return SparseDataset(_csr(matrix), cast(ResponseArray, response.values))
+
+
+def _csr(matrix: LogicalSparseMatrix) -> sparse.csr_matrix:
+    return sparse.csr_matrix(
         (matrix.values, matrix.column_indices, matrix.row_offsets),
         shape=(matrix.rows, matrix.columns),
     )
-    return SparseDataset(features, cast(ResponseArray, response.values))
 
 
 def decode_libsvm_split(
@@ -85,4 +90,21 @@ def decode_libsvm_split(
         ),
         components=split,
         canonical_digest=digest,
+    )
+
+
+def decode_libsvm_multilabel(
+    path: Pathish,
+    options: Mapping[str, object],
+    *,
+    compression: str = "none",
+    compute_digest: bool = False,
+) -> DecodedMultilabelSparseDataset:
+    recipe = libsvm_multilabel_options(options)
+    components, digest = _native.decode_libsvm_multilabel(
+        Path(path), compression, recipe, compute_digest
+    )
+    pair = cast(tuple[LogicalSparseMatrix, LogicalSparseMatrix], tuple(components))
+    return DecodedMultilabelSparseDataset(
+        MultilabelSparseDataset(_csr(pair[0]), _csr(pair[1]), recipe[2]), pair, digest
     )

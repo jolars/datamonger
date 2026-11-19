@@ -15,7 +15,11 @@ from datamonger._cache import (
 from datamonger._canonical import canonical_sha256
 from datamonger._citations import citation_metadata, citation_text, select_citations
 from datamonger._decode import decode_delimited_text
-from datamonger._decode_libsvm import decode_libsvm, decode_libsvm_split
+from datamonger._decode_libsvm import (
+    decode_libsvm,
+    decode_libsvm_multilabel,
+    decode_libsvm_split,
+)
 from datamonger._errors import (
     ArtifactIntegrityError,
     ArtifactSelectionError,
@@ -30,6 +34,7 @@ from datamonger._errors import (
 from datamonger._models import (
     DataInfo,
     DatasetData,
+    DecodedMultilabelSparseDataset,
     DecodedSparseDataset,
     DecodedSparseDatasetSplit,
     DecodedSplits,
@@ -527,6 +532,7 @@ def _prepare_representation(
             "delimited-text",
             "libsvm",
             "libsvm-split",
+            "libsvm-multilabel",
         }
     ):
         raise UnsupportedDecoderError(
@@ -534,8 +540,17 @@ def _prepare_representation(
             "LIBSVM split versions 1 and 2"
         )
 
-    if decoder_version == 2 and dataset.get("schema_version") != 5:
-        raise UnsupportedDecoderError("decoder version 2 requires manifest schema 5")
+    if decoder_version == 2 and dataset.get("schema_version") not in (5, 6):
+        raise UnsupportedDecoderError(
+            "decoder version 2 requires manifest schema 5 or 6"
+        )
+
+    if decoder == "libsvm-multilabel" and (
+        decoder_version != 1 or dataset.get("schema_version") != 6
+    ):
+        raise UnsupportedDecoderError(
+            "multilabel LIBSVM version 1 requires manifest schema 6"
+        )
 
     roles = ("train", "test") if decoder == "libsvm-split" else ("data",)
     artifacts = _artifacts_for_representation(dataset, representation, roles)
@@ -576,9 +591,21 @@ def _decode_leaf(
     decoder_version: int = 1,
     *,
     compute_digest: bool = False,
-) -> DecodedTable | DecodedSparseDataset | DecodedSparseDatasetSplit:
+) -> (
+    DecodedTable
+    | DecodedSparseDataset
+    | DecodedSparseDatasetSplit
+    | DecodedMultilabelSparseDataset
+):
     if decoder == "delimited-text":
         return decode_delimited_text(paths[0], options, compression=compressions[0])
+    if decoder == "libsvm-multilabel":
+        return decode_libsvm_multilabel(
+            paths[0],
+            options,
+            compression=compressions[0],
+            compute_digest=compute_digest,
+        )
     if decoder == "libsvm":
         return decode_libsvm(
             paths[0],
@@ -675,7 +702,7 @@ def fetch_data(
     representation = _object(dataset.get("representation"), "dataset.representation")
     recipes: tuple[Mapping[str, Any], ...] = ()
     if representation.get("decoder") == "named-splits":
-        if dataset.get("schema_version") not in (4, 5):
+        if dataset.get("schema_version") not in (4, 5, 6):
             raise UnsupportedDecoderError("named-splits requires manifest schema 4")
         recipes = split_recipes(representation)
         inputs = _object(representation.get("inputs"), "representation.inputs")
@@ -721,13 +748,21 @@ def fetch_data(
         decoded: (
             DecodedTable
             | DecodedSparseDataset
+            | DecodedMultilabelSparseDataset
             | DecodedSparseDatasetSplit
             | DecodedSplits
         )
         if recipes:
             single_children = []
             for child in children:
-                assert isinstance(child, (DecodedTable, DecodedSparseDataset))
+                assert isinstance(
+                    child,
+                    (
+                        DecodedTable,
+                        DecodedSparseDataset,
+                        DecodedMultilabelSparseDataset,
+                    ),
+                )
                 single_children.append(child)
             decoded = assemble_splits(recipes, single_children)
         else:
@@ -744,7 +779,14 @@ def fetch_data(
         record = _verification_record(index, dataset, expect)
         canonical_form = _integer(record.get("canonical_form"), "canonical form")
         expected_digest = _string(record.get("digest"), "canonical digest")
-        if isinstance(decoded, (DecodedSparseDataset, DecodedSparseDatasetSplit)):
+        if isinstance(
+            decoded,
+            (
+                DecodedSparseDataset,
+                DecodedSparseDatasetSplit,
+                DecodedMultilabelSparseDataset,
+            ),
+        ):
             canonical_digest = decoded.canonical_digest
         if canonical_digest is None:
             canonical_digest = canonical_sha256(decoded.components)

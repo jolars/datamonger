@@ -118,6 +118,15 @@ class SparseDataset:
 
 
 @dataclass(frozen=True)
+class MultilabelSparseDataset:
+    """Sparse features and class indicators aligned by observation."""
+
+    features: sparse.csr_matrix
+    response: sparse.csr_matrix
+    label_index_base: int
+
+
+@dataclass(frozen=True)
 class SparseDatasetSplit:
     """Separate training and test sparse datasets from one representation."""
 
@@ -128,16 +137,20 @@ class SparseDatasetSplit:
 
 
 @dataclass(frozen=True)
-class DatasetSplits(Mapping[str, pd.DataFrame | SparseDataset]):
+class DatasetSplits(
+    Mapping[str, pd.DataFrame | SparseDataset | MultilabelSparseDataset]
+):
     """Provider-named splits in recipe order, accessed as ``data["validation"]``.
 
     Each value is a table or sparse dataset. A table may contain only features
     when the provider does not supply labels for that split.
     """
 
-    splits: Mapping[str, pd.DataFrame | SparseDataset]
+    splits: Mapping[str, pd.DataFrame | SparseDataset | MultilabelSparseDataset]
 
-    def __getitem__(self, name: str) -> pd.DataFrame | SparseDataset:
+    def __getitem__(
+        self, name: str
+    ) -> pd.DataFrame | SparseDataset | MultilabelSparseDataset:
         return self.splits[name]
 
     def __iter__(self) -> Iterator[str]:
@@ -148,7 +161,11 @@ class DatasetSplits(Mapping[str, pd.DataFrame | SparseDataset]):
 
 
 DatasetData: TypeAlias = (
-    pd.DataFrame | SparseDataset | SparseDatasetSplit | DatasetSplits
+    pd.DataFrame
+    | SparseDataset
+    | MultilabelSparseDataset
+    | SparseDatasetSplit
+    | DatasetSplits
 )
 
 
@@ -393,3 +410,12 @@ class DecodedSplits:
 
     data: DatasetSplits
     components: tuple[LogicalValueComponent, ...]
+
+
+@dataclass(frozen=True)
+class DecodedMultilabelSparseDataset:
+    """Native indicators and ordered logical matrices."""
+
+    data: MultilabelSparseDataset
+    components: tuple[LogicalSparseMatrix, LogicalSparseMatrix]
+    canonical_digest: str | None = None
