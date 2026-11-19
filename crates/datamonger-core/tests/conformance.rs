@@ -662,3 +662,42 @@ fn libsvm_v2_shared_canonical_digest() {
         case["expected_sha256"].as_str().unwrap()
     );
 }
+
+#[test]
+fn multilabel_targets_use_declared_columns() {
+    for base in [0, 1] {
+        let options = LibsvmMultilabelOptions {
+            feature_count: 3,
+            label_count: 4,
+            label_index_base: base,
+            target_name: "response".into(),
+        };
+        let input = format!("{},{} 1:0 3:2\r\n 2:4\n{}", base + 2, base, base + 1);
+        let decode = |bytes| decode_libsvm_multilabel_with_control(bytes, &options, &mut || Ok(()));
+        let components = decode(input.as_bytes()).unwrap();
+        assert_eq!(
+            components[1].shape,
+            Shape::Sparse {
+                rows: 3,
+                columns: 4,
+                row_offsets: vec![0, 2, 2, 3],
+                column_indices: vec![0, 2, 1],
+            }
+        );
+        assert_eq!(components[1].values, Values::Float64(vec![1.0; 3]));
+        assert_eq!(components[0].values, Values::Float64(vec![2.0, 4.0]));
+        for invalid in [
+            format!("{base},{base}"),
+            format!("{base},"),
+            format!("{}", base + 4),
+            "\n".into(),
+        ] {
+            assert_eq!(
+                decode_libsvm_multilabel_with_control(invalid.as_bytes(), &options, &mut || Ok(()))
+                    .unwrap_err()
+                    .kind,
+                ErrorKind::Decode
+            );
+        }
+    }
+}

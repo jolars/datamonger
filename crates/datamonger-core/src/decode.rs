@@ -583,41 +583,14 @@ fn decode_libsvm_impl<R: BufRead>(
             .ok_or_else(|| decode_error("missing LIBSVM label"))?;
         push_value(&mut labels, label, true, true, compatibility)
             .map_err(|e| decode_error(format!("invalid LIBSVM label: {e}")))?;
-        let mut previous = 0;
-        for field in fields {
-            let (index, value) = field
-                .split_once(':')
-                .ok_or_else(|| decode_error("invalid feature token"))?;
-            let index = feature_index(index)?;
-            if index == 0 || index > options.feature_count {
-                return Err(decode_error("feature index is out of range"));
-            }
-            if index == previous {
-                return Err(decode_error("duplicate feature index"));
-            }
-            if index < previous {
-                return Err(decode_error("feature indices must be strictly increasing"));
-            }
-            let value = parse_binary64_with_options(
-                value,
-                true,
-                if version == 2 {
-                    DecodeOptions::default()
-                } else {
-                    compatibility
-                },
-            )
-            .map_err(|e| decode_error(format!("invalid feature value: {e}")))?;
-            previous = index;
-            if value == 0.0 {
-                if version == 1 {
-                    return Err(decode_error("stored sparse zero is invalid"));
-                }
-                continue;
-            }
-            column_indices.push(index - 1);
-            values.push(value);
-        }
+        libsvm_features(
+            fields,
+            options.feature_count,
+            version,
+            compatibility,
+            &mut column_indices,
+            &mut values,
+        )?;
         row_offsets.push(values.len() as u64);
         if labels.len() % 1024 == 0 {
             control.checkpoint()?;
@@ -722,4 +695,156 @@ fn decode_libsvm_split_impl<R: BufRead, S: BufRead>(
     }
     components.extend(test);
     Ok(components)
+}
+
+fn libsvm_features<'a>(
+    fields: impl Iterator<Item = &'a str>,
+    feature_count: u64,
+    version: u32,
+    compatibility: DecodeOptions,
+    column_indices: &mut Vec<u64>,
+    values: &mut Vec<f64>,
+) -> Result<()> {
+    let mut previous = 0;
+    for field in fields {
+        let (index, value) = field
+            .split_once(':')
+            .ok_or_else(|| decode_error("invalid feature token"))?;
+        let index = feature_index(index)?;
+        if index == 0 || index > feature_count {
+            return Err(decode_error("feature index is out of range"));
+        }
+        if index == previous {
+            return Err(decode_error("duplicate feature index"));
+        }
+        if index < previous {
+            return Err(decode_error("feature indices must be strictly increasing"));
+        }
+        let value = parse_binary64_with_options(
+            value,
+            true,
+            if version == 2 {
+                DecodeOptions::default()
+            } else {
+                compatibility
+            },
+        )
+        .map_err(|e| decode_error(format!("invalid feature value: {e}")))?;
+        previous = index;
+        if value == 0.0 {
+            if version == 1 {
+                return Err(decode_error("stored sparse zero is invalid"));
+            }
+            continue;
+        }
+        column_indices.push(index - 1);
+        values.push(value);
+    }
+    Ok(())
+}
+
+/// Options for multilabel LIBSVM with a declared class range.
+pub struct LibsvmMultilabelOptions {
+    /// Number of feature columns.
+    pub feature_count: u64,
+    /// Number of response columns.
+    pub label_count: u64,
+    /// First source label, zero or one.
+    pub label_index_base: u64,
+    /// Name of the response component.
+    pub target_name: String,
+}
+
+/// Decode multilabel LIBSVM into feature and indicator matrices.
+pub fn decode_libsvm_multilabel_with_control<R: BufRead>(
+    reader: R,
+    options: &LibsvmMultilabelOptions,
+    control: &mut impl Control,
+) -> Result<Vec<Component>> {
+    control.checkpoint()?;
+    let limit = (1_u64 << 53) - 1;
+    if !(1..=limit).contains(&options.feature_count)
+        || !(1..=limit).contains(&options.label_count)
+        || options.label_index_base > 1
+        || options.target_name.is_empty()
+        || options.target_name == "features"
+    {
+        return Err(unsupported("invalid multilabel LIBSVM recipe"));
+    }
+    let mut records = Records::new(reader);
+    let (mut feature_offsets, mut label_offsets) = (vec![0], vec![0]);
+    let (mut feature_indices, mut label_indices, mut values) = (Vec::new(), Vec::new(), Vec::new());
+    while let Some(record) = records.next()? {
+        let mut fields = record
+            .split([' ', '\t'])
+            .filter(|field| !field.is_empty())
+            .peekable();
+        let first = *fields
+            .peek()
+            .ok_or_else(|| decode_error("blank LIBSVM record"))?;
+        if !first.contains(':') {
+            if record.starts_with([' ', '\t']) {
+                return Err(decode_error("leading whitespace before LIBSVM labels"));
+            }
+            fields.next();
+            let start = label_indices.len();
+            for token in first.split(',') {
+                let label =
+                    feature_index(token).map_err(|_| decode_error("invalid LIBSVM label ID"))?;
+                let column = label
+                    .checked_sub(options.label_index_base)
+                    .filter(|&column| column < options.label_count)
+                    .ok_or_else(|| decode_error("LIBSVM label ID is out of range"))?;
+                label_indices.push(column);
+            }
+            let row = &mut label_indices[start..];
+            row.sort_unstable();
+            if row.windows(2).any(|pair| pair[0] == pair[1]) {
+                return Err(decode_error("duplicate LIBSVM label ID"));
+            }
+        }
+        libsvm_features(
+            fields,
+            options.feature_count,
+            2,
+            DecodeOptions::default(),
+            &mut feature_indices,
+            &mut values,
+        )?;
+        feature_offsets.push(values.len() as u64);
+        label_offsets.push(label_indices.len() as u64);
+        if (feature_offsets.len() - 1) % 1024 == 0 {
+            control.checkpoint()?;
+        }
+    }
+    control.checkpoint()?;
+    let rows = (feature_offsets.len() - 1) as u64;
+    let matrix = |name, columns, row_offsets, column_indices, values| Component {
+        name,
+        shape: Shape::Sparse {
+            rows,
+            columns,
+            row_offsets,
+            column_indices,
+        },
+        values: Values::Float64(values),
+        valid: Vec::new(),
+    };
+    let indicators = vec![1.0; label_indices.len()];
+    Ok(vec![
+        matrix(
+            "features".into(),
+            options.feature_count,
+            feature_offsets,
+            feature_indices,
+            values,
+        ),
+        matrix(
+            options.target_name.clone(),
+            options.label_count,
+            label_offsets,
+            label_indices,
+            indicators,
+        ),
+    ])
 }
