@@ -550,6 +550,7 @@
         "delimiter": {
           "enum": [
             ",",
+            ";",
             "\t"
           ]
         },
@@ -843,6 +844,27 @@
               "options": {
                 "$ref": "#/$defs/delimitedOptions"
               }
+            },
+            "if": {
+              "properties": {
+                "decoder_version": {
+                  "const": 1
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "options": {
+                  "properties": {
+                    "delimiter": {
+                      "enum": [
+                        ",",
+                        "\t"
+                      ]
+                    }
+                  }
+                }
+              }
             }
           }
         },
@@ -937,6 +959,7 @@
             "properties": {
               "decoder": {
                 "enum": [
+                  "delimited-text",
                   "libsvm",
                   "libsvm-split"
                 ]
@@ -1207,6 +1230,27 @@
               "options": {
                 "$ref": "#/$defs/delimitedOptions"
               }
+            },
+            "if": {
+              "properties": {
+                "decoder_version": {
+                  "const": 1
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "options": {
+                  "properties": {
+                    "delimiter": {
+                      "enum": [
+                        ",",
+                        "\t"
+                      ]
+                    }
+                  }
+                }
+              }
             }
           }
         },
@@ -1234,6 +1278,7 @@
             "properties": {
               "decoder": {
                 "enum": [
+                  "delimited-text",
                   "libsvm",
                   "libsvm-split"
                 ]
