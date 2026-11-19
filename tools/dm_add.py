@@ -152,12 +152,12 @@ def _prepare_draft(source: Mapping[str, Any], retrieved_at: date) -> dict[str, A
     if (
         decoder not in _SUPPORTED_DECODERS
         or type(representation["decoder_version"]) is not int
-        or representation["decoder_version"]
-        not in ((1, 2) if decoder in {"libsvm", "libsvm-split"} else (1,))
+        or representation["decoder_version"] not in (1, 2)
+        or (decoder == "named-splits" and representation["decoder_version"] != 1)
     ):
         raise ValueError(
-            "dm-add supports delimited-text, libsvm, libsvm-split, "
-            "and named-splits version 1; LIBSVM also supports version 2"
+            "dm-add supports delimited-text, libsvm, and libsvm-split "
+            "versions 1 and 2, and named-splits version 1"
         )
     inputs = _mapping(representation["inputs"], "representation.inputs")
     roles = {"train", "test"} if decoder == "libsvm-split" else {"data"}

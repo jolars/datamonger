@@ -279,10 +279,13 @@ def _validate_dataset(dataset: Mapping[str, Any]) -> None:
         _validate_named_splits(dataset)
     elif decoder == "delimited-text":
         artifact = artifact_by_name[cast(str, inputs["data"])]
-        expected_delimiter = "," if artifact.get("format") == "csv" else "\t"
-        if artifact.get("format") not in {"csv", "tsv"}:
+        artifact_format = artifact.get("format")
+        if artifact_format not in {"csv", "tsv"}:
             raise ValueError("delimited-text requires a CSV or TSV artifact")
-        if options.get("delimiter") != expected_delimiter:
+        delimiters: tuple[str, ...] = (",",) if artifact_format == "csv" else ("\t",)
+        if artifact_format == "csv" and representation["decoder_version"] == 2:
+            delimiters = (",", ";")
+        if options.get("delimiter") not in delimiters:
             raise ValueError("artifact format and delimiter disagree")
     else:
         for artifact_name in inputs.values():
