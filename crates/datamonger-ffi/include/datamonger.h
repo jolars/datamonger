@@ -63,6 +63,7 @@ DM_API DmResult *dm_decode_libsvm_split(DmArtifact train, DmArtifact test, DmLib
 /* Version 2 omits feature values that round to zero. */
 DM_API DmResult *dm_decode_libsvm_v2(DmArtifact, DmLibsvmOptions, DmBytes prefix);
 DM_API DmResult *dm_decode_libsvm_split_v2(DmArtifact train, DmArtifact test, DmLibsvmOptions);
+DM_API DmResult *dm_decode_svmlight_ranking(DmArtifact, DmLibsvmOptions, uint64_t index_base);
 DM_API DmResult *dm_decode_libsvm_multilabel(DmArtifact, DmLibsvmMultilabelOptions);
 /* emit_bytes=0 streams the digest without allocating a canonical byte buffer;
  * emit_bytes=1 also returns canonical bytes. Components are copied for the call. */

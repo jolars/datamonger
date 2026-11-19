@@ -414,6 +414,24 @@ pub unsafe extern "C" fn dm_decode_libsvm_multilabel(
         ))
     })
 }
+#[no_mangle]
+pub unsafe extern "C" fn dm_decode_svmlight_ranking(
+    artifact: DmArtifact,
+    options: DmLibsvmOptions,
+    index_base: u64,
+) -> *mut DmResult {
+    boundary(|| {
+        Ok(DmResult::new(
+            datamonger_core::decode_svmlight_ranking_with_control(
+                unsafe { reader(artifact)? },
+                &unsafe { svm_options(options)? },
+                index_base,
+                &mut || Ok(()),
+            )?,
+        ))
+    })
+}
+
 unsafe fn component(view: &DmComponent) -> Result<Component> {
     let kind = ErrorKind::DecodedIntegrity;
     let name = unsafe { text(view.name, kind)? };
