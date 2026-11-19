@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.0](https://github.com/jolars/datamonger/compare/datamonger-core-v0.2.0...datamonger-core-v0.3.0) (2026-11-19)
+
+### Features
+
+- decode semicolon-delimited CSV ([`cbb63e0`](https://github.com/jolars/datamonger/commit/cbb63e055a1c36317ce0bcea585bb492ab545fba))
+
+### Performance Improvements
+
+- speed up CSV decoding and benchmark against `csv` ([`9a6ec62`](https://github.com/jolars/datamonger/commit/9a6ec623d2eb9cd83acffb6a9204f07b83377347))
+- borrow delimited fields from the input record ([`7407312`](https://github.com/jolars/datamonger/commit/7407312acef88885410d9d499e5adca7c100d847))
+- parse LIBSVM feature indices in one pass ([`aca4879`](https://github.com/jolars/datamonger/commit/aca48794e41094e837b20726db79bbf2d7ff8e8e))
+- scan LIBSVM delimiters as bytes ([`75d5952`](https://github.com/jolars/datamonger/commit/75d59524f161f94f2f91134265ffdca6d80e412e))
+
 ## [0.2.0](https://github.com/jolars/datamonger/compare/datamonger-core-v0.1.0...datamonger-core-v0.2.0) (2026-10-27)
 
 ### Features

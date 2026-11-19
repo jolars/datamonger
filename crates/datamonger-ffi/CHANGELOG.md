@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.0](https://github.com/jolars/datamonger/compare/datamonger-ffi-v0.2.0...datamonger-ffi-v0.3.0) (2026-11-19)
+
+### Features
+
+- expose semicolon decoding through the C ABI ([`ac53b16`](https://github.com/jolars/datamonger/commit/ac53b16f81a11745a5a59396b474fdaf769342f8))
+
+### Dependencies
+
+- updated crates/datamonger-core to v0.3.0
+
 ## [0.2.0](https://github.com/jolars/datamonger/compare/datamonger-ffi-v0.1.0...datamonger-ffi-v0.2.0) (2026-10-27)
 
 ### Features

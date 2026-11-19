@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.4.0](https://github.com/jolars/datamonger/compare/datamonger-v0.3.0...datamonger-v0.4.0) (2026-11-19)
+
+### Features
+
+- validate delimited-text v2 manifests in the CLI ([`db42d44`](https://github.com/jolars/datamonger/commit/db42d44dcd5eb2f8d02d1d8bd9cf82ab577c3690))
+
 ## [0.3.0](https://github.com/jolars/datamonger/compare/datamonger-v0.2.0...datamonger-v0.3.0) (2026-11-02)
 
 ### Features
