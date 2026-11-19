@@ -411,7 +411,7 @@ fn decode_delimited_impl<R: BufRead>(
 ) -> Result<Vec<Component>> {
     control.checkpoint()?;
     let mut names = HashSet::new();
-    if !matches!(options.delimiter, b',' | b'\t')
+    if !matches!(options.delimiter, b',' | b';' | b'\t')
         || options.columns.is_empty()
         || options
             .columns
