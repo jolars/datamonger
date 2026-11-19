@@ -40,3 +40,6 @@ canonical-form version 1 and all earlier decoder and schema contracts.
 
 [Delimited text version 2](decoders/delimited-text-v2.md) uses manifest schema
 version 5 and accepts semicolon-delimited CSV.
+
+[Multilabel LIBSVM version 1](decoders/libsvm-multilabel-v1.md) uses manifest
+and index schema 6 and represents targets as sparse class indicators.

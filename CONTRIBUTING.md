@@ -412,6 +412,17 @@ core with semicolon support and a refreshed vendor archive. Julia needs a
 native artifact built with that core. Use `dm-test-r` and
 `tools/dm_julia_core.jl` to exercise local builds.
 
+### Multilabel LIBSVM
+
+Use manifest schema 6 and `libsvm-multilabel` version 1 for comma-separated
+label IDs. Declare the class width and index base in each split recipe. See
+[the decoder contract](spec/decoders/libsvm-multilabel-v1.md).
+
+Use `dm-test-r` and a locally built Julia native artifact for development.
+Publish the updated core and FFI before refreshing R's vendor archive and
+Julia's artifact bindings. Release schema-6 clients before publishing a
+registry that uses schema 6.
+
 ### Curated dataset names
 
 For new datasets curated and distributed under the `datamonger` source

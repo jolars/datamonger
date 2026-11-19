@@ -26,6 +26,8 @@ artifact references remain `unsupported-registry` errors.
 
 Manifest schema version 5 also allows
 [delimited-text version 2](delimited-text-v2.md) as a child decoder.
+Manifest schema version 6 also allows
+[multilabel LIBSVM version 1](libsvm-multilabel-v1.md).
 
 For example, the outline below assembles two labeled sparse inputs and a table
 containing only test features. Replace each options placeholder with the
