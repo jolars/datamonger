@@ -29,6 +29,7 @@ manifests:
 - registry/datasets/libsvm/e2006-tfidf-1.yaml
 - registry/datasets/libsvm/glass_scale-1.yaml
 - registry/datasets/libsvm/heart_scale-1.yaml
+- registry/datasets/libsvm/leukemia-1.yaml
 - registry/datasets/libsvm/madelon-1.yaml
 - registry/datasets/libsvm/mushrooms-1.yaml
 - registry/datasets/libsvm/news20-binary-1.yaml
@@ -136,6 +137,9 @@ defaults:
   version: '1'
 - source: libsvm
   name: heart_scale
+  version: '1'
+- source: libsvm
+  name: leukemia
   version: '1'
 - source: libsvm
   name: madelon

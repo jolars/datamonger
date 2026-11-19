@@ -1,0 +1,136 @@
+schema_version: 5
+source: libsvm
+name: leukemia
+version: '1'
+title: Leukemia
+description: 'Human acute leukemia microarray profiles for binary classification of acute
+  lymphoblastic leukemia (ALL) and acute myeloid leukemia (AML). LIBSVM provides separate
+  training and test files with 7,129 probe measurements per sample.
+
+  '
+modality: tabular
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#leukemia
+    steps:
+    - kind: normalization
+      description: Pool the training and test samples and normalize each sample to mean zero
+        and variance one.
+      parameters:
+        axis: rows
+        mean: '0'
+        variance: '1'
+    - kind: normalization
+      description: Then normalize each feature across the pooled samples to mean zero and
+        variance one.
+      parameters:
+        axis: columns
+        mean: '0'
+        variance: '1'
+    notes: The published normalization uses both splits. Datamonger preserves the supplied
+      split membership.
+  datamonger:
+    status: none
+    evidence:
+    - spec/decoders/libsvm-v1.md
+provenance:
+  provider: LIBSVM
+  upstream_name: leukemia
+  landing_page: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary.html#leukemia
+  authors:
+  - T. R. Golub
+  - D. K. Slonim
+  - P. Tamayo
+  - C. Huard
+  - M. Gaasenbeek
+  - J. P. Mesirov
+  - H. Coller
+  - M. L. Loh
+  - J. R. Downing
+  - M. A. Caligiuri
+  - C. D. Bloomfield
+  - E. S. Lander
+  citations:
+  - citation: Golub et al. (1999). Molecular classification of cancer, class discovery and
+      class prediction by gene expression monitoring. Science 286(5439), 531–537. https://doi.org/10.1126/science.286.5439.531.
+    role: paper
+  - citation: Shevade and Keerthi (2003). A simple and efficient algorithm for gene selection
+      using sparse logistic regression. Bioinformatics 19(17), 2246–2253.
+    role: paper
+    note: LIBSVM cites this paper for preprocessing.
+  retrieved_at: '2026-11-19'
+license:
+  status: unknown
+  evidence: 'The LIBSVM catalog provides both files without dataset-specific license terms.
+    The Golub et al. citation establishes the dataset''s origin but supplies no license for
+    the normalized LIBSVM files.
+
+    '
+artifacts:
+- name: train
+  format: libsvm
+  compression: bzip2
+  size: 1423727
+  sha256: 2f7dc1c8ea4343b17038e27ff777dad0a87d79a5fa29de54765055cc841cb75b
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/leu.bz2
+- name: test
+  format: libsvm
+  compression: bzip2
+  size: 1269502
+  sha256: 582161e3d5112f6c1604d262413acca5e33cad1b3f522c681faeb369e8b4a271
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/leu.t.bz2
+representation:
+  decoder: libsvm-split
+  decoder_version: 1
+  inputs:
+    train: train
+    test: test
+  options:
+    index_base: 1
+    feature_count: 7129
+    duplicate_features: error
+    label_type: float64
+    row_order: source
+    target_name: response
+  expect:
+    components:
+    - name: train_features
+      kind: sparse_matrix
+      type: float64
+      rows: 38
+      columns: 7129
+    - name: train_response
+      kind: vector
+      type: float64
+      length: 38
+    - name: test_features
+      kind: sparse_matrix
+      type: float64
+      rows: 34
+      columns: 7129
+    - name: test_response
+      kind: vector
+      type: float64
+      length: 34
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: 590c0d8239d766b7df598043d045a7975d98bdb6c113c6e6175b4ff086ee86a0
+tasks:
+- name: default
+  type: classification
+  splits:
+    train:
+      features: train_features
+      target: train_response
+    test:
+      features: test_features
+      target: test_response

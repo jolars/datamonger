@@ -38,7 +38,7 @@ Register these catalog entries under the `libsvm` source. See the
 - [ ] `kdd2010 (bridge to algebra)`
 - [ ] `kdd2010 raw version (bridge to algebra)`
 - [ ] `kdd2012`
-- [ ] `leukemia`
+- [x] `leukemia`
 - [ ] `liver-disorders`
 - [ ] `phishing`
 - [ ] `skin_nonskin`
