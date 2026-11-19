@@ -10,28 +10,6 @@ licensed under the repository's MIT license. Upstream dataset artifacts are not
 part of that license and must not be committed to this repository; small,
 purpose-built conformance fixtures belong under `tests/conformance/artifacts`.
 
-## Before changing behavior
-
-Read the document that owns the behavior:
-
-- [`spec/revision-1.md`](spec/revision-1.md) inventories the frozen revision 1
-  contracts and defines their version boundaries.
-- [`spec/`](spec/README.md) is normative for clients, registry tooling, and
-  conformance behavior.
-- [`tests/conformance/README.md`](tests/conformance/README.md) defines the
-  language-neutral implementation corpus.
-- [`TRUST.md`](TRUST.md) constrains integrity, authentication, licensing, and
-  preservation claims.
-- [`OPERATIONS.md`](OPERATIONS.md) defines publication and incident procedures.
-- [`DESIGN.md`](DESIGN.md) records rationale; it does not override a normative
-  contract.
-
-Revision 1 is frozen and stable. Discuss a proposed contract extension before
-implementing it. An editorial clarification may keep the current contract
-version only when it changes no accepted input, logical output, identity,
-retrieval behavior, or failure classification. Output-affecting changes need the
-later revision and contract versions described by the specification.
-
 ## Development environment
 
 The supported environment is the repository's devenv shell. From the repository
@@ -43,12 +21,12 @@ task test
 ```
 
 Entering the shell installs Git hooks for Ruff, nixfmt, and Prettier. The hooks
-format staged Python and Nix files and YAML under `.github`, plus
-`devenv.yaml` and `Taskfile.yml`.
-Generated registry files and conformance fixtures are outside the YAML formatter's
-scope. Run `prek run --all-files` to check all matching files; formatters may
-update files, so review and stage their changes before committing. `devenv test`
-also runs these hooks, and CI checks YAML formatting with Prettier.
+format staged Python and Nix files and YAML under `.github`, plus `devenv.yaml`
+and `Taskfile.yml`. Generated registry files and conformance fixtures are
+outside the YAML formatter's scope. Run `prek run --all-files` to check all
+matching files; formatters may update files, so review and stage their changes
+before committing. `devenv test` also runs these hooks, and CI checks YAML
+formatting with Prettier.
 
 `task --list` lists focused checks and maintenance tasks from `Taskfile.yml`.
 `devenv test` delegates to `task test` after running the Git hooks.
@@ -70,17 +48,17 @@ uv build
 ```
 
 Python uses Maturin to build the private PyO3 extension. `uv sync` builds it
-against the local `crates/datamonger-core` path dependency, and `uv build` bundles
-that core in the source distribution and builds a wheel from it. After editing
-Rust code, run `uv sync --reinstall-package datamonger` before Python tests to
-rebuild the extension. The binding uses the repository's stable Rust toolchain;
-the core and R adapter retain their separate MSRV checks. Python source
-releases include the local core, so they do not require an earlier crates.io
-publication. Maturin includes the shared Cargo lockfile and trims unrelated
-workspace members from source distributions. Source builds allow Cargo to prune
-that lockfile; release wheel builds pass `--locked` explicitly.
-When changing the core's version, update the Python and C ABI
-bindings' Cargo requirements and the workspace lockfile in the same change.
+against the local `crates/datamonger-core` path dependency, and `uv build`
+bundles that core in the source distribution and builds a wheel from it. After
+editing Rust code, run `uv sync --reinstall-package datamonger` before Python
+tests to rebuild the extension. The binding uses the repository's stable Rust
+toolchain; the core and R adapter retain their separate MSRV checks. Python
+source releases include the local core, so they do not require an earlier
+crates.io publication. Maturin includes the shared Cargo lockfile and trims
+unrelated workspace members from source distributions. Source builds allow Cargo
+to prune that lockfile; release wheel builds pass `--locked` explicitly. When
+changing the core's version, update the Python and C ABI bindings' Cargo
+requirements and the workspace lockfile in the same change.
 
 From `packages/python`, check the bindings and compare them with the independent
 Python implementation retained under `tests/reference`:
@@ -94,18 +72,18 @@ uv run pytest tests/test_native.py
 The Python oracle is test-only. Keep its parsing and canonical encoding
 independent of the native backend. The differential tests compare native and
 Python results against the shared conformance corpus, compressed inputs,
-malformed artifacts, and generated inputs before a backend change can ship.
-CI builds portable wheels for all supported platforms when the Python client,
-shared Rust core, packaging configuration, or shared conformance fixtures change.
-It installs the wheels into fresh environments and tests those distributions.
-Versionary release PRs skip the broad build and test matrices and the documentation
-build. They still check release versions, lockfiles, vendored Rust sources, and
-client bundles. Registry release PRs validate their pending snapshots, and release
-PRs run one Linux R check when the Rust adapter or vendor files change.
-Ordinary PRs keep the Linux Python quality checks, and pushes to `main` run the
-full checks before Versionary publishes. The release workflow always runs the
-full wheel matrix. Run `Python distributions` manually
-to check a selected branch, commit, or tag before a release.
+malformed artifacts, and generated inputs before a backend change can ship. CI
+builds portable wheels for all supported platforms when the Python client,
+shared Rust core, packaging configuration, or shared conformance fixtures
+change. It installs the wheels into fresh environments and tests those
+distributions. Versionary release PRs skip the broad build and test matrices and
+the documentation build. They still check release versions, lockfiles, vendored
+Rust sources, and client bundles. Registry release PRs validate their pending
+snapshots, and release PRs run one Linux R check when the Rust adapter or vendor
+files change. Ordinary PRs keep the Linux Python quality checks, and pushes to
+`main` run the full checks before Versionary publishes. The release workflow
+always runs the full wheel matrix. Run `Python distributions` manually to check
+a selected branch, commit, or tag before a release.
 
 Focused commands from `packages/r` are:
 
@@ -116,10 +94,10 @@ R CMD check --as-cran datamonger_*.tar.gz
 ```
 
 The core, C ABI, Python bindings, and CLI belong to the root Cargo workspace.
-They share `Cargo.lock` and `target/`, but retain independent versions, editions,
-and minimum Rust versions. From the repository root, run
-`cargo fmt --all --check` and `cargo test --locked --workspace`, or select packages
-with `cargo test --locked -p datamonger-core -p datamonger-ffi`.
+They share `Cargo.lock` and `target/`, but retain independent versions,
+editions, and minimum Rust versions. From the repository root, run
+`cargo fmt --all --check` and `cargo test --locked --workspace`, or select
+packages with `cargo test --locked -p datamonger-core -p datamonger-ffi`.
 Dependabot updates the workspace as one dependency graph. The R adapter is
 excluded because it resolves and vendors a published core independently.
 
@@ -139,8 +117,8 @@ The R adapter depends on a published `datamonger-core` version from crates.io.
 Use `dm-test-r` to test it against unpublished core edits. For other development
 scripts, use `dm-local-r` in place of `Rscript`; it sets `DM_R_CORE_PATH` and
 enables a local Cargo patch. These commands temporarily match the dependency pin
-to the local core version and restore the release manifest and lockfile afterward.
-For example, from `packages/r`, run:
+to the local core version and restore the release manifest and lockfile
+afterward. For example, from `packages/r`, run:
 
 ```console
 dm-local-r -e 'pkgload::load_all(".")'
@@ -151,27 +129,27 @@ dependency graph. Local builds use Cargo's usual cache and may download new
 dependencies. Release builds use at most two Cargo jobs. `DEBUG=1` selects a
 debug build; `NOT_CRAN=1` permits development without the vendor archive.
 
-Publish core changes before preparing an R release that needs them. Update the
-R adapter's version requirement when needed, then run
-`task r:vendor`. Its `r:catalog` dependency refreshes the compressed
-catalog offline from the currently bundled registry release. Run
-`task r:catalog` separately to regenerate only the R catalog. The
-vendor task resolves the published core, runs `rextendr::vendor_crates()`, and
-records the lockfile digest. Commit the compressed catalog, lockfile, vendor
-archive, vendor configuration, and digest. The core receives the same vendoring
-treatment as every other registry dependency. The R tarball must build with no
-checkout or Cargo network access.
+Publish core changes before preparing an R release that needs them. Update the R
+adapter's version requirement when needed, then run `task r:vendor`. Its
+`r:catalog` dependency refreshes the compressed catalog offline from the
+currently bundled registry release. Run `task r:catalog` separately to
+regenerate only the R catalog. The vendor task resolves the published core, runs
+`rextendr::vendor_crates()`, and records the lockfile digest. Commit the
+compressed catalog, lockfile, vendor archive, vendor configuration, and digest.
+The core receives the same vendoring treatment as every other registry
+dependency. The R tarball must build with no checkout or Cargo network access.
 
 Run `python tools/dm_rust_sources.py` after shared conformance changes to update
-the core's fixture copy. `python tools/dm_rust_sources.py --check` checks fixtures
-and vendor metadata. Check changes with Rust 1.82.
+the core's fixture copy. `python tools/dm_rust_sources.py --check` checks
+fixtures and vendor metadata. Check changes with Rust 1.82.
 
 R package builds regenerate `R/extendr-wrappers.R` from extendr metadata using
 the `document` Cargo target introduced in rextendr 0.5.0. After changing Rust
-bindings, rebuild with `dm-test-r` or `pkgbuild::compile_dll(force = TRUE)` through
-`dm-local-r`, and commit the generated wrappers. No separate wrapper-generation
-command or `rextendr::document()` call is needed. The package's Rd files and
-NAMESPACE remain manually maintained. Do not edit the generated wrappers by hand.
+bindings, rebuild with `dm-test-r` or `pkgbuild::compile_dll(force = TRUE)`
+through `dm-local-r`, and commit the generated wrappers. No separate
+wrapper-generation command or `rextendr::document()` call is needed. The
+package's Rd files and NAMESPACE remain manually maintained. Do not edit the
+generated wrappers by hand.
 
 Versionary manages core releases independently of the language clients. Merge
 its release PR after CI passes. Versionary creates a published GitHub Release
@@ -217,10 +195,11 @@ cases. The shared corpus remains the normative source for golden values. HTTP
 content decoding remains Julia's responsibility, separate from native artifact
 decompression.
 
-CI packages native libraries for Linux x86-64 and ARM64 with glibc 2.17 or newer,
-macOS Intel and Apple Silicon, and Windows x86-64. It tests each installed
-artifact with Julia 1.10 and the current stable Julia, outside the checkout,
-without building Rust. See `OPERATIONS.md` for native release ordering.
+CI packages native libraries for Linux x86-64 and ARM64 with glibc 2.17 or
+newer, macOS Intel and Apple Silicon, and Windows x86-64. It tests each
+installed artifact with Julia 1.10 and the current stable Julia, outside the
+checkout, without building Rust. See `OPERATIONS.md` for native release
+ordering.
 
 Focused CLI commands from `packages/cli` are:
 
@@ -235,13 +214,14 @@ The CLI publishes to crates.io as `datamonger`. Its package includes the source,
 bundled registry assets, README, and license. Integration tests use repository
 fixtures and run before publication. To verify the packaged crate locally, run
 `cargo publish --locked --dry-run` from `packages/cli` (add `--allow-dirty` when
-testing uncommitted changes). See `OPERATIONS.md` for the initial publication and
-trusted publisher setup.
+testing uncommitted changes). See `OPERATIONS.md` for the initial publication
+and trusted publisher setup.
 
 The CLI reference is generated from `packages/cli/src/cli.rs` with clapdown.
 After changing commands or help text, run
 `cargo run --locked --example generate_cli_docs` from `packages/cli` and commit
-`documentation/pages/cli-reference.md`. CI and `devenv test` check that it is current.
+`documentation/pages/cli-reference.md`. CI and `devenv test` check that it is
+current.
 
 From `packages/python`, run the live proof-registry test separately:
 
@@ -260,7 +240,8 @@ hermetic gate.
 
 ## Decoder benchmarks
 
-Run the Criterion CSV comparison from the repository root in the development shell.
+Run the Criterion CSV comparison from the repository root in the development
+shell.
 
 ```console
 cargo bench --locked -p datamonger-core --bench csv
@@ -274,10 +255,10 @@ time and byte throughput. Input generation and the output comparison happen
 before timing.
 
 Run the LIBSVM benchmarks from the repository root in the development shell.
-Prepare the inputs in a directory outside the working tree. Preparation uses
-the bundled registry and verifies the downloaded artifacts against their
-registered digests. It stages the training splits of `a9a` and `rcv1-binary`
-and the complete `cadata` dataset as uncompressed files.
+Prepare the inputs in a directory outside the working tree. Preparation uses the
+bundled registry and verifies the downloaded artifacts against their registered
+digests. It stages the training splits of `a9a` and `rcv1-binary` and the
+complete `cadata` dataset as uncompressed files.
 
 ```sh
 bench_dir="$HOME/.cache/datamonger-bench"
@@ -285,7 +266,8 @@ uv run --project packages/python python tools/dm_bench_libsvm.py prepare "$bench
 ```
 
 Preparation prints the path, feature count, and label type for each case. Pass
-those arguments to both harnesses. For example, use `cadata` with these commands.
+those arguments to both harnesses. For example, use `cadata` with these
+commands.
 
 ```sh
 cargo bench --locked -p datamonger-core --bench libsvm -- "$bench_dir/cadata.libsvm" 8 float64 7
@@ -294,18 +276,18 @@ uv run --project packages/python --with scikit-learn --with libsvm-official \
 ```
 
 The Rust harness preloads the file and times parsing into the core's CSR and
-label components. The Python runner times local file reads through SciPy CSR
-and labels, with one warmup per reader. It checks normalized CSR values and
-labels after timing and records stored entries, index widths, dependency
-versions, and process peak RSS, including imports. The runner uses Unix
-resource accounting and supports Linux and macOS. If LIBSVM builds from source
-on Linux, use a C++ compiler with OpenMP support, such as `CC=gcc CXX=g++`.
-For inputs with explicit zeros, select Datamonger decoder v2 by appending
-`2` to the Rust arguments and passing `--decoder-version 2` to `read`.
+label components. The Python runner times local file reads through SciPy CSR and
+labels, with one warmup per reader. It checks normalized CSR values and labels
+after timing and records stored entries, index widths, dependency versions, and
+process peak RSS, including imports. The runner uses Unix resource accounting
+and supports Linux and macOS. If LIBSVM builds from source on Linux, use a C++
+compiler with OpenMP support, such as `CC=gcc CXX=g++`. For inputs with explicit
+zeros, select Datamonger decoder v2 by appending `2` to the Rust arguments and
+passing `--decoder-version 2` to `read`.
 
 To measure the public fetch path, prepare with `--seed-fetch` to cache all
-required splits, then run `fetch`. The fetch runner uses the cache offline
-and reports timings with canonical verification enabled and disabled.
+required splits, then run `fetch`. The fetch runner uses the cache offline and
+reports timings with canonical verification enabled and disabled.
 
 ```sh
 uv run --project packages/python python tools/dm_bench_libsvm.py prepare "$bench_dir" --dataset cadata --seed-fetch
@@ -313,9 +295,9 @@ uv run --project packages/python python tools/dm_bench_libsvm.py fetch "$bench_d
 ```
 
 Omit `--dataset` to select all three cases. Seeding the fetch cache for
-`rcv1-binary` also retrieves its roughly 433 MiB compressed test split.
-For comparisons across revisions, reuse the prepared files and record the
-Git revisions, compiler, and machine. Timing runs are opt-in.
+`rcv1-binary` also retrieves its roughly 433 MiB compressed test split. For
+comparisons across revisions, reuse the prepared files and record the Git
+revisions, compiler, and machine. Timing runs are opt-in.
 
 ## Code changes
 
@@ -389,73 +371,39 @@ obeys the append-only evolution rules in [`spec/identity.md`](spec/identity.md).
 Incorrect component expectations or verification records require an approved
 erratum in a later registry release; earlier release bytes remain unchanged.
 
-### LIBSVM decoder version 2
-
-Use manifest schema 5 and `decoder_version: 2` for LIBSVM artifacts that
-explicitly store zero-valued features. The decoder omits those entries while
-preserving the exact downloaded bytes for artifact verification. See
-[`spec/decoders/libsvm-v2.md`](spec/decoders/libsvm-v2.md).
-
-The R adapter's published vendor archive currently contains core 0.1.0 and
-supports decoder v1. Use `dm-test-r` to exercise v2 against the local core.
-Before releasing R support for v2, publish the updated core, update the R
-core dependency, enable its v2 dispatch for that dependency, and run
-`task r:vendor`. Julia likewise needs a native artifact containing
-the new v2 entry points; `tools/dm_julia_core.jl` builds it locally. Do not
-release a registry selecting v2 until the affected client releases are available.
-
-### Semicolon-delimited CSV
-
-Use manifest schema 5, `decoder: delimited-text`, `decoder_version: 2`, and
-`delimiter: ';'` for semicolon-delimited CSV. The R adapter needs a published
-core with semicolon support and a refreshed vendor archive. Julia needs a
-native artifact built with that core. Use `dm-test-r` and
-`tools/dm_julia_core.jl` to exercise local builds.
-
-### Multilabel LIBSVM
-
-Use manifest schema 6 and `libsvm-multilabel` version 1 for comma-separated
-label IDs. Declare the class width and index base in each split recipe. See
-[the decoder contract](spec/decoders/libsvm-multilabel-v1.md).
-
-Use `dm-test-r` and a locally built Julia native artifact for development.
-Publish the updated core and FFI before refreshing R's vendor archive and
-Julia's artifact bindings. Release schema-6 clients before publishing a
-registry that uses schema 6.
-
 ### Curated dataset names
 
 For new datasets curated and distributed under the `datamonger` source
 namespace, use `<surname><year>[<paper-letter>][-<dataset-label>]`. Use the
-first author's surname normalized to lowercase ASCII and the paper's
-publication year. Preserve the provider's spelling in `provenance.upstream_name`.
+first author's surname normalized to lowercase ASCII and the paper's publication
+year. Preserve the provider's spelling in `provenance.upstream_name`.
 
-| Situation | Dataset name |
-| --- | --- |
-| One paper, one dataset | `smith2023` |
-| Multiple distinct datasets from that paper | `smith2023-plasma`, `smith2023-tissue` |
-| Another paper with the same first-author surname and publication year | `smith2023b` |
-| Multiple distinct datasets from that second paper | `smith2023b-plasma`, `smith2023b-tissue` |
+  | Situation                                                             | Dataset name                             |
+  | --------------------------------------------------------------------- | ---------------------------------------- |
+  | One paper, one dataset                                                | `smith2023`                              |
+  | Multiple distinct datasets from that paper                            | `smith2023-plasma`, `smith2023-tissue`   |
+  | Another paper with the same first-author surname and publication year | `smith2023b`                             |
+  | Multiple distinct datasets from that second paper                     | `smith2023b-plasma`, `smith2023b-tissue` |
 
-The first paper registered with a surname and year uses the unsuffixed base.
-For subsequent papers with the same base, assign the next available letter
-starting with `b`, then `c`, and so on. Reuse that paper's base and letter for
-all its datasets. These letters identify papers within the registry and are
-independent of bibliography labels. Check existing manifests, curation
-directories, and published indexes before allocating a name.
+The first paper registered with a surname and year uses the unsuffixed base. For
+subsequent papers with the same base, assign the next available letter starting
+with `b`, then `c`, and so on. Reuse that paper's base and letter for all its
+datasets. These letters identify papers within the registry and are independent
+of bibliography labels. Check existing manifests, curation directories, and
+published indexes before allocating a name.
 
 For distinct datasets from one paper, prefer short suffixes describing their
-scientific content. When no useful descriptive label exists, use a stable
-source label such as `-table-s2`. Avoid bare numeric suffixes such as `-1`:
-dataset versions already have a separate field, written as `@1` in the
-canonical ID. Multiple tasks or training and test splits alone generally
-belong within one dataset.
+scientific content. When no useful descriptive label exists, use a stable source
+label such as `-table-s2`. Avoid bare numeric suffixes such as `-1`: dataset
+versions already have a separate field, written as `@1` in the canonical ID.
+Multiple tasks or training and test splits alone generally belong within one
+dataset.
 
-Keep existing dataset IDs unchanged when adding papers or datasets. If a
-second dataset is discovered after an unsuffixed name is established, retain
-that name and give the new dataset a descriptive suffix. This policy applies
-to new curated names; existing IDs and names in upstream source namespaces
-retain their established spelling.
+Keep existing dataset IDs unchanged when adding papers or datasets. If a second
+dataset is discovered after an unsuffixed name is established, retain that name
+and give the new dataset a descriptive suffix. This policy applies to new
+curated names; existing IDs and names in upstream source namespaces retain their
+established spelling.
 
 ## Registry and specification changes
 
