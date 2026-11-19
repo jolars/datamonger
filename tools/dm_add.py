@@ -25,6 +25,7 @@ from datamonger._canonical import canonical_sha256
 from datamonger._errors import DatamongerError
 from datamonger._models import (
     DecodedMultilabelSparseDataset,
+    DecodedRankingSparseDataset,
     DecodedSparseDataset,
     DecodedSparseDatasetSplit,
     DecodedSplits,
@@ -44,6 +45,7 @@ _SUPPORTED_DECODERS = {
     "libsvm",
     "libsvm-split",
     "libsvm-multilabel",
+    "svmlight-ranking",
     "named-splits",
 }
 _SAMPLE_ROWS = 3
@@ -53,6 +55,7 @@ _SCALAR_LIMIT = 80
 Decoded = (
     DecodedTable
     | DecodedMultilabelSparseDataset
+    | DecodedRankingSparseDataset
     | DecodedSparseDataset
     | DecodedSparseDatasetSplit
     | DecodedSplits
@@ -164,7 +167,7 @@ def _prepare_draft(source: Mapping[str, Any], retrieved_at: date) -> dict[str, A
         or type(representation["decoder_version"]) is not int
         or representation["decoder_version"] not in (1, 2)
         or (
-            decoder in {"named-splits", "libsvm-multilabel"}
+            decoder in {"named-splits", "libsvm-multilabel", "svmlight-ranking"}
             and representation["decoder_version"] != 1
         )
     ):
@@ -175,7 +178,7 @@ def _prepare_draft(source: Mapping[str, Any], retrieved_at: date) -> dict[str, A
     inputs = _mapping(representation["inputs"], "representation.inputs")
     roles = {"train", "test"} if decoder == "libsvm-split" else {"data"}
     if decoder == "named-splits":
-        if manifest["schema_version"] not in (4, 5, 6):
+        if manifest["schema_version"] not in (4, 5, 6, 7):
             raise ValueError("named-splits requires manifest schema 4")
         roles = {split["name"] for split in split_recipes(representation)}
     if set(inputs) != roles:
@@ -316,6 +319,7 @@ def _decode(
         | DecodedSparseDataset
         | DecodedSparseDatasetSplit
         | DecodedMultilabelSparseDataset
+        | DecodedRankingSparseDataset
     ):
         leaf, selected, leaf_options, compressions = _prepare_representation(
             manifest, recipe

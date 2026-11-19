@@ -264,7 +264,7 @@ def _validate_dataset(dataset: Mapping[str, Any]) -> None:
     inputs = _mapping(representation.get("inputs"), "representation.inputs")
     options = _mapping(representation.get("options"), "representation.options")
     if (
-        decoder in {"libsvm", "libsvm-split", "libsvm-multilabel"}
+        decoder in {"libsvm", "libsvm-split", "libsvm-multilabel", "svmlight-ranking"}
         and options.get("target_name") == "features"
     ):
         raise ValueError("LIBSVM target_name must be distinct from features")
@@ -338,9 +338,20 @@ def _validate_dataset(dataset: Mapping[str, Any]) -> None:
         lengths = {component.get("length") for component in component_records}
         if len(lengths) != 1:
             raise ValueError("delimited-text components must have equal lengths")
-    elif decoder in {"libsvm", "libsvm-multilabel"}:
+    elif decoder in {"libsvm", "libsvm-multilabel", "svmlight-ranking"}:
         target = cast(str, options["target_name"])
         expected_names = ["features", target]
+        if decoder == "svmlight-ranking":
+            expected_names.append("query_id")
+            query = component_by_name.get("query_id", {})
+            if (
+                target == "query_id"
+                or query.get("kind") != "vector"
+                or query.get("type") != "int64"
+                or query.get("length")
+                != component_by_name.get("features", {}).get("rows")
+            ):
+                raise ValueError("invalid ranking query ID component")
         if list(component_by_name) != expected_names:
             raise ValueError("LIBSVM components have the wrong names or order")
         features = component_by_name["features"]
@@ -405,7 +416,26 @@ def _validate_dataset(dataset: Mapping[str, Any]) -> None:
             role_target = roles.get("target")
             if role_target is not None and role_target in feature_names:
                 raise ValueError("task feature and target roles must be distinct")
-            for name in [*feature_names, role_target]:
+            query_name = roles.get("query_id")
+            if query_name is not None:
+                query_component = component_by_name.get(query_name, {})
+                related = [
+                    component_by_name.get(name, {})
+                    for name in [*feature_names, role_target]
+                ]
+                if (
+                    query_name in feature_names
+                    or query_name == role_target
+                    or query_component.get("kind") != "vector"
+                    or query_component.get("type") != "int64"
+                    or any(
+                        component.get("rows", component.get("length"))
+                        != query_component.get("length")
+                        for component in related
+                    )
+                ):
+                    raise ValueError("invalid ranking query ID role")
+            for name in [*feature_names, role_target, query_name]:
                 if name is not None and name not in component_by_name:
                     raise ValueError(f"task refers to unknown component {name!r}")
 
@@ -468,13 +498,15 @@ def _validate_named_splits(dataset: Mapping[str, Any]) -> None:
             refs = [features] if isinstance(features, str) else list(features)
             if "target" in roles:
                 refs.append(roles["target"])
+            if "query_id" in roles:
+                refs.append(roles["query_id"])
             if not set(refs) <= split_components[name]:
                 raise ValueError("task split refers to another split's components")
 
 
 def _versioned_schema(record: Mapping[str, Any], name: str) -> str:
     version = record.get("schema_version")
-    if type(version) is not int or version not in (1, 2, 3, 4, 5, 6):
+    if type(version) is not int or version not in (1, 2, 3, 4, 5, 6, 7):
         raise ValueError(f"unsupported {name} schema_version {version!r}")
     return f"{name}-v{version}.schema.json"
 

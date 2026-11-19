@@ -31,6 +31,7 @@ from datamonger._errors import (
 )
 from datamonger._models import (
     DecodedMultilabelSparseDataset,
+    DecodedRankingSparseDataset,
     DecodedSparseDataset,
     DecodedSparseDatasetSplit,
     DecodedSplits,
@@ -46,6 +47,7 @@ CheckKind = Literal["registry", "location", "dataset"]
 Decoded = (
     DecodedTable
     | DecodedMultilabelSparseDataset
+    | DecodedRankingSparseDataset
     | DecodedSparseDataset
     | DecodedSparseDatasetSplit
     | DecodedSplits
@@ -184,7 +186,7 @@ def _read_index(path: Path, registry: Registry, root: Path) -> Mapping[str, Any]
         )
     if type(index.get("schema_version")) is not int or index.get(
         "schema_version"
-    ) not in (1, 2, 3, 4, 5, 6):
+    ) not in (1, 2, 3, 4, 5, 6, 7):
         raise UnsupportedRegistryError(
             f"unsupported registry schema {index.get('schema_version')!r}"
         )
@@ -201,7 +203,7 @@ def _read_index(path: Path, registry: Registry, root: Path) -> Mapping[str, Any]
         schema = dataset.get("schema_version")
         if (
             type(schema) is not int
-            or schema not in (1, 2, 3, 4, 5, 6)
+            or schema not in (1, 2, 3, 4, 5, 6, 7)
             or schema > index["schema_version"]
         ):
             raise UnsupportedRegistryError(
@@ -287,7 +289,7 @@ def _decode_dataset(
     decoder = representation.get("decoder")
     decoded: Decoded
     if decoder == "named-splits":
-        if dataset.get("schema_version") not in (4, 5, 6):
+        if dataset.get("schema_version") not in (4, 5, 6, 7):
             raise UnsupportedDecoderError("named-splits requires manifest schema 4")
         recipes = split_recipes(representation)
         children = []
