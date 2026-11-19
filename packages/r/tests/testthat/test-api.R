@@ -154,7 +154,7 @@ test_that("public failures use the shared semantic taxonomy", {
   )
 
   index <- seeded$index
-  index$datasets[[1]]$representation$decoder_version <- 2L
+  index$datasets[[1]]$representation$decoder_version <- 3L
   unsupported <- reseal_index(index, cache_dir)
   expect_error(
     fetch_data(

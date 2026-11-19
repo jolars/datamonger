@@ -34,8 +34,7 @@
     split_names <- c(split_names, split$name)
     if (
       !(identical(split$decoder_version, 1L) ||
-        (identical(split$decoder_version, 2L) &&
-          identical(split$decoder, "libsvm"))) ||
+        identical(split$decoder_version, 2L)) ||
         !.is_scalar_character(split$decoder) ||
         !(split$decoder %in% c("delimited-text", "libsvm")) ||
         !is.list(split$options)

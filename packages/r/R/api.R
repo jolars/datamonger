@@ -432,13 +432,12 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
 
   if (
     !(identical(representation$decoder_version, 1L) ||
-      (identical(representation$decoder_version, 2L) &&
-        decoder %in% c("libsvm", "libsvm-split"))) ||
+      identical(representation$decoder_version, 2L)) ||
       !(decoder %in% c("delimited-text", "libsvm", "libsvm-split"))
   ) {
     .abort_category(
       "unsupported-decoder",
-      "R supports delimited-text version 1 and LIBSVM and LIBSVM split versions 1 and 2"
+      "R supports delimited-text, LIBSVM, and LIBSVM split versions 1 and 2"
     )
   }
 
@@ -448,12 +447,14 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
   ) {
     .abort_category(
       "unsupported-decoder",
-      "LIBSVM v2 requires manifest schema 5"
+      "decoder version 2 requires manifest schema 5"
     )
   }
 
   if (
-    identical(representation$decoder_version, 2L) && !dm_supports_libsvm_v2()
+    identical(representation$decoder_version, 2L) &&
+      !identical(decoder, "delimited-text") &&
+      !dm_supports_libsvm_v2()
   ) {
     .abort_category(
       "unsupported-decoder",
@@ -500,8 +501,17 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
         "delimited-text requires CSV or TSV"
       )
     }
-    expected_delimiter <- if (identical(formats[[1]], "csv")) "," else "\t"
-    if (!identical(options$delimiter, expected_delimiter)) {
+    delimiters <- if (identical(formats[[1]], "csv")) "," else "\t"
+    if (
+      identical(formats[[1]], "csv") &&
+        identical(representation$decoder_version, 2L)
+    ) {
+      delimiters <- c(",", ";")
+    }
+    if (
+      !.is_scalar_character(options$delimiter) ||
+        !(options$delimiter %in% delimiters)
+    ) {
       .abort_category(
         "unsupported-decoder",
         "artifact format and delimiter disagree"

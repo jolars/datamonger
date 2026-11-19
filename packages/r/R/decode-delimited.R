@@ -42,7 +42,7 @@
   }
   if (
     !.is_scalar_character(options$delimiter) ||
-      !(options$delimiter %in% c(",", "\t"))
+      !(options$delimiter %in% c(",", ";", "\t"))
   ) {
     .abort_category("unsupported-decoder", "unsupported delimiter")
   }
