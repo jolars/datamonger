@@ -101,3 +101,20 @@ test_that("multilabel public fetch verifies both splits", {
   expect_identical(result$info$canonical_digest,
     case$manifest$representation$expect$verification[[1]]$digest)
 })
+
+test_that("ranking public fetch verifies row-aligned query IDs", {
+  skip_if(!dm_internal("dm_supports_svmlight_ranking")(), "Requires the updated core.")
+  case <- read_fixture_json("conformance", "svmlight-ranking.json")
+  cache_dir <- tempfile("datamonger-ranking-")
+  registry <- seed_split_case(case, cache_dir, "gzip")
+  result <- fetch_data("conformance:ranking@1", registry = registry,
+    cache_dir = cache_dir, offline = TRUE, return_info = TRUE)
+  expect_identical(names(result$data), c("train", "test"))
+  train <- result$data$train
+  expect_s3_class(train, "datamonger_ranking_sparse_dataset")
+  expect_identical(format(train$query_id), c("7", "9223372036854775807", "7"))
+  expect_equal(as.numeric(train$response), c(1, 0, 2))
+  expect_equal(as.matrix(train$features), matrix(c(2, 0, 0, 0, 0, -3), 3L))
+  expect_identical(result$info$canonical_digest,
+    case$manifest$representation$expect$verification[[1]]$digest)
+})

@@ -367,6 +367,13 @@ fn dm_decode(
                 &mut control,
             )?,
             #[cfg(local_core_v2)]
+            "svmlight-ranking" => core::decode_svmlight_ranking_with_control(
+                reader(&paths[0], &compressions[0])?,
+                &libsvm_options(&options)?,
+                dimension(&options, "index_base")?,
+                &mut control,
+            )?,
+            #[cfg(local_core_v2)]
             "libsvm-multilabel" => {
                 let options = core::LibsvmMultilabelOptions {
                     feature_count: dimension(&options, "feature_count")?,
@@ -475,11 +482,18 @@ fn dm_supports_libsvm_multilabel() -> bool {
     cfg!(local_core_v2)
 }
 
+/// Report whether this build includes the SVMLight ranking decoder.
+#[extendr]
+fn dm_supports_svmlight_ranking() -> bool {
+    cfg!(local_core_v2)
+}
+
 extendr_module! {
     mod datamonger;
     fn dm_decode;
     fn dm_supports_libsvm_v2;
     fn dm_supports_libsvm_multilabel;
+    fn dm_supports_svmlight_ranking;
     fn dm_canonical;
     fn dm_http_gzip;
     fn dm_parse_binary64;

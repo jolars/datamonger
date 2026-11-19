@@ -55,6 +55,10 @@ Multilabel results have sparse \code{features} and \code{response} matrices and
 a \code{label_index_base}. Source label \code{k} maps to column
 \code{k - label_index_base + 1}.
 
+Ranking results have class \code{datamonger_ranking_sparse_dataset} and
+contain sparse \code{features}, a relevance vector \code{response}, and a
+row-aligned int64 vector \code{query_id}.
+
 Metadata records expose \code{preprocessing} when recorded in a version 3
 registry. Upstream processing and Datamonger preparation have separate stages,
 with status \code{unknown}, \code{none}, or \code{documented}. Known steps retain

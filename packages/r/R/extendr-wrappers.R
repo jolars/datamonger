@@ -14,6 +14,9 @@ dm_supports_libsvm_v2 <- function() .Call(wrap__dm_supports_libsvm_v2)
 #' Report whether this build includes the multilabel decoder.
 dm_supports_libsvm_multilabel <- function() .Call(wrap__dm_supports_libsvm_multilabel)
 
+#' Report whether this build includes the SVMLight ranking decoder.
+dm_supports_svmlight_ranking <- function() .Call(wrap__dm_supports_svmlight_ranking)
+
 #' Encode or hash supplied logical components for conformance and diagnostics.
 dm_canonical <- function(components, hash) .Call(wrap__dm_canonical, components, hash)
 

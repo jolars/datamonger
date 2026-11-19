@@ -130,3 +130,19 @@
   )
   decoded
 }
+
+.decode_svmlight_ranking <- function(path, options, compression, hash) {
+  if (!(identical(options$index_base, 0L) || identical(options$index_base, 1L)) ||
+      identical(options$target_name, "query_id")) {
+    .abort_category("unsupported-decoder", "invalid SVMLight ranking options")
+  }
+  scalar <- options
+  scalar$index_base <- 1L
+  .validate_libsvm_options(scalar)
+  decoded <- .native_result(dm_decode("svmlight-ranking", path, compression, options, hash))
+  data <- .sparse_data(decoded$components)
+  data$query_id <- .public_vector(decoded$components[[3]])
+  class(data) <- "datamonger_ranking_sparse_dataset"
+  decoded$data <- data
+  decoded
+}

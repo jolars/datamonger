@@ -404,7 +404,7 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
   decoder <- representation$decoder
 
   if (identical(decoder, "named-splits")) {
-    if (!(dataset$schema_version %in% c(4L, 5L, 6L))) {
+    if (!(dataset$schema_version %in% c(4L, 5L, 6L, 7L))) {
       .abort_category(
         "unsupported-decoder",
         "named-splits requires manifest schema 4"
@@ -433,7 +433,7 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
   if (
     !(identical(representation$decoder_version, 1L) ||
       identical(representation$decoder_version, 2L)) ||
-      !(decoder %in% c("delimited-text", "libsvm", "libsvm-split", "libsvm-multilabel"))
+      !(decoder %in% c("delimited-text", "libsvm", "libsvm-split", "libsvm-multilabel", "svmlight-ranking"))
   ) {
     .abort_category(
       "unsupported-decoder",
@@ -443,7 +443,7 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
 
   if (
     identical(representation$decoder_version, 2L) &&
-      !(dataset$schema_version %in% c(5L, 6L))
+      !(dataset$schema_version %in% c(5L, 6L, 7L))
   ) {
     .abort_category(
       "unsupported-decoder",
@@ -462,8 +462,16 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
     )
   }
 
+  if (identical(decoder, "svmlight-ranking")) {
+    if (!identical(representation$decoder_version, 1L) || !identical(dataset$schema_version, 7L)) {
+      .abort_category("unsupported-decoder", "SVMLight ranking requires manifest schema 7 and decoder version 1")
+    }
+    if (!dm_supports_svmlight_ranking()) {
+      .abort_category("unsupported-decoder", "SVMLight ranking requires an updated native core")
+    }
+  }
   if (identical(decoder, "libsvm-multilabel")) {
-    if (!identical(representation$decoder_version, 1L) || !identical(dataset$schema_version, 6L)) {
+    if (!identical(representation$decoder_version, 1L) || !(dataset$schema_version %in% c(6L, 7L))) {
       .abort_category("unsupported-decoder", "multilabel LIBSVM version 1 requires manifest schema 6")
     }
     if (!dm_supports_libsvm_multilabel()) {
@@ -550,8 +558,8 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
 #' @param return_info Whether to return reproducibility metadata with the data.
 #' @return
 #' An R data frame, `datamonger_sparse_dataset`, or
-#' `datamonger_sparse_dataset_split`, a `datamonger_multilabel_sparse_dataset`,
-#' or a provider-named
+#' `datamonger_sparse_dataset_split`, `datamonger_multilabel_sparse_dataset`,
+#' `datamonger_ranking_sparse_dataset`, or a provider-named
 #' `datamonger_dataset_splits` list. With `return_info = TRUE`, returns a
 #' `datamonger_fetch_result` containing `data` and `info`.
 #' @export

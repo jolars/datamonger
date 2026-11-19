@@ -36,7 +36,7 @@
       !(identical(split$decoder_version, 1L) ||
         identical(split$decoder_version, 2L)) ||
         !.is_scalar_character(split$decoder) ||
-        !(split$decoder %in% c("delimited-text", "libsvm", "libsvm-multilabel")) ||
+        !(split$decoder %in% c("delimited-text", "libsvm", "libsvm-multilabel", "svmlight-ranking")) ||
         !is.list(split$options)
     ) {
       fail("unsupported split decoder recipe")
@@ -77,6 +77,9 @@
       setup$options,
       setup$compressions[[1]],
       hash = hash
+    ),
+    `svmlight-ranking` = .decode_svmlight_ranking(
+      paths[[1]], setup$options, setup$compressions[[1]], hash
     ),
     `libsvm-multilabel` = .decode_libsvm_multilabel(
       paths[[1]], setup$options, setup$compressions[[1]], hash

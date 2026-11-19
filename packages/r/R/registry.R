@@ -307,7 +307,8 @@ active_registry <- function(project_dir = getwd()) {
       !identical(index$schema_version, 3L) &&
       !identical(index$schema_version, 4L) &&
       !identical(index$schema_version, 5L) &&
-      !identical(index$schema_version, 6L)
+      !identical(index$schema_version, 6L) &&
+      !identical(index$schema_version, 7L)
   ) {
     .abort_category(
       "unsupported-registry",
@@ -442,7 +443,7 @@ active_registry <- function(project_dir = getwd()) {
   if (
     !is.integer(dataset$schema_version) ||
       length(dataset$schema_version) != 1L ||
-      !(dataset$schema_version %in% 1:6) ||
+      !(dataset$schema_version %in% 1:7) ||
       dataset$schema_version > index$schema_version
   ) {
     .abort_category(
