@@ -23,7 +23,7 @@ typedef struct { const uint64_t *data; size_t len; } DmU64s;
 /* Types: 1=float64, 2=int64, 3=UTF-8 string, 4=bool (one uint8_t, 0 or 1). */
 typedef struct { DmBytes name; uint32_t data_type; } DmColumn;
 typedef struct {
-    uint32_t delimiter; /* ASCII comma or tab. */
+    uint32_t delimiter; /* ASCII comma, semicolon, or tab. */
     const DmColumn *columns;
     size_t column_count;
     const DmBytes *missing_values;
