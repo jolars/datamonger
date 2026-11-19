@@ -12,7 +12,15 @@ use crate::error::{Error, Result};
 
 pub const BUNDLED_INDEX: &[u8] = include_bytes!("../assets/index.json");
 const BUNDLED_SELECTOR: &[u8] = include_bytes!("../assets/selector.json");
-const SCHEMAS: [(&str, &str); 15] = [
+const SCHEMAS: [(&str, &str); 17] = [
+    (
+        "https://datamonger.dev/spec/schema/index-v7.schema.json",
+        include_str!("../assets/index-v7.schema.json"),
+    ),
+    (
+        "https://datamonger.dev/spec/schema/manifest-v7.schema.json",
+        include_str!("../assets/manifest-v7.schema.json"),
+    ),
     (
         "https://datamonger.dev/spec/schema/index-v6.schema.json",
         include_str!("../assets/index-v6.schema.json"),
@@ -404,6 +412,24 @@ mod tests {
         validate_schema(&index, "index").unwrap();
 
         index["schema_version"] = json!(5);
+        assert!(validate_schema(&index, "index").is_err());
+    }
+
+    #[test]
+    fn ranking_requires_schema_7() {
+        let mut index: Value = serde_json::from_slice(BUNDLED_INDEX).unwrap();
+        let case: Value = serde_json::from_str(include_str!(
+            "../../../tests/conformance/svmlight-ranking.json"
+        ))
+        .unwrap();
+        index["schema_version"] = json!(7);
+        index["datasets"]
+            .as_array_mut()
+            .unwrap()
+            .push(case["manifest"].clone());
+        validate_schema(&index, "index").unwrap();
+
+        index["schema_version"] = json!(6);
         assert!(validate_schema(&index, "index").is_err());
     }
 
