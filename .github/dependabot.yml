@@ -10,6 +10,10 @@ updates:
       interval: weekly
     commit-message:
       prefix: ci
+    groups:
+      github-actions:
+        patterns:
+          - "*"
 
   - package-ecosystem: cargo
     directory: /
