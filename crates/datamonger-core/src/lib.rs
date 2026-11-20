@@ -21,6 +21,7 @@ mod canonical;
 mod compression;
 mod decode;
 mod error;
+mod graph;
 mod model;
 
 pub use canonical::{
@@ -42,6 +43,7 @@ pub use decode::{
     DelimitedOptions, LabelType, LibsvmMultilabelOptions, LibsvmOptions,
 };
 pub use error::{Error, ErrorKind, Result};
+pub use graph::{assemble_graph, assemble_hypergraph, decode_hif, HifColumns, HifOptions};
 pub use model::{Component, DataType, Shape, Values};
 
 /// A caller-supplied cancellation checkpoint. Implementations must return errors
