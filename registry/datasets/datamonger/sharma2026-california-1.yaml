@@ -1,0 +1,103 @@
+schema_version: 3
+source: datamonger
+name: sharma2026-california
+version: '1'
+title: GeoGraphNetworks California road network
+description: Edge list for the GeoGraphNetworks California road network, derived from TIGER/Line
+  primary and secondary roads. Contains 9,152 undirected edges among 4,600 nodes. A companion
+  node table contains the source coordinates.
+modality: tabular
+provenance:
+  provider: GeoGraphNetworks via Figshare
+  upstream_name: GeoGraphNetworks
+  upstream_id: california.json
+  upstream_version: '3'
+  retrieved_at: '2026-11-20'
+  landing_page: https://doi.org/10.6084/m9.figshare.27284859.v3
+  authors:
+  - Harish Sharma
+  - Peter Mooney
+  - Edgar Galván-López
+  citation: Sharma et al. (2026), GeoGraphNetworks. https://doi.org/10.1016/j.dib.2026.112655
+license:
+  status: known
+  identifier: CC-BY-4.0
+  url: https://creativecommons.org/licenses/by/4.0/
+  evidence: The version 3 Figshare metadata at https://api.figshare.com/v2/articles/27284859/versions/3
+    identifies the source license as CC BY 4.0. The CSV deposit at https://doi.org/10.5281/zenodo.24400335
+    retains that license and cites the versioned source.
+  reviewed_by: Codex (automated source review)
+  reviewed_at: '2026-11-20'
+artifacts:
+- name: edges
+  format: csv
+  compression: gzip
+  size: 116013
+  sha256: a5278e1c5a987cb35631980629cb57aebcce50369da91ebd5fc1ce844b408e0c
+  distribution: mirror
+  downloads:
+  - kind: mirror
+    url: https://zenodo.org/api/records/24400335/files/edges.csv.gz/content
+- name: nodes
+  format: csv
+  compression: gzip
+  size: 93357
+  sha256: f2eb7ccc893a3019dab0fe563f956a389e17854a1a41bb82a16eff7ea88a6583
+  distribution: mirror
+  downloads:
+  - kind: mirror
+    url: https://zenodo.org/api/records/24400335/files/nodes.csv.gz/content
+representation:
+  decoder: delimited-text
+  decoder_version: 1
+  inputs:
+    data: edges
+  options:
+    encoding: utf-8
+    delimiter: ','
+    header: true
+    quote: '"'
+    escape: double
+    row_order: source
+    columns:
+    - name: source
+      type: int64
+    - name: target
+      type: int64
+    - name: weight
+      type: float64
+  expect:
+    components:
+    - name: source
+      kind: vector
+      type: int64
+      length: 9152
+    - name: target
+      kind: vector
+      type: int64
+      length: 9152
+    - name: weight
+      kind: vector
+      type: float64
+      length: 9152
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: 010cedf1d311d342f16b0314193668f3d915cebc6c3411992da23d24d994f5d4
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - https://doi.org/10.1016/j.dib.2026.112655
+    steps:
+    - kind: graph-construction
+      description: GeoGraphNetworks derived an undirected graph from TIGER/Line primary and
+        secondary roads.
+  datamonger:
+    status: documented
+    evidence:
+    - curation/sharma2026-delaware/1/prepare.py
+    steps:
+    - kind: format-conversion
+      description: Convert the source JSON into separate gzip CSV tables while preserving
+        source IDs, row order, coordinates, and edge lengths.
