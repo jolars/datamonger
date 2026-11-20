@@ -111,6 +111,8 @@ datasets:
       versions: ["1"]
     iris:
       versions: ["1"]
+    p53-mutants:
+      versions: ["1"]
     wholesale-customers:
       versions: ["1"]
     wine-quality:
