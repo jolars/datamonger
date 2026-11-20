@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.6.0](https://github.com/jolars/datamonger/compare/registry-v1.5.0...registry-v1.6.0) (2026-11-20)
+
+### Features
+
+- **registry:** add LIBSVM news20 dataset ([`7459cc6`](https://github.com/jolars/datamonger/commit/7459cc644415f15d6f392585170249b1262f1f67))
+- **registry:** add LIBSVM leukemia dataset ([`3938a99`](https://github.com/jolars/datamonger/commit/3938a99d336eda153e282337c8b0351b289868b2))
+- **registry:** add Tribler Learning-to-Rank ([`5463d86`](https://github.com/jolars/datamonger/commit/5463d8639ff4cc05721f491f77e8164edefcd45f))
+- **registry:** add LIBSVM Scene Classification ([`344f227`](https://github.com/jolars/datamonger/commit/344f2278e9a0b1dbe8d554a6b22e687a4b9c7d5a))
+- **registry:** add UCI Wine Quality red wines ([`dbb7e12`](https://github.com/jolars/datamonger/commit/dbb7e1206166702f3e7f66dd936f87fc9e1b95b4))
+- **registry:** add Duke breast cancer dataset ([`f89a7f4`](https://github.com/jolars/datamonger/commit/f89a7f4ded6594849bafc719aae9a39817270f4d))
+- **registry:** add `e2006-tfidf` dataset ([`bb4df26`](https://github.com/jolars/datamonger/commit/bb4df2649d9e914a5efeeb04469d9c25b0031f78))
+- **registry:** add `covtype` dataset ([`f0927c5`](https://github.com/jolars/datamonger/commit/f0927c58ecca55d53a8afcf98eaee48cc2a7a71f))
+- **registry:** add `e2006-log1p` dataset ([`41c8801`](https://github.com/jolars/datamonger/commit/41c88011e4ceb55064cee6fda1c5376632149b6f))
+- **registry:** add `covtype-binary` dataset ([`2ff69e2`](https://github.com/jolars/datamonger/commit/2ff69e23f27dec4dd2617cea309d9d34da2f8507))
+- **registry:** add fallback for `heart_scale` ([`1fa1bc9`](https://github.com/jolars/datamonger/commit/1fa1bc9ce7615ac240286168e0a2e357c262448b))
+
 ## [1.5.0](https://github.com/jolars/datamonger/compare/registry-v1.4.0...registry-v1.5.0) (2026-11-09)
 
 ### Features
