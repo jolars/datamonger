@@ -60,7 +60,6 @@
     "packages/cli": {
       "release-type": "rust",
       "package-name": "datamonger",
-      "release-draft": true,
       "exclude-paths": [
         "examples"
       ]
