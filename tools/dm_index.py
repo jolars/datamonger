@@ -9,12 +9,20 @@ import sys
 from collections.abc import Mapping, Sequence
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import yaml
 from jsonschema import Draft202012Validator, FormatChecker
 from referencing import Registry as SchemaRegistry
 from referencing import Resource
+
+if TYPE_CHECKING:
+    from yaml import SafeLoader as _SafeLoader
+else:
+    try:
+        from yaml import CSafeLoader as _SafeLoader
+    except ImportError:
+        from yaml import SafeLoader as _SafeLoader
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_RELEASE = Path("registry/releases/2026.09/release.yaml")
@@ -22,7 +30,7 @@ DEFAULT_RELEASE = Path("registry/releases/2026.09/release.yaml")
 Identity = tuple[str, str, str]
 
 
-class _UniqueKeyLoader(yaml.SafeLoader):
+class _UniqueKeyLoader(_SafeLoader):
     """Load the JSON-compatible YAML subset while rejecting duplicate keys."""
 
 

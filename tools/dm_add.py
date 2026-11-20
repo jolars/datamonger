@@ -483,8 +483,9 @@ def build(
 
 
 def _yaml_bytes(manifest: Mapping[str, Any]) -> bytes:
-    rendered = yaml.safe_dump(
+    rendered = yaml.dump(
         dict(manifest),
+        Dumper=getattr(yaml, "CSafeDumper", yaml.SafeDumper),
         allow_unicode=True,
         sort_keys=False,
         width=88,
