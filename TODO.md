@@ -7,6 +7,19 @@
 - [x] Support SVMLight ranking files with `qid` fields.
 - [ ] Support Excel workbooks (`.xlsx`) such as UCI's Online Retail dataset.
 
+## Graphs and hypergraphs
+
+- [ ] Wire graph and HIF decoding into `fetch_data()` in Python, R, and Julia.
+- [ ] Add manifest and index schema 8 support to the clients, CLI, and registry tooling.
+- [ ] Register the California, Delaware, and Texas road networks as graph `@2` datasets.
+- [ ] Register XGI House committees as a hypergraph using the original HIF artifact.
+- [ ] Verify canonical digests and public fetches across Python, R, and Julia.
+  Check CLI metadata and artifact retrieval.
+- [ ] Release the compatible clients, including Julia's rebuilt native library,
+  then publish the registry with the new graph and hypergraph entries.
+- [ ] Check registry 1.7.0 publication for the existing road edge tables.
+  Its configured index download URL returned HTTP 404.
+
 ## Datasets
 
 ### LIBSVM
