@@ -1,0 +1,26 @@
+{
+  "record_id": 24399892,
+  "doi": "10.5281/zenodo.24399892",
+  "record_url": "https://zenodo.org/records/24399892",
+  "status": "published",
+  "file_access": "public",
+  "license": "CC-BY-4.0",
+  "verified_at": "2026-11-20",
+  "files": {
+    "README.md": {
+      "url": "https://zenodo.org/api/records/24399892/files/README.md/content",
+      "size": 1707,
+      "sha256": "34000c87b3eec1cd69d4dc4a1302e05e90c12e69b213c8aa5417e66959b232e0"
+    },
+    "edges.csv.gz": {
+      "url": "https://zenodo.org/api/records/24399892/files/edges.csv.gz/content",
+      "size": 25129,
+      "sha256": "634b9b107f929edd4cb92b65e7157e748ad87aa82dd50511d3cabeb297b601d3"
+    },
+    "nodes.csv.gz": {
+      "url": "https://zenodo.org/api/records/24399892/files/nodes.csv.gz/content",
+      "size": 14894,
+      "sha256": "1b2c2e3072adeda324c08b52cd1a5f9a41b9ae3510513765f9dcb7e8862d6e70"
+    }
+  }
+}
