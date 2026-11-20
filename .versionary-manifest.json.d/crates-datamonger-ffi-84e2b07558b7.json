@@ -1,14 +1,11 @@
 {
   "manifest-version": 1,
   "path": "crates/datamonger-ffi",
-  "baseline-sha": "f94a700ebfd15641b8d6fc3db5b3216336fe3115",
+  "baseline-sha": "d92b185a3f597291afa626b3359dacb79b13d0cd",
   "release-target": {
     "path": "crates/datamonger-ffi",
-    "version": "0.3.1",
-    "tag": "datamonger-ffi-v0.3.1",
-    "dependencies": [
-      "crates/datamonger-core"
-    ]
+    "version": "0.4.0",
+    "tag": "datamonger-ffi-v0.4.0"
   },
-  "release-branch": "versionary/release-datamonger-core-9e1ace9cc7be"
+  "release-branch": "versionary/release-datamonger-ffi-84e2b07558b7"
 }
