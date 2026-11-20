@@ -43,11 +43,11 @@ _DEFAULT_CATALOG_URL = (
 )
 
 BUNDLED_REGISTRY = Registry(
-    release="1.6.0",
-    index_sha256="7bfbec1fa1e2d3cd17c66f5bf6d340c81c61f6d77a6c666607cb52473f9b2f1c",
+    release="1.7.0",
+    index_sha256="0837dbe2f30bb1235de74b6bd4075aec46ff065ad9d5a408df4cec7a7178fa6e",
     index_url=(
         "https://github.com/jolars/datamonger/releases/download/"
-        "registry-v1.6.0/index.json"
+        "registry-v1.7.0/index.json"
     ),
 )
 """Strong selector for the immutable registry index shipped with the Python package.
