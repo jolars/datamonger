@@ -13,7 +13,7 @@
     text
   }
 
-  if (!(dataset$schema_version %in% c(3L, 4L, 5L, 6L, 7L))) {
+  if (!(dataset$schema_version %in% c(3L, 4L, 5L, 6L, 7L, 8L))) {
     fail("preprocessing requires manifest schema 3 or 4")
   }
 

@@ -79,3 +79,33 @@ reseal_index <- function(index, cache_dir, transform = identity) {
   writeBin(contents, file.path(directory, digest))
   registry_selector(index$release, digest, "https://example.com/index.json")
 }
+
+seed_decoder_case <- function(case, cache_dir, compression = "none") {
+  dataset <- case$manifest
+  directory <- file.path(cache_dir, "objects", "sha256")
+  dir.create(directory, recursive = TRUE, showWarnings = FALSE)
+  for (i in seq_along(dataset$artifacts)) {
+    artifact <- dataset$artifacts[[i]]
+    path <- fixture_path("conformance", case$artifact_paths[[artifact$name]])
+    if (!identical(compression, "none")) {
+      path <- compress_fixture(path, compression)
+    }
+    contents <- readBin(path, "raw", n = file.info(path)$size)
+    artifact$compression <- compression
+    artifact$size <- length(contents)
+    artifact$sha256 <- digest::digest(
+      contents,
+      algo = "sha256",
+      serialize = FALSE
+    )
+    writeBin(contents, file.path(directory, artifact$sha256))
+    dataset$artifacts[[i]] <- artifact
+  }
+  index <- list(
+    schema_version = dataset$schema_version,
+    release = "named-splits-test",
+    datasets = list(dataset),
+    defaults = list()
+  )
+  reseal_index(index, cache_dir)
+}

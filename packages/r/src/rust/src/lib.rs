@@ -335,6 +335,38 @@ fn envelope(result: core::Result<Robj>) -> List {
     }
 }
 
+fn option_list(options: &List, name: &str) -> core::Result<List> {
+    field(options, name)?
+        .as_list()
+        .ok_or_else(|| invalid(format!("expected {name} options")))
+}
+
+fn flag(options: &List, name: &str) -> core::Result<bool> {
+    field(options, name)?
+        .as_bool()
+        .ok_or_else(|| invalid(format!("expected {name} to be a boolean")))
+}
+
+fn hif_columns(options: &List, name: &str) -> core::Result<core::HifColumns> {
+    let table = option_list(options, name)?;
+    let attributes = option_list(&table, "attributes")?
+        .values()
+        .map(|value| {
+            let column = value
+                .as_list()
+                .ok_or_else(|| invalid("expected attribute column"))?;
+            Ok((
+                string(&field(&column, "name")?)?,
+                data_type(&string(&field(&column, "type")?)?)?,
+            ))
+        })
+        .collect::<core::Result<_>>()?;
+    Ok(core::HifColumns {
+        attributes,
+        weight: flag(&table, "weight")?,
+    })
+}
+
 // Decode verified artifact paths and optionally hash before converting buffers.
 #[extendr]
 fn dm_decode(
@@ -354,6 +386,30 @@ fn dm_decode(
                 reader(&paths[0], &compressions[0])?,
                 &delimited_options(&options)?,
                 &mut control,
+            )?,
+            "graph-tables" if paths.len() == 2 => {
+                let nodes = core::decode_delimited_with_control(
+                    reader(&paths[0], &compressions[0])?,
+                    &delimited_options(&option_list(&options, "nodes")?)?,
+                    &mut control,
+                )?;
+                let edges = core::decode_delimited_with_control(
+                    reader(&paths[1], &compressions[1])?,
+                    &delimited_options(&option_list(&options, "edges")?)?,
+                    &mut control,
+                )?;
+                core::assemble_graph(flag(&options, "directed")?, nodes, edges)?
+            }
+            "hif" if paths.len() == 1 => core::decode_hif(
+                reader(&paths[0], &compressions[0])?,
+                &core::HifOptions {
+                    directed: flag(&options, "directed")?,
+                    node_id: data_type(&string(&field(&options, "node_id")?)?)?,
+                    edge_id: data_type(&string(&field(&options, "edge_id")?)?)?,
+                    nodes: hif_columns(&options, "nodes")?,
+                    hyperedges: hif_columns(&options, "hyperedges")?,
+                    incidences: hif_columns(&options, "incidences")?,
+                },
             )?,
             "libsvm" => core::decode_libsvm_with_control(
                 reader(&paths[0], &compressions[0])?,

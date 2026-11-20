@@ -379,9 +379,12 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
   )
 
   decoder <- representation$decoder
+  if (identical(decoder, "graph-tables") || identical(decoder, "hif")) {
+    return(.graph_setup(dataset, representation))
+  }
 
   if (identical(decoder, "named-splits")) {
-    if (!(dataset$schema_version %in% c(4L, 5L, 6L, 7L))) {
+    if (!(dataset$schema_version %in% c(4L, 5L, 6L, 7L, 8L))) {
       .abort_category(
         "unsupported-decoder",
         "named-splits requires manifest schema 4"
@@ -427,7 +430,7 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
 
   if (
     identical(representation$decoder_version, 2L) &&
-      !(dataset$schema_version %in% c(5L, 6L, 7L))
+      !(dataset$schema_version %in% c(5L, 6L, 7L, 8L))
   ) {
     .abort_category(
       "unsupported-decoder",
@@ -449,7 +452,7 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
   if (identical(decoder, "svmlight-ranking")) {
     if (
       !identical(representation$decoder_version, 1L) ||
-        !identical(dataset$schema_version, 7L)
+        !(dataset$schema_version %in% c(7L, 8L))
     ) {
       .abort_category(
         "unsupported-decoder",
@@ -466,7 +469,7 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
   if (identical(decoder, "libsvm-multilabel")) {
     if (
       !identical(representation$decoder_version, 1L) ||
-        !(dataset$schema_version %in% c(6L, 7L))
+        !(dataset$schema_version %in% c(6L, 7L, 8L))
     ) {
       .abort_category(
         "unsupported-decoder",
@@ -591,10 +594,14 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
 #' `NULL`. These records describe the registered artifacts; fetching does not
 #' apply the transformations.
 #'
+#' Graphs return a `datamonger_graph_dataset` with `directed`, `nodes`, and
+#' `edges`. A `datamonger_hypergraph_dataset` has `directed`, `nodes`,
+#' `hyperedges`, and `incidences`. Each topology table is a data frame.
+#'
 #' @returns
-#' `fetch_data()` returns a data frame, a Datamonger sparse result, or a
-#' `datamonger_dataset_splits` named list in provider split order; with
-#' `return_info = TRUE`, it returns a `datamonger_fetch_result`.
+#' `fetch_data()` returns a graph, hypergraph, data frame, Datamonger sparse
+#' result, or `datamonger_dataset_splits` named list in provider split order.
+#' With `return_info = TRUE`, it returns a `datamonger_fetch_result`.
 #' `fetch_artifact()` returns a cache path. Metadata functions return one or a
 #' list of `datamonger_data_info` records. Sparse features use a row-compressed
 #' `Matrix`, or an exact `datamonger_csr_matrix` when a declared dimension

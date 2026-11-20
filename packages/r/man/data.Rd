@@ -63,9 +63,9 @@ the registry default.}
 dataset.}
 }
 \value{
-\code{fetch_data()} returns a data frame, a Datamonger sparse result, or a
-\code{datamonger_dataset_splits} named list in provider split order; with
-\code{return_info = TRUE}, it returns a \code{datamonger_fetch_result}.
+\code{fetch_data()} returns a graph, hypergraph, data frame, Datamonger sparse
+result, or \code{datamonger_dataset_splits} named list in provider split order.
+With \code{return_info = TRUE}, it returns a \code{datamonger_fetch_result}.
 \code{fetch_artifact()} returns a cache path. Metadata functions return one or a
 list of \code{datamonger_data_info} records. Sparse features use a row-compressed
 \code{Matrix}, or an exact \code{datamonger_csr_matrix} when a declared dimension
@@ -95,6 +95,10 @@ stages, with status \code{unknown}, \code{none}, or \code{documented}. Known ste
 their order, string parameters, and evidence references. Missing history is
 \code{NULL}. These records describe the registered artifacts; fetching does not
 apply the transformations.
+
+Graphs return a \code{datamonger_graph_dataset} with \code{directed}, \code{nodes}, and
+\code{edges}. A \code{datamonger_hypergraph_dataset} has \code{directed}, \code{nodes},
+\code{hyperedges}, and \code{incidences}. Each topology table is a data frame.
 }
 \examples{
 cache <- tempfile("datamonger-cache-")

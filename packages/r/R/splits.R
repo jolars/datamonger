@@ -92,6 +92,10 @@
     ))
   }
 
+  if (setup$decoder %in% c("graph-tables", "hif")) {
+    return(.decode_graph(setup, paths, hash))
+  }
+
   switch(
     setup$decoder,
     `delimited-text` = .decode_delimited(
