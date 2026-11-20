@@ -1,3 +1,10 @@
+# datamonger 0.3.0
+
+## Features
+
+- fetch graphs and hypergraphs in R ([`09c325f`](https://github.com/jolars/datamonger/commit/09c325fb9ddd823acaaa61a9cc5113c21a0383f9))
+- **r:** update datamonger_core to 0.4 ([`40d5c50`](https://github.com/jolars/datamonger/commit/40d5c500af707fa80333da91cdff8bbe8bd4ba48))
+
 # datamonger 0.2.0
 
 ## Features
