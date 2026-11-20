@@ -19,7 +19,7 @@ path = "document.rs"
 [dependencies]
 # Keep Versionary from advancing this dependency before the core is published
 # and the R package's vendor archive is refreshed.
-datamonger_core = { package = "datamonger-core", version = "0.1" }
+datamonger_core = { package = "datamonger-core", version = "0.4" }
 extendr-api = "0.9.0"
 
 [profile.release]
