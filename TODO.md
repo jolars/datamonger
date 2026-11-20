@@ -62,7 +62,7 @@ Register these catalog entries under the `libsvm` source. See the
 - [ ] `letter`
 - [ ] `mnist`
 - [ ] `mnist8m`
-- [ ] `news20`
+- [x] `news20`
 - [ ] `news20 (18,846)`
 - [ ] `pendigits`
 - [ ] `poker`

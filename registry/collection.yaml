@@ -71,6 +71,8 @@ datasets:
       versions: ["1"]
     mushrooms:
       versions: ["1"]
+    news20:
+      versions: ["1"]
     news20-binary:
       versions: ["1"]
     rcv1-binary:

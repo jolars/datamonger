@@ -1,0 +1,109 @@
+schema_version: 5
+source: libsvm
+name: news20
+version: '1'
+title: News20
+description: >-
+  LIBSVM's multiclass 20 Newsgroups dataset represents Usenet posts as sparse
+  text features and labels them by newsgroup. The original training and test files share 62,061
+  feature columns. Feature values, labels, split membership, and row order are preserved.
+modality: tabular
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass.html#news20
+    steps:
+    - kind: train-test-split
+      description: Use the provider's first 80/20 training and test split.
+    notes: >-
+      This entry uses LIBSVM's base files. The provider does not describe the full
+      text feature extraction procedure or map numeric labels to newsgroup names.
+  datamonger:
+    status: none
+    evidence:
+    - spec/decoders/libsvm-v1.md
+    notes: Datamonger decodes the upstream files without additional preprocessing.
+provenance:
+  provider: LIBSVM
+  upstream_name: news20
+  landing_page: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass.html#news20
+  authors:
+  - Ken Lang
+  citation: >-
+    Ken Lang. NewsWeeder: Learning to Filter Netnews. Proceedings of the Twelfth
+    International Conference on Machine Learning, pp. 331–339, 1995. https://doi.org/10.1016/B978-1-55860-377-6.50048-7
+  retrieved_at: '2026-11-20'
+license:
+  status: unknown
+  url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass.html#news20
+  evidence: >-
+    LIBSVM gives no license terms for these files. UCI lists CC BY 4.0 for its own
+    Twenty Newsgroups deposit (https://doi.org/10.24432/C5C323). The applicability of those
+    terms to these LIBSVM artifacts has not been established.
+artifacts:
+- name: train
+  format: libsvm
+  compression: bzip2
+  size: 2376572
+  sha256: 8c79851f6f5fdc5540a0d04a5ab728353c42d26b84e73f93bda301c06c15ffe9
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/news20.bz2
+- name: test
+  format: libsvm
+  compression: bzip2
+  size: 602348
+  sha256: 31cab389a4331722c9ba23f0f3b855080de5a8a8b8357a3b323f896a4cfc4648
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/news20.t.bz2
+representation:
+  decoder: libsvm-split
+  decoder_version: 1
+  inputs:
+    train: train
+    test: test
+  options:
+    index_base: 1
+    feature_count: 62061
+    duplicate_features: error
+    label_type: int64
+    row_order: source
+    target_name: response
+  expect:
+    components:
+    - name: train_features
+      kind: sparse_matrix
+      type: float64
+      rows: 15935
+      columns: 62061
+    - name: train_response
+      kind: vector
+      type: int64
+      length: 15935
+    - name: test_features
+      kind: sparse_matrix
+      type: float64
+      rows: 3993
+      columns: 62061
+    - name: test_response
+      kind: vector
+      type: int64
+      length: 3993
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: 37615a44a7d1473a220f9a4dfcac910340145b2446ed4f2d7e8a3bfc41d4af44
+tasks:
+- name: default
+  type: classification
+  splits:
+    train:
+      features: train_features
+      target: train_response
+    test:
+      features: test_features
+      target: test_response
