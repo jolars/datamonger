@@ -1,0 +1,1 @@
+{"network-type": "undirected", "nodes": [{"node": "isolate", "attrs": {"label": "Isolated"}}], "incidences": [{"node": "inferred", "edge": 9007199254740993}]}

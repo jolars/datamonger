@@ -1,0 +1,382 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "graph",
+      "manifest": {
+        "source": "conformance",
+        "version": "1",
+        "title": "Mixed CSV conformance fixture",
+        "description": "Tiny mixed-type CSV used by the language-neutral conformance suite.",
+        "provenance": {
+          "landing_page": "https://example.invalid/datamonger/conformance",
+          "provider": "Datamonger",
+          "retrieved_at": "2026-08-29",
+          "upstream_name": "mixed.csv"
+        },
+        "license": {
+          "identifier": "CC0-1.0",
+          "status": "known"
+        },
+        "name": "graph",
+        "modality": "graph",
+        "schema_version": 8,
+        "artifacts": [
+          {
+            "name": "nodes",
+            "format": "csv",
+            "compression": "none",
+            "size": 22,
+            "sha256": "c139018b4f5269658f1ddb031ff325ad9f9ca34f364303f8f29551024f6a3f18",
+            "distribution": "upstream-only",
+            "downloads": [
+              {
+                "kind": "upstream",
+                "url": "https://example.invalid/graph-nodes.csv"
+              }
+            ]
+          },
+          {
+            "name": "edges",
+            "format": "csv",
+            "compression": "none",
+            "size": 82,
+            "sha256": "4239ea46da3d28502f3505584276dd435cfa033553471d37c0c449b08976a27a",
+            "distribution": "upstream-only",
+            "downloads": [
+              {
+                "kind": "upstream",
+                "url": "https://example.invalid/graph-edges.csv"
+              }
+            ]
+          }
+        ],
+        "representation": {
+          "decoder": "graph-tables",
+          "decoder_version": 1,
+          "options": {
+            "directed": false,
+            "nodes": {
+              "encoding": "utf-8",
+              "delimiter": ",",
+              "header": true,
+              "quote": "\"",
+              "escape": "double",
+              "row_order": "source",
+              "columns": [
+                {
+                  "name": "id",
+                  "type": "int64"
+                }
+              ]
+            },
+            "edges": {
+              "encoding": "utf-8",
+              "delimiter": ",",
+              "header": true,
+              "quote": "\"",
+              "escape": "double",
+              "row_order": "source",
+              "columns": [
+                {
+                  "name": "source",
+                  "type": "int64"
+                },
+                {
+                  "name": "target",
+                  "type": "int64"
+                }
+              ]
+            }
+          },
+          "inputs": {
+            "nodes": "nodes",
+            "edges": "edges"
+          },
+          "expect": {
+            "components": [
+              {
+                "name": "directed",
+                "type": "bool",
+                "kind": "vector",
+                "length": 1
+              },
+              {
+                "name": "nodes/id",
+                "type": "int64",
+                "kind": "vector",
+                "length": 2
+              },
+              {
+                "name": "edges/source",
+                "type": "int64",
+                "kind": "vector",
+                "length": 2
+              },
+              {
+                "name": "edges/target",
+                "type": "int64",
+                "kind": "vector",
+                "length": 2
+              }
+            ],
+            "verification": [
+              {
+                "canonical_form": 1,
+                "algorithm": "sha256",
+                "digest": "21dee3bf9a5b2c2e1f5d30a124af5a1a9b100742518f44d6bbb9d4f49193af99"
+              }
+            ]
+          }
+        }
+      },
+      "artifact_paths": {
+        "nodes": "artifacts/graph-nodes.csv",
+        "edges": "artifacts/graph-edges.csv"
+      },
+      "expected_hex": "444d434601000400000008000000646972656374656401040101000000000000000100080000006e6f6465732f6964010201020000000000000003010000000000200007000000000000000c00000065646765732f736f75726365010201020000000000000003010000000000200001000000000020000c00000065646765732f74617267657401020102000000000000000301000000000020000100000000002000"
+    },
+    {
+      "id": "hif-undirected",
+      "manifest": {
+        "source": "conformance",
+        "version": "1",
+        "title": "Mixed CSV conformance fixture",
+        "description": "Tiny mixed-type CSV used by the language-neutral conformance suite.",
+        "provenance": {
+          "landing_page": "https://example.invalid/datamonger/conformance",
+          "provider": "Datamonger",
+          "retrieved_at": "2026-08-29",
+          "upstream_name": "mixed.csv"
+        },
+        "license": {
+          "identifier": "CC0-1.0",
+          "status": "known"
+        },
+        "name": "hif-undirected",
+        "modality": "hypergraph",
+        "schema_version": 8,
+        "artifacts": [
+          {
+            "name": "data",
+            "format": "hif",
+            "compression": "none",
+            "size": 159,
+            "sha256": "10b339828584999d601f8eab6ad57ac75f65b6257d66fd3dffc8c342824a8eb1",
+            "distribution": "upstream-only",
+            "downloads": [
+              {
+                "kind": "upstream",
+                "url": "https://example.invalid/hif-undirected.json"
+              }
+            ]
+          }
+        ],
+        "representation": {
+          "decoder": "hif",
+          "decoder_version": 1,
+          "options": {
+            "directed": false,
+            "node_id": "string",
+            "edge_id": "int64",
+            "nodes": {
+              "weight": false,
+              "attributes": [
+                {
+                  "name": "label",
+                  "type": "string"
+                }
+              ]
+            },
+            "hyperedges": {
+              "weight": false,
+              "attributes": []
+            },
+            "incidences": {
+              "weight": false,
+              "attributes": []
+            }
+          },
+          "inputs": {
+            "data": "data"
+          },
+          "expect": {
+            "components": [
+              {
+                "name": "directed",
+                "type": "bool",
+                "kind": "vector",
+                "length": 1
+              },
+              {
+                "name": "nodes/id",
+                "type": "string",
+                "kind": "vector",
+                "length": 2
+              },
+              {
+                "name": "nodes/label",
+                "type": "string",
+                "kind": "vector",
+                "length": 2
+              },
+              {
+                "name": "hyperedges/id",
+                "type": "int64",
+                "kind": "vector",
+                "length": 1
+              },
+              {
+                "name": "incidences/node",
+                "type": "string",
+                "kind": "vector",
+                "length": 1
+              },
+              {
+                "name": "incidences/edge",
+                "type": "int64",
+                "kind": "vector",
+                "length": 1
+              }
+            ],
+            "verification": [
+              {
+                "canonical_form": 1,
+                "algorithm": "sha256",
+                "digest": "690403ddd6b78616ca23df84bfdecbca1d33fbff1bddba6271ba360d72ecc038"
+              }
+            ]
+          }
+        }
+      },
+      "artifact_paths": {
+        "data": "artifacts/hif-undirected.json"
+      },
+      "expected_hex": "444d434601000600000008000000646972656374656401040101000000000000000100080000006e6f6465732f6964010301020000000000000003070000000000000069736f6c6174650800000000000000696e6665727265640b0000006e6f6465732f6c6162656c010301020000000000000001080000000000000049736f6c6174656400000000000000000d000000687970657265646765732f696401020101000000000000000101000000000020000f000000696e636964656e6365732f6e6f64650103010100000000000000010800000000000000696e6665727265640f000000696e636964656e6365732f656467650102010100000000000000010100000000002000"
+    },
+    {
+      "id": "hif-directed",
+      "manifest": {
+        "source": "conformance",
+        "version": "1",
+        "title": "Mixed CSV conformance fixture",
+        "description": "Tiny mixed-type CSV used by the language-neutral conformance suite.",
+        "provenance": {
+          "landing_page": "https://example.invalid/datamonger/conformance",
+          "provider": "Datamonger",
+          "retrieved_at": "2026-08-29",
+          "upstream_name": "mixed.csv"
+        },
+        "license": {
+          "identifier": "CC0-1.0",
+          "status": "known"
+        },
+        "name": "hif-directed",
+        "modality": "hypergraph",
+        "schema_version": 8,
+        "artifacts": [
+          {
+            "name": "data",
+            "format": "hif",
+            "compression": "none",
+            "size": 178,
+            "sha256": "d0858bfce7cc19b61bc52ddc05f2406b6f8b6db5f19e0d95598ef384edfafa13",
+            "distribution": "upstream-only",
+            "downloads": [
+              {
+                "kind": "upstream",
+                "url": "https://example.invalid/hif-directed.json"
+              }
+            ]
+          }
+        ],
+        "representation": {
+          "decoder": "hif",
+          "decoder_version": 1,
+          "options": {
+            "directed": true,
+            "node_id": "string",
+            "edge_id": "int64",
+            "nodes": {
+              "weight": false,
+              "attributes": [
+                {
+                  "name": "label",
+                  "type": "string"
+                }
+              ]
+            },
+            "hyperedges": {
+              "weight": false,
+              "attributes": []
+            },
+            "incidences": {
+              "weight": false,
+              "attributes": []
+            }
+          },
+          "inputs": {
+            "data": "data"
+          },
+          "expect": {
+            "components": [
+              {
+                "name": "directed",
+                "type": "bool",
+                "kind": "vector",
+                "length": 1
+              },
+              {
+                "name": "nodes/id",
+                "type": "string",
+                "kind": "vector",
+                "length": 2
+              },
+              {
+                "name": "nodes/label",
+                "type": "string",
+                "kind": "vector",
+                "length": 2
+              },
+              {
+                "name": "hyperedges/id",
+                "type": "int64",
+                "kind": "vector",
+                "length": 1
+              },
+              {
+                "name": "incidences/node",
+                "type": "string",
+                "kind": "vector",
+                "length": 1
+              },
+              {
+                "name": "incidences/edge",
+                "type": "int64",
+                "kind": "vector",
+                "length": 1
+              },
+              {
+                "name": "incidences/direction",
+                "type": "string",
+                "kind": "vector",
+                "length": 1
+              }
+            ],
+            "verification": [
+              {
+                "canonical_form": 1,
+                "algorithm": "sha256",
+                "digest": "520d45290e5cb001718e296a0c8ed3a3d2171d9e1c238d16af331d16fb98c6cb"
+              }
+            ]
+          }
+        }
+      },
+      "artifact_paths": {
+        "data": "artifacts/hif-directed.json"
+      },
+      "expected_hex": "444d434601000700000008000000646972656374656401040101000000000000000101080000006e6f6465732f6964010301020000000000000003070000000000000069736f6c6174650800000000000000696e6665727265640b0000006e6f6465732f6c6162656c010301020000000000000001080000000000000049736f6c6174656400000000000000000d000000687970657265646765732f696401020101000000000000000101000000000020000f000000696e636964656e6365732f6e6f64650103010100000000000000010800000000000000696e6665727265640f000000696e636964656e6365732f65646765010201010000000000000001010000000000200014000000696e636964656e6365732f646972656374696f6e01030101000000000000000104000000000000007461696c"
+    }
+  ]
+}

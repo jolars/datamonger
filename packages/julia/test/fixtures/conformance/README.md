@@ -46,3 +46,7 @@ reject this input. The version 1 fixture and its digest remain unchanged.
 splits, unordered labels, empty label sets, and a class absent from both
 splits. The expected bytes encode the two pairs of hand-specified sparse
 matrices under canonical form 1.
+
+`graphs.json` exercises graph tables and HIF through a schema 8 registry.
+The goldens encode hand-specified topology columns with the independent
+Python canonical encoder.
