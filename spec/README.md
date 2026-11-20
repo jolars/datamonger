@@ -46,3 +46,6 @@ and index schema 6 and represents targets as sparse class indicators.
 
 [SVMLight ranking version 1](decoders/svmlight-ranking-v1.md) uses manifest
 and index schema 7 and preserves query IDs alongside relevance and features.
+
+[Graph tables and HIF version 1](decoders/graphs-v1.md) use manifest and index
+schema 8 and preserve typed topology tables and attributes.
