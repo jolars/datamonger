@@ -829,19 +829,47 @@ def _validate_index(
         validated.add(contents)
 
 
+class _BuildCache:
+    """Reuse source files within one invocation against a single registry root."""
+
+    def __init__(self) -> None:
+        self.manifests: dict[Path, Mapping[str, Any]] = {}
+        self.indexes: dict[Path, Mapping[str, Any]] = {}
+        self.validated_indexes: set[bytes] = set()
+
+    def manifest(self, path: Path, root: Path) -> Mapping[str, Any]:
+        if path not in self.manifests:
+            dataset = _load_yaml(path)
+            validate_manifest(dataset, root=root)
+            self.manifests[path] = dataset
+        return self.manifests[path]
+
+    def index(
+        self, path: Path, schema_directory: Path, field: str
+    ) -> Mapping[str, Any]:
+        if path not in self.indexes:
+            contents = _read_json_bytes(path)
+            index = _load_json(path, contents)
+            _validate_index(
+                index, contents, schema_directory, field, self.validated_indexes
+            )
+            self.indexes[path] = index
+        return self.indexes[path]
+
+
 def build(
     release_path: Path,
     *,
     root: Path | None = None,
     use_snapshot: bool = True,
     manifest_identities: Mapping[str, Identity] | None = None,
-    _validated_indexes: set[bytes] | None = None,
+    _cache: _BuildCache | None = None,
 ) -> tuple[bytes, bytes]:
     """Return a validated release's deterministic index and selector bytes."""
 
     source_root = (root or ROOT).resolve()
     schema_directory = source_root / "spec" / "schema"
-    validated = set() if _validated_indexes is None else _validated_indexes
+    cache = _BuildCache() if _cache is None else _cache
     release_path = release_path.resolve()
     if not release_path.is_relative_to(source_root):
         raise ValueError("release source must be inside the repository root")
@@ -858,8 +886,9 @@ def build(
     datasets = []
     identities = []
     for path in _sequence(release_record.get("manifests"), "manifests"):
-        dataset = _load_yaml(_source_path(source_root, path, "manifest path"))
-        validate_manifest(dataset, root=source_root)
+        dataset = cache.manifest(
+            _source_path(source_root, path, "manifest path"), source_root
+        )
         identity = _identity(dataset, "dataset")
         if manifest_identities is not None:
             expected = manifest_identities.get(cast(str, path))
@@ -874,11 +903,7 @@ def build(
     snapshot_path = release_path.parent / "index.json"
     snapshot_schema: int | None = None
     if use_snapshot and snapshot_path.is_file():
-        snapshot_bytes = _read_json_bytes(snapshot_path)
-        snapshot = _load_json(snapshot_path, snapshot_bytes)
-        _validate_index(
-            snapshot, snapshot_bytes, schema_directory, "release snapshot", validated
-        )
+        snapshot = cache.index(snapshot_path, schema_directory, "release snapshot")
         if snapshot["release"] != release:
             raise ValueError("release snapshot identifier does not match its source")
         recorded = [
@@ -922,14 +947,10 @@ def build(
     for erratum in errata:
         _validate_schema(erratum, "erratum-v1.schema.json", schema_directory, "erratum")
 
-    histories = []
-    for path in _history_index_paths(release_path, sequence):
-        contents = _read_json_bytes(path)
-        history = _load_json(path, contents)
-        _validate_index(
-            history, contents, schema_directory, "historical index", validated
-        )
-        histories.append(history)
+    histories = [
+        cache.index(path, schema_directory, "historical index")
+        for path in _history_index_paths(release_path, sequence)
+    ]
     history_releases = [
         _string(history.get("release"), "history.release") for history in histories
     ]
@@ -971,7 +992,9 @@ def build(
     if errata:
         index["errata"] = list(errata)
     index_bytes = _json_bytes(index)
-    _validate_index(index, index_bytes, schema_directory, "generated index", validated)
+    _validate_index(
+        index, index_bytes, schema_directory, "generated index", cache.validated_indexes
+    )
     selector = {
         "schema_version": 1,
         "release": release,
@@ -988,7 +1011,7 @@ def build(
 
 
 def build_catalog(
-    *, root: Path | None = None, _validated_indexes: set[bytes] | None = None
+    *, root: Path | None = None, _cache: _BuildCache | None = None
 ) -> bytes:
     """Return the deterministic catalog for validated production releases."""
 
@@ -1000,12 +1023,12 @@ def build_catalog(
     if not release_paths:
         raise ValueError("registry catalog requires at least one release")
 
-    validated = set() if _validated_indexes is None else _validated_indexes
+    cache = _BuildCache() if _cache is None else _cache
     selectors: list[Mapping[str, Any]] = []
     release_names: set[str] = set()
     for release_path in release_paths:
         index_bytes, selector_bytes = build(
-            release_path, root=source_root, _validated_indexes=validated
+            release_path, root=source_root, _cache=cache
         )
         index_path = release_path.parent / "index.json"
         selector_path = release_path.parent / "selector.json"
@@ -1083,9 +1106,9 @@ def main() -> int:
         if not release_path.is_absolute():
             release_path = source_root / release_path
         release_path = release_path.resolve()
-        validated: set[bytes] = set()
+        cache = _BuildCache()
         index_bytes, selector_bytes = build(
-            release_path, root=source_root, _validated_indexes=validated
+            release_path, root=source_root, _cache=cache
         )
         current = _write_or_check(
             release_path.parent / "index.json", index_bytes, check
@@ -1097,9 +1120,7 @@ def main() -> int:
             current
             and release_path.parent.parent == source_root / "registry" / "releases"
         ):
-            catalog_bytes = build_catalog(
-                root=source_root, _validated_indexes=validated
-            )
+            catalog_bytes = build_catalog(root=source_root, _cache=cache)
             current &= _write_generated(
                 source_root / "registry" / "catalog.json", catalog_bytes, check
             )

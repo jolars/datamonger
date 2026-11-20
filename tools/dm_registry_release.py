@@ -67,17 +67,17 @@ def _outputs(root: Path, version: str) -> dict[Path, bytes]:
         release_path = staging / release_directory / "release.yaml"
         release_path.parent.mkdir(parents=True, exist_ok=True)
         release_path.write_bytes(source_bytes)
-        validated: set[bytes] = set()
+        cache = dm_index._BuildCache()
         index, selector = dm_index.build(
             release_path,
             root=staging,
             use_snapshot=False,
             manifest_identities=manifest_identities,
-            _validated_indexes=validated,
+            _cache=cache,
         )
         (release_path.parent / "index.json").write_bytes(index)
         (release_path.parent / "selector.json").write_bytes(selector)
-        catalog = dm_index.build_catalog(root=staging, _validated_indexes=validated)
+        catalog = dm_index.build_catalog(root=staging, _cache=cache)
     return {
         release_directory / "release.yaml": source_bytes,
         release_directory / "index.json": index,

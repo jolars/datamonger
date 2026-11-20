@@ -4,7 +4,10 @@ import importlib.util
 import json
 import shutil
 import sys
+from collections import Counter
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
 
 import pytest
 import yaml
@@ -136,6 +139,36 @@ def test_prepare_is_deterministic_and_preserves_historical_releases(
     ).read_bytes()
     catalog = json.loads((registry_root / "registry/catalog.json").read_bytes())
     assert json.loads((directory / "selector.json").read_bytes()) in catalog["releases"]
+
+
+def test_pending_check_reuses_manifests_and_decoded_indexes(
+    registry_root: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    bump(registry_root)
+    dm_registry_release.prepare(registry_root)
+    index_builder = dm_registry_release.dm_index
+    load_yaml = index_builder._load_yaml
+    load_json = index_builder._load_json
+    manifest_loads: Counter[str] = Counter()
+    index_loads: Counter[str] = Counter()
+
+    def count_yaml(path: Path) -> Mapping[str, Any]:
+        if "datasets" in path.parts:
+            manifest_loads[path.name] += 1
+        return load_yaml(path)
+
+    def count_json(path: Path, contents: bytes | None = None) -> Mapping[str, Any]:
+        if path.name == "index.json":
+            index_loads[path.parent.name] += 1
+        return load_json(path, contents)
+
+    monkeypatch.setattr(index_builder, "_load_yaml", count_yaml)
+    monkeypatch.setattr(index_builder, "_load_json", count_json)
+    dm_registry_release.check(registry_root, pending=True)
+
+    assert manifest_loads
+    assert set(manifest_loads.values()) == {1}
+    assert index_loads == {"2026.09": 1, "1.1.0": 1}
 
 
 def test_prepare_uses_the_last_listed_version_as_default(registry_root: Path) -> None:
