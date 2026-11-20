@@ -55,8 +55,28 @@ typedef struct {
     DmU64s column_indices; /* Zero-based; empty for nonsparse components. */
 } DmComponent;
 typedef struct DmResult DmResult;
+typedef struct { const DmComponent *columns; size_t count; } DmTable;
+typedef struct {
+    const DmColumn *attributes;
+    size_t count;
+    uint32_t weight; /* Include the top-level weight column (0 or 1). */
+} DmHifColumns;
+typedef struct {
+    uint32_t directed; /* 0=undirected, 1=directed. */
+    uint32_t node_id; /* 2=int64, 3=UTF-8 string. */
+    uint32_t edge_id;
+    DmHifColumns nodes;
+    DmHifColumns hyperedges;
+    DmHifColumns incidences;
+} DmHifOptions;
 
 DM_API uint32_t dm_abi_version(void);
+/* Results contain direction followed by qualified table columns. The table
+ * inputs contain unqualified vector columns and are copied for the call. */
+DM_API DmResult *dm_assemble_graph(uint32_t directed, DmTable nodes, DmTable edges);
+DM_API DmResult *dm_assemble_hypergraph(uint32_t directed, DmTable nodes,
+                                      DmTable hyperedges, DmTable incidences);
+DM_API DmResult *dm_decode_hif(DmArtifact, DmHifOptions);
 DM_API DmResult *dm_decode_delimited(DmArtifact, DmDelimitedOptions);
 DM_API DmResult *dm_decode_libsvm(DmArtifact, DmLibsvmOptions, DmBytes prefix);
 DM_API DmResult *dm_decode_libsvm_split(DmArtifact train, DmArtifact test, DmLibsvmOptions);

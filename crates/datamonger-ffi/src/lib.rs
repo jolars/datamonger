@@ -12,10 +12,11 @@ use std::ptr;
 use std::slice;
 
 use datamonger_core::{
-    artifact_reader, canonical_sha256, decode_delimited_with_options,
-    decode_libsvm_split_version_with_options, decode_libsvm_split_with_options,
-    decode_libsvm_version_with_options, decode_libsvm_with_options, write_canonical, Column,
-    Component, Compression, DataType, DecodeOptions, DelimitedOptions, Error, ErrorKind, LabelType,
+    artifact_reader, assemble_graph, assemble_hypergraph, canonical_sha256,
+    decode_delimited_with_options, decode_hif, decode_libsvm_split_version_with_options,
+    decode_libsvm_split_with_options, decode_libsvm_version_with_options,
+    decode_libsvm_with_options, write_canonical, Column, Component, Compression, DataType,
+    DecodeOptions, DelimitedOptions, Error, ErrorKind, HifColumns, HifOptions, LabelType,
     LibsvmOptions, Result, Shape, Values,
 };
 
@@ -65,6 +66,24 @@ pub struct DmColumn {
     pub name: DmBytes,
     pub data_type: u32,
 }
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct DmHifColumns {
+    pub attributes: *const DmColumn,
+    pub count: usize,
+    pub weight: u32,
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct DmHifOptions {
+    pub directed: u32,
+    pub node_id: u32,
+    pub edge_id: u32,
+    pub nodes: DmHifColumns,
+    pub hyperedges: DmHifColumns,
+    pub incidences: DmHifColumns,
+}
+
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct DmDelimitedOptions {
@@ -499,6 +518,105 @@ unsafe fn component(view: &DmComponent) -> Result<Component> {
         valid,
     })
 }
+fn graph_flag(flag: u32) -> Result<bool> {
+    match flag {
+        0 => Ok(false),
+        1 => Ok(true),
+        _ => Err(invalid(
+            ErrorKind::UnsupportedDecoder,
+            "expected a 0 or 1 flag",
+        )),
+    }
+}
+
+unsafe fn hif_columns(options: DmHifColumns) -> Result<HifColumns> {
+    let kind = ErrorKind::UnsupportedDecoder;
+    let attributes = unsafe { borrow(options.attributes, options.count, kind)? }
+        .iter()
+        .map(|column| {
+            Ok((
+                unsafe { text(column.name, kind)? },
+                data_type(column.data_type, kind)?,
+            ))
+        })
+        .collect::<Result<_>>()?;
+    Ok(HifColumns {
+        attributes,
+        weight: graph_flag(options.weight)?,
+    })
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn dm_decode_hif(
+    artifact: DmArtifact,
+    options: DmHifOptions,
+) -> *mut DmResult {
+    boundary(|| {
+        let kind = ErrorKind::UnsupportedDecoder;
+        let options = HifOptions {
+            directed: graph_flag(options.directed)?,
+            node_id: data_type(options.node_id, kind)?,
+            edge_id: data_type(options.edge_id, kind)?,
+            nodes: unsafe { hif_columns(options.nodes)? },
+            hyperedges: unsafe { hif_columns(options.hyperedges)? },
+            incidences: unsafe { hif_columns(options.incidences)? },
+        };
+        Ok(DmResult::new(decode_hif(
+            std::io::BufReader::new(unsafe { reader(artifact)? }),
+            &options,
+        )?))
+    })
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct DmTable {
+    pub columns: *const DmComponent,
+    pub count: usize,
+}
+
+unsafe fn graph_table(table: DmTable) -> Result<Vec<Component>> {
+    unsafe { borrow(table.columns, table.count, ErrorKind::Decode)? }
+        .iter()
+        .map(|view| {
+            unsafe { component(view) }
+                .map_err(|error| invalid(ErrorKind::Decode, &error.to_string()))
+        })
+        .collect()
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn dm_assemble_graph(
+    directed: u32,
+    nodes: DmTable,
+    edges: DmTable,
+) -> *mut DmResult {
+    boundary(|| {
+        Ok(DmResult::new(assemble_graph(
+            graph_flag(directed)?,
+            unsafe { graph_table(nodes)? },
+            unsafe { graph_table(edges)? },
+        )?))
+    })
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn dm_assemble_hypergraph(
+    directed: u32,
+    nodes: DmTable,
+    hyperedges: DmTable,
+    incidences: DmTable,
+) -> *mut DmResult {
+    boundary(|| {
+        Ok(DmResult::new(assemble_hypergraph(
+            graph_flag(directed)?,
+            unsafe { graph_table(nodes)? },
+            unsafe { graph_table(hyperedges)? },
+            unsafe { graph_table(incidences)? },
+        )?))
+    })
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn dm_canonical(
     views: *const DmComponent,
