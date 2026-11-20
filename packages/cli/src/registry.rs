@@ -377,9 +377,16 @@ mod tests {
     use super::*;
     use serde_json::json;
 
+    fn schema_test_index() -> Value {
+        serde_json::from_str(include_str!(
+            "../../../tests/registry/releases/test-0001/index.json"
+        ))
+        .unwrap()
+    }
+
     #[test]
     fn libsvm_v2_requires_schema_5() {
-        let mut index: Value = serde_json::from_slice(BUNDLED_INDEX).unwrap();
+        let mut index: Value = schema_test_index();
         index["schema_version"] = json!(5);
         let position = index["datasets"]
             .as_array()
@@ -399,7 +406,7 @@ mod tests {
 
     #[test]
     fn multilabel_requires_schema_6() {
-        let mut index: Value = serde_json::from_slice(BUNDLED_INDEX).unwrap();
+        let mut index: Value = schema_test_index();
         let case: Value = serde_json::from_str(include_str!(
             "../../../tests/conformance/libsvm-multilabel.json"
         ))
@@ -417,7 +424,7 @@ mod tests {
 
     #[test]
     fn ranking_requires_schema_7() {
-        let mut index: Value = serde_json::from_slice(BUNDLED_INDEX).unwrap();
+        let mut index: Value = schema_test_index();
         let case: Value = serde_json::from_str(include_str!(
             "../../../tests/conformance/svmlight-ranking.json"
         ))
