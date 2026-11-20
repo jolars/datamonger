@@ -32,14 +32,14 @@ pub use compression::{
     ArtifactReaderOptions, Compression,
 };
 pub use decode::{
-    decode_delimited, decode_delimited_with_control, decode_delimited_with_options, decode_libsvm,
-    decode_libsvm_multilabel_with_control, decode_libsvm_split,
-    decode_libsvm_split_version_with_control, decode_libsvm_split_version_with_options,
-    decode_libsvm_split_with_control, decode_libsvm_split_with_options,
-    decode_libsvm_version_with_control, decode_libsvm_version_with_options,
-    decode_libsvm_with_control, decode_libsvm_with_options, decode_svmlight_ranking_with_control,
-    parse_binary64, Column, DecodeOptions, DelimitedOptions, LabelType, LibsvmMultilabelOptions,
-    LibsvmOptions,
+    decode_delimited, decode_delimited_with_control, decode_delimited_with_layout,
+    decode_delimited_with_options, decode_libsvm, decode_libsvm_multilabel_with_control,
+    decode_libsvm_split, decode_libsvm_split_version_with_control,
+    decode_libsvm_split_version_with_options, decode_libsvm_split_with_control,
+    decode_libsvm_split_with_options, decode_libsvm_version_with_control,
+    decode_libsvm_version_with_options, decode_libsvm_with_control, decode_libsvm_with_options,
+    decode_svmlight_ranking_with_control, parse_binary64, Column, DecodeOptions, DelimitedLayout,
+    DelimitedOptions, LabelType, LibsvmMultilabelOptions, LibsvmOptions,
 };
 pub use error::{Error, ErrorKind, Result};
 pub use model::{Component, DataType, Shape, Values};

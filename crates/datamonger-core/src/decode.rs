@@ -13,8 +13,7 @@ pub struct Column {
     pub data_type: DataType,
 }
 
-/// The configurable parts of the revision 1 delimited-text recipe.
-/// UTF-8, a header, double-quote escaping, and source row order are fixed.
+/// Column and field options shared by the delimited-text recipes.
 #[derive(Clone, Debug)]
 pub struct DelimitedOptions {
     /// Comma or horizontal tab.
@@ -23,6 +22,24 @@ pub struct DelimitedOptions {
     pub columns: Vec<Column>,
     /// Exact tokens matched after unquoting and before lexical conversion.
     pub missing_values: Vec<String>,
+}
+
+/// Physical layout for a version 3 delimited-text recipe.
+#[derive(Clone, Copy, Debug)]
+pub struct DelimitedLayout {
+    /// Number of leading physical lines to discard before reading the table.
+    pub skip_lines: u32,
+    /// Whether the first remaining record must match the declared column names.
+    pub header: bool,
+}
+
+impl Default for DelimitedLayout {
+    fn default() -> Self {
+        Self {
+            skip_lines: 0,
+            header: true,
+        }
+    }
 }
 
 /// LIBSVM response type.
@@ -391,7 +408,13 @@ pub fn decode_delimited_with_control<R: BufRead>(
     options: &DelimitedOptions,
     control: &mut impl Control,
 ) -> Result<Vec<Component>> {
-    decode_delimited_impl(reader, options, DecodeOptions::default(), control)
+    decode_delimited_impl(
+        reader,
+        options,
+        DelimitedLayout::default(),
+        DecodeOptions::default(),
+        control,
+    )
 }
 
 /// Decode with explicit numeric compatibility for an existing client.
@@ -400,12 +423,23 @@ pub fn decode_delimited_with_options<R: BufRead>(
     options: &DelimitedOptions,
     compatibility: DecodeOptions,
 ) -> Result<Vec<Component>> {
-    decode_delimited_impl(reader, options, compatibility, &mut || Ok(()))
+    decode_delimited_with_layout(reader, options, DelimitedLayout::default(), compatibility)
+}
+
+/// Decode delimited text with an explicit version 3 layout.
+pub fn decode_delimited_with_layout<R: BufRead>(
+    reader: R,
+    options: &DelimitedOptions,
+    layout: DelimitedLayout,
+    compatibility: DecodeOptions,
+) -> Result<Vec<Component>> {
+    decode_delimited_impl(reader, options, layout, compatibility, &mut || Ok(()))
 }
 
 fn decode_delimited_impl<R: BufRead>(
     reader: R,
     options: &DelimitedOptions,
+    layout: DelimitedLayout,
     compatibility: DecodeOptions,
     control: &mut impl Control,
 ) -> Result<Vec<Component>> {
@@ -424,21 +458,28 @@ fn decode_delimited_impl<R: BufRead>(
     }
     let missing: HashSet<&str> = options.missing_values.iter().map(String::as_str).collect();
     let mut records = Records::new(reader);
-    let header = fields(
+    for _ in 0..layout.skip_lines {
         records
             .next()?
-            .ok_or_else(|| decode_error("delimited artifact is empty"))?,
-        options.delimiter,
-        options.columns.len(),
-    )?;
-    if header
-        .iter()
-        .map(AsRef::as_ref)
-        .ne(options.columns.iter().map(|c| c.name.as_str()))
-    {
-        return Err(decode_error(
-            "artifact header does not match declared columns",
-        ));
+            .ok_or_else(|| decode_error("delimited artifact ended in the preamble"))?;
+    }
+    if layout.header {
+        let header = fields(
+            records
+                .next()?
+                .ok_or_else(|| decode_error("delimited artifact is empty"))?,
+            options.delimiter,
+            options.columns.len(),
+        )?;
+        if header
+            .iter()
+            .map(AsRef::as_ref)
+            .ne(options.columns.iter().map(|c| c.name.as_str()))
+        {
+            return Err(decode_error(
+                "artifact header does not match declared columns",
+            ));
+        }
     }
     let mut components: Vec<_> = options
         .columns

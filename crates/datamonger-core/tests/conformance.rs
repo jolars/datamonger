@@ -774,3 +774,46 @@ fn ranking_named_splits_match_the_canonical_digest() {
         .unwrap();
     assert_eq!(hex(&actual), expected);
 }
+
+#[test]
+fn delimited_layout_skips_preamble_and_reads_headerless_rows() {
+    let options = csv_options(&serde_json::json!({
+        "delimiter": "\t",
+        "columns": [
+            {"name": "FromNodeId", "type": "int64"},
+            {"name": "ToNodeId", "type": "int64"}
+        ]
+    }));
+    let input = b"# Graph metadata\r\n# FromNodeId\tToNodeId\r\n0\t1\r\n1\t0";
+    let layout = DelimitedLayout {
+        skip_lines: 2,
+        header: false,
+    };
+    let decoded =
+        decode_delimited_with_layout(&input[..], &options, layout, DecodeOptions::default())
+            .unwrap();
+    assert_eq!(decoded[0].values, Values::Int64(vec![0, 1]));
+    assert_eq!(decoded[1].values, Values::Int64(vec![1, 0]));
+    assert!(decode_delimited(&input[..], &options).is_err());
+
+    let layout = DelimitedLayout {
+        skip_lines: 1,
+        header: true,
+    };
+    let input = b"# Graph metadata\nFromNodeId\tToNodeId\n0\t1\n1\t0";
+    assert_eq!(
+        decode_delimited_with_layout(&input[..], &options, layout, DecodeOptions::default())
+            .unwrap(),
+        decoded
+    );
+
+    for malformed in [&b""[..], b"# \xff\n", b"# Graph\rmetadata\n"] {
+        assert!(decode_delimited_with_layout(
+            malformed,
+            &options,
+            layout,
+            DecodeOptions::default()
+        )
+        .is_err());
+    }
+}
