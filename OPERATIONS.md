@@ -57,9 +57,8 @@ configure the repository as follows:
    `cargo publish --locked --manifest-path packages/cli/Cargo.toml`.
    crates.io requires an API token for a crate's first publication. After that,
    configure a trusted publisher for `datamonger`, repository `jolars/datamonger`,
-   workflow `datamonger-v-release.yml`, and environment `release`. The reusable
-   `publish-cli.yml` workflow runs inside `datamonger-v-release.yml`; the caller's workflow
-   identity is used for authentication. Revoke the bootstrap token when done.
+   workflow `publish-cli.yml`, and environment `release`. Revoke the bootstrap token
+   when done.
 
 The explicit Versionary package names produce distinct tag namespaces:
 `datamonger-vX.Y.Z` (CLI), `datamonger-core-vX.Y.Z`,
@@ -241,11 +240,13 @@ Release. The tag push starts `datamonger-v-release.yml`.
 from that tag. It uploads the archives, SHA-256 checksums, and shell installer
 to the draft and publishes it. The documentation site's `/install` route
 redirects to the shell installer from the newest stable CLI release that has it.
-For stable releases, the workflow then calls `Publish Rust CLI`, which checks the crate
-name and tag version, runs the CLI tests and a publication dry run, and publishes
-`datamonger` to crates.io through trusted publishing. Prereleases only publish
-GitHub artifacts. The workflow's pull request run only plans the release.
-Check the release and artifact checksums after the tag run completes.
+A stable tag also starts `Publish Rust CLI` (`publish-cli.yml`) independently.
+It checks the crate name and tag version, runs the CLI tests and a publication
+dry run, and publishes `datamonger` to crates.io through trusted publishing.
+You can dispatch that workflow with the same stable tag to retry crate
+publication. Prereleases only publish GitHub artifacts. The `dist` workflow's
+pull request run only plans the release. Check the release and artifact
+checksums after the tag run completes.
 
 Historical CLI releases retain their `datamonger-cli-v<version>` tags. The
 Versionary baseline remains unchanged when the package is renamed. Complete the

@@ -16,8 +16,6 @@ hosting = "github"
 # Versionary creates the draft release, then this workflow adds binaries.
 create-release = false
 tag-namespace = "datamonger-v"
-publish-jobs = ["./publish-cli"]
-github-custom-job-permissions = { "publish-cli" = { contents = "read", id-token = "write" } }
 
 [dist.github-custom-runners]
 aarch64-apple-darwin = "macos-15"

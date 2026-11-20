@@ -52,6 +52,7 @@ def test_publication_requires_matching_crate_and_tag(
         text=True,
         check=False,
     )
-    assert (result.returncode == 0) == success, result.stderr
-    if not success:
+    expected_success = success and (crate != "datamonger" or "-" not in version)
+    assert (result.returncode == 0) == expected_success, result.stderr
+    if not expected_success:
         assert "Expected release tag" in result.stderr

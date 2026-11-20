@@ -1,14 +1,18 @@
 name: Publish Rust CLI
 
 on:
-  workflow_call:
+  push:
+    tags:
+      - "datamonger-v[0-9]+.[0-9]+.[0-9]+"
+  workflow_dispatch:
     inputs:
-      plan:
+      tag:
+        description: Existing stable CLI release tag
         required: true
         type: string
 
 concurrency:
-  group: publish-cli-${{ fromJSON(inputs.plan).announcement_tag }}
+  group: publish-cli-${{ inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -21,26 +25,31 @@ jobs:
       contents: read
       id-token: write
     env:
-      RELEASE_TAG: ${{ fromJSON(inputs.plan).announcement_tag }}
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
     defaults:
       run:
         working-directory: packages/cli
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ fromJSON(inputs.plan).announcement_tag }}
+          ref: ${{ format('refs/tags/{0}', env.RELEASE_TAG) }}
           persist-credentials: false
 
       - name: Match crate and tag versions
         run: |
           python - <<'PY'
           import os
+          import re
           import tomllib
           from pathlib import Path
 
           package = tomllib.loads(Path("Cargo.toml").read_text())["package"]
           expected = f"datamonger-v{package['version']}"
-          if package["name"] != "datamonger" or os.environ["RELEASE_TAG"] != expected:
+          if (
+              package["name"] != "datamonger"
+              or not re.fullmatch(r"datamonger-v[0-9]+\.[0-9]+\.[0-9]+", expected)
+              or os.environ["RELEASE_TAG"] != expected
+          ):
               raise SystemExit(f"Expected release tag {expected} for crate datamonger")
           PY
 
