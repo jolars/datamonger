@@ -201,7 +201,11 @@ def test_curated_dataset_manifests_are_valid_and_cover_mvp() -> None:
     ]
     assert all(manifest["provenance"].get("upstream_id") for manifest in uci_manifests)
     assert all(manifest["provenance"].get("authors") for manifest in uci_manifests)
-    assert all(manifest["provenance"].get("citation") for manifest in uci_manifests)
+    for manifest in uci_manifests:
+        provenance = manifest["provenance"]
+        assert provenance.get("citation") or provenance.get("citations"), manifest[
+            "name"
+        ]
 
 
 def test_candidate_release_preserves_its_curated_snapshot() -> None:
