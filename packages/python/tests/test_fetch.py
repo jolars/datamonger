@@ -6,6 +6,7 @@ import gzip
 import hashlib
 import io
 import json
+import sys
 import threading
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field
@@ -430,6 +431,48 @@ def add_libsvm_split_dataset(
         index_sha256=hashlib.sha256(index_bytes).hexdigest(),
         index_url=registry.index_url,
     )
+
+
+@pytest.mark.parametrize(
+    ("interactive", "term", "show_progress"),
+    [(True, "xterm", True), (False, "xterm", False), (True, "dumb", False)],
+)
+def test_fetch_download_progress(
+    tmp_path: Path,
+    local_server: tuple[str, ServerState],
+    monkeypatch: pytest.MonkeyPatch,
+    interactive: bool,
+    term: str,
+    show_progress: bool,
+) -> None:
+    base_url, state = local_server
+    registry = make_registry(base_url, state)
+    stderr = io.StringIO()
+    monkeypatch.setattr(stderr, "isatty", lambda: interactive)
+    monkeypatch.setattr(sys, "stderr", stderr)
+    monkeypatch.setenv("TERM", term)
+
+    path = fetch_artifact("fixture:mixed", registry=registry, cache_dir=tmp_path)
+    output = stderr.getvalue()
+    if show_progress:
+        size = path.stat().st_size
+        assert "Downloading registry proof-0001" in output
+        assert "Downloading data" in output
+        assert f"{size:,}/{size:,} B" in output
+        assert not output.rsplit("\r", 2)[-2].strip()
+    else:
+        assert output == ""
+
+    stderr.seek(0)
+    stderr.truncate()
+    assert (
+        fetch_artifact("fixture:mixed", registry=registry, cache_dir=tmp_path) == path
+    )
+    output = stderr.getvalue()
+    if show_progress:
+        assert "Checking cache for data" in output
+    else:
+        assert output == ""
 
 
 def test_fetch_data_verifies_decodes_reports_and_reuses_cache_offline(

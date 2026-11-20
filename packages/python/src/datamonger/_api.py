@@ -196,6 +196,7 @@ def _retrieve_artifact_lease(
             integrity_error=ArtifactIntegrityError,
             unavailable_error=OfflineError,
             description=f"artifact {artifact_name!r}",
+            progress_subject=artifact_name,
         ) as path:
             yield path
         return
@@ -219,6 +220,7 @@ def _retrieve_artifact_lease(
                     digest=digest,
                     size=size,
                     integrity_error=ArtifactIntegrityError,
+                    progress_subject=artifact_name,
                 )
             )
         except RetrievalError as error:

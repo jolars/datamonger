@@ -21,6 +21,7 @@ import portalocker
 from platformdirs import user_cache_path
 
 from datamonger._errors import CacheError, DatamongerError, RetrievalError
+from datamonger._progress import transfer_progress
 
 _CHUNK_SIZE = 1024 * 1024
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
@@ -152,11 +153,22 @@ def _publication_lock(cache_root: Path, namespace: str, digest: str) -> Iterator
         yield
 
 
-def _matches(path: Path, digest: str, size: int | None) -> bool:
+def _matches(
+    path: Path, digest: str, size: int | None, *, subject: str | None = None
+) -> bool:
+    label = f"Checking cache for {subject}" if subject is not None else None
     try:
-        with path.open("rb") as source:
-            actual = hashlib.file_digest(source, "sha256")
-            count = source.tell()
+        with path.open("rb") as source, transfer_progress(label, size) as update:
+            if update is None:
+                actual = hashlib.file_digest(source, "sha256")
+                count = source.tell()
+            else:
+                actual = hashlib.sha256()
+                count = 0
+                while chunk := source.read(_CHUNK_SIZE):
+                    actual.update(chunk)
+                    count += len(chunk)
+                    update(count)
     except OSError as error:
         raise CacheError(f"cannot read cached object {path}: {error}") from error
     return actual.hexdigest() == digest and (size is None or count == size)
@@ -284,6 +296,7 @@ def _ensure_cached(
     size: int | None,
     integrity_error: Callable[[str], DatamongerError],
     retrieval_error: Callable[[str], DatamongerError],
+    progress_subject: str | None = None,
 ) -> Path:
     try:
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -297,7 +310,7 @@ def _ensure_cached(
     # has just made available.
     with _publication_lock(cache_root, namespace, digest):
         if target.exists():
-            if _matches(target, digest, size):
+            if _matches(target, digest, size, subject=progress_subject):
                 return target
             _unlink(target)
 
@@ -309,6 +322,7 @@ def _ensure_cached(
             size=size,
             integrity_error=integrity_error,
             retrieval_error=retrieval_error,
+            progress_subject=progress_subject,
         )
         if size is not None and downloaded.size != size:
             raise integrity_error(
@@ -348,9 +362,11 @@ def _download_to_temporary(
     size: int | None,
     integrity_error: Callable[[str], DatamongerError],
     retrieval_error: Callable[[str], DatamongerError],
+    progress_subject: str | None = None,
 ) -> DownloadedFile:
     """Download exact artifact bytes to a temporary file in ``directory``."""
 
+    label = f"Downloading {progress_subject}" if progress_subject is not None else None
     temporary_path: Path | None = None
     try:
         request = urllib.request.Request(url, headers={"Accept-Encoding": "identity"})
@@ -375,9 +391,17 @@ def _download_to_temporary(
                     url,
                     retrieval_error,
                 )
-            with tempfile.NamedTemporaryFile(
-                mode="wb", dir=directory, prefix=".download-", delete=False
-            ) as temporary:
+            total = (
+                size
+                if size is not None
+                else (encoded_size if decoder is None else None)
+            )
+            with (
+                transfer_progress(label, total) as update_progress,
+                tempfile.NamedTemporaryFile(
+                    mode="wb", dir=directory, prefix=".download-", delete=False
+                ) as temporary,
+            ):
                 temporary_path = Path(temporary.name)
                 actual = hashlib.sha256()
                 count = 0
@@ -395,6 +419,8 @@ def _download_to_temporary(
                             f"size mismatch for {url}: expected {size}, "
                             f"received more than {size}"
                         )
+                    if update_progress is not None:
+                        update_progress(count)
 
                 while chunk := response.read(_CHUNK_SIZE):
                     encoded_count += len(chunk)
@@ -478,6 +504,7 @@ def verified_download_lease(
     size: int | None,
     integrity_error: Callable[[str], DatamongerError],
     retrieval_error: Callable[[str], DatamongerError] = RetrievalError,
+    progress_subject: str | None = None,
 ) -> Iterator[Path]:
     """Yield a verified path while retaining its reader lease."""
 
@@ -500,6 +527,7 @@ def verified_download_lease(
             size=size,
             integrity_error=integrity_error,
             retrieval_error=retrieval_error,
+            progress_subject=progress_subject,
         )
         with _reader_lease(cache_root, namespace, digest):
             yield path
@@ -515,6 +543,7 @@ def verified_cache_lease(
     integrity_error: Callable[[str], DatamongerError],
     unavailable_error: Callable[[str], DatamongerError],
     description: str,
+    progress_subject: str | None = None,
 ) -> Iterator[Path]:
     """Yield a verified cached object without attempting network access."""
 
@@ -526,7 +555,9 @@ def verified_cache_lease(
         integrity_error=integrity_error,
     )
     with _reader_lease(cache_root, namespace, digest):
-        if not target.is_file() or not _matches(target, digest, size):
+        if not target.is_file() or not _matches(
+            target, digest, size, subject=progress_subject
+        ):
             raise unavailable_error(
                 f"verified {description} {digest} is unavailable while offline"
             )

@@ -232,6 +232,7 @@ def _registry_bytes(registry: Registry, cache_root: Path, *, offline: bool) -> b
             integrity_error=RegistryIntegrityError,
             unavailable_error=RegistryOfflineError,
             description="registry index",
+            progress_subject=f"registry {registry.release}",
         )
         if offline
         else verified_download_lease(
@@ -242,6 +243,7 @@ def _registry_bytes(registry: Registry, cache_root: Path, *, offline: bool) -> b
             size=None,
             integrity_error=RegistryIntegrityError,
             retrieval_error=RegistryRetrievalError,
+            progress_subject=f"registry {registry.release}",
         )
     )
     with lease as index_path:
