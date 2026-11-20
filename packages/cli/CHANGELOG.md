@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.5.0](https://github.com/jolars/datamonger/compare/datamonger-v0.4.0...datamonger-v0.5.0) (2026-11-20)
+
+### Features
+
+- bundle registry 1.6.0 (#61) ([`a06f5af`](https://github.com/jolars/datamonger/commit/a06f5aff52d81f710c4342e50aa12d26767ba68f))
+
+### Bug Fixes
+
+- use a fixed index for CLI schema checks ([`e33684f`](https://github.com/jolars/datamonger/commit/e33684fefa4ed612d0a349dc8f55eb63cf2b4b48)), refs [#61](https://github.com/jolars/datamonger/issues/61)
+
 ## [0.4.0](https://github.com/jolars/datamonger/compare/datamonger-v0.3.0...datamonger-v0.4.0) (2026-11-19)
 
 ### Features
