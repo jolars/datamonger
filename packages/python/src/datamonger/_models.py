@@ -175,8 +175,35 @@ class DatasetSplits(
         return len(self.splits)
 
 
+@dataclass(frozen=True)
+class GraphDataset:
+    """A graph with node and edge tables in source order."""
+
+    directed: bool
+    nodes: pd.DataFrame
+    edges: pd.DataFrame
+
+
+@dataclass(frozen=True)
+class HypergraphDataset:
+    """A hypergraph with node, hyperedge, and incidence tables."""
+
+    directed: bool
+    nodes: pd.DataFrame
+    hyperedges: pd.DataFrame
+    incidences: pd.DataFrame
+
+
+@dataclass(frozen=True)
+class DecodedGraph:
+    data: GraphDataset | HypergraphDataset
+    components: tuple[LogicalComponent, ...]
+
+
 DatasetData: TypeAlias = (
     pd.DataFrame
+    | GraphDataset
+    | HypergraphDataset
     | SparseDataset
     | MultilabelSparseDataset
     | RankingSparseDataset

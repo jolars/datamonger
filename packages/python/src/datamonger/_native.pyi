@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from pathlib import Path
 
-from datamonger._models import LogicalValueComponent
+from datamonger._models import LogicalComponent, LogicalValueComponent
 
 def decode_delimited(
     path: Path,
@@ -25,3 +25,20 @@ def decode_libsvm_multilabel(
 def decode_svmlight_ranking(
     path: Path, coding: str, recipe: tuple[int, int, str, str], compute_digest: bool
 ) -> tuple[list[LogicalValueComponent], str | None]: ...
+def assemble_graph(
+    directed: bool,
+    nodes: tuple[LogicalComponent, ...],
+    edges: tuple[LogicalComponent, ...],
+) -> list[LogicalComponent]: ...
+def decode_hif(
+    path: Path,
+    compression: str,
+    recipe: tuple[
+        bool,
+        str,
+        str,
+        tuple[list[tuple[str, str]], bool],
+        tuple[list[tuple[str, str]], bool],
+        tuple[list[tuple[str, str]], bool],
+    ],
+) -> list[LogicalComponent]: ...

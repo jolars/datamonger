@@ -435,8 +435,60 @@ fn hash_components(py: Python<'_>, components: &[core::Component]) -> PyResult<S
     Ok(digest.iter().map(|b| format!("{b:02x}")).collect())
 }
 
+#[pyfunction]
+fn assemble_graph(
+    py: Python<'_>,
+    directed: bool,
+    nodes: &Bound<'_, PyAny>,
+    edges: &Bound<'_, PyAny>,
+) -> PyResult<Vec<Py<PyAny>>> {
+    let nodes = from_python(nodes)?;
+    let edges = from_python(edges)?;
+    let components = run(py, |_| core::assemble_graph(directed, nodes, edges))?;
+    to_python(py, components)
+}
+
+type HifTable = (Vec<(String, String)>, bool);
+type HifRecipe = (bool, String, String, HifTable, HifTable, HifTable);
+
+#[pyfunction]
+fn decode_hif(
+    py: Python<'_>,
+    path: PathBuf,
+    compression: &str,
+    recipe: HifRecipe,
+) -> PyResult<Vec<Py<PyAny>>> {
+    let (directed, node_id, edge_id, nodes, hyperedges, incidences) = recipe;
+    let columns = |(attributes, weight): HifTable| -> PyResult<core::HifColumns> {
+        Ok(core::HifColumns {
+            attributes: attributes
+                .into_iter()
+                .map(|(name, kind)| Ok((name, data_type(&kind)?)))
+                .collect::<PyResult<_>>()?,
+            weight,
+        })
+    };
+    let options = core::HifOptions {
+        directed,
+        node_id: data_type(&node_id)?,
+        edge_id: data_type(&edge_id)?,
+        nodes: columns(nodes)?,
+        hyperedges: columns(hyperedges)?,
+        incidences: columns(incidences)?,
+    };
+    let coding = self::compression(compression)?;
+    let components = run(py, |_| {
+        reader(path, coding)
+            .and_then(|reader| core::decode_hif(reader, &options))
+            .map_err(|error| artifact_error(error, compression))
+    })?;
+    to_python(py, components)
+}
+
 #[pymodule]
 fn _native(module: &Bound<'_, PyModule>) -> PyResult<()> {
+    module.add_function(wrap_pyfunction!(assemble_graph, module)?)?;
+    module.add_function(wrap_pyfunction!(decode_hif, module)?)?;
     module.add_function(wrap_pyfunction!(decode_delimited, module)?)?;
     module.add_function(wrap_pyfunction!(decode_libsvm, module)?)?;
     module.add_function(wrap_pyfunction!(decode_svmlight_ranking, module)?)?;

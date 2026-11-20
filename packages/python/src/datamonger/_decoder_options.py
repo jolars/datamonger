@@ -42,6 +42,7 @@ def _parse_columns(
         if (
             not isinstance(name, str)
             or not name
+            or not isinstance(logical_type, str)
             or logical_type
             not in {
                 "float64",

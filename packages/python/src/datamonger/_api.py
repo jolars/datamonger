@@ -32,9 +32,11 @@ from datamonger._errors import (
     UnsupportedDecoderError,
     UnsupportedRegistryError,
 )
+from datamonger._graphs import decode_graph, validate_graph_options
 from datamonger._models import (
     DataInfo,
     DatasetData,
+    DecodedGraph,
     DecodedMultilabelSparseDataset,
     DecodedRankingSparseDataset,
     DecodedSparseDataset,
@@ -523,6 +525,28 @@ def _verification_record(
     raise UnsupportedDecoderError("no supported decoded-verification record")
 
 
+def _prepare_graph_representation(
+    decoder: str, dataset: Mapping[str, Any], representation: Mapping[str, Any]
+) -> tuple[str, tuple[Mapping[str, Any], ...], Mapping[str, Any], tuple[str, ...]]:
+    decoder_version = representation.get("decoder_version")
+    modality = "graph" if decoder == "graph-tables" else "hypergraph"
+    if (
+        dataset.get("schema_version") != 8
+        or dataset.get("modality") != modality
+        or (type(decoder_version) is not int or decoder_version != 1)
+    ):
+        raise UnsupportedDecoderError("graph and HIF recipes require manifest schema 8")
+    roles = ("nodes", "edges") if decoder == "graph-tables" else ("data",)
+    artifacts = _artifacts_for_representation(dataset, representation, roles)
+    options = validate_graph_options(decoder, representation.get("options"), artifacts)
+    return (
+        decoder,
+        artifacts,
+        options,
+        tuple(artifact["compression"] for artifact in artifacts),
+    )
+
+
 def _prepare_representation(
     dataset: Mapping[str, Any], representation: Mapping[str, Any]
 ) -> tuple[str, tuple[Mapping[str, Any], ...], Mapping[str, Any], tuple[str, ...]]:
@@ -545,20 +569,20 @@ def _prepare_representation(
             "LIBSVM split versions 1 and 2"
         )
 
-    if decoder_version == 2 and dataset.get("schema_version") not in (5, 6, 7):
+    if decoder_version == 2 and dataset.get("schema_version") not in (5, 6, 7, 8):
         raise UnsupportedDecoderError(
             "decoder version 2 requires manifest schema 5 or 6"
         )
 
     if decoder == "libsvm-multilabel" and (
-        decoder_version != 1 or dataset.get("schema_version") not in (6, 7)
+        decoder_version != 1 or dataset.get("schema_version") not in (6, 7, 8)
     ):
         raise UnsupportedDecoderError(
             "multilabel LIBSVM version 1 requires manifest schema 6"
         )
 
     if decoder == "svmlight-ranking" and (
-        decoder_version != 1 or dataset.get("schema_version") != 7
+        decoder_version != 1 or dataset.get("schema_version") not in (7, 8)
     ):
         raise UnsupportedDecoderError(
             "SVMLight ranking version 1 requires manifest schema 7"
@@ -706,7 +730,10 @@ def fetch_data(
     An omitted version selects the registry default.
 
     An explicit registry overrides session and project selection. ``offline=True``
-    requires both the selected registry and its artifact to be bundled or cached.
+    requires the selected registry and all input artifacts to be bundled or cached.
+
+    Graph recipes return a :class:`GraphDataset` or :class:`HypergraphDataset`
+    with native pandas tables for topology and attributes.
     """
 
     source, name, version = parse_dataset_reference(
@@ -721,8 +748,9 @@ def fetch_data(
     preprocessing = preprocessing_metadata(dataset)
     representation = _object(dataset.get("representation"), "dataset.representation")
     recipes: tuple[Mapping[str, Any], ...] = ()
-    if representation.get("decoder") == "named-splits":
-        if dataset.get("schema_version") not in (4, 5, 6, 7):
+    decoder = representation.get("decoder")
+    if decoder == "named-splits":
+        if dataset.get("schema_version") not in (4, 5, 6, 7, 8):
             raise UnsupportedDecoderError("named-splits requires manifest schema 4")
         recipes = split_recipes(representation)
         inputs = _object(representation.get("inputs"), "representation.inputs")
@@ -738,11 +766,20 @@ def fetch_data(
             )
             for recipe in recipes
         )
+    elif decoder in ("graph-tables", "hif"):
+        setups = (_prepare_graph_representation(decoder, dataset, representation),)
     else:
         setups = (_prepare_representation(dataset, representation),)
     artifacts = tuple(artifact for setup in setups for artifact in setup[1])
     with ExitStack() as stack:
-        children = []
+        children: list[
+            DecodedTable
+            | DecodedSparseDataset
+            | DecodedSparseDatasetSplit
+            | DecodedMultilabelSparseDataset
+            | DecodedRankingSparseDataset
+            | DecodedGraph
+        ] = []
         for child_index, (decoder, child_artifacts, options, compressions) in enumerate(
             setups
         ):
@@ -752,6 +789,9 @@ def fetch_data(
                 )
                 for artifact in child_artifacts
             )
+            if decoder in ("graph-tables", "hif"):
+                children.append(decode_graph(decoder, paths, options, compressions))
+                continue
             children.append(
                 _decode_leaf(
                     decoder,
@@ -772,6 +812,7 @@ def fetch_data(
             | DecodedRankingSparseDataset
             | DecodedSparseDatasetSplit
             | DecodedSplits
+            | DecodedGraph
         )
         if recipes:
             single_children = []
