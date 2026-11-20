@@ -93,10 +93,34 @@ Zenodo is the design's preferred preservation host. Check current official
 [deposit guidance](https://help.zenodo.org/docs/deposit/) for the operations
 needed; do not assume endpoints or policies are frozen.
 
-- Use the configured token, such as `ZENODO_API_TOKEN`, through an authorization
-  header without printing it. Personal tokens suffice for a maintainer's own
-  deposits. Production and sandbox use separate accounts and tokens; a sandbox
-  account is needed only for a sandbox trial.
+### Public deposits with the maintainer's NixOS uploader
+
+When `zenodo-upload` is available and the requested deposit is public, stage
+the reviewed files and `deposit.json` together outside the working tree. The
+plan has a `metadata` object using Zenodo deposit fields and a `files` array
+of staged basenames. Include attribution, license, version, and source
+identifiers in the metadata. Make the directory traversable and the reviewed
+files readable by the unprivileged service. The uploader accepts regular
+files and path components with letters, digits, dots, underscores, or hyphens.
+
+Give the maintainer the command `zenodo-upload /path/to/staging/deposit.json`
+to run in their own terminal. They authenticate with sudo, review the metadata
+and file hashes, and type `publish`. NixOS supplies the root-owned Agenix
+credential to the isolated service. Keep credential handling in the system
+configuration and use the public DOI or record URL to continue verification.
+
+The uploader retains a private receipt keyed to the absolute plan path.
+Resume with the same plan path and unchanged files to reuse the draft or
+verify an already published record. Ask for the DOI or record URL if the
+maintainer confirms publication without sharing it.
+
+### Verification and other deposit workflows
+
+Use the configured Zenodo mechanism for draft-only, sandbox, or custom-rights
+work. Production and sandbox use separate credentials. Authenticated API
+calls should pass credentials through an authorization header and keep them
+out of tool output, receipts, and repository files.
+
 - Reuse a recorded deposit ID when resuming. Record the ID and links promptly
   so an interrupted upload does not create duplicate deposits. Keep credentials
   out of receipts and repository files.
