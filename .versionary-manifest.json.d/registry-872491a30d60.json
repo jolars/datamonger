@@ -1,11 +1,11 @@
 {
   "manifest-version": 1,
   "path": "registry",
-  "baseline-sha": "44ffa021ad13f43256592b87d394cb5109590252",
+  "baseline-sha": "8054d31cceb2b0e7ee18f11343e52a138b317438",
   "release-target": {
     "path": "registry",
-    "version": "1.6.0",
-    "tag": "registry-v1.6.0"
+    "version": "1.7.0",
+    "tag": "registry-v1.7.0"
   },
   "release-branch": "versionary/release-registry-872491a30d60"
 }
