@@ -9,23 +9,32 @@
   fail <- function(message) {
     .abort_category("unsupported-decoder", message)
   }
+
   if (!identical(representation$decoder_version, 1L)) {
     fail("unsupported named-splits version")
   }
+
   options <- representation$options
+
   if (!is.list(options) || !setequal(names(options), "splits")) {
     fail("named-splits options must contain exactly splits")
   }
+
   splits <- options$splits
+
   if (!is.list(splits) || length(splits) == 0L || !is.null(names(splits))) {
     fail("splits must be a nonempty array")
   }
+
   split_names <- character()
+
   for (split in splits) {
     fields <- c("name", "decoder", "decoder_version", "options")
+
     if (!is.list(split) || !setequal(names(split), fields)) {
       fail("invalid split recipe fields")
     }
+
     if (
       !.is_scalar_character(split$name) ||
         !nzchar(split$name) ||
@@ -33,7 +42,9 @@
     ) {
       fail("split names must be nonempty and unique")
     }
+
     split_names <- c(split_names, split$name)
+
     if (
       !(identical(split$decoder_version, 1L) ||
         identical(split$decoder_version, 2L)) ||
@@ -50,12 +61,14 @@
       fail("unsupported split decoder recipe")
     }
   }
+
   if (
     !is.list(representation$inputs) ||
       !setequal(names(representation$inputs), split_names)
   ) {
     fail("input names must match the declared split names")
   }
+
   splits
 }
 
@@ -78,6 +91,7 @@
       canonical_digest = if (hash) .canonical_sha256(components) else NULL
     ))
   }
+
   switch(
     setup$decoder,
     `delimited-text` = .decode_delimited(

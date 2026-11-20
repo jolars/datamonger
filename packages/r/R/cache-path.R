@@ -7,6 +7,7 @@
 #' @param cache_dir An explicit cache path, or `NULL` for the platform default.
 #' @param dataset A canonical `source:name@version` filter.
 #' @param older_than A nonnegative `difftime` or number of seconds.
+#'
 #' @returns
 #' `datamonger_cache_dir()` returns a path without creating it. `cache_info()`
 #' returns a cache inventory. `cache_clean()` reports removed and skipped

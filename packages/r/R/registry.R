@@ -6,11 +6,14 @@
     "registry-v1.5.0/index.json"
   )
 )
+
 .default_catalog_url <- paste0(
   "https://raw.githubusercontent.com/jolars/datamonger/",
   "main/registry/catalog.json"
 )
+
 .session_state <- new.env(parent = emptyenv())
+
 .session_state$registry <- NULL
 
 .validate_registry <- function(registry) {
@@ -219,10 +222,13 @@ set_registry <- function(registry) {
       }
       return(candidate)
     }
+
     parent <- dirname(directory)
+
     if (identical(parent, directory)) {
       return(NULL)
     }
+
     directory <- parent
   }
 }
@@ -326,6 +332,7 @@ active_registry <- function(project_dir = getwd()) {
       paste0("unsupported registry schema ", index$schema_version)
     )
   }
+
   if (!identical(index$release, registry$release)) {
     .dm_abort(
       "datamonger_registry_release",
