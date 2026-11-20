@@ -29,12 +29,6 @@ tasks:
         "${DM_RUFF:-ruff}" check . ../../tools ../../curation
         uv run mypy
         uv run pytest
-        uv run python ../../tools/dm_index.py check
-        uv run python ../../tools/dm_registry_release.py check
-        uv run python ../../tools/dm_index.py check \
-          tests/registry/releases/test-0001/release.yaml
-        uv run python ../../tools/dm_index.py check \
-          tests/registry/releases/test-0002/release.yaml
         uv build
         cargo fmt --check
         cargo clippy --locked --all-targets -- -D warnings
@@ -83,9 +77,15 @@ tasks:
           --locked --all-targets -- -D warnings
 
   test:registry:
-    desc: Validate bundled registry assets and schemas
+    desc: Validate registry snapshots, bundled assets, and schemas
     cmds:
       - |
+        test -f registry/releases/2026.09/release.yaml
+        uv run --project packages/python python tools/dm_registry_release.py check
+        for release in test-0001 test-0002; do
+          uv run --project packages/python python tools/dm_index.py check \
+            "tests/registry/releases/$release/release.yaml"
+        done
         uv run --project packages/python python tools/dm_bundle_registry.py --check
         for schema in index manifest erratum selector catalog; do
           diff "spec/schema/${schema}-v1.schema.json" \

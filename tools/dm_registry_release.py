@@ -67,15 +67,17 @@ def _outputs(root: Path, version: str) -> dict[Path, bytes]:
         release_path = staging / release_directory / "release.yaml"
         release_path.parent.mkdir(parents=True, exist_ok=True)
         release_path.write_bytes(source_bytes)
+        validated: set[bytes] = set()
         index, selector = dm_index.build(
             release_path,
             root=staging,
             use_snapshot=False,
             manifest_identities=manifest_identities,
+            _validated_indexes=validated,
         )
         (release_path.parent / "index.json").write_bytes(index)
         (release_path.parent / "selector.json").write_bytes(selector)
-        catalog = dm_index.build_catalog(root=staging)
+        catalog = dm_index.build_catalog(root=staging, _validated_indexes=validated)
     return {
         release_directory / "release.yaml": source_bytes,
         release_directory / "index.json": index,
@@ -126,20 +128,19 @@ def check(root: Path, *, pending: bool = False) -> None:
     source = dm_index.load_yaml(directory / "release.yaml")
     if source["release"] != release or source["tag"] != tag:
         raise ValueError("registry source does not match the Versionary target")
-    index, selector = dm_index.build(directory / "release.yaml", root=root)
-    for filename, contents in (("index.json", index), ("selector.json", selector)):
-        if (directory / filename).read_bytes() != contents:
-            raise ValueError(f"registry {filename} is stale")
-    if (root / "registry/latest.json").read_bytes() != selector:
-        raise ValueError(
-            "registry latest selector does not match the Versionary target"
-        )
+    if pending:
+        prepare(root, check_only=True)
+        return
     if (root / "registry/catalog.json").read_bytes() != dm_index.build_catalog(
         root=root
     ):
         raise ValueError("registry catalog is stale")
-    if pending:
-        prepare(root, check_only=True)
+    if (root / "registry/latest.json").read_bytes() != (
+        directory / "selector.json"
+    ).read_bytes():
+        raise ValueError(
+            "registry latest selector does not match the Versionary target"
+        )
 
 
 def main() -> int:

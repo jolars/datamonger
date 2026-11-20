@@ -103,10 +103,17 @@ def load_yaml(path: Path) -> Mapping[str, Any]:
     return _load_yaml(path)
 
 
-def _load_json(path: Path) -> Mapping[str, Any]:
+def _read_json_bytes(path: Path) -> bytes:
     try:
-        value = json.loads(path.read_bytes())
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        return path.read_bytes()
+    except OSError as error:
+        raise ValueError(f"cannot parse {path}: {error}") from error
+
+
+def _load_json(path: Path, contents: bytes | None = None) -> Mapping[str, Any]:
+    try:
+        value = json.loads(_read_json_bytes(path) if contents is None else contents)
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
         raise ValueError(f"cannot parse {path}: {error}") from error
     return _mapping(value, str(path))
 
@@ -764,13 +771,11 @@ def _validate_active_verification(
                 )
 
 
-def _history_indexes(
-    release_path: Path, current_sequence: int
-) -> list[Mapping[str, Any]]:
+def _history_index_paths(release_path: Path, current_sequence: int) -> list[Path]:
     releases_root = release_path.parent.parent
     if releases_root.name != "releases":
         return []
-    histories: list[Mapping[str, Any]] = []
+    histories: list[Path] = []
     sequences: dict[int, Path] = {}
     for source_path in sorted(releases_root.glob("*/release.yaml")):
         source = _load_yaml(source_path)
@@ -787,7 +792,7 @@ def _history_indexes(
             index_path = source_path.parent / "index.json"
             if not index_path.is_file():
                 raise ValueError(f"earlier release is missing its index: {index_path}")
-            histories.append(_load_json(index_path))
+            histories.append(index_path)
     return histories
 
 
@@ -801,17 +806,34 @@ def _json_bytes(value: object) -> bytes:
     return encoded.encode("utf-8") + b"\n"
 
 
+def _validate_index(
+    index: Mapping[str, Any],
+    contents: bytes,
+    schema_directory: Path,
+    field: str,
+    validated: set[bytes],
+) -> None:
+    # The cache is scoped to one run against a single schema directory.
+    if contents not in validated:
+        _validate_schema(
+            index, _versioned_schema(index, "index"), schema_directory, field
+        )
+        validated.add(contents)
+
+
 def build(
     release_path: Path,
     *,
     root: Path | None = None,
     use_snapshot: bool = True,
     manifest_identities: Mapping[str, Identity] | None = None,
+    _validated_indexes: set[bytes] | None = None,
 ) -> tuple[bytes, bytes]:
     """Return a validated release's deterministic index and selector bytes."""
 
     source_root = (root or ROOT).resolve()
     schema_directory = source_root / "spec" / "schema"
+    validated = set() if _validated_indexes is None else _validated_indexes
     release_path = release_path.resolve()
     if not release_path.is_relative_to(source_root):
         raise ValueError("release source must be inside the repository root")
@@ -844,12 +866,10 @@ def build(
     snapshot_path = release_path.parent / "index.json"
     snapshot_schema: int | None = None
     if use_snapshot and snapshot_path.is_file():
-        snapshot = _load_json(snapshot_path)
-        _validate_schema(
-            snapshot,
-            _versioned_schema(snapshot, "index"),
-            schema_directory,
-            "release snapshot",
+        snapshot_bytes = _read_json_bytes(snapshot_path)
+        snapshot = _load_json(snapshot_path, snapshot_bytes)
+        _validate_index(
+            snapshot, snapshot_bytes, schema_directory, "release snapshot", validated
         )
         if snapshot["release"] != release:
             raise ValueError("release snapshot identifier does not match its source")
@@ -894,14 +914,14 @@ def build(
     for erratum in errata:
         _validate_schema(erratum, "erratum-v1.schema.json", schema_directory, "erratum")
 
-    histories = _history_indexes(release_path, sequence)
-    for history in histories:
-        _validate_schema(
-            history,
-            _versioned_schema(history, "index"),
-            schema_directory,
-            "historical index",
+    histories = []
+    for path in _history_index_paths(release_path, sequence):
+        contents = _read_json_bytes(path)
+        history = _load_json(path, contents)
+        _validate_index(
+            history, contents, schema_directory, "historical index", validated
         )
+        histories.append(history)
     history_releases = [
         _string(history.get("release"), "history.release") for history in histories
     ]
@@ -942,11 +962,8 @@ def build(
     }
     if errata:
         index["errata"] = list(errata)
-    _validate_schema(
-        index, _versioned_schema(index, "index"), schema_directory, "generated index"
-    )
-
     index_bytes = _json_bytes(index)
+    _validate_index(index, index_bytes, schema_directory, "generated index", validated)
     selector = {
         "schema_version": 1,
         "release": release,
@@ -962,7 +979,9 @@ def build(
     return index_bytes, _json_bytes(selector)
 
 
-def build_catalog(*, root: Path | None = None) -> bytes:
+def build_catalog(
+    *, root: Path | None = None, _validated_indexes: set[bytes] | None = None
+) -> bytes:
     """Return the deterministic catalog for validated production releases."""
 
     source_root = (root or ROOT).resolve()
@@ -973,10 +992,13 @@ def build_catalog(*, root: Path | None = None) -> bytes:
     if not release_paths:
         raise ValueError("registry catalog requires at least one release")
 
+    validated = set() if _validated_indexes is None else _validated_indexes
     selectors: list[Mapping[str, Any]] = []
     release_names: set[str] = set()
     for release_path in release_paths:
-        index_bytes, selector_bytes = build(release_path, root=source_root)
+        index_bytes, selector_bytes = build(
+            release_path, root=source_root, _validated_indexes=validated
+        )
         index_path = release_path.parent / "index.json"
         selector_path = release_path.parent / "selector.json"
         if not index_path.is_file() or index_path.read_bytes() != index_bytes:
@@ -1053,7 +1075,10 @@ def main() -> int:
         if not release_path.is_absolute():
             release_path = source_root / release_path
         release_path = release_path.resolve()
-        index_bytes, selector_bytes = build(release_path, root=source_root)
+        validated: set[bytes] = set()
+        index_bytes, selector_bytes = build(
+            release_path, root=source_root, _validated_indexes=validated
+        )
         current = _write_or_check(
             release_path.parent / "index.json", index_bytes, check
         )
@@ -1064,7 +1089,9 @@ def main() -> int:
             current
             and release_path.parent.parent == source_root / "registry" / "releases"
         ):
-            catalog_bytes = build_catalog(root=source_root)
+            catalog_bytes = build_catalog(
+                root=source_root, _validated_indexes=validated
+            )
             current &= _write_generated(
                 source_root / "registry" / "catalog.json", catalog_bytes, check
             )

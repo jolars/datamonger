@@ -310,6 +310,7 @@ def write_release_outputs(release_path: Path, root: Path) -> None:
 
 def test_catalog_is_generated_deterministically_from_release_selectors(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     prepare_root(tmp_path)
     releases = tmp_path / "registry/releases"
@@ -336,8 +337,21 @@ def test_catalog_is_generated_deterministically_from_release_selectors(
     second_path.replace(second_root / "release.yaml")
     write_release_outputs(second_root / "release.yaml", tmp_path)
 
+    validated_releases = []
+    validate_schema = dm_index._validate_schema
+
+    def track_schema_validation(
+        value: Any, schema: str, directory: Path, field: str
+    ) -> None:
+        if schema.startswith("index-"):
+            validated_releases.append(value["release"])
+        validate_schema(value, schema, directory, field)
+
+    monkeypatch.setattr(dm_index, "_validate_schema", track_schema_validation)
     contents = dm_index.build_catalog(root=tmp_path)
     catalog = json.loads(contents)
+
+    assert sorted(validated_releases) == ["a-release", "z-release"]
 
     assert contents.endswith(b"\n")
     assert [release["release"] for release in catalog["releases"]] == [

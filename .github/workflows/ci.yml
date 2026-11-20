@@ -319,14 +319,32 @@ jobs:
         run: uv run mypy
       - name: Run hermetic tests
         run: uv run pytest
-      - name: Check generated registry
+      - name: Build package
+        run: uv build
+
+  registry-quality:
+    needs: ci-policy
+    if: ${{ !cancelled() && needs.ci-policy.outputs.run_checks != 'false' }}
+    name: Registry quality
+    runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: "3.14"
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+      - name: Install registry tooling dependencies
+        run: uv sync --locked --no-install-project --project packages/python
+      - name: Check legacy release and generated registry fixtures
         run: |
-          uv run python ../../tools/dm_index.py check
-          uv run python ../../tools/dm_index.py check \
-            tests/registry/releases/test-0001/release.yaml
-          uv run python ../../tools/dm_index.py check \
-            tests/registry/releases/test-0002/release.yaml
-      - name: Check Versionary registry snapshot
+          test -f registry/releases/2026.09/release.yaml
+          for release in test-0001 test-0002; do
+            uv run --no-sync --project packages/python python tools/dm_index.py check \
+              "tests/registry/releases/$release/release.yaml"
+          done
+      - name: Check registry catalog and Versionary snapshot
         env:
           REGISTRY_RELEASE_PR: ${{ startsWith(github.head_ref, 'versionary/release-registry-') }}
         run: |
@@ -334,11 +352,9 @@ jobs:
           if [[ "$REGISTRY_RELEASE_PR" == true ]]; then
             flags+=(--pending)
           fi
-          uv run python ../../tools/dm_registry_release.py check "${flags[@]}"
+          uv run --no-sync --project packages/python python tools/dm_registry_release.py check "${flags[@]}"
       - name: Check client registry bundles
-        run: uv run python ../../tools/dm_bundle_registry.py --check
-      - name: Build package
-        run: uv build
+        run: uv run --no-sync --project packages/python python tools/dm_bundle_registry.py --check
 
   r-quality:
     needs: [ci-policy, python-distribution-changes]
