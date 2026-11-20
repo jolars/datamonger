@@ -83,6 +83,9 @@ jobs:
       - name: Test dataset browser
         working-directory: documentation
         run: npm run test:catalog
+      - name: Test CLI installer route
+        working-directory: documentation
+        run: node --test tests/installer-node.mjs
       - name: Check Worker package
         working-directory: documentation
         run: npx --no-install wrangler deploy --dry-run

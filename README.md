@@ -50,6 +50,12 @@ Pkg.add(url="https://github.com/jolars/datamonger.git", subdir="packages/julia")
 
 ### CLI
 
+Install the prebuilt CLI on supported Linux and macOS systems:
+
+```sh
+curl --proto '=https' --tlsv1.2 -LsSf https://datamonger.dev/install | sh
+```
+
 Download a prebuilt binary from [GitHub
 releases](https://github.com/jolars/datamonger/releases), or install from
 crates.io with Rust 1.89 or newer:

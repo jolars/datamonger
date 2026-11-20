@@ -3,7 +3,13 @@
 The standalone Rust CLI downloads verified raw artifacts. It checks artifact
 size and SHA-256 but does not decode datasets or check canonical logical values.
 
-Install from crates.io:
+Install the prebuilt CLI on supported Linux and macOS systems:
+
+```sh
+curl --proto '=https' --tlsv1.2 -LsSf https://datamonger.dev/install | sh
+```
+
+You can also install from crates.io:
 
 ```console
 cargo install datamonger --locked
