@@ -136,9 +136,30 @@ fn bundled_registry_works_offline() {
             .all(|entry| entry["dataset_id"].as_str().unwrap().starts_with("uci:"))
     );
 
+    let list = command(dir.path(), &["--offline", "list", "--source", "uci"]);
+    assert!(list.status.success());
+    let text = String::from_utf8(list.stdout).unwrap();
+    let mut rows = text.lines();
+    let header = rows.next().unwrap();
+    let title_column = header.find("Title").unwrap();
+    assert_eq!(header[..title_column].trim_end(), "Dataset ID");
+    for (id, title) in [
+        ("uci:iris@1", "Iris"),
+        (
+            "uci:breast-cancer-wisconsin-diagnostic@1",
+            "Breast Cancer Wisconsin (Diagnostic)",
+        ),
+    ] {
+        let row = rows.clone().find(|row| row.starts_with(id)).unwrap();
+        assert_eq!(&row[title_column..], title);
+    }
+
     let info = command(dir.path(), &["--offline", "info", "uci:iris"]);
     assert!(info.status.success());
+    assert!(info.stderr.is_empty());
+    assert!(!info.stdout.contains(&0x1b));
     let detail = String::from_utf8(info.stdout).unwrap();
+    assert!(detail.starts_with("uci:iris@1 - Iris\n"));
     assert!(detail.contains("Distribution: upstream-only"));
     assert!(detail.contains("Verification on fetch: artifact bytes only"));
 
@@ -189,6 +210,7 @@ fn fetch_tries_next_location_verifies_and_exports_raw_bytes() {
         "{}",
         String::from_utf8_lossy(&output.stderr)
     );
+    assert!(output.stderr.is_empty());
     let report: Value = serde_json::from_slice(&output.stdout).unwrap();
     assert_eq!(report["verification"], "artifact");
     let output_path = report["artifacts"][0]["output_path"].as_str().unwrap();
@@ -212,6 +234,27 @@ fn fetch_tries_next_location_verifies_and_exports_raw_bytes() {
         "{}",
         String::from_utf8_lossy(&again.stderr)
     );
+    let human = command(
+        dir.path(),
+        &[
+            "--selector",
+            &selector,
+            "--cache-dir",
+            cache.to_str().unwrap(),
+            "--offline",
+            "fetch",
+            "conformance:mixed_csv@1",
+        ],
+    );
+    assert!(human.status.success());
+    assert!(human.stderr.is_empty());
+    assert!(!human.stdout.contains(&0x1b));
+    assert!(
+        String::from_utf8(human.stdout)
+            .unwrap()
+            .contains("conformance:mixed_csv@1 - artifact verified")
+    );
+
     let collision = command(
         dir.path(),
         &[

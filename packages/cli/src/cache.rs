@@ -10,6 +10,7 @@ use tempfile::NamedTempFile;
 
 use crate::error::{Error, Result};
 use crate::registry::{BUNDLED_INDEX, dataset_id};
+use crate::terminal::{Stage, Terminal};
 
 pub fn default_root() -> Result<PathBuf> {
     dirs::cache_dir()
@@ -88,7 +89,7 @@ pub struct CachedFile {
     _lease: Lease,
 }
 
-fn digest_file(path: &Path) -> Result<(String, u64)> {
+fn digest_file(path: &Path, stage: Option<&Stage>) -> Result<(String, u64)> {
     let mut file = File::open(path).map_err(|error| Error::new("cache", error.to_string()))?;
     let mut hasher = Sha256::new();
     let mut total = 0_u64;
@@ -102,37 +103,58 @@ fn digest_file(path: &Path) -> Result<(String, u64)> {
         }
         hasher.update(&buffer[..count]);
         total += count as u64;
+        if let Some(stage) = stage {
+            stage.advance(count as u64);
+        }
     }
     Ok((hex::encode(hasher.finalize()), total))
 }
 
-fn matches(path: &Path, digest: &str, size: Option<u64>) -> Result<bool> {
+fn matches(path: &Path, digest: &str, size: Option<u64>, stage: Option<&Stage>) -> Result<bool> {
     if !path.exists() {
         return Ok(false);
     }
-    let (actual, actual_size) = digest_file(path)?;
+    matches_file(path, digest, size, stage)
+}
+
+fn matches_file(
+    path: &Path,
+    digest: &str,
+    size: Option<u64>,
+    stage: Option<&Stage>,
+) -> Result<bool> {
+    let (actual, actual_size) = digest_file(path, stage)?;
     Ok(actual == digest && size.is_none_or(|expected| actual_size == expected))
 }
 
-pub fn verify_path(path: &Path, digest: &str, size: u64) -> Result<bool> {
-    matches(path, digest, Some(size))
+pub fn verify_path(path: &Path, digest: &str, size: u64, stage: &Stage) -> Result<bool> {
+    matches(path, digest, Some(size), Some(stage))
 }
 
 pub fn get_or_fetch<F>(
     root: &Path,
     namespace: &str,
-    digest: &str,
-    size: Option<u64>,
+    expected: (&str, Option<u64>),
     integrity_category: &'static str,
     offline: bool,
+    progress: (&Terminal, &str),
     download: F,
 ) -> Result<CachedFile>
 where
     F: FnOnce(&mut NamedTempFile) -> Result<()>,
 {
+    let (digest, size) = expected;
+    let (terminal, subject) = progress;
     let path = object_path(root, namespace, digest);
     let lease = Lease::shared(&lock_path(root, namespace, digest, false))?;
-    if matches(&path, digest, size)? {
+    let check_cached = || {
+        if !path.exists() {
+            return Ok(false);
+        }
+        let stage = terminal.stage("Checking cache for", subject, size);
+        matches_file(&path, digest, size, Some(&stage))
+    };
+    if check_cached()? {
         return Ok(CachedFile {
             path,
             _lease: lease,
@@ -158,7 +180,10 @@ where
         .as_file_mut()
         .sync_all()
         .map_err(|error| Error::new("cache", error.to_string()))?;
-    let (actual, actual_size) = digest_file(temporary.path())?;
+    let (actual, actual_size) = digest_file(
+        temporary.path(),
+        Some(&terminal.stage("Verifying download of", subject, size)),
+    )?;
     if actual != digest || size.is_some_and(|expected| actual_size != expected) {
         return Err(Error::new(
             integrity_category,
@@ -168,7 +193,7 @@ where
         ));
     }
     let _publication = Lease::exclusive(&lock_path(root, namespace, digest, true))?;
-    if !matches(&path, digest, size)? {
+    if !check_cached()? {
         temporary
             .persist(&path)
             .map_err(|error| Error::new("cache", error.error.to_string()))?;
@@ -252,7 +277,7 @@ pub fn inventory(root: &Path) -> Result<Inventory> {
                 continue;
             }
             let _lease = Lease::shared(&lock_path(root, namespace, digest, false))?;
-            let (actual, size) = digest_file(&path)?;
+            let (actual, size) = digest_file(&path, None)?;
             let metadata =
                 fs::metadata(&path).map_err(|error| Error::new("cache", error.to_string()))?;
             let modified_unix_seconds = metadata
@@ -342,7 +367,7 @@ pub fn clean(root: &Path, dataset: Option<&str>, all: bool) -> Result<CleanResul
                 .map_err(|error| Error::new("cache", error.to_string()))?
                 .len()
                 == entry.size
-            && matches(&entry.path, &entry.sha256, None)? == entry.valid
+            && matches(&entry.path, &entry.sha256, None, None)? == entry.valid
         {
             fs::remove_file(&entry.path).map_err(|error| Error::new("cache", error.to_string()))?;
             removed.push(entry);
@@ -359,7 +384,14 @@ pub fn clean(root: &Path, dataset: Option<&str>, all: bool) -> Result<CleanResul
     })
 }
 
-pub fn copy_verified(source: &CachedFile, target: &Path, digest: &str, size: u64) -> Result<()> {
+pub fn copy_verified(
+    source: &CachedFile,
+    target: &Path,
+    digest: &str,
+    size: u64,
+    terminal: &Terminal,
+    subject: &str,
+) -> Result<()> {
     fs::create_dir_all(target.parent().expect("export has parent"))
         .map_err(|error| Error::new("cache", error.to_string()))?;
     if target.exists() {
@@ -372,13 +404,18 @@ pub fn copy_verified(source: &CachedFile, target: &Path, digest: &str, size: u64
         .map_err(|error| Error::new("cache", error.to_string()))?;
     let mut input =
         File::open(&source.path).map_err(|error| Error::new("cache", error.to_string()))?;
-    std::io::copy(&mut input, temporary.as_file_mut())
+    let copying = terminal.stage("Exporting", subject, Some(size));
+    Stage::copy(Some(&copying), &mut input, temporary.as_file_mut())
         .map_err(|error| Error::new("cache", error.to_string()))?;
+    drop(copying);
     temporary
         .as_file_mut()
         .sync_all()
         .map_err(|error| Error::new("cache", error.to_string()))?;
-    let (actual, actual_size) = digest_file(temporary.path())?;
+    let (actual, actual_size) = digest_file(
+        temporary.path(),
+        Some(&terminal.stage("Verifying export of", subject, Some(size))),
+    )?;
     if actual != digest || actual_size != size {
         return Err(Error::new(
             "artifact-integrity",

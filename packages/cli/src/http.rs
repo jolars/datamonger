@@ -7,6 +7,7 @@ use reqwest::header::{ACCEPT_ENCODING, CONTENT_ENCODING};
 use reqwest::redirect::Policy;
 
 use crate::error::{Error, Result};
+use crate::terminal::Stage;
 
 pub struct HttpClient(Client);
 
@@ -64,7 +65,13 @@ impl HttpClient {
         Ok(response)
     }
 
-    pub fn download<W: Write>(&self, url: &str, https_only: bool, output: &mut W) -> Result<()> {
+    pub fn download<W: Write>(
+        &self,
+        url: &str,
+        https_only: bool,
+        output: &mut W,
+        stage: Option<&Stage>,
+    ) -> Result<()> {
         let response = self.response(url, https_only)?;
         let codings: Vec<_> = response
             .headers()
@@ -85,10 +92,10 @@ impl HttpClient {
                 .trim(),
         };
         match coding.to_ascii_lowercase().as_str() {
-            "identity" => copy(response, output),
+            "identity" => copy(response, output, stage),
             "gzip" | "x-gzip" => {
                 let mut decoder = GzDecoder::new(BufReader::new(response));
-                copy(&mut decoder, output)?;
+                copy(&mut decoder, output, stage)?;
                 let mut rest = decoder.into_inner();
                 let mut trailing = [0_u8; 1];
                 if rest
@@ -112,13 +119,13 @@ impl HttpClient {
 
     pub fn get_bytes(&self, url: &str, https_only: bool) -> Result<Vec<u8>> {
         let mut bytes = Vec::new();
-        self.download(url, https_only, &mut bytes)?;
+        self.download(url, https_only, &mut bytes, None)?;
         Ok(bytes)
     }
 }
 
-fn copy<R: Read, W: Write>(mut input: R, output: &mut W) -> Result<()> {
-    std::io::copy(&mut input, output)
+fn copy<R: Read, W: Write>(mut input: R, output: &mut W, stage: Option<&Stage>) -> Result<()> {
+    Stage::copy(stage, &mut input, output)
         .map_err(|error| Error::new("retrieval-exhausted", error.to_string()))?;
     Ok(())
 }

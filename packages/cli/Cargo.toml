@@ -16,7 +16,10 @@ name = "datamonger"
 path = "src/main.rs"
 
 [dependencies]
+anstream = "1"
+indicatif = "0.18"
 clap = { version = "4", features = ["derive"] }
+comfy-table = { version = "8", default-features = false, features = ["custom_styling"] }
 dirs = "7"
 flate2 = "1"
 hex = "0.4"

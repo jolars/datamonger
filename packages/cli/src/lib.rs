@@ -3,6 +3,7 @@ mod cli;
 mod error;
 mod http;
 mod registry;
+mod terminal;
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -19,9 +20,12 @@ use crate::error::{Error, Result};
 use crate::http::HttpClient;
 use crate::registry::{Index, Selector, active_selector, dataset_id, parse_catalog, parse_index};
 
+use crate::terminal::{Terminal, cyan, dataset_label, styled};
+
 pub fn run() -> i32 {
     let cli = Cli::parse();
-    match execute(&cli) {
+    let terminal = Terminal::new(cli.json);
+    match execute(&cli, &terminal) {
         Ok(()) => 0,
         Err(error) => {
             if cli.json {
@@ -32,14 +36,14 @@ pub fn run() -> i32 {
                     serde_json::to_string(&value).expect("error serializes")
                 );
             } else {
-                eprintln!("error[{}]: {}", error.category, error.message);
+                terminal.error(error.category, &error.message);
             }
             1
         }
     }
 }
 
-fn execute(cli: &Cli) -> Result<()> {
+fn execute(cli: &Cli, terminal: &Terminal) -> Result<()> {
     let cache_root = match &cli.cache_dir {
         Some(path) => path.clone(),
         None => default_root()?,
@@ -51,19 +55,23 @@ fn execute(cli: &Cli) -> Result<()> {
                 if cli.json {
                     print_json(&inventory)?;
                 } else {
-                    println!(
-                        "Cache: {} ({} bytes)",
+                    terminal.out(format_args!(
+                        "\x1b[36mCache:\x1b[0m {} ({} bytes)",
                         inventory.location.display(),
                         inventory.total_size
-                    );
+                    ));
                     for entry in inventory.entries {
-                        println!(
+                        terminal.out(format_args!(
                             "{} {} {} bytes {}",
                             entry.kind,
                             entry.sha256,
                             entry.size,
-                            if entry.valid { "valid" } else { "INVALID" }
-                        );
+                            if entry.valid {
+                                styled(32, "valid")
+                            } else {
+                                styled(31, "INVALID")
+                            }
+                        ));
                     }
                 }
                 Ok(())
@@ -82,12 +90,12 @@ fn execute(cli: &Cli) -> Result<()> {
                 if cli.json {
                     print_json(&result)?;
                 } else {
-                    println!(
+                    terminal.out(format_args!(
                         "Removed {} bytes in {} objects; skipped {} active objects",
                         result.bytes_removed,
                         result.removed.len(),
                         result.skipped.len()
-                    );
+                    ));
                 }
                 Ok(())
             }
@@ -98,10 +106,10 @@ fn execute(cli: &Cli) -> Result<()> {
                 if cli.json {
                     print_json(&selector)?;
                 } else {
-                    println!(
+                    terminal.out(format_args!(
                         "{} {} {}",
                         selector.release, selector.index_sha256, selector.index_url
-                    );
+                    ));
                 }
                 Ok(())
             }
@@ -132,7 +140,7 @@ fn execute(cli: &Cli) -> Result<()> {
         },
         Command::List { source } => {
             let selector = selected_selector(cli)?;
-            let index = load_index(&selector, &cache_root, cli.offline)?;
+            let index = load_index(&selector, &cache_root, cli.offline, terminal)?;
             let datasets: Vec<Value> = index
                 .datasets()
                 .iter()
@@ -150,19 +158,30 @@ fn execute(cli: &Cli) -> Result<()> {
             if cli.json {
                 print_json(&json!({"registry": index.selector, "datasets": datasets}))?;
             } else {
+                let mut table = comfy_table::Table::new();
+                table
+                    .load_style(comfy_table::presets::NOTHING)
+                    .set_header([cyan("Dataset ID").to_string(), cyan("Title").to_string()]);
+                table
+                    .column_mut(0)
+                    .expect("dataset ID column")
+                    .set_padding((0, 1));
                 for entry in datasets {
-                    println!(
-                        "{}\t{}",
-                        entry["dataset_id"].as_str().unwrap_or(""),
-                        entry["title"].as_str().unwrap_or("")
-                    );
+                    table.add_row([
+                        dataset_label(entry["dataset_id"].as_str().unwrap_or("")),
+                        entry["title"]
+                            .as_str()
+                            .unwrap_or("")
+                            .replace(['\t', '\r', '\n'], " "),
+                    ]);
                 }
+                terminal.out(format_args!("{}", table.trim_fmt()));
             }
             Ok(())
         }
         Command::Info { dataset } => {
             let selector = selected_selector(cli)?;
-            let index = load_index(&selector, &cache_root, cli.offline)?;
+            let index = load_index(&selector, &cache_root, cli.offline, terminal)?;
             let entry = index.resolve(dataset)?;
             if cli.json {
                 print_json(&json!({
@@ -171,55 +190,68 @@ fn execute(cli: &Cli) -> Result<()> {
                     "dataset": entry,
                 }))?;
             } else {
-                println!(
-                    "{} — {}",
-                    dataset_id(entry),
+                terminal.out(format_args!(
+                    "{} - {}",
+                    dataset_label(&dataset_id(entry)),
                     entry["title"].as_str().unwrap_or("")
-                );
-                println!(
-                    "Registry: {} {}",
+                ));
+                terminal.out(format_args!(
+                    "\x1b[36mRegistry:\x1b[0m {} {}",
                     index.selector.release, index.selector.index_sha256
-                );
-                println!("{}", entry["description"].as_str().unwrap_or(""));
+                ));
+                terminal.out(format_args!(
+                    "{}",
+                    entry["description"].as_str().unwrap_or("")
+                ));
                 let provenance = &entry["provenance"];
-                println!(
-                    "Provider: {}",
+                terminal.out(format_args!(
+                    "\x1b[36mProvider:\x1b[0m {}",
                     provenance["provider"].as_str().unwrap_or("")
-                );
-                println!(
-                    "Source: {}",
+                ));
+                terminal.out(format_args!(
+                    "\x1b[36mSource:\x1b[0m {}",
                     provenance["landing_page"].as_str().unwrap_or("")
-                );
+                ));
                 let license = &entry["license"];
-                println!(
-                    "License: {} ({})",
+                terminal.out(format_args!(
+                    "\x1b[36mLicense:\x1b[0m {} ({})",
                     license["identifier"].as_str().unwrap_or("unspecified"),
                     license["status"].as_str().unwrap_or("unknown")
-                );
+                ));
                 for artifact in entry["artifacts"].as_array().expect("validated artifacts") {
-                    println!(
-                        "Artifact: {} ({}, {}, {} bytes)",
+                    terminal.out(format_args!(
+                        "\x1b[36mArtifact:\x1b[0m {} ({}, {}, {} bytes)",
                         artifact["name"].as_str().unwrap_or(""),
                         artifact["format"].as_str().unwrap_or(""),
                         artifact["compression"].as_str().unwrap_or(""),
                         artifact["size"].as_u64().unwrap_or(0)
-                    );
-                    println!("  SHA-256: {}", artifact["sha256"].as_str().unwrap_or(""));
-                    println!(
-                        "  Distribution: {}",
+                    ));
+                    terminal.out(format_args!(
+                        "  \x1b[36mSHA-256:\x1b[0m {}",
+                        artifact["sha256"].as_str().unwrap_or("")
+                    ));
+                    terminal.out(format_args!(
+                        "  \x1b[36mDistribution:\x1b[0m {}",
                         artifact["distribution"].as_str().unwrap_or("")
-                    );
+                    ));
                     if let Some(preservation) = artifact["preservation"].as_str() {
-                        println!("  Preservation: {preservation}");
+                        terminal.out(format_args!(
+                            "  \x1b[36mPreservation:\x1b[0m {preservation}"
+                        ));
                     }
                     for location in artifact["downloads"]
                         .as_array()
                         .expect("validated downloads")
                     {
-                        println!("  Download: {}", location["url"].as_str().unwrap_or(""));
+                        terminal.out(format_args!(
+                            "  \x1b[36mDownload:\x1b[0m {}",
+                            location["url"].as_str().unwrap_or("")
+                        ));
                     }
                 }
-                println!("Verification on fetch: artifact bytes only");
+                terminal.out(format_args!(
+                    "\x1b[36mVerification on fetch:\x1b[0m artifact bytes only"
+                ));
             }
             Ok(())
         }
@@ -229,7 +261,7 @@ fn execute(cli: &Cli) -> Result<()> {
             output_dir,
         } => {
             let selector = selected_selector(cli)?;
-            let index = load_index(&selector, &cache_root, cli.offline)?;
+            let index = load_index(&selector, &cache_root, cli.offline, terminal)?;
             fetch(
                 cli,
                 &index,
@@ -237,6 +269,7 @@ fn execute(cli: &Cli) -> Result<()> {
                 artifact.as_deref(),
                 output_dir.as_deref(),
                 &cache_root,
+                terminal,
             )
         }
     }
@@ -248,7 +281,12 @@ fn selected_selector(cli: &Cli) -> Result<Selector> {
     active_selector(cli.selector.as_deref(), &cwd)
 }
 
-fn load_index(selector: &Selector, root: &Path, offline: bool) -> Result<Index> {
+fn load_index(
+    selector: &Selector,
+    root: &Path,
+    offline: bool,
+    terminal: &Terminal,
+) -> Result<Index> {
     let bytes = if selector.is_bundled() {
         registry::BUNDLED_INDEX.to_vec()
     } else {
@@ -260,15 +298,16 @@ fn load_index(selector: &Selector, root: &Path, offline: bool) -> Result<Index> 
         let cached = cache::get_or_fetch(
             root,
             "registries",
-            &selector.index_sha256,
-            None,
+            (&selector.index_sha256, None),
             "unsupported-registry",
             offline,
+            (terminal, &selector.release),
             |temporary| {
                 client.as_ref().expect("online client exists").download(
                     &selector.index_url,
                     false,
                     temporary.as_file_mut(),
+                    Some(&terminal.stage("Downloading registry", &selector.release, None)),
                 )
             },
         )?;
@@ -294,6 +333,7 @@ fn fetch(
     chosen: Option<&str>,
     output_dir: Option<&Path>,
     root: &Path,
+    terminal: &Terminal,
 ) -> Result<()> {
     let dataset = index.resolve(id)?;
     let artifacts = dataset["artifacts"]
@@ -354,10 +394,10 @@ fn fetch(
         let cached = cache::get_or_fetch(
             root,
             "objects",
-            digest,
-            Some(size),
+            (digest, Some(size)),
             "artifact-integrity",
             cli.offline,
+            (terminal, name),
             |temporary| {
                 let mut failures = Vec::new();
                 let mut integrity_failure = false;
@@ -371,13 +411,17 @@ fn fetch(
                         .seek(SeekFrom::Start(0))
                         .map_err(|error| Error::new("cache", error.to_string()))?;
                     let url = download["url"].as_str().expect("validated URL");
-                    match client.as_ref().expect("online client exists").download(
+                    let download = client.as_ref().expect("online client exists").download(
                         url,
                         false,
                         temporary.as_file_mut(),
-                    ) {
+                        Some(&terminal.stage("Downloading", name, Some(size))),
+                    );
+                    match download {
                         Ok(()) => {
-                            if cache::verify_path(temporary.path(), digest, size)? {
+                            let verifying =
+                                terminal.stage("Verifying download of", name, Some(size));
+                            if cache::verify_path(temporary.path(), digest, size, &verifying)? {
                                 return Ok(());
                             }
                             integrity_failure = true;
@@ -415,9 +459,14 @@ fn fetch(
     let mut created = Vec::new();
     for artifact in &fetched {
         if let Some(path) = &artifact.output_path {
-            if let Err(error) =
-                cache::copy_verified(&artifact.cached, path, &artifact.digest, artifact.size)
-            {
+            if let Err(error) = cache::copy_verified(
+                &artifact.cached,
+                path,
+                &artifact.digest,
+                artifact.size,
+                terminal,
+                &artifact.name,
+            ) {
                 for path in created {
                     let _ = fs::remove_file(path);
                 }
@@ -449,15 +498,26 @@ fn fetch(
     if cli.json {
         print_json(&report)?;
     } else {
-        println!("{} — artifact verified", dataset_id(dataset));
-        println!(
-            "Registry: {} {}",
+        terminal.out(format_args!(
+            "{} - {}",
+            dataset_label(&dataset_id(dataset)),
+            styled(32, "artifact verified")
+        ));
+        terminal.out(format_args!(
+            "\x1b[36mRegistry:\x1b[0m {} {}",
             index.selector.release, index.selector.index_sha256
-        );
+        ));
         for artifact in &fetched {
-            println!("{}\t{}", artifact.name, artifact.cached.path.display());
+            terminal.out(format_args!(
+                "{}\t{}",
+                artifact.name,
+                artifact.cached.path.display()
+            ));
             if let Some(path) = &artifact.output_path {
-                println!("  exported: {}", path.display());
+                terminal.out(format_args!(
+                    "  \x1b[36mexported:\x1b[0m {}",
+                    path.display()
+                ));
             }
         }
     }

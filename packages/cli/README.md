@@ -31,6 +31,11 @@ also exports verified raw bytes under `SOURCE/NAME/VERSION/ARTIFACT.FORMAT`. The
 CLI preserves an artifact's registered compression. It refuses to overwrite an
 existing export.
 
+On an interactive terminal, progress on stderr shows downloads, cache checks,
+verification, and exports. Human-readable output uses color on terminal
+streams. Set `NO_COLOR` for monochrome progress and output. Redirected stderr,
+`TERM=dumb`, and `--json` suppress progress.
+
 ```console
 datamonger fetch libsvm:dna_scale --output-dir ./data
 datamonger fetch libsvm:dna_scale --artifact train --json
