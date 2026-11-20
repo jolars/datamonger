@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.7.0](https://github.com/jolars/datamonger/compare/registry-v1.6.0...registry-v1.7.0) (2026-11-20)
+
+### Features
+
+- **registry:** add California and Texas road networks ([`4a98e70`](https://github.com/jolars/datamonger/commit/4a98e70f187b3f75c3eedc8cb64fffa27784290a))
+- **registry:** add the Delaware road network ([`ed29de5`](https://github.com/jolars/datamonger/commit/ed29de5fef92731cfe706c7489189169a01053f6))
+- **registry:** add UCI p53 mutants dataset ([`4164be3`](https://github.com/jolars/datamonger/commit/4164be3ddfab8c948a03e2d2bc925526cda51287))
+
 ## [1.6.0](https://github.com/jolars/datamonger/compare/registry-v1.5.0...registry-v1.6.0) (2026-11-20)
 
 ### Features
