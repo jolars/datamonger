@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.4.0](https://github.com/jolars/datamonger/compare/datamonger-ffi-v0.3.1...datamonger-ffi-v0.4.0) (2026-11-20)
+
+### Features
+
+- expose graph decoding through the C ABI ([`4ab15f4`](https://github.com/jolars/datamonger/commit/4ab15f4c642b26addc17a005f85ffcded6b8e870))
+
 ## [0.3.1](https://github.com/jolars/datamonger/compare/datamonger-ffi-v0.3.0...datamonger-ffi-v0.3.1) (2026-11-20)
 
 ### Dependencies
