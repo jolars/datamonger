@@ -1,3 +1,21 @@
+# datamonger 0.2.0
+
+## Features
+
+- bundle registry 1.6.0 (#61) ([`a06f5af`](https://github.com/jolars/datamonger/commit/a06f5aff52d81f710c4342e50aa12d26767ba68f))
+- bundle registry 1.5.0 (#50) ([`fdd31af`](https://github.com/jolars/datamonger/commit/fdd31af49564d01450fe3af5f6d28d4cf4259557))
+- fetch SVMLight ranking datasets in R ([`bdfaced`](https://github.com/jolars/datamonger/commit/bdfacedbd31eefd6294ac421a6dfd32da6fcdf98))
+- fetch multilabel LIBSVM datasets in R ([`1403eb0`](https://github.com/jolars/datamonger/commit/1403eb0cfd36f9b6287efa01bd14e219d6e5866a))
+- fetch semicolon-delimited datasets in R ([`9df4e6c`](https://github.com/jolars/datamonger/commit/9df4e6c4bbcba2830be1bc31167a40e88a5ad5f0))
+
+## Bug fixes
+
+- isolate staged R adapter workspace ([`ec130e5`](https://github.com/jolars/datamonger/commit/ec130e56e3ff4c8feabb4b26a9879a05a2190be3))
+
+## Performance improvements
+
+- skip NA assignment for complete R columns ([`6cc1bc2`](https://github.com/jolars/datamonger/commit/6cc1bc2b1b0c5bc92f6cab0d19d73dbeca041be7))
+
 # datamonger 0.1.0
 
 ## Features
