@@ -259,7 +259,7 @@
   non_identity <- codings[codings != "identity"]
 
   if (
-    any(!nzchar(codings)) ||
+    !all(nzchar(codings)) ||
       length(non_identity) > 1L ||
       (length(non_identity) && !(non_identity %in% c("gzip", "x-gzip")))
   ) {
