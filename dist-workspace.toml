@@ -8,16 +8,19 @@ cargo-dist-version = "0.33.0"
 # CI backends to support
 ci = "github"
 # The installers to generate for each app
-installers = []
+installers = ["shell"]
 # Target platforms to build apps for (Rust target-triple syntax)
 targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-musl", "x86_64-pc-windows-msvc"]
 # Where to host releases
 hosting = "github"
 # Versionary creates the draft release, then this workflow adds binaries.
 create-release = false
-dispatch-releases = true
+tag-namespace = "datamonger-v"
 publish-jobs = ["./publish-cli"]
 github-custom-job-permissions = { "publish-cli" = { contents = "read", id-token = "write" } }
+
+[dist.github-custom-runners]
+aarch64-apple-darwin = "macos-15"
 
 [dist.github-action-commits]
 "actions/checkout" = "v7"
