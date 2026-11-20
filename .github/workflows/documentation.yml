@@ -57,6 +57,7 @@ jobs:
           working-directory: packages/r
           extra-packages: |
             any::pkgload
+            any::roxygen2
             any::evaluate
             any::knitr
       - name: Compile the R client
@@ -66,7 +67,7 @@ jobs:
       - name: Generate dataset catalog
         run: uv run --no-sync --project packages/python python tools/dm_catalog.py
       - name: Build documentation site
-        run: uv run --no-sync --project packages/python diplodocus build --config documentation/diplodocus.yaml --output documentation/site
+        run: uv run --no-sync --project packages/python --with sphinx diplodocus build --config documentation/diplodocus.yaml --output documentation/site
       - uses: actions/setup-node@v7
         with:
           node-version: "24"
