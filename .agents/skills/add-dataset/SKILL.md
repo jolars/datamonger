@@ -149,8 +149,10 @@ print("Collection validation passed.")
 PY
 ```
 
-Run `devenv test`. Keep any new regression tests deterministic and offline;
-network-dependent tests belong in the affected client's `tests_live` directory.
+For additions limited to dataset manifests, collection entries, and dataset
+documentation, the `dm-add` review and staged collection check are sufficient.
+If the change also touches code or specifications, run the checks for those
+changes. Run the full suite when requested or required for pull request review.
 Published-registry audits do not exercise an unpublished addition.
 
 Leave release snapshots, indexes, selectors, catalogs, registry version bumps,
