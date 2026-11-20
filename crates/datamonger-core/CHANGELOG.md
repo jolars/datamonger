@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/jolars/datamonger/compare/datamonger-core-v0.3.0...datamonger-core-v0.4.0) (2026-11-20)
+
+### Features
+
+- add graph and hypergraph decoding to Rust core ([`d716ad9`](https://github.com/jolars/datamonger/commit/d716ad95c3f13f7860155db5475da3c8560d1f90))
+- support delimited text preambles and headerless input ([`82e4089`](https://github.com/jolars/datamonger/commit/82e4089349930ca4f35ffadde9222676429e1081))
+
 ## [0.3.0](https://github.com/jolars/datamonger/compare/datamonger-core-v0.2.0...datamonger-core-v0.3.0) (2026-11-19)
 
 ### Features

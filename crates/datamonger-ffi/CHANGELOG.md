@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.1](https://github.com/jolars/datamonger/compare/datamonger-ffi-v0.3.0...datamonger-ffi-v0.3.1) (2026-11-20)
+
+### Dependencies
+
+- updated crates/datamonger-core to v0.4.0
+
 ## [0.3.0](https://github.com/jolars/datamonger/compare/datamonger-ffi-v0.2.0...datamonger-ffi-v0.3.0) (2026-11-19)
 
 ### Features
