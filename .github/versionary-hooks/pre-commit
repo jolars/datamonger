@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Versionary stages the version bump and release target in a temporary worktree.
+if git diff --cached --quiet -- registry/version.txt; then
+  exit 0
+fi
+
+uv sync --locked --no-install-project --project packages/python
+uv run --no-sync --project packages/python \
+  python tools/dm_registry_release.py prepare
+git add -- registry/releases registry/catalog.json registry/latest.json

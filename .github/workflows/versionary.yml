@@ -56,6 +56,10 @@ jobs:
 
       - id: versionary
         uses: jolars/versionary@v1
+        env:
+          GIT_CONFIG_COUNT: "1"
+          GIT_CONFIG_KEY_0: core.hooksPath
+          GIT_CONFIG_VALUE_0: ${{ github.workspace }}/.github/versionary-hooks
         with:
           token: ${{ secrets.RELEASE_TOKEN }}
 
@@ -115,34 +119,13 @@ jobs:
             fi
           done < <(jq -r '.[].branch' <<< "$REVIEW_REQUESTS" | sort -u)
 
-      - name: Select registry release work
+      - name: Select registry release tag
         id: registry
         env:
-          REVIEW_REQUESTS: ${{ steps.versionary.outputs.review_requests }}
           RELEASE_TARGETS: ${{ steps.versionary.outputs.release_targets }}
         run: |
-          branch="$(jq -r '.[] | select(.packagePaths == ["registry"]) | .branch' <<< "$REVIEW_REQUESTS")"
           tag="$(jq -r '.[] | select(.path == "registry") | .tag' <<< "$RELEASE_TARGETS")"
-          echo "branch=$branch" >> "$GITHUB_OUTPUT"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
-
-      - name: Prepare registry snapshot in its release PR
-        if: steps.registry.outputs.branch != ''
-        env:
-          REGISTRY_BRANCH: ${{ steps.registry.outputs.branch }}
-        run: |
-          git check-ref-format "refs/heads/$REGISTRY_BRANCH"
-          git fetch origin "refs/heads/$REGISTRY_BRANCH"
-          git checkout --detach FETCH_HEAD
-          uv run --project packages/python python tools/dm_registry_release.py prepare
-          uv run --project packages/python python tools/dm_registry_release.py check --pending
-          git add registry/releases registry/catalog.json registry/latest.json
-          if ! git diff --cached --quiet; then
-            git -c user.name='github-actions[bot]' \
-              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
-              commit -m 'chore: prepare registry release snapshot'
-            git push origin "HEAD:refs/heads/$REGISTRY_BRANCH"
-          fi
 
   publish-registry:
     needs: release

@@ -263,17 +263,18 @@ release must have a newer version than the bootstrap publication.
    becomes its default.
 
 2. Commit release-worthy registry changes with Conventional Commits. After CI
-   passes on `main`, Versionary opens a separate registry release PR that bumps
-   `registry/version.txt`, updates `registry/CHANGELOG.md`, and records its
+   passes on `main`, Versionary prepares a separate registry release commit that
+   bumps `registry/version.txt`, updates `registry/CHANGELOG.md`, and records its
    release target. Registry versions are independent of client and contract
    versions.
 
-3. The same workflow runs `dm_registry_release.py prepare` on that PR branch. It
-   creates `registry/releases/<version>/release.yaml` with the Versionary tag
-   and the next sequence number, then uses `dm-index` to generate the index and
-   selector. It also updates `registry/catalog.json` and `registry/latest.json`.
-   The complete snapshot is committed to the release PR for review. CI requires
-   these files to match the Versionary target and collection inputs.
+3. A Git pre-commit hook runs `dm_registry_release.py prepare` in Versionary's
+   release worktree. It creates `registry/releases/<version>/release.yaml` with
+   the Versionary tag and the next sequence number, then generates the index
+   and selector and updates `registry/catalog.json` and `registry/latest.json`.
+   The hook stages these files in the same commit as the version bump.
+   Versionary then pushes the release branch and opens or updates the PR. CI
+   requires the snapshot to match the Versionary target and collection inputs.
 
 4. Inspect the release PR, including the dataset diff and generated selector.
    Run the full hermetic gate and the pending-snapshot check from its checkout:
