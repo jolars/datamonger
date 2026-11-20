@@ -260,8 +260,9 @@ release must have a newer version than the bootstrap publication.
 1. Add or revise manifests under `registry/datasets` according to
    [CONTRIBUTING.md](CONTRIBUTING.md). Review identity, provenance, license,
    distribution, preservation, decoded shapes, representative values, and task
-   roles. Update `registry/collection.yaml` to select the manifests, defaults,
-   and approved errata for the next release.
+   roles. Update `registry/collection.yaml` to select dataset versions and
+   approved errata for the next release. Each dataset's last listed version
+   becomes its default.
 
 2. Commit release-worthy registry changes with Conventional Commits. After CI
    passes on `main`, Versionary opens a separate registry release PR that bumps

@@ -358,7 +358,8 @@ reviewed mirror locations and the digests of the bytes served there.
    Check for IDs or bookkeeping columns that should not silently become model
    features.
 
-5. Add the manifest and its default to `registry/collection.yaml`. Do not edit
+5. Add the quoted version to the dataset's `versions` list in
+   `registry/collection.yaml`. The last entry becomes the default. Do not edit
    generated indexes or selectors, and do not alter a published release.
 
 6. Commit the registry change with `feat(registry): ...` or

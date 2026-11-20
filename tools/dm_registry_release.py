@@ -40,15 +40,7 @@ def _target(root: Path) -> tuple[str, str]:
 
 
 def _outputs(root: Path, version: str) -> dict[Path, bytes]:
-    collection = dict(dm_index.load_yaml(root / "registry/collection.yaml"))
-    if set(collection) - {
-        "schema_version",
-        "repository",
-        "manifests",
-        "defaults",
-        "errata",
-    }:
-        raise ValueError("registry collection contains unsupported fields")
+    collection, manifest_identities = dm_index.load_collection(root)
     release_directory = Path("registry/releases") / version
     sequences = [
         dm_index.load_yaml(path)["sequence"]
@@ -75,7 +67,12 @@ def _outputs(root: Path, version: str) -> dict[Path, bytes]:
         release_path = staging / release_directory / "release.yaml"
         release_path.parent.mkdir(parents=True, exist_ok=True)
         release_path.write_bytes(source_bytes)
-        index, selector = dm_index.build(release_path, root=staging, use_snapshot=False)
+        index, selector = dm_index.build(
+            release_path,
+            root=staging,
+            use_snapshot=False,
+            manifest_identities=manifest_identities,
+        )
         (release_path.parent / "index.json").write_bytes(index)
         (release_path.parent / "selector.json").write_bytes(selector)
         catalog = dm_index.build_catalog(root=staging)

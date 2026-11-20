@@ -1,212 +1,117 @@
 schema_version: 1
 repository: jolars/datamonger
-manifests:
-- registry/datasets/datamonger/brca1-1.yaml
-- registry/datasets/datamonger/godlewski2023-1.yaml
-- registry/datasets/datamonger/guyon2004-gisette-2.yaml
-- registry/datasets/datamonger/guyon2004-madelon-1.yaml
-- registry/datasets/datamonger/koussounadis2014-1.yaml
-- registry/datasets/datamonger/rhee2006-1.yaml
-- registry/datasets/datamonger/scheetz2006-1.yaml
-- registry/datasets/huggingface/tribler-ltr-1.yaml
-- registry/datasets/lars/diabetes-1.yaml
-- registry/datasets/libsvm/a1a-1.yaml
-- registry/datasets/libsvm/a2a-1.yaml
-- registry/datasets/libsvm/a3a-1.yaml
-- registry/datasets/libsvm/a4a-1.yaml
-- registry/datasets/libsvm/a5a-1.yaml
-- registry/datasets/libsvm/a6a-1.yaml
-- registry/datasets/libsvm/a7a-1.yaml
-- registry/datasets/libsvm/a8a-1.yaml
-- registry/datasets/libsvm/a9a-1.yaml
-- registry/datasets/libsvm/cadata-1.yaml
-- registry/datasets/libsvm/colon-cancer-1.yaml
-- registry/datasets/libsvm/covtype-1.yaml
-- registry/datasets/libsvm/covtype-binary-1.yaml
-- registry/datasets/libsvm/dna_scale-1.yaml
-- registry/datasets/libsvm/duke-1.yaml
-- registry/datasets/libsvm/e2006-log1p-1.yaml
-- registry/datasets/libsvm/e2006-tfidf-1.yaml
-- registry/datasets/libsvm/glass_scale-1.yaml
-- registry/datasets/libsvm/heart_scale-1.yaml
-- registry/datasets/libsvm/leukemia-1.yaml
-- registry/datasets/libsvm/madelon-1.yaml
-- registry/datasets/libsvm/mushrooms-1.yaml
-- registry/datasets/libsvm/news20-binary-1.yaml
-- registry/datasets/libsvm/rcv1-binary-1.yaml
-- registry/datasets/libsvm/real-sim-1.yaml
-- registry/datasets/libsvm/scene-classification-1.yaml
-- registry/datasets/libsvm/triazines_scale-1.yaml
-- registry/datasets/libsvm/w1a-1.yaml
-- registry/datasets/libsvm/w2a-1.yaml
-- registry/datasets/libsvm/w3a-1.yaml
-- registry/datasets/libsvm/w4a-1.yaml
-- registry/datasets/libsvm/w5a-1.yaml
-- registry/datasets/libsvm/w6a-1.yaml
-- registry/datasets/libsvm/w7a-1.yaml
-- registry/datasets/libsvm/w8a-1.yaml
-- registry/datasets/libsvm/yearpredictionmsd-1.yaml
-- registry/datasets/uci/abalone-1.yaml
-- registry/datasets/uci/breast-cancer-wisconsin-diagnostic-1.yaml
-- registry/datasets/uci/covertype-1.yaml
-- registry/datasets/uci/iris-1.yaml
-- registry/datasets/uci/wholesale-customers-1.yaml
-- registry/datasets/uci/wine-quality-1.yaml
-- registry/datasets/uci/wine-quality-red-1.yaml
-defaults:
-- source: datamonger
-  name: brca1
-  version: '1'
-- source: datamonger
-  name: godlewski2023
-  version: '1'
-- source: datamonger
-  name: guyon2004-gisette
-  version: '2'
-- source: datamonger
-  name: guyon2004-madelon
-  version: '1'
-- source: datamonger
-  name: koussounadis2014
-  version: '1'
-- source: datamonger
-  name: rhee2006
-  version: '1'
-- source: datamonger
-  name: scheetz2006
-  version: '1'
-- source: huggingface
-  name: tribler-ltr
-  version: '1'
-- source: lars
-  name: diabetes
-  version: '1'
-- source: libsvm
-  name: a1a
-  version: '1'
-- source: libsvm
-  name: a2a
-  version: '1'
-- source: libsvm
-  name: a3a
-  version: '1'
-- source: libsvm
-  name: a4a
-  version: '1'
-- source: libsvm
-  name: a5a
-  version: '1'
-- source: libsvm
-  name: a6a
-  version: '1'
-- source: libsvm
-  name: a7a
-  version: '1'
-- source: libsvm
-  name: a8a
-  version: '1'
-- source: libsvm
-  name: a9a
-  version: '1'
-- source: libsvm
-  name: cadata
-  version: '1'
-- source: libsvm
-  name: colon-cancer
-  version: '1'
-- source: libsvm
-  name: covtype
-  version: '1'
-- source: libsvm
-  name: covtype-binary
-  version: '1'
-- source: libsvm
-  name: dna_scale
-  version: '1'
-- source: libsvm
-  name: duke
-  version: '1'
-- source: libsvm
-  name: e2006-log1p
-  version: '1'
-- source: libsvm
-  name: e2006-tfidf
-  version: '1'
-- source: libsvm
-  name: glass_scale
-  version: '1'
-- source: libsvm
-  name: heart_scale
-  version: '1'
-- source: libsvm
-  name: leukemia
-  version: '1'
-- source: libsvm
-  name: madelon
-  version: '1'
-- source: libsvm
-  name: mushrooms
-  version: '1'
-- source: libsvm
-  name: news20-binary
-  version: '1'
-- source: libsvm
-  name: rcv1-binary
-  version: '1'
-- source: libsvm
-  name: real-sim
-  version: '1'
-- source: libsvm
-  name: scene-classification
-  version: '1'
-- source: libsvm
-  name: triazines_scale
-  version: '1'
-- source: libsvm
-  name: w1a
-  version: '1'
-- source: libsvm
-  name: w2a
-  version: '1'
-- source: libsvm
-  name: w3a
-  version: '1'
-- source: libsvm
-  name: w4a
-  version: '1'
-- source: libsvm
-  name: w5a
-  version: '1'
-- source: libsvm
-  name: w6a
-  version: '1'
-- source: libsvm
-  name: w7a
-  version: '1'
-- source: libsvm
-  name: w8a
-  version: '1'
-- source: libsvm
-  name: yearpredictionmsd
-  version: '1'
-- source: uci
-  name: abalone
-  version: '1'
-- source: uci
-  name: breast-cancer-wisconsin-diagnostic
-  version: '1'
-- source: uci
-  name: covertype
-  version: '1'
-- source: uci
-  name: iris
-  version: '1'
-- source: uci
-  name: wholesale-customers
-  version: '1'
-- source: uci
-  name: wine-quality
-  version: '1'
-- source: uci
-  name: wine-quality-red
-  version: '1'
+
+datasets:
+  datamonger:
+    brca1:
+      versions: ["1"]
+    godlewski2023:
+      versions: ["1"]
+    guyon2004-gisette:
+      versions: ["2"]
+    guyon2004-madelon:
+      versions: ["1"]
+    koussounadis2014:
+      versions: ["1"]
+    rhee2006:
+      versions: ["1"]
+    scheetz2006:
+      versions: ["1"]
+
+  huggingface:
+    tribler-ltr:
+      versions: ["1"]
+
+  lars:
+    diabetes:
+      versions: ["1"]
+
+  libsvm:
+    a1a:
+      versions: ["1"]
+    a2a:
+      versions: ["1"]
+    a3a:
+      versions: ["1"]
+    a4a:
+      versions: ["1"]
+    a5a:
+      versions: ["1"]
+    a6a:
+      versions: ["1"]
+    a7a:
+      versions: ["1"]
+    a8a:
+      versions: ["1"]
+    a9a:
+      versions: ["1"]
+    cadata:
+      versions: ["1"]
+    colon-cancer:
+      versions: ["1"]
+    covtype:
+      versions: ["1"]
+    covtype-binary:
+      versions: ["1"]
+    dna_scale:
+      versions: ["1"]
+    duke:
+      versions: ["1"]
+    e2006-log1p:
+      versions: ["1"]
+    e2006-tfidf:
+      versions: ["1"]
+    glass_scale:
+      versions: ["1"]
+    heart_scale:
+      versions: ["1"]
+    leukemia:
+      versions: ["1"]
+    madelon:
+      versions: ["1"]
+    mushrooms:
+      versions: ["1"]
+    news20-binary:
+      versions: ["1"]
+    rcv1-binary:
+      versions: ["1"]
+    real-sim:
+      versions: ["1"]
+    scene-classification:
+      versions: ["1"]
+    triazines_scale:
+      versions: ["1"]
+    w1a:
+      versions: ["1"]
+    w2a:
+      versions: ["1"]
+    w3a:
+      versions: ["1"]
+    w4a:
+      versions: ["1"]
+    w5a:
+      versions: ["1"]
+    w6a:
+      versions: ["1"]
+    w7a:
+      versions: ["1"]
+    w8a:
+      versions: ["1"]
+    yearpredictionmsd:
+      versions: ["1"]
+
+  uci:
+    abalone:
+      versions: ["1"]
+    breast-cancer-wisconsin-diagnostic:
+      versions: ["1"]
+    covertype:
+      versions: ["1"]
+    iris:
+      versions: ["1"]
+    wholesale-customers:
+      versions: ["1"]
+    wine-quality:
+      versions: ["1"]
+    wine-quality-red:
+      versions: ["1"]

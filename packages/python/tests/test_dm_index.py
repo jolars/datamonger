@@ -230,20 +230,19 @@ def test_candidate_release_preserves_its_curated_snapshot() -> None:
 
 
 def test_collection_contains_every_curated_dataset() -> None:
-    collection = dm_index.load_yaml(ROOT / "registry/collection.yaml")
+    collection, identities = dm_index.load_collection(ROOT)
     paths = sorted(
         path.relative_to(ROOT).as_posix()
         for path in (ROOT / "registry/datasets").glob("*/*.yaml")
     )
     assert collection["manifests"] == paths
-    manifests = [dm_index.load_yaml(ROOT / path) for path in paths]
-    assert {
-        (default["source"], default["name"], default["version"])
-        for default in collection["defaults"]
-    } == {
-        (manifest["source"], manifest["name"], manifest["version"])
-        for manifest in manifests
-    }
+    for path in paths:
+        manifest = dm_index.load_yaml(ROOT / path)
+        assert identities[path] == (
+            manifest["source"],
+            manifest["name"],
+            manifest["version"],
+        )
 
 
 def test_first_stable_release_preserves_certified_candidate_records() -> None:
@@ -1038,7 +1037,7 @@ def test_collection_preprocessing_covers_both_stages_without_changing_identity()
             snapshots[(dataset["source"], dataset["name"], dataset["version"])] = (
                 dataset
             )
-    collection = dm_index.load_yaml(ROOT / "registry/collection.yaml")
+    collection, _ = dm_index.load_collection(ROOT)
     for path in collection["manifests"]:
         dataset = dm_index.load_yaml(ROOT / path)
         assert dataset["schema_version"] in {3, 4, 5, 6, 7}

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://datamonger.dev/spec/schema/collection-v1.schema.json",
+  "title": "Datamonger registry collection version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "repository", "datasets"],
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "repository": {"$ref": "release-source-v1.schema.json#/properties/repository"},
+    "datasets": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {"$ref": "index-v1.schema.json#/$defs/identity/properties/source"},
+      "additionalProperties": {
+        "type": "object",
+        "minProperties": 1,
+        "propertyNames": {"$ref": "index-v1.schema.json#/$defs/identity/properties/name"},
+        "additionalProperties": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["versions"],
+          "properties": {
+            "versions": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {"$ref": "index-v1.schema.json#/$defs/identity/properties/version"}
+            }
+          }
+        }
+      }
+    },
+    "errata": {"$ref": "release-source-v1.schema.json#/properties/errata"}
+  }
+}

@@ -35,19 +35,9 @@ def registry_root(tmp_path: Path) -> Path:
     collection = dict(
         dm_registry_release.dm_index.load_yaml(ROOT / "registry/collection.yaml")
     )
-    collection["manifests"] = [
-        path for path in collection["manifests"] if (tmp_path / path).exists()
-    ]
-    identities = {
-        (record["source"], record["name"], record["version"])
-        for path in collection["manifests"]
-        for record in [dm_registry_release.dm_index.load_yaml(tmp_path / path)]
+    collection["datasets"] = {
+        source: collection["datasets"][source] for source in ("libsvm", "uci")
     }
-    collection["defaults"] = [
-        record
-        for record in collection["defaults"]
-        if (record["source"], record["name"], record["version"]) in identities
-    ]
     (tmp_path / "registry/collection.yaml").write_text(
         yaml.safe_dump(collection, sort_keys=False)
     )
@@ -124,21 +114,18 @@ def test_prepare_is_deterministic_and_preserves_historical_releases(
         (registry_root / "registry/releases/2026.09/index.json").read_bytes()
     )
     index = json.loads((directory / "index.json").read_bytes())
-    collection = yaml.safe_load(
-        (registry_root / "registry/collection.yaml").read_text()
-    )
     assert previous["schema_version"] == 1
     assert index["schema_version"] == max(
         record["schema_version"] for record in index["datasets"]
     )
     assert index["release"] == "1.1.0"
     for key, records in (
-        ("defaults", collection["defaults"]),
+        ("defaults", source["defaults"]),
         (
             "datasets",
             [
                 yaml.safe_load((registry_root / path).read_text())
-                for path in collection["manifests"]
+                for path in source["manifests"]
             ],
         ),
     ):
@@ -151,19 +138,75 @@ def test_prepare_is_deterministic_and_preserves_historical_releases(
     assert json.loads((directory / "selector.json").read_bytes()) in catalog["releases"]
 
 
-def test_invalid_source_leaves_no_partial_release(registry_root: Path) -> None:
+def test_prepare_uses_the_last_listed_version_as_default(registry_root: Path) -> None:
+    bump(registry_root)
+    path = registry_root / "registry/collection.yaml"
+    collection = yaml.safe_load(path.read_text())
+    collection["datasets"]["uci"]["iris"]["versions"] = ["1", "0"]
+    path.write_text(yaml.safe_dump(collection))
+    iris = registry_root / "registry/datasets/uci/iris-1.yaml"
+    manifest = yaml.safe_load(iris.read_text())
+    manifest["version"] = "0"
+    iris.with_name("iris-0.yaml").write_text(yaml.safe_dump(manifest))
+
+    dm_registry_release.prepare(registry_root)
+    index = json.loads(
+        (registry_root / "registry/releases/1.1.0/index.json").read_bytes()
+    )
+    assert {
+        record["version"] for record in index["datasets"] if record["name"] == "iris"
+    } == {
+        "0",
+        "1",
+    }
+    defaults = {
+        (record["source"], record["name"]): record["version"]
+        for record in index["defaults"]
+    }
+    assert defaults["uci", "iris"] == "0"
+    assert defaults["uci", "abalone"] == "1"
+
+
+@pytest.mark.parametrize(
+    ("versions", "error", "message"),
+    [
+        ([], ValueError, "non-empty"),
+        (["1", "1"], ValueError, "non-unique"),
+        ([1], ValueError, "not of type 'string'"),
+        (["missing"], FileNotFoundError, "iris-missing"),
+    ],
+)
+def test_invalid_source_leaves_no_partial_release(
+    registry_root: Path,
+    versions: list[str | int],
+    error: type[Exception],
+    message: str,
+) -> None:
     bump(registry_root)
     path = registry_root / "registry/collection.yaml"
     source = yaml.safe_load(path.read_text())
-    source["defaults"][0]["version"] = "missing"
+    source["datasets"]["uci"]["iris"]["versions"] = versions
     path.write_text(yaml.safe_dump(source))
     latest = (registry_root / "registry/latest.json").read_bytes()
     catalog = (registry_root / "registry/catalog.json").read_bytes()
-    with pytest.raises(ValueError, match="unknown datasets"):
+    with pytest.raises(error, match=message):
         dm_registry_release.prepare(registry_root)
     assert not (registry_root / "registry/releases/1.1.0").exists()
     assert (registry_root / "registry/latest.json").read_bytes() == latest
     assert (registry_root / "registry/catalog.json").read_bytes() == catalog
+
+
+def test_prepare_rejects_mismatched_manifest_identity(registry_root: Path) -> None:
+    bump(registry_root)
+    path = registry_root / "registry/collection.yaml"
+    collection = yaml.safe_load(path.read_text())
+    collection["datasets"]["uci"]["iris"]["versions"] = ["2", "1"]
+    path.write_text(yaml.safe_dump(collection))
+    iris = registry_root / "registry/datasets/uci/iris-1.yaml"
+    # The default still identifies an available version, but the first entry does not.
+    shutil.copyfile(iris, iris.with_name("iris-2.yaml"))
+    with pytest.raises(ValueError, match=r"manifest identity .* does not match"):
+        dm_registry_release.prepare(registry_root)
 
 
 @pytest.mark.parametrize("filename", ["release.yaml", "index.json", "selector.json"])
@@ -200,7 +243,7 @@ def test_pending_check_rejects_a_stale_collection(registry_root: Path) -> None:
     dm_registry_release.prepare(registry_root)
     path = registry_root / "registry/collection.yaml"
     source = yaml.safe_load(path.read_text())
-    source["defaults"].pop()
+    del source["datasets"]["uci"]["iris"]
     path.write_text(yaml.safe_dump(source))
     with pytest.raises(ValueError):
         dm_registry_release.check(registry_root, pending=True)

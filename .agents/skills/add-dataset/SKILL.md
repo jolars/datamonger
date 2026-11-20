@@ -108,10 +108,9 @@ failure and do not manufacture hashes or expectations.
 
 ## Register and validate
 
-Add the manifest path to `registry/collection.yaml`. For a new dataset, add its
-`source`, `name`, and quoted `version` to `defaults`. For an additional version,
-make the default choice explicit and preserve existing versions. Follow the
-surrounding ordering and formatting.
+Under `datasets` in `registry/collection.yaml`, find or create the entry for the
+dataset's source and name. Append the quoted version to its `versions` list,
+preserving existing versions. The last version becomes the default.
 
 The normal index check validates existing release snapshots; it does not
 validate newly selected collection entries. Check the updated collection in a
@@ -140,12 +139,12 @@ with tempfile.TemporaryDirectory(prefix="dm-collection-check-") as directory:
         dm_index.load_yaml(path)["sequence"]
         for path in releases.glob("*/release.yaml")
     ) + 1
-    source = dict(dm_index.load_yaml(staging / "registry/collection.yaml"))
+    source, manifest_identities = dm_index.load_collection(staging)
     source.update(release="local-check", sequence=sequence, tag="local-check")
     path = releases / "local-check/release.yaml"
     path.parent.mkdir()
     path.write_text(yaml.safe_dump(source, sort_keys=False), encoding="utf-8")
-    dm_index.build(path, root=staging)
+    dm_index.build(path, root=staging, manifest_identities=manifest_identities)
 print("Collection validation passed.")
 PY
 ```

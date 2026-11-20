@@ -184,6 +184,37 @@ def _identity(record: Mapping[str, Any], field: str) -> Identity:
     )
 
 
+def load_collection(root: Path) -> tuple[dict[str, Any], dict[str, Identity]]:
+    """Expand the collection into release-source fields and expected identities."""
+    path = root / "registry/collection.yaml"
+    collection = _load_yaml(path)
+    _validate_schema(
+        collection, "collection-v1.schema.json", root / "spec/schema", str(path)
+    )
+    identities: dict[str, Identity] = {}
+    defaults = []
+    for source, datasets in sorted(collection["datasets"].items()):
+        for name, dataset in sorted(datasets.items()):
+            versions = dataset["versions"]
+            for version in versions:
+                manifest = f"registry/datasets/{source}/{name}-{version}.yaml"
+                if manifest in identities:
+                    raise ValueError(
+                        f"collection entries share manifest path {manifest}"
+                    )
+                identities[manifest] = (source, name, version)
+            defaults.append({"source": source, "name": name, "version": versions[-1]})
+    fields = {
+        "schema_version": 1,
+        "repository": collection["repository"],
+        "manifests": sorted(identities),
+        "defaults": defaults,
+    }
+    if "errata" in collection:
+        fields["errata"] = collection["errata"]
+    return fields, identities
+
+
 def _unique(records: Sequence[object], field: str, key: str) -> None:
     values: list[str] = []
     for index, raw in enumerate(records):
@@ -771,7 +802,11 @@ def _json_bytes(value: object) -> bytes:
 
 
 def build(
-    release_path: Path, *, root: Path | None = None, use_snapshot: bool = True
+    release_path: Path,
+    *,
+    root: Path | None = None,
+    use_snapshot: bool = True,
+    manifest_identities: Mapping[str, Identity] | None = None,
 ) -> tuple[bytes, bytes]:
     """Return a validated release's deterministic index and selector bytes."""
 
@@ -790,13 +825,20 @@ def build(
     release = _string(release_record.get("release"), "release")
     sequence = cast(int, release_record["sequence"])
 
-    datasets = [
-        _load_yaml(_source_path(source_root, path, "manifest path"))
-        for path in _sequence(release_record.get("manifests"), "manifests")
-    ]
-    for dataset in datasets:
+    datasets = []
+    identities = []
+    for path in _sequence(release_record.get("manifests"), "manifests"):
+        dataset = _load_yaml(_source_path(source_root, path, "manifest path"))
         validate_manifest(dataset, root=source_root)
-    identities = [_identity(dataset, "dataset") for dataset in datasets]
+        identity = _identity(dataset, "dataset")
+        if manifest_identities is not None:
+            expected = manifest_identities.get(cast(str, path))
+            if identity != expected:
+                raise ValueError(
+                    f"manifest identity {identity} does not match {expected} at {path}"
+                )
+        datasets.append(dataset)
+        identities.append(identity)
     if len(identities) != len(set(identities)):
         raise ValueError("dataset identifiers must be unique")
     snapshot_path = release_path.parent / "index.json"
