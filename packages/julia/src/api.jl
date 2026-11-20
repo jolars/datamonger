@@ -215,8 +215,9 @@ end
 function _validate_representation(dataset)
     representation = _require_object(get(dataset, "representation", nothing), "representation")
     decoder = get(representation, "decoder", nothing)
+    decoder in ("graph-tables", "hif") && return _graph_setup(dataset, representation, decoder)
     if decoder == "named-splits"
-        get(dataset, "schema_version", nothing) in (4, 5, 6, 7) ||
+        get(dataset, "schema_version", nothing) in (4, 5, 6, 7, 8) ||
             throw(UnsupportedDecoderError("named-splits requires manifest schema 4"))
         recipes = _split_recipes(representation)
         children = map(recipes) do recipe
@@ -237,16 +238,16 @@ function _validate_representation(dataset)
         throw(UnsupportedDecoderError(
             "Julia supports delimited-text, LIBSVM, and LIBSVM split versions 1 and 2",
         ))
-    decoder_version == 2 && !(get(dataset, "schema_version", nothing) in (5, 6, 7)) &&
+    decoder_version == 2 && !(get(dataset, "schema_version", nothing) in (5, 6, 7, 8)) &&
         throw(UnsupportedDecoderError("decoder version 2 requires manifest schema 5 or 6"))
     if decoder == "svmlight-ranking"
-        decoder_version == 1 && get(dataset, "schema_version", nothing) == 7 ||
+        decoder_version == 1 && get(dataset, "schema_version", nothing) in (7, 8) ||
             throw(UnsupportedDecoderError("SVMLight ranking requires manifest schema 7 and decoder version 1"))
         _supports_svmlight_ranking() ||
             throw(UnsupportedDecoderError("SVMLight ranking requires an updated native artifact"))
     end
     if decoder == "libsvm-multilabel"
-        decoder_version == 1 && get(dataset, "schema_version", nothing) in (6, 7) ||
+        decoder_version == 1 && get(dataset, "schema_version", nothing) in (6, 7, 8) ||
             throw(UnsupportedDecoderError("multilabel LIBSVM version 1 requires manifest schema 6"))
         _supports_libsvm_multilabel() ||
             throw(UnsupportedDecoderError("multilabel LIBSVM requires an updated native artifact"))
@@ -336,7 +337,8 @@ Resolve, retrieve, verify, and decode one registered dataset.
 `name` accepts a bare name with `source`, `source:name`, or `source:name@version`.
 Omit `source` for qualified references and omit `version` when the reference
 embeds it, even if the values would agree. An omitted version selects the
-registry default.
+registry default. Graph recipes return a `GraphDataset` or
+`HypergraphDataset` with DataFrames for topology and attributes.
 """
 function fetch_data(
     name;

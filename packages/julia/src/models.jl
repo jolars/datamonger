@@ -108,6 +108,21 @@ struct RankingSparseDataset{T<:Union{Int64,Float64},M<:AbstractMatrix{Float64}}
     query_id::Vector{Int64}
 end
 
+"""A graph with node and edge tables in source order."""
+struct GraphDataset
+    directed::Bool
+    nodes::DataFrame
+    edges::DataFrame
+end
+
+"""A hypergraph with node, hyperedge, and incidence tables."""
+struct HypergraphDataset
+    directed::Bool
+    nodes::DataFrame
+    hyperedges::DataFrame
+    incidences::DataFrame
+end
+
 """Provider-named table or sparse splits in recipe order, accessed with `data["validation"]`."""
 struct DatasetSplits <: AbstractDict{String,Union{DataFrame,SparseDataset,MultilabelSparseDataset,RankingSparseDataset}}
     names::Vector{String}

@@ -18,6 +18,7 @@ include("native.jl")
 include("canonical.jl")
 include("decode.jl")
 include("splits.jl")
+include("graphs.jl")
 include("cache.jl")
 include("registry.jl")
 include("api.jl")
@@ -40,6 +41,8 @@ export ArtifactIntegrityError,
     DecodedIntegrityError,
     FetchInfo,
     FetchResult,
+    GraphDataset,
+    HypergraphDataset,
     OfflineError,
     Registry,
     RegistryError,

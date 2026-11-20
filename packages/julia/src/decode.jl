@@ -78,16 +78,20 @@ function decode_delimited(path, options::AbstractDict; compression="none")
         result = ccall(_native_symbol(:dm_decode_delimited), Ptr{Cvoid},
                        (_NativeArtifact, _NativeDelimitedOptions), artifact, recipe)
         components = _with_native_result(_native_components, result)
-        native = map(components) do component
-            T = eltype(component.values)
-            values = Vector{Union{Missing,T}}(undef, length(component.values))
-            for index in eachindex(values)
-                values[index] = component.valid[index] ? component.values[index] : missing
-            end
-            Symbol(component.name) => values
-        end
-        return Decoded(DataFrame(collect(native)), components)
+        return Decoded(_decoded_dataframe(components), components)
     end
+end
+
+function _decoded_dataframe(components)
+    native = map(components) do component
+        T = eltype(component.values)
+        values = Vector{Union{Missing,T}}(undef, length(component.values))
+        for index in eachindex(values)
+            values[index] = component.valid[index] ? component.values[index] : missing
+        end
+        Symbol(component.name) => values
+    end
+    return DataFrame(collect(native))
 end
 
 function _sparse_matrix(features)

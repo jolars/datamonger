@@ -43,6 +43,8 @@ function _decode_setup(setup, paths)
             append!(components, [_rename_component(c, _split_component_name(name, c.name)) for c in child.components])
         end
         return Decoded(DatasetSplits(names, data), Tuple(components))
+    elseif setup.decoder in ("graph-tables", "hif")
+        return _decode_graph(setup, paths)
     elseif setup.decoder == "delimited-text"
         return decode_delimited(paths[1], setup.options; compression=setup.compressions[1])
     elseif setup.decoder == "svmlight-ranking"
