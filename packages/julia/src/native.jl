@@ -18,6 +18,19 @@ struct _NativeColumn
     name::_NativeBytes
     data_type::UInt32
 end
+struct _NativeHifColumns
+    attributes::Ptr{_NativeColumn}
+    count::Csize_t
+    weight::UInt32
+end
+struct _NativeHifOptions
+    directed::UInt32
+    node_id::UInt32
+    edge_id::UInt32
+    nodes::_NativeHifColumns
+    hyperedges::_NativeHifColumns
+    incidences::_NativeHifColumns
+end
 struct _NativeDelimitedOptions
     delimiter::UInt32
     columns::Ptr{_NativeColumn}
@@ -183,8 +196,7 @@ function _native_artifact(path::String, compression)
     return _NativeArtifact(_NativeBytes(path), tag)
 end
 
-function _native_canonical(components, emit_bytes)
-    roots = Any[]
+function _native_component_views(components, roots)
     views = _NativeComponent[]
     for component in components
         name = component.name
@@ -233,6 +245,12 @@ function _native_canonical(components, emit_bytes)
             _NativeBytes(valid), _NativeU64s(offsets), _NativeU64s(indices),
         ))
     end
+    return views
+end
+
+function _native_canonical(components, emit_bytes)
+    roots = Any[]
+    views = _native_component_views(components, roots)
     GC.@preserve roots views begin
         result = ccall(_native_symbol(:dm_canonical), Ptr{Cvoid},
             (Ptr{_NativeComponent}, Csize_t, UInt32), views, length(views), emit_bytes)
@@ -241,4 +259,60 @@ function _native_canonical(components, emit_bytes)
             return _copy_native(ccall(_native_symbol(symbol), _NativeBytes, (Ptr{Cvoid},), result))
         end
     end
+end
+
+
+struct _NativeTable
+    columns::Ptr{_NativeComponent}
+    count::Csize_t
+end
+
+_NativeTable(views::Vector{_NativeComponent}) = _NativeTable(pointer(views), length(views))
+
+function _native_assemble_graph(directed, nodes, edges, incidences=nothing)
+    roots = Any[]
+    node_views = _native_component_views(nodes, roots)
+    edge_views = _native_component_views(edges, roots)
+    if incidences === nothing
+        result = GC.@preserve roots node_views edge_views ccall(
+            _native_symbol(:dm_assemble_graph), Ptr{Cvoid},
+            (UInt32, _NativeTable, _NativeTable),
+            directed, _NativeTable(node_views), _NativeTable(edge_views),
+        )
+    else
+        incidence_views = _native_component_views(incidences, roots)
+        result = GC.@preserve roots node_views edge_views incidence_views ccall(
+            _native_symbol(:dm_assemble_hypergraph), Ptr{Cvoid},
+            (UInt32, _NativeTable, _NativeTable, _NativeTable),
+            directed, _NativeTable(node_views), _NativeTable(edge_views),
+            _NativeTable(incidence_views),
+        )
+    end
+    return _with_native_result(_native_components, result)
+end
+
+function _native_hif_columns(attributes, weight, roots)
+    columns = _NativeColumn[]
+    for (name, logical_type) in attributes
+        push!(roots, name)
+        push!(columns, _NativeColumn(_NativeBytes(name), _NATIVE_TYPES[logical_type]))
+    end
+    push!(roots, columns)
+    return _NativeHifColumns(pointer(columns), length(columns), weight)
+end
+
+function _native_decode_hif(path::String, compression, directed, node_id, edge_id,
+                            nodes, hyperedges, incidences)
+    roots = Any[]
+    options = _NativeHifOptions(
+        directed, _NATIVE_TYPES[node_id], _NATIVE_TYPES[edge_id],
+        _native_hif_columns(nodes..., roots),
+        _native_hif_columns(hyperedges..., roots),
+        _native_hif_columns(incidences..., roots),
+    )
+    result = GC.@preserve path roots ccall(
+        _native_symbol(:dm_decode_hif), Ptr{Cvoid}, (_NativeArtifact, _NativeHifOptions),
+        _native_artifact(path, compression), options,
+    )
+    return _with_native_result(_native_components, result)
 end
