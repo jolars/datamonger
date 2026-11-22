@@ -1,0 +1,136 @@
+schema_version: 8
+source: datamonger
+name: sharma2026-texas
+version: '2'
+title: GeoGraphNetworks Texas road network
+description: Undirected GeoGraphNetworks road graph for Texas, derived from TIGER/Line primary
+  and secondary roads. Contains 9,725 nodes with source coordinates and 21,399 edges weighted
+  by their published lengths in kilometers.
+modality: graph
+provenance:
+  provider: GeoGraphNetworks via Figshare
+  upstream_name: GeoGraphNetworks
+  upstream_id: texas.json
+  upstream_version: '3'
+  landing_page: https://doi.org/10.6084/m9.figshare.27284859.v3
+  authors:
+  - Harish Sharma
+  - Peter Mooney
+  - Edgar Galván-López
+  citation: Sharma et al. (2026), GeoGraphNetworks. https://doi.org/10.1016/j.dib.2026.112655
+  retrieved_at: '2026-11-22'
+license:
+  status: known
+  identifier: CC-BY-4.0
+  url: https://creativecommons.org/licenses/by/4.0/
+  evidence: The version 3 Figshare metadata at https://api.figshare.com/v2/articles/27284859/versions/3
+    identifies the source license as CC BY 4.0. The CSV deposit at https://doi.org/10.5281/zenodo.24400344
+    retains that license and cites the versioned source.
+  reviewed_by: Codex (automated source review)
+  reviewed_at: '2026-11-20'
+artifacts:
+- name: edges
+  format: csv
+  compression: gzip
+  size: 270943
+  sha256: 726a3c0dd9ad6bde4b2f4a94ee47143e607fe99e69f57a478d961d2a44b17cf9
+  distribution: mirror
+  downloads:
+  - kind: mirror
+    url: https://zenodo.org/api/records/24400344/files/edges.csv.gz/content
+- name: nodes
+  format: csv
+  compression: gzip
+  size: 196410
+  sha256: 90f70cb94264d70a77abbbfc2d9a3aaa02386d72a62d9a8a997e9cb01dbf4e31
+  distribution: mirror
+  downloads:
+  - kind: mirror
+    url: https://zenodo.org/api/records/24400344/files/nodes.csv.gz/content
+representation:
+  decoder: graph-tables
+  decoder_version: 1
+  inputs:
+    nodes: nodes
+    edges: edges
+  options:
+    directed: false
+    nodes:
+      encoding: utf-8
+      delimiter: ','
+      header: true
+      quote: '"'
+      escape: double
+      row_order: source
+      columns:
+      - name: id
+        type: int64
+      - name: x
+        type: float64
+      - name: y
+        type: float64
+    edges:
+      encoding: utf-8
+      delimiter: ','
+      header: true
+      quote: '"'
+      escape: double
+      row_order: source
+      columns:
+      - name: source
+        type: int64
+      - name: target
+        type: int64
+      - name: weight
+        type: float64
+  expect:
+    components:
+    - name: directed
+      kind: vector
+      type: bool
+      length: 1
+    - name: nodes/id
+      kind: vector
+      type: int64
+      length: 9725
+    - name: nodes/x
+      kind: vector
+      type: float64
+      length: 9725
+    - name: nodes/y
+      kind: vector
+      type: float64
+      length: 9725
+    - name: edges/source
+      kind: vector
+      type: int64
+      length: 21399
+    - name: edges/target
+      kind: vector
+      type: int64
+      length: 21399
+    - name: edges/weight
+      kind: vector
+      type: float64
+      length: 21399
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: d5c23dc8319546d20db5b875ea29377a8219c20245098522025a42b5bba63801
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - https://doi.org/10.1016/j.dib.2026.112655
+    steps:
+    - kind: graph-construction
+      description: GeoGraphNetworks derived an undirected graph from TIGER/Line primary and
+        secondary roads.
+  datamonger:
+    status: documented
+    evidence:
+    - curation/sharma2026-delaware/1/prepare.py
+    steps:
+    - kind: format-conversion
+      description: Convert the source JSON into separate gzip CSV tables while preserving
+        source IDs, row order, coordinates, and edge lengths.

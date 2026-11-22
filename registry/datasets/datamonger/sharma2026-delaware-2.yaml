@@ -1,0 +1,136 @@
+schema_version: 8
+source: datamonger
+name: sharma2026-delaware
+version: '2'
+title: GeoGraphNetworks Delaware road network
+description: Undirected GeoGraphNetworks road graph for Delaware, derived from TIGER/Line
+  primary and secondary roads. Contains 729 nodes with source coordinates and 2,015 edges
+  weighted by their published lengths in kilometers.
+modality: graph
+provenance:
+  provider: GeoGraphNetworks via Figshare
+  upstream_name: GeoGraphNetworks
+  upstream_id: delaware.json
+  upstream_version: '3'
+  landing_page: https://doi.org/10.6084/m9.figshare.27284859.v3
+  authors:
+  - Harish Sharma
+  - Peter Mooney
+  - Edgar Galván-López
+  citation: Sharma et al. (2026), GeoGraphNetworks. https://doi.org/10.1016/j.dib.2026.112655
+  retrieved_at: '2026-11-22'
+license:
+  status: known
+  identifier: CC-BY-4.0
+  url: https://creativecommons.org/licenses/by/4.0/
+  evidence: The version 3 Figshare metadata at https://api.figshare.com/v2/articles/27284859/versions/3
+    identifies the source license as CC BY 4.0. The CSV deposit at https://doi.org/10.5281/zenodo.24399892
+    retains that license and cites the versioned source.
+  reviewed_by: Codex (automated source review)
+  reviewed_at: '2026-11-20'
+artifacts:
+- name: edges
+  format: csv
+  compression: gzip
+  size: 25129
+  sha256: 634b9b107f929edd4cb92b65e7157e748ad87aa82dd50511d3cabeb297b601d3
+  distribution: mirror
+  downloads:
+  - kind: mirror
+    url: https://zenodo.org/api/records/24399892/files/edges.csv.gz/content
+- name: nodes
+  format: csv
+  compression: gzip
+  size: 14894
+  sha256: 1b2c2e3072adeda324c08b52cd1a5f9a41b9ae3510513765f9dcb7e8862d6e70
+  distribution: mirror
+  downloads:
+  - kind: mirror
+    url: https://zenodo.org/api/records/24399892/files/nodes.csv.gz/content
+representation:
+  decoder: graph-tables
+  decoder_version: 1
+  inputs:
+    nodes: nodes
+    edges: edges
+  options:
+    directed: false
+    nodes:
+      encoding: utf-8
+      delimiter: ','
+      header: true
+      quote: '"'
+      escape: double
+      row_order: source
+      columns:
+      - name: id
+        type: int64
+      - name: x
+        type: float64
+      - name: y
+        type: float64
+    edges:
+      encoding: utf-8
+      delimiter: ','
+      header: true
+      quote: '"'
+      escape: double
+      row_order: source
+      columns:
+      - name: source
+        type: int64
+      - name: target
+        type: int64
+      - name: weight
+        type: float64
+  expect:
+    components:
+    - name: directed
+      kind: vector
+      type: bool
+      length: 1
+    - name: nodes/id
+      kind: vector
+      type: int64
+      length: 729
+    - name: nodes/x
+      kind: vector
+      type: float64
+      length: 729
+    - name: nodes/y
+      kind: vector
+      type: float64
+      length: 729
+    - name: edges/source
+      kind: vector
+      type: int64
+      length: 2015
+    - name: edges/target
+      kind: vector
+      type: int64
+      length: 2015
+    - name: edges/weight
+      kind: vector
+      type: float64
+      length: 2015
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: 506b3466f2e77edb56eb6a86ec74c0fb837c1849dabdfb1cc24c4a2dc2a52c34
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - https://doi.org/10.1016/j.dib.2026.112655
+    steps:
+    - kind: graph-construction
+      description: GeoGraphNetworks derived an undirected graph from TIGER/Line primary and
+        secondary roads.
+  datamonger:
+    status: documented
+    evidence:
+    - curation/sharma2026-delaware/1/prepare.py
+    steps:
+    - kind: format-conversion
+      description: Convert the source JSON into separate gzip CSV tables while preserving
+        source IDs, row order, coordinates, and edge lengths.

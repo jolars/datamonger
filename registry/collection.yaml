@@ -18,11 +18,11 @@ datasets:
     scheetz2006:
       versions: ["1"]
     sharma2026-california:
-      versions: ["1"]
+      versions: ["1", "2"]
     sharma2026-delaware:
-      versions: ["1"]
+      versions: ["1", "2"]
     sharma2026-texas:
-      versions: ["1"]
+      versions: ["1", "2"]
 
   huggingface:
     tribler-ltr:
