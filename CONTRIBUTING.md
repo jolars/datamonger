@@ -75,15 +75,15 @@ Python results against the shared conformance corpus, compressed inputs,
 malformed artifacts, and generated inputs before a backend change can ship. CI
 builds portable wheels for all supported platforms when the Python client,
 shared Rust core, packaging configuration, or shared conformance fixtures
-change. It installs the wheels into fresh environments and tests those
-distributions. Versionary release PRs skip the broad build and test matrices and
-the documentation build. They still check release versions, lockfiles, vendored
-Rust sources, and client bundles. Registry release PRs validate their pending
-snapshots, and release PRs run one Linux R check when the Rust adapter or vendor
-files change. Ordinary PRs keep the Linux Python quality checks, and pushes to
-`main` run the full checks before Versionary publishes. The release workflow
-always runs the full wheel matrix. Run `Python distributions` manually to check
-a selected branch, commit, or tag before a release.
+change. It tests installed wheels with Python 3.14 and 3.15 on all five platforms,
+and with Python 3.11 on Linux x86-64. Versionary release PRs skip the broad build
+and test matrices and the documentation build. They still check release versions,
+lockfiles, vendored Rust sources, and client bundles. Registry release PRs validate
+their pending snapshots, and release PRs run one Linux R check when the Rust
+adapter or vendor files change. Ordinary PRs and pushes to `main` run the Linux
+Python quality checks. Publishing tests installed wheels on all five platforms
+with all three Python versions. Run `Python distributions` manually to check the
+full matrix on a selected branch, commit, or tag before a release.
 
 Focused commands from `packages/r` are:
 
@@ -199,9 +199,10 @@ decompression.
 
 CI packages native libraries for Linux x86-64 and ARM64 with glibc 2.17 or
 newer, macOS Intel and Apple Silicon, and Windows x86-64. It tests each
-installed artifact with Julia 1.10 and the current stable Julia, outside the
-checkout, without building Rust. See `OPERATIONS.md` for native release
-ordering.
+installed artifact with the current stable Julia and tests Julia 1.10 on
+Linux x86-64. Publishing tests all five platforms with both versions. These
+tests run outside the checkout without building Rust. See `OPERATIONS.md` for
+native release ordering.
 
 Focused CLI commands from `packages/cli` are:
 

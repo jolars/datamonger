@@ -179,7 +179,9 @@ def test_force_push_checks_the_previous_tree(repository: Path) -> None:
 
 
 @pytest.mark.parametrize("base", ["", "0" * 40, "f" * 40])
-def test_unknown_history_runs_the_full_matrix(repository: Path, base: str) -> None:
+def test_unknown_history_requires_distribution_checks(
+    repository: Path, base: str
+) -> None:
     head = commit(repository, "docs/note.md")
     decisions = detect_outputs(repository, "push", base, head)
     assert decisions == {

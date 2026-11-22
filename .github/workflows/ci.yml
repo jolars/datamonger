@@ -102,7 +102,7 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
-          # New branches and unavailable history need the full distribution checks.
+          # New branches and unavailable history need distribution checks.
           required=true
           julia_release_changed=true
           r_vendor_changed=true
@@ -147,6 +147,8 @@ jobs:
     needs: [ci-policy, python-distribution-changes]
     if: ${{ !cancelled() && needs.ci-policy.outputs.run_checks != 'false' && needs.python-distribution-changes.outputs.required == 'true' }}
     uses: ./.github/workflows/python-wheels.yml
+    with:
+      minimum-version-linux-only: true
 
   python-distributions-status:
     name: Python distributions
@@ -426,4 +428,5 @@ jobs:
     if: ${{ !cancelled() && (needs.ci-policy.outputs.run_checks != 'false' || needs.python-distribution-changes.outputs.julia_release_changed != 'false') }}
     uses: ./.github/workflows/julia-native.yml
     with:
+      minimum-version-linux-only: true
       test-committed-artifacts: ${{ needs.python-distribution-changes.outputs.julia_release_changed != 'false' }}

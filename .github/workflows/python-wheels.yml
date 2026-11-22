@@ -15,6 +15,10 @@ on:
         required: false
         type: string
         default: ""
+      minimum-version-linux-only:
+        description: Test Python 3.11 on Linux x86-64 only
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -71,13 +75,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.11", "3.14", "3.15"]
+        python: ${{ fromJSON(inputs.minimum-version-linux-only && '["3.14", "3.15"]' || '["3.11", "3.14", "3.15"]') }}
         platform:
           - { os: ubuntu-latest, target: x86_64-unknown-linux-gnu }
           - { os: ubuntu-24.04-arm, target: aarch64-unknown-linux-gnu }
           - { os: macos-15-intel, target: x86_64-apple-darwin }
           - { os: macos-latest, target: aarch64-apple-darwin }
           - { os: windows-latest, target: x86_64-pc-windows-msvc }
+        include: >-
+          ${{ fromJSON(inputs.minimum-version-linux-only
+            && '[{"platform":{"os":"ubuntu-latest","target":"x86_64-unknown-linux-gnu"},"python":"3.11"}]'
+            || '[]') }}
     defaults:
       run:
         shell: bash

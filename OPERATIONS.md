@@ -124,8 +124,9 @@ The publishing job deliberately receives only the downloaded distributions and
 an OpenID Connect token. Package building runs in a separate, unprivileged job.
 
 The `Python distributions` workflow can also run manually to build and test a
-selected branch, commit, or tag. CI runs that matrix when Python distribution
-inputs change and reports its result through the `Python distributions` check.
+selected branch, commit, or tag. When Python distribution inputs change, CI
+runs the distribution checks with Python 3.11 wheel tests on Linux x86-64 only.
+It reports the result through the `Python distributions` check.
 
 ### R
 
