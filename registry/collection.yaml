@@ -125,3 +125,7 @@ datasets:
       versions: ["1"]
     wine-quality-red:
       versions: ["1"]
+
+  xgi:
+    house-committees:
+      versions: ["1"]

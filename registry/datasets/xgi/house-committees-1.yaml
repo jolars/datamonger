@@ -1,0 +1,124 @@
+schema_version: 8
+source: xgi
+name: house-committees
+version: '1'
+title: U.S. House Committee Memberships
+description: Undirected hypergraph of U.S. House committee memberships from the 103rd through
+  the 114th Congresses. Nodes represent legislators and carry their names and party affiliations.
+  Each hyperedge represents a committee in one Congress.
+modality: hypergraph
+provenance:
+  provider: XGI-DATA
+  upstream_name: house-committees
+  upstream_id: 10.5281/zenodo.21935676
+  upstream_version: v0.1
+  landing_page: https://zenodo.org/records/21935676
+  authors:
+  - Nicholas Landry
+  citations:
+  - role: dataset
+    citation: Landry, N. (2026). house-committees (v0.1). Zenodo. https://doi.org/10.5281/zenodo.21935676
+  - role: paper
+    citation: 'Chodrow, P. S., Veldt, N., and Benson, A. R. (2021). Generative hypergraph
+      clustering: From blockmodels to modularity. Science Advances, 7(28), eabh1303.
+      https://doi.org/10.1126/sciadv.abh1303'
+  - role: dataset
+    citation: 'Stewart, C., III, and Woon, J. Congressional Committee Assignments, 103rd to
+      114th Congresses, 1993–2017: House. https://web.mit.edu/17.251/www/data_page.html'
+  retrieved_at: '2026-11-22'
+license:
+  status: unknown
+  evidence: Zenodo lists CC BY 4.0 for the HIF deposit at https://zenodo.org/api/records/21935676.
+    The underlying House committee assignment source at https://web.mit.edu/17.251/www/data_page.html
+    permits academic use and excludes commercial use. The scope of the deposit license for
+    the underlying data is unverified.
+artifacts:
+- name: data
+  format: hif
+  compression: none
+  size: 799538
+  sha256: 026e57c1fe42e0bfab895df1e9c372600517428e5b0f9a233e768b304ada9853
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://zenodo.org/records/21935676/files/house-committees.json
+representation:
+  decoder: hif
+  decoder_version: 1
+  inputs:
+    data: data
+  options:
+    directed: false
+    node_id: string
+    edge_id: string
+    nodes:
+      weight: false
+      attributes:
+      - name: name
+        type: string
+      - name: affiliation
+        type: string
+    hyperedges:
+      weight: false
+      attributes: []
+    incidences:
+      weight: false
+      attributes: []
+  expect:
+    components:
+    - name: directed
+      kind: vector
+      type: bool
+      length: 1
+    - name: nodes/id
+      kind: vector
+      type: string
+      length: 1290
+    - name: nodes/name
+      kind: vector
+      type: string
+      length: 1290
+    - name: nodes/affiliation
+      kind: vector
+      type: string
+      length: 1290
+    - name: hyperedges/id
+      kind: vector
+      type: string
+      length: 341
+    - name: incidences/node
+      kind: vector
+      type: string
+      length: 11843
+    - name: incidences/edge
+      kind: vector
+      type: string
+      length: 11843
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: e710cfd56b8786c86318d380ca3c416fe78d17f6f2b4c538a7601d9ceadff0da
+tasks:
+- name: party-affiliation
+  type: classification
+  target: nodes/affiliation
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - https://www.cs.cornell.edu/~arb/data/house-committees/
+    - https://doi.org/10.1126/sciadv.abh1303
+    - https://zenodo.org/records/21935676
+    steps:
+    - kind: hypergraph-construction
+      description: Construct a hypergraph from House committee assignments, with legislators
+        as nodes, committees by Congress as hyperedges, and party affiliations as node labels.
+    - kind: format-conversion
+      description: XGI-DATA published the dataset in Hypergraph Interchange Format in version
+        v0.1.
+  datamonger:
+    status: none
+    notes: Datamonger decodes the published HIF file and preserves its node and membership
+      records.
+    evidence:
+    - spec/decoders/graphs-v1.md
