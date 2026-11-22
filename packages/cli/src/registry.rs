@@ -12,7 +12,15 @@ use crate::error::{Error, Result};
 
 pub const BUNDLED_INDEX: &[u8] = include_bytes!("../assets/index.json");
 const BUNDLED_SELECTOR: &[u8] = include_bytes!("../assets/selector.json");
-const SCHEMAS: [(&str, &str); 17] = [
+const SCHEMAS: [(&str, &str); 19] = [
+    (
+        "https://datamonger.dev/spec/schema/index-v8.schema.json",
+        include_str!("../assets/index-v8.schema.json"),
+    ),
+    (
+        "https://datamonger.dev/spec/schema/manifest-v8.schema.json",
+        include_str!("../assets/manifest-v8.schema.json"),
+    ),
     (
         "https://datamonger.dev/spec/schema/index-v7.schema.json",
         include_str!("../assets/index-v7.schema.json"),
@@ -419,6 +427,24 @@ mod tests {
         validate_schema(&index, "index").unwrap();
 
         index["schema_version"] = json!(5);
+        assert!(validate_schema(&index, "index").is_err());
+    }
+
+    #[test]
+    fn graph_manifests_require_schema_8() {
+        let mut index = schema_test_index();
+        let fixture: Value =
+            serde_json::from_str(include_str!("../../../tests/conformance/graphs.json")).unwrap();
+        let datasets = index["datasets"].as_array_mut().unwrap();
+        for case in fixture["cases"].as_array().unwrap() {
+            datasets.push(case["manifest"].clone());
+        }
+
+        index["schema_version"] = json!(8);
+        validate_schema(&index, "index").unwrap();
+        validate_index_semantics(&index).unwrap();
+
+        index["schema_version"] = json!(7);
         assert!(validate_schema(&index, "index").is_err());
     }
 

@@ -15,7 +15,8 @@ use tempfile::TempDir;
 const FIXTURE_INDEX: &[u8] =
     include_bytes!("../../../tests/registry/releases/test-0001/index.json");
 const ARTIFACT: &[u8] = include_bytes!("../../../tests/conformance/artifacts/mixed.csv");
-const SECOND_ARTIFACT: &[u8] = include_bytes!("../../../tests/conformance/artifacts/mixed.tsv");
+const GRAPH_NODES: &[u8] = include_bytes!("../../../tests/conformance/artifacts/graph-nodes.csv");
+const GRAPH_EDGES: &[u8] = include_bytes!("../../../tests/conformance/artifacts/graph-edges.csv");
 
 fn sha256(bytes: &[u8]) -> String {
     hex::encode(Sha256::digest(bytes))
@@ -93,22 +94,17 @@ fn fixture_index(base: &str) -> Vec<u8> {
     serde_json::to_vec(&index).unwrap()
 }
 
-fn two_artifact_index(base: &str) -> Vec<u8> {
+fn graph_index(base: &str) -> Vec<u8> {
     let mut index: Value = serde_json::from_slice(FIXTURE_INDEX).unwrap();
-    index["datasets"].as_array_mut().unwrap().truncate(1);
-    index["defaults"].as_array_mut().unwrap().truncate(1);
-    let first = &mut index["datasets"][0]["artifacts"][0];
-    first["downloads"] = json!([{"kind": "upstream", "url": format!("{base}/first")}]);
-    let mut second = first.clone();
-    second["name"] = json!("second");
-    second["format"] = json!("tsv");
-    second["sha256"] = json!(sha256(SECOND_ARTIFACT));
-    second["size"] = json!(SECOND_ARTIFACT.len());
-    second["downloads"] = json!([{"kind": "upstream", "url": format!("{base}/second")}]);
-    index["datasets"][0]["artifacts"]
-        .as_array_mut()
-        .unwrap()
-        .push(second);
+    let cases: Value =
+        serde_json::from_str(include_str!("../../../tests/conformance/graphs.json")).unwrap();
+    let mut graph = cases["cases"][0]["manifest"].clone();
+    for artifact in graph["artifacts"].as_array_mut().unwrap() {
+        let name = artifact["name"].as_str().unwrap();
+        artifact["downloads"] = json!([{"kind": "upstream", "url": format!("{base}/{name}")}]);
+    }
+    index["schema_version"] = json!(8);
+    index["datasets"].as_array_mut().unwrap().push(graph);
     serde_json::to_vec(&index).unwrap()
 }
 
@@ -329,16 +325,16 @@ fn fetch_tries_next_location_verifies_and_exports_raw_bytes() {
 }
 
 #[test]
-fn fetch_gets_all_artifacts_unless_one_is_selected() {
+fn schema_8_graph_fetch_gets_all_artifacts_unless_one_is_selected() {
     let dir = TempDir::new().unwrap();
     let (base, task) = server(|base| {
         vec![
-            ("", two_artifact_index(base)),
-            ("", ARTIFACT.to_vec()),
-            ("", SECOND_ARTIFACT.to_vec()),
+            ("", graph_index(base)),
+            ("", GRAPH_NODES.to_vec()),
+            ("", GRAPH_EDGES.to_vec()),
         ]
     });
-    let bytes = two_artifact_index(&base);
+    let bytes = graph_index(&base);
     let selector = fixture_selector(&dir, &bytes, &base);
     let cache = dir.path().join("cache");
     let fetched = command(
@@ -350,7 +346,7 @@ fn fetch_gets_all_artifacts_unless_one_is_selected() {
             cache.to_str().unwrap(),
             "--json",
             "fetch",
-            "conformance:mixed_csv@1",
+            "conformance:graph@1",
         ],
     );
     task.join().unwrap();
@@ -361,6 +357,24 @@ fn fetch_gets_all_artifacts_unless_one_is_selected() {
     );
     let report: Value = serde_json::from_slice(&fetched.stdout).unwrap();
     assert_eq!(report["artifacts"].as_array().unwrap().len(), 2);
+    let info = command(
+        dir.path(),
+        &[
+            "--selector",
+            &selector,
+            "--cache-dir",
+            cache.to_str().unwrap(),
+            "--offline",
+            "--json",
+            "info",
+            "conformance:graph@1",
+        ],
+    );
+    assert!(info.status.success());
+    let metadata: Value = serde_json::from_slice(&info.stdout).unwrap();
+    assert_eq!(metadata["dataset"]["schema_version"], 8);
+    assert_eq!(metadata["dataset"]["modality"], "graph");
+
     let selected = command(
         dir.path(),
         &[
@@ -371,9 +385,9 @@ fn fetch_gets_all_artifacts_unless_one_is_selected() {
             "--offline",
             "--json",
             "fetch",
-            "conformance:mixed_csv@1",
+            "conformance:graph@1",
             "--artifact",
-            "second",
+            "edges",
         ],
     );
     assert!(
@@ -383,5 +397,5 @@ fn fetch_gets_all_artifacts_unless_one_is_selected() {
     );
     let report: Value = serde_json::from_slice(&selected.stdout).unwrap();
     assert_eq!(report["artifacts"].as_array().unwrap().len(), 1);
-    assert_eq!(report["artifacts"][0]["name"], "second");
+    assert_eq!(report["artifacts"][0]["name"], "edges");
 }
