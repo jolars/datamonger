@@ -10,7 +10,7 @@
 ## Graphs and hypergraphs
 
 - [x] Wire graph and HIF decoding into `fetch_data()` in Python, R, and Julia.
-- [ ] Add manifest and index schema 8 support to the clients, CLI, and registry tooling.
+- [x] Add manifest and index schema 8 support to the clients, CLI, and registry tooling.
 - [ ] Register the California, Delaware, and Texas road networks as graph `@2` datasets.
 - [ ] Register XGI House committees as a hypergraph using the original HIF artifact.
 - [ ] Verify canonical digests and public fetches across Python, R, and Julia.
