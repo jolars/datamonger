@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/jolars/datamonger/compare/datamonger-v0.5.0...datamonger-v0.6.0) (2026-11-22)
+
+### Features
+
+- support schema 8 registries in the CLI ([`2b90a41`](https://github.com/jolars/datamonger/commit/2b90a416f4cd1a35b188693509d57e89f7a70a56))
+- improve CLI terminal output ([`3e2c211`](https://github.com/jolars/datamonger/commit/3e2c2110894cdfe853a09363de3abc24b5340ce7))
+
 ## [0.5.0](https://github.com/jolars/datamonger/compare/datamonger-v0.4.0...datamonger-v0.5.0) (2026-11-20)
 
 ### Features
