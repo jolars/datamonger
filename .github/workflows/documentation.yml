@@ -43,7 +43,11 @@ jobs:
           enable-cache: true
           python-version: "3.11"
       - name: Prepare the Python client
-        run: uv sync --locked --project packages/python
+        run: |
+          uv sync --locked --project packages/python
+          # Keep Sphinx in the project environment so Diplodocus can identify
+          # its site-packages directory when inspecting the checkout.
+          uv pip install --python packages/python/.venv/bin/python sphinx
       - uses: julia-actions/setup-julia@v3
         with:
           version: "1.12"
@@ -67,7 +71,7 @@ jobs:
       - name: Generate dataset catalog
         run: uv run --no-sync --project packages/python python tools/dm_catalog.py
       - name: Build documentation site
-        run: uv run --no-sync --project packages/python --with sphinx diplodocus build --config documentation/diplodocus.yaml --output documentation/site
+        run: uv run --no-sync --project packages/python diplodocus build --config documentation/diplodocus.yaml --output documentation/site
       - uses: actions/setup-node@v7
         with:
           node-version: "24"
