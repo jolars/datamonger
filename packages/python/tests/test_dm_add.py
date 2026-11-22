@@ -5,6 +5,7 @@ import copy
 import gzip
 import hashlib
 import importlib.util
+import json
 import sys
 import threading
 from collections.abc import Callable, Iterator
@@ -520,3 +521,24 @@ def test_author_named_splits_from_shared_fixture(
     assert result.manifest["representation"]["expect"] == expected
     assert "test/x1" in result.report
     assert "validation/features" in result.report
+
+
+@pytest.mark.parametrize("case_id", ["graph", "hif-undirected", "hif-directed"])
+def test_build_schema_8_graph_manifest(
+    tmp_path: Path, local_server: tuple[str, ServerState], case_id: str
+) -> None:
+    corpus = ROOT / "tests/conformance"
+    cases = json.loads((corpus / "graphs.json").read_bytes())["cases"]
+    case = next(case for case in cases if case["id"] == case_id)
+    draft = case["manifest"]
+    expected = draft["representation"].pop("expect")
+    base_url, state = local_server
+    for artifact in draft["artifacts"]:
+        name = artifact["name"]
+        route = f"/{name}"
+        state.bodies[route] = (corpus / case["artifact_paths"][name]).read_bytes()
+        artifact["downloads"] = [{"kind": "upstream", "url": base_url + route}]
+        del artifact["size"], artifact["sha256"]
+
+    result = dm_add.build(write_draft(tmp_path, draft), root=ROOT)
+    assert result.manifest["representation"]["expect"] == expected

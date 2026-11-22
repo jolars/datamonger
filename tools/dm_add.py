@@ -19,11 +19,17 @@ import dm_index
 import numpy as np
 import yaml
 
-from datamonger._api import _decode_leaf, _prepare_representation
+from datamonger._api import (
+    _decode_leaf,
+    _prepare_graph_representation,
+    _prepare_representation,
+)
 from datamonger._cache import DownloadedFile, download_unverified
 from datamonger._canonical import canonical_sha256
 from datamonger._errors import DatamongerError
+from datamonger._graphs import decode_graph
 from datamonger._models import (
+    DecodedGraph,
     DecodedMultilabelSparseDataset,
     DecodedRankingSparseDataset,
     DecodedSparseDataset,
@@ -47,6 +53,8 @@ _SUPPORTED_DECODERS = {
     "libsvm-multilabel",
     "svmlight-ranking",
     "named-splits",
+    "graph-tables",
+    "hif",
 }
 _SAMPLE_ROWS = 3
 _SPARSE_SAMPLE_VALUES = 8
@@ -59,6 +67,7 @@ Decoded = (
     | DecodedSparseDataset
     | DecodedSparseDatasetSplit
     | DecodedSplits
+    | DecodedGraph
 )
 
 
@@ -167,20 +176,30 @@ def _prepare_draft(source: Mapping[str, Any], retrieved_at: date) -> dict[str, A
         or type(representation["decoder_version"]) is not int
         or representation["decoder_version"] not in (1, 2)
         or (
-            decoder in {"named-splits", "libsvm-multilabel", "svmlight-ranking"}
+            decoder
+            in {
+                "named-splits",
+                "libsvm-multilabel",
+                "svmlight-ranking",
+                "graph-tables",
+                "hif",
+            }
             and representation["decoder_version"] != 1
         )
     ):
         raise ValueError(
             "dm-add supports delimited-text, libsvm, and libsvm-split "
-            "versions 1 and 2, and named-splits and libsvm-multilabel version 1"
+            "versions 1 and 2. It also supports version 1 of named-splits, "
+            "libsvm-multilabel, svmlight-ranking, graph-tables, and hif"
         )
     inputs = _mapping(representation["inputs"], "representation.inputs")
     roles = {"train", "test"} if decoder == "libsvm-split" else {"data"}
     if decoder == "named-splits":
-        if manifest["schema_version"] not in (4, 5, 6, 7):
+        if manifest["schema_version"] not in (4, 5, 6, 7, 8):
             raise ValueError("named-splits requires manifest schema 4")
         roles = {split["name"] for split in split_recipes(representation)}
+    if decoder == "graph-tables":
+        roles = {"nodes", "edges"}
     if set(inputs) != roles:
         raise ValueError(f"representation inputs must be exactly {sorted(roles)}")
     for role, raw_artifact_name in inputs.items():
@@ -311,6 +330,13 @@ def _decode(
 ) -> Decoded:
     representation = _mapping(manifest["representation"], "representation")
     decoder = _string(representation["decoder"], "representation.decoder")
+
+    if decoder in {"graph-tables", "hif"}:
+        decoder, selected, options, compressions = _prepare_graph_representation(
+            decoder, manifest, representation
+        )
+        paths = [artifacts[artifact["name"]].path for artifact in selected]
+        return decode_graph(decoder, paths, options, compressions)
 
     def decode(
         recipe: Mapping[str, Any],

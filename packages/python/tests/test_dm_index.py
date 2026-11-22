@@ -1078,3 +1078,24 @@ def test_libsvm_v2_requires_new_schema_and_restricts_decoder_versions() -> None:
         dataset["representation"]["decoder_version"] = version
         with pytest.raises(ValueError):
             dm_index.validate_manifest(dataset)
+
+
+def test_build_mixed_schema_8_index(tmp_path: Path) -> None:
+    prepare_root(tmp_path)
+    cases = json.loads((ROOT / "tests/conformance/graphs.json").read_bytes())["cases"]
+    manifests = [make_manifest(), *(case["manifest"] for case in cases)]
+    release = make_release(tmp_path, manifests, [default()])
+    data, _ = dm_index.build(release, root=tmp_path)
+    index = json.loads(data)
+    assert index["schema_version"] == 8
+    assert {d["schema_version"] for d in index["datasets"]} == {1, 8}
+    assert {d["modality"] for d in index["datasets"]} == {
+        "graph",
+        "hypergraph",
+        "tabular",
+    }
+
+    graph = manifests[1]
+    graph["representation"]["expect"]["components"][0]["length"] = 2
+    with pytest.raises(ValueError, match="directed component must have length one"):
+        dm_index.validate_manifest(graph)

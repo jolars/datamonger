@@ -75,7 +75,7 @@ def snapshot(root: Path) -> dict[Path, bytes]:
     }
 
 
-@pytest.mark.parametrize("schema_version", [1, 2, 3, 4])
+@pytest.mark.parametrize("schema_version", [1, 2, 3, 4, 8])
 def test_updates_all_clients_and_is_idempotent(
     bundle_root: Path, monkeypatch: pytest.MonkeyPatch, schema_version: int
 ) -> None:

@@ -251,6 +251,65 @@ def _verification(dataset: Mapping[str, Any]) -> Sequence[object]:
     return _sequence(expect.get("verification"), "representation.expect.verification")
 
 
+def _validate_graph_components(
+    decoder: str,
+    options: Mapping[str, Any],
+    components: Sequence[Mapping[str, Any]],
+) -> None:
+    expected = [("directed", "bool")]
+    if decoder == "graph-tables":
+        roles: tuple[str, ...] = ("nodes", "edges")
+        tables = {
+            role: [
+                (column["name"], column["type"]) for column in options[role]["columns"]
+            ]
+            for role in roles
+        }
+        nodes, edges = (dict(tables[role]) for role in roles)
+        node_id = nodes.get("id")
+        if (
+            node_id not in {"int64", "string"}
+            or edges.get("source") != node_id
+            or edges.get("target") != node_id
+            or ("id" in edges and edges["id"] not in {"int64", "string"})
+        ):
+            raise ValueError("invalid graph key columns")
+    else:
+        roles = ("nodes", "hyperedges", "incidences")
+        tables = {
+            "nodes": [("id", options["node_id"])],
+            "hyperedges": [("id", options["edge_id"])],
+            "incidences": [("node", options["node_id"]), ("edge", options["edge_id"])],
+        }
+        if options["directed"]:
+            tables["incidences"].append(("direction", "string"))
+        for role in roles:
+            recipe = options[role]
+            if recipe["weight"]:
+                tables[role].append(("weight", "float64"))
+            reserved = {name for name, _ in tables[role]}
+            if role == "incidences":
+                reserved.add("direction")
+            for column in recipe["attributes"]:
+                name = column["name"]
+                if name in reserved:
+                    raise ValueError(f"invalid or duplicate HIF attribute {name!r}")
+                reserved.add(name)
+                tables[role].append((name, column["type"]))
+
+    for role in roles:
+        expected.extend((f"{role}/{name}", kind) for name, kind in tables[role])
+    actual = [(component["name"], component["type"]) for component in components]
+    if actual != expected or any(c["kind"] != "vector" for c in components):
+        raise ValueError("graph components disagree with declared columns")
+    if components[0]["length"] != 1:
+        raise ValueError("directed component must have length one")
+    for role in roles:
+        lengths = {c["length"] for c in components if c["name"].startswith(f"{role}/")}
+        if len(lengths) != 1:
+            raise ValueError(f"{role} components must have equal lengths")
+
+
 def _validate_dataset(dataset: Mapping[str, Any]) -> None:
     identity = ":".join(_identity(dataset, "dataset"))
     artifacts = _sequence(dataset.get("artifacts"), f"{identity}.artifacts")
@@ -333,6 +392,16 @@ def _validate_dataset(dataset: Mapping[str, Any]) -> None:
             delimiters = (",", ";")
         if options.get("delimiter") not in delimiters:
             raise ValueError("artifact format and delimiter disagree")
+    elif decoder == "graph-tables":
+        for role in ("nodes", "edges"):
+            artifact_format = artifact_by_name[inputs[role]]["format"]
+            if {"csv": ",", "tsv": "\t"}.get(artifact_format) != options[role][
+                "delimiter"
+            ]:
+                raise ValueError("graph table format and delimiter disagree")
+    elif decoder == "hif":
+        if artifact_by_name[inputs["data"]]["format"] != "hif":
+            raise ValueError("HIF requires a HIF artifact")
     else:
         for artifact_name in inputs.values():
             if artifact_by_name[cast(str, artifact_name)].get("format") not in {
@@ -366,7 +435,9 @@ def _validate_dataset(dataset: Mapping[str, Any]) -> None:
     if len(verification_keys) != len(set(verification_keys)):
         raise ValueError("verification records must be unique")
 
-    if decoder == "delimited-text":
+    if decoder in {"graph-tables", "hif"}:
+        _validate_graph_components(decoder, options, component_records)
+    elif decoder == "delimited-text":
         columns = [
             _mapping(raw, "column")
             for raw in _sequence(options.get("columns"), "options.columns")
@@ -552,7 +623,7 @@ def _validate_named_splits(dataset: Mapping[str, Any]) -> None:
 
 def _versioned_schema(record: Mapping[str, Any], name: str) -> str:
     version = record.get("schema_version")
-    if type(version) is not int or version not in (1, 2, 3, 4, 5, 6, 7):
+    if type(version) is not int or version not in (1, 2, 3, 4, 5, 6, 7, 8):
         raise ValueError(f"unsupported {name} schema_version {version!r}")
     return f"{name}-v{version}.schema.json"
 

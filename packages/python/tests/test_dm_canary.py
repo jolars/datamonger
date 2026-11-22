@@ -412,3 +412,26 @@ def test_canary_verifies_named_splits_from_shared_fixture(
         == "verified canonical SHA-256 "
         + dataset["representation"]["expect"]["verification"][0]["digest"]
     )
+
+
+def test_canary_verifies_schema_8_graphs(
+    tmp_path: Path, local_server: tuple[str, ServerState]
+) -> None:
+    corpus = ROOT / "tests/conformance"
+    cases = json.loads((corpus / "graphs.json").read_bytes())["cases"]
+    base_url, state = local_server
+    datasets = []
+    for case in cases:
+        dataset = case["manifest"]
+        datasets.append(dataset)
+        for artifact in dataset["artifacts"]:
+            name = artifact["name"]
+            route = f"/{case['id']}/{name}"
+            state.responses[route] = Response(
+                (corpus / case["artifact_paths"][name]).read_bytes()
+            )
+            artifact["downloads"] = [{"kind": "upstream", "url": base_url + route}]
+    selector = _selector(tmp_path, base_url, state, datasets, schema_version=8)
+    result = dm_canary.check(selector, root=ROOT)
+    assert result.ok, result.render_markdown()
+    assert sum(check.kind == "dataset" for check in result.checks) == len(cases)

@@ -394,3 +394,21 @@ def test_removes_only_previously_generated_files(catalog_root: Path) -> None:
     assert not (output / "uci/iris/1.md").exists()
     assert not (output / "uci/iris/1.json").exists()
     assert authored.read_text() == "Retain this file."
+
+
+def test_catalog_renders_schema_8_graphs(catalog_root: Path) -> None:
+    index = read_index(catalog_root)
+    index["schema_version"] = 8
+    cases = json.loads((ROOT / "tests/conformance/graphs.json").read_bytes())["cases"]
+    for case in cases:
+        manifest = case["manifest"]
+        index["datasets"].append(manifest)
+        index["defaults"].append(
+            {field: manifest[field] for field in ("source", "name", "version")}
+        )
+    write_snapshot(catalog_root, index)
+    outputs = dm_catalog.generate(catalog_root)
+    for case in cases:
+        manifest = case["manifest"]
+        path = Path("conformance") / manifest["name"] / "1.json"
+        assert json.loads(outputs[path]) == manifest

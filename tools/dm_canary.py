@@ -15,6 +15,7 @@ import dm_index
 
 from datamonger._api import (
     _decode_leaf,
+    _prepare_graph_representation,
     _prepare_representation,
     _validate_components,
     _verification_record,
@@ -29,7 +30,9 @@ from datamonger._errors import (
     UnsupportedDecoderError,
     UnsupportedRegistryError,
 )
+from datamonger._graphs import decode_graph
 from datamonger._models import (
+    DecodedGraph,
     DecodedMultilabelSparseDataset,
     DecodedRankingSparseDataset,
     DecodedSparseDataset,
@@ -51,6 +54,7 @@ Decoded = (
     | DecodedSparseDataset
     | DecodedSparseDatasetSplit
     | DecodedSplits
+    | DecodedGraph
 )
 
 
@@ -186,7 +190,7 @@ def _read_index(path: Path, registry: Registry, root: Path) -> Mapping[str, Any]
         )
     if type(index.get("schema_version")) is not int or index.get(
         "schema_version"
-    ) not in (1, 2, 3, 4, 5, 6, 7):
+    ) not in (1, 2, 3, 4, 5, 6, 7, 8):
         raise UnsupportedRegistryError(
             f"unsupported registry schema {index.get('schema_version')!r}"
         )
@@ -203,7 +207,7 @@ def _read_index(path: Path, registry: Registry, root: Path) -> Mapping[str, Any]
         schema = dataset.get("schema_version")
         if (
             type(schema) is not int
-            or schema not in (1, 2, 3, 4, 5, 6, 7)
+            or schema not in (1, 2, 3, 4, 5, 6, 7, 8)
             or schema > index["schema_version"]
         ):
             raise UnsupportedRegistryError(
@@ -289,7 +293,7 @@ def _decode_dataset(
     decoder = representation.get("decoder")
     decoded: Decoded
     if decoder == "named-splits":
-        if dataset.get("schema_version") not in (4, 5, 6, 7):
+        if dataset.get("schema_version") not in (4, 5, 6, 7, 8):
             raise UnsupportedDecoderError("named-splits requires manifest schema 4")
         recipes = split_recipes(representation)
         children = []
@@ -318,22 +322,37 @@ def _decode_dataset(
             )
             assert isinstance(
                 child,
-                (DecodedTable, DecodedSparseDataset, DecodedMultilabelSparseDataset),
+                (
+                    DecodedTable,
+                    DecodedSparseDataset,
+                    DecodedMultilabelSparseDataset,
+                    DecodedRankingSparseDataset,
+                ),
             )
             children.append(child)
         decoded = assemble_splits(recipes, children)
     else:
-        decoder, artifacts, options, compressions = _prepare_representation(
-            dataset, representation
-        )
+        is_graph = decoder in ("graph-tables", "hif")
+        if is_graph:
+            decoder, artifacts, options, compressions = _prepare_graph_representation(
+                cast(str, decoder), dataset, representation
+            )
+        else:
+            decoder, artifacts, options, compressions = _prepare_representation(
+                dataset, representation
+            )
         try:
             paths = [artifact_paths[artifact["name"]] for artifact in artifacts]
         except KeyError as error:
             raise DecodedIntegrityError(
                 "no location supplied verified bytes for artifact"
             ) from error
-        decoded = _decode_leaf(
-            decoder, paths, options, compressions, representation["decoder_version"]
+        decoded = (
+            decode_graph(decoder, paths, options, compressions)
+            if is_graph
+            else _decode_leaf(
+                decoder, paths, options, compressions, representation["decoder_version"]
+            )
         )
 
     expect = _mapping(representation.get("expect"), "representation expectation")
