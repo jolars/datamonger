@@ -5,6 +5,9 @@ members = ["cargo:packages/cli"]
 [dist]
 # The preferred dist version to use in CI (Cargo.toml SemVer syntax)
 cargo-dist-version = "0.33.0"
+# Build only the CLI package and its dependencies. The Python cdylib cannot
+# build for the static musl target used by the CLI release.
+precise-builds = true
 # CI backends to support
 ci = "github"
 # The installers to generate for each app
