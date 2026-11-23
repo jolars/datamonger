@@ -128,9 +128,6 @@ release name again is not a cryptographic pin. Registry updates are always
 explicit. The [reproducibility guide](tutorials/reproducibility.md) includes a
 project selector example and explains how to retain it with your analysis.
 
-See the [trust model](https://github.com/jolars/datamonger/blob/main/TRUST.md)
-for verification guarantees and their limits.
-
 ## Offline use and caching
 
 Once a dataset is cached, reuse it without network access:

@@ -140,8 +140,7 @@ print(result.info.registry_release, result.info.registry_index_sha256)
 Pin a project's registry by checking its selector into
 `.datamonger/selector.json`. The selector records the registry release, index
 digest, and retrieval URL. See the package guides for registry selection and
-offline workflows, and the [trust model](TRUST.md) for the verification
-guarantees and their limits.
+offline workflows.
 
 <!-- bundled-registry:start -->
 All four clients bundle the stable `1.7.0` snapshot. Its selector is

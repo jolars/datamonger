@@ -32,8 +32,8 @@ CLI preserves an artifact's registered compression. It refuses to overwrite an
 existing export.
 
 On an interactive terminal, progress on stderr shows downloads, cache checks,
-verification, and exports. Human-readable output uses color on terminal
-streams. Set `NO_COLOR` for monochrome progress and output. Redirected stderr,
+verification, and exports. Human-readable output uses color on terminal streams.
+Set `NO_COLOR` for monochrome progress and output. Redirected stderr,
 `TERM=dumb`, and `--json` suppress progress.
 
 ```console
@@ -59,10 +59,7 @@ datamonger --selector .datamonger/selector.json list
 
 A selector fixes an index by SHA-256. Treat a selector obtained through an
 untrusted channel as untrusted; the checksum alone does not authenticate its
-publisher. See
-[TRUST.md](https://github.com/jolars/datamonger/blob/main/TRUST.md).
-
-See the [command-line
+publisher. See the [command-line
 reference](https://github.com/jolars/datamonger/blob/main/documentation/pages/cli-reference.md)
 for every command and option. It is generated from the clap definitions with
 clapdown; see

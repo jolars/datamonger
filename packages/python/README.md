@@ -134,9 +134,6 @@ Use `active_registry()` to inspect the current selection and
 `set_registry(None)` to clear a session setting. Registry updates are always
 explicit.
 
-See the [trust model](https://github.com/jolars/datamonger/blob/main/TRUST.md)
-for verification guarantees and their limits.
-
 ## Offline use and caching
 
 Once a dataset is cached, reuse it without network access:
