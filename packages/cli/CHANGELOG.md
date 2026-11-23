@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.7.0](https://github.com/jolars/datamonger/compare/datamonger-v0.6.0...datamonger-v0.7.0) (2026-11-23)
+
+### Features
+
+- bundle registry 1.7.0 (#74) ([`ec6d033`](https://github.com/jolars/datamonger/commit/ec6d0331ba80541737bedaf8a96207461529cafe))
+
 ## [0.6.0](https://github.com/jolars/datamonger/compare/datamonger-v0.5.0...datamonger-v0.6.0) (2026-11-22)
 
 ### Features
