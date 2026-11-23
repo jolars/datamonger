@@ -6,6 +6,7 @@ using Dates
 using FileWatching
 using HTTP
 using JSON3
+import Datamonger_jll
 using Libdl
 using Pkg.Artifacts: artifact_exists, artifact_hash, artifact_path
 using SHA

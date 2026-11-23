@@ -230,7 +230,7 @@ end
     mktempdir() do directory
         artifact_toml = joinpath(directory, "Artifacts.toml")
         write(artifact_toml, "")
-        @test_throws "No Datamonger native artifact" Datamonger._native_library_path(artifact_toml)
+        @test_throws "No local Datamonger native artifact" Datamonger._local_native_library_path(artifact_toml)
 
         hash = bytes2hex(sha1(codeunits(directory)))
         @test !Datamonger.artifact_exists(Base.SHA1(hash))
@@ -243,7 +243,7 @@ end
             """)
         # A regressed installer can only try the local, nonexistent file.
         withenv("JULIA_PKG_SERVER" => "") do
-            @test_throws "native artifact is not installed" Datamonger._native_library_path(artifact_toml)
+            @test_throws "native artifact is not installed" Datamonger._local_native_library_path(artifact_toml)
         end
         @test !Datamonger.artifact_exists(Base.SHA1(hash))
     end

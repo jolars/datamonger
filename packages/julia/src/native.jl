@@ -82,17 +82,26 @@ const _NATIVE_TYPES = Dict("float64" => UInt32(1), "int64" => UInt32(2),
 const _NATIVE_LIBRARY = Ref{Ptr{Cvoid}}(C_NULL)
 const _NATIVE_LOCK = ReentrantLock()
 
-function _native_library_path(artifact_toml)
+function _native_library_path()
+    artifact_toml = joinpath(@__DIR__, "..", "deps", "Artifacts.toml")
+    isfile(artifact_toml) && return _local_native_library_path(artifact_toml)
+    Datamonger_jll.is_available() || error(
+        "Datamonger_jll has no native library for this platform. " *
+        "For a source checkout, run tools/dm_julia_core.jl with Julia.",
+    )
+    return Datamonger_jll.get_libdatamonger_ffi_path()
+end
+
+function _local_native_library_path(artifact_toml)
     hash = artifact_hash("datamonger_core", artifact_toml)
     hash === nothing && error(
-        "No Datamonger native artifact for this platform. " *
+        "No local Datamonger native artifact for this platform. " *
         "For a source checkout, run tools/dm_julia_core.jl with Julia.",
     )
     # Package installation owns executable downloads, including when the first
     # decode is offline. Runtime calls must never initiate that installation.
     artifact_exists(hash) || error(
-        "Datamonger native artifact is not installed. Run Pkg.instantiate() " *
-        "before fetching data, or rebuild the local artifact in a source checkout.",
+        "Local Datamonger native artifact is not installed. Rebuild it with tools/dm_julia_core.jl.",
     )
     return joinpath(artifact_path(hash), "lib", "datamonger_ffi.$(Libdl.dlext)")
 end
@@ -101,11 +110,7 @@ function _native_symbol(name)
     lock(_NATIVE_LOCK) do
         if _NATIVE_LIBRARY[] == C_NULL
             path = get(ENV, "DM_JULIA_CORE_LIBRARY", "")
-            if isempty(path)
-                local_toml = joinpath(@__DIR__, "..", "deps", "Artifacts.toml")
-                artifact_toml = isfile(local_toml) ? local_toml : joinpath(@__DIR__, "..", "Artifacts.toml")
-                path = _native_library_path(artifact_toml)
-            end
+            isempty(path) && (path = _native_library_path())
             handle = Libdl.dlopen(path)
             version = try
                 ccall(Libdl.dlsym(handle, :dm_abi_version), UInt32, ())

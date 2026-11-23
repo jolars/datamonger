@@ -23,15 +23,13 @@ using Pkg
 Pkg.activate("packages/julia")
 Pkg.instantiate()
 
-include("tools/dm_julia_core.jl")
-
 using Datamonger
 ```
 
-Building the native decoder from source requires Rust 1.82 or newer. Rebuild it
-after native code changes. See the [contributor
+Julia installs the native decoder through `Datamonger_jll`. Graph and HIF
+decoding require Datamonger FFI 0.4.0 or newer. See the [contributor
 guide](https://github.com/jolars/datamonger/blob/main/CONTRIBUTING.md) for
-development setup and native builds.
+testing with a local native build.
 
 ## Usage
 
