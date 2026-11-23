@@ -35,7 +35,7 @@ labels, including empty tables and names containing Unicode and path punctuation
 These cases extend the corpus without changing the revision 1 implementation
 claim. Golden bytes were produced by the independent Python decoder and
 canonical encoder in `packages/python/tests/reference`, with names qualified
-according to `spec/decoders/named-splits-v1.md`.
+according to the named splits section in `spec/decoders.md`.
 
 `libsvm-v2.json` adds explicit positive, negative, and underflowed zeros to the
 small LIBSVM fixture. All four decoders must reproduce the existing fixture's

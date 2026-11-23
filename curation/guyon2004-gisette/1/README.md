@@ -50,7 +50,7 @@ labels. `test-representation.local.yaml` describes its separately verified
 CSV representation. The local manifest lists the artifact, but its labeled
 representation does not consume or expose it.
 
-The [named splits extension](../../../spec/decoders/named-splits-v1.md) now
+The [named splits decoder](../../../spec/decoders.md#named-splits-version-1) now
 supports a complete assembly: declare `train` and `validation` with their
 LIBSVM recipes and `test` with its delimited feature-only recipe. The result
 exposes all three provider names and retains the 6,500 test rows without labels.

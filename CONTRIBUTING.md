@@ -332,8 +332,9 @@ reviewed mirror locations and the digests of the bytes served there.
    task metadata. Do not guess a license—use `status: unknown` when the evidence
    is insufficient.
 
-   Record [preprocessing](spec/preprocessing.md) separately for upstream and
-   Datamonger preparation. Supply known steps, parameters, and evidence. Use
+   Record [preprocessing](registry/README.md#preprocessing) separately for
+   upstream and Datamonger preparation. Supply known steps, parameters, and
+   evidence. Use
    `unknown` when the history is not established; reserve `none` for an absence
    of preprocessing supported by evidence.
 
@@ -368,7 +369,7 @@ reviewed mirror locations and the digests of the bytes served there.
    against the published asset afterward.
 
 A release-scoped metadata improvement may retain a dataset version only when it
-obeys the append-only evolution rules in [`spec/identity.md`](spec/identity.md).
+obeys the [release evolution rules](spec/registry.md#release-evolution).
 Incorrect component expectations or verification records require an approved
 erratum in a later registry release; earlier release bytes remain unchanged.
 
@@ -415,7 +416,7 @@ Treat the following as separate questions during review:
 - Do canonical bytes or error precedence change?
 - Is the edit release-scoped metadata that the evolution rules permit?
 - Does the change require a new schema, decoder, canonical-form, behavioral
-  contract, dataset, registry release, or specification release candidate?
+  contract, dataset, or registry release?
 
 `dm-index` compares repeated dataset identities with every lower-sequence
 release and rejects forbidden mutations. Passing that check is necessary, but it

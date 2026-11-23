@@ -1,51 +1,13 @@
-# Datamonger normative specification
+# Datamonger format reference
 
-Specification revision 1 is frozen and stable. [`revision-1.md`](revision-1.md)
-defines the profile and its versioned contract inventory:
+- [Registry and retrieval](registry.md) covers dataset identity, index
+  generation, artifact verification, caching, and errors.
+- [Decoders](decoders.md) defines how artifact bytes become logical datasets.
+- [Canonical form](canonical-form.md) defines the bytes used for decoded
+  verification.
+- [JSON Schemas](schema/) define versioned authoring and generated records.
+- [Conformance fixtures](../tests/conformance/) exercise the shared behavior.
 
-- `identity.md` defines dataset identity, resolution, and release evolution.
-- `retrieval.md` defines selectors, HTTP byte boundaries, fallback, and cache
-  guarantees.
-- `errors.md` defines the shared semantic failure categories and precedence.
-- `index.md` defines generated client indexes and deterministic serialization.
-- `canonical-form.md` defines byte-exact logical verification streams.
-- `decoders/` defines the accepted CSV, TSV, LIBSVM, and SVMLight recipes.
-- `schema/` contains closed Draft 2020-12 JSON Schemas for authoring and
-  generated records.
-
-Specification release [`spec-v1`](revision-1.md#stable-release) freezes this
-inventory and pairs it with the strongly selected `2026.09` registry. Python, R,
-and Julia pass the shared conformance corpus and reproduce every registry
-verification record. Any change that alters logical output or reinterprets
-existing bytes requires a later specification revision and a new decoder,
-canonical-form, schema, or behavioral-contract version as appropriate.
-
-The [citation metadata extension](citations.md) adds manifest and index schema
-version 2 while preserving the frozen revision 1 contracts. It defines multiple
-references, optional semantic roles, and recorded upstream recommendations.
-
-The [preprocessing metadata extension](preprocessing.md) adds manifest and index
-schema version 3. It records upstream and Datamonger preparation separately,
-including known steps, parameters, evidence, and explicit unknown history.
-
-The [named splits extension](decoders/named-splits-v1.md) adds manifest and
-index schema version 4 and the `named-splits` version 1 assembly. It preserves
-provider split names and membership and supports feature-only splits without
-labels.
-
-The [LIBSVM zero normalization extension](decoders/libsvm-v2.md) adds manifest
-and index schema version 5 and LIBSVM decoder version 2. It accepts explicit
-zero-valued features and omits them from decoded sparse storage while preserving
-canonical-form version 1 and all earlier decoder and schema contracts.
-
-[Delimited text version 2](decoders/delimited-text-v2.md) uses manifest schema
-version 5 and accepts semicolon-delimited CSV.
-
-[Multilabel LIBSVM version 1](decoders/libsvm-multilabel-v1.md) uses manifest
-and index schema 6 and represents targets as sparse class indicators.
-
-[SVMLight ranking version 1](decoders/svmlight-ranking-v1.md) uses manifest
-and index schema 7 and preserves query IDs alongside relevance and features.
-
-[Graph tables and HIF version 1](decoders/graphs-v1.md) use manifest and index
-schema 8 and preserve typed topology tables and attributes.
+See the [registry guide](../registry/README.md) for authoring and releasing
+datasets. The [spec-v1 tag](https://github.com/jolars/datamonger/tree/spec-v1/spec)
+preserves the original specification and its release history.

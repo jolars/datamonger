@@ -24,7 +24,7 @@ the [dataset contribution workflow](../../../CONTRIBUTING.md#adding-or-revising-
   `(source, name, version)`. Quote YAML versions as strings. Artifact bytes,
   artifact format or compression, and the complete representation recipe are
   immutable for a published identity. Changes require a new dataset version.
-  See the [identity contract](../../../spec/identity.md).
+  See the [identity contract](../../../spec/registry.md#dataset-version-identity).
 - For new curated names under `datamonger`, follow the
   [curated dataset naming policy](../../../CONTRIBUTING.md#curated-dataset-names):
   use the first author's lowercase ASCII surname and publication year, letters
@@ -38,9 +38,8 @@ the [dataset contribution workflow](../../../CONTRIBUTING.md#adding-or-revising-
   identities or attestations. Source terms or a public-domain statement can
   establish a reviewed redistribution basis without a named SPDX license;
   record the evidence accurately rather than inferring a CC0 dedication.
-- Use `upstream-only` for upstream downloads. Claim a mirror or durable
-  preservation only with the evidence and review required by
-  [TRUST.md](../../../TRUST.md#distribution-preservation-and-upstream-risk).
+- Use `upstream-only` for upstream downloads. Review the evidence for any
+  mirror or preservation claim during [dataset review](../../../CONTRIBUTING.md#adding-or-revising-a-dataset).
 
 ## Draft a supported representation
 
@@ -49,9 +48,8 @@ the working tree. Commit recipes and documentation, not dataset artifacts.
 
 Choose a `decoder` and `decoder_version` that fit the artifact format and
 preserve the provider's split names and membership. Check that the manifest
-schema allows the recipe and that `dm-add` supports it. Read the matching
-contract in `spec/decoders/` and check for applicable extensions in the
-[specification overview](../../../spec/README.md).
+schema allows the recipe and that `dm-add` supports it. Read the matching recipe in the
+[decoder reference](../../../spec/decoders.md).
 
 - For delimited text, match declared columns to the header in order. Declare
   logical types and missing tokens explicitly.
@@ -73,7 +71,7 @@ make an ordinary registry addition pass.
 Supply identity, descriptive metadata, provenance, license, artifacts and their
 download locations, representation inputs and options, and appropriate tasks.
 Record upstream and Datamonger preparation separately using the
-[preprocessing specification](../../../spec/preprocessing.md).
+[preprocessing guidance](../../../registry/README.md#preprocessing).
 
 For a new draft, omit artifact `size` and `sha256`, `representation.expect`,
 and an unknown `provenance.retrieved_at`; let `dm-add` derive them. Do not copy
@@ -157,7 +155,7 @@ Published-registry audits do not exercise an unpublished addition.
 
 Leave release snapshots, indexes, selectors, catalogs, registry version bumps,
 and bundled client registries to the Versionary release workflow in
-[OPERATIONS.md](../../../OPERATIONS.md#prepare-a-registry-release). Adding a
+[the contributor guide](../../../CONTRIBUTING.md#adding-or-revising-a-dataset). Adding a
 dataset does not authorize publishing a registry. Release approval requires
 the independent verification described there.
 
