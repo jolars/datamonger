@@ -289,8 +289,6 @@ def add_libsvm_dataset(
                 "options": LIBSVM_OPTIONS,
                 "expect": {
                     "components": [
-                        # DESIGN.md's normative sparse examples omit "type",
-                        # so the fixture must be accepted without it.
                         {
                             "name": "features",
                             "kind": "sparse_matrix",

@@ -152,13 +152,8 @@ Only the registry index is bundled; dataset files are downloaded separately.
 
 ## Documentation
 
-- [Documentation website](https://datamonger.dev/)—guides and API references.
-- [Python](packages/python/README.md), [R](packages/r/README.md), and
-  [Julia](packages/julia/README.md) package guides—return types, metadata,
-  registry selection, and cache management.
-- [CLI guide](packages/cli/README.md)—commands and verified file downloads.
-- [Specification](spec/README.md) and [architecture](DESIGN.md)—contracts and
-  design rationale.
+See the [documentation website](https://datamonger.dev/) for guides and API
+reference.
 
 ## Citation
 

@@ -19,7 +19,6 @@ belong in `curation/<name>/<version>/`; shared tooling belongs in `tools/`.
 Keep maintainer instructions in `README.md` and deposited dataset documentation
 in `DATASET.md`. Store source and generated data outside the working tree.
 Use `tools/dm_index.py` to validate generated registry data.
-Consult `DESIGN.md` for architecture.
 
 ## Build, Test, and Development Commands
 
