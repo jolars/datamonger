@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.4.0](https://github.com/jolars/datamonger/compare/datamonger-python-v0.3.0...datamonger-python-v0.4.0) (2026-11-23)
+
+### Features
+
+- bundle registry 1.7.0 (#74) ([`ec6d033`](https://github.com/jolars/datamonger/commit/ec6d0331ba80541737bedaf8a96207461529cafe))
+- fetch graphs and hypergraphs in Python ([`702df1c`](https://github.com/jolars/datamonger/commit/702df1c57292135fdfade94223365ff5d0a9d0e1))
+- **python:** add progress bars ([`8c248d0`](https://github.com/jolars/datamonger/commit/8c248d090f1e6fd7287a14018f82bb0d7506e57f))
+- bundle registry 1.6.0 (#61) ([`a06f5af`](https://github.com/jolars/datamonger/commit/a06f5aff52d81f710c4342e50aa12d26767ba68f))
+- bundle registry 1.5.0 (#50) ([`fdd31af`](https://github.com/jolars/datamonger/commit/fdd31af49564d01450fe3af5f6d28d4cf4259557))
+- fetch SVMLight ranking datasets in Python ([`7fdd0f9`](https://github.com/jolars/datamonger/commit/7fdd0f963912b09342a0d43e3974accca877fcab))
+- fetch multilabel LIBSVM datasets in Python ([`4d8a090`](https://github.com/jolars/datamonger/commit/4d8a0906bfa1e195553eeed25eeca65741719be7))
+- fetch semicolon-delimited datasets in Python ([`087f4f1`](https://github.com/jolars/datamonger/commit/087f4f104e5a592770eefec6d3a9b4987e06e157))
+
+### Performance Improvements
+
+- verify Python LIBSVM components before conversion ([`4800d84`](https://github.com/jolars/datamonger/commit/4800d84891fcfc2280f7c0f441da30098278d4d6))
+
 ## [0.3.0](https://github.com/jolars/datamonger/compare/datamonger-python-v0.2.0...datamonger-python-v0.3.0) (2026-10-28)
 
 ### Features
