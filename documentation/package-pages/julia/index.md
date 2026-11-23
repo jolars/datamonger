@@ -1,7 +1,8 @@
 # Datamonger for Julia
 
 Retrieve, verify, and decode research datasets with the Julia client.
-Start with the [Julia guide](../../pages/julia.md) for installation and dataset access.
+Start with the [getting started guide](../../pages/getting-started.md) for
+installation and dataset access.
 See the [complete client guide](https://github.com/jolars/datamonger/blob/main/packages/julia/README.md)
 for return types, registry selection, offline use, and cache management.
 

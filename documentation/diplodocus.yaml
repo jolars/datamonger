@@ -7,25 +7,57 @@ presentation:
   home:
     tagline: Datasets, delivered!
     description: Retrieve, verify, and decode public research datasets with consistent values across Python, R, and Julia.
-    guide: python.html
+    guide: what-is-datamonger.html
     actions:
+      - label: What is Datamonger?
+        path: what-is-datamonger.html
+      - label: Get started
+        path: getting-started.html
       - label: Browse datasets
         path: datasets/index.html
-      - label: Get started
-        path: python.html
     features:
-      - title: Find your next dataset
-        description: Search the catalog, compare dimensions, and find retrieval examples for your analysis.
-        path: datasets/index.html
-      - title: Three languages, consistent values
-        description: Use Python, R, or Julia with the same registry records and verified decoded values.
-        path: r.html
-      - title: Reproduce your data access
-        description: Record the dataset version and pin the registry to retrieve and verify the same data again.
-        path: julia.html
-      - title: Retrieve from the command line
-        description: Download verified raw artifacts for scripts, pipelines, and tools beyond the language clients.
-        path: cli.html
+      - title: Dataset metadata and citations
+        description: >-
+          Search by source, task, or dataset dimensions. Inspect licenses,
+          provenance, and citations before downloading data.
+      - title: Data frames and sparse matrices
+        description: >-
+          Load tabular data and sparse features in Python, R, or Julia.
+          Datamonger checks that the clients decode the same values and
+          preserves registered train and test splits.
+      - title: Verified downloads and offline access
+        description: >-
+          Datamonger checks file sizes and SHA-256 digests on download. Reuse
+          cached files offline, or use the CLI to export files in their
+          registered format and compression.
+      - title: Versioned datasets and registries
+        description: >-
+          Pin a dataset version and a registry snapshot so you can retrieve and
+          verify the same data again.
+  sidebar:
+    - text: Introduction
+      items:
+        - text: What is Datamonger?
+          link: what-is-datamonger.html
+        - text: Getting started
+          link: getting-started.html
+    - text: Reference
+      items:
+        - text: Command-line reference
+          link: cli-reference.html
+        - text: Contributing
+          link: CONTRIBUTING.html
+        - text: Changelog
+          link: CHANGELOG.html
+  redirects:
+    /python: getting-started.html
+    /python.html: getting-started.html
+    /r: getting-started.html
+    /r.html: getting-started.html
+    /julia: getting-started.html
+    /julia.html: getting-started.html
+    /cli: getting-started.html
+    /cli.html: getting-started.html
   logo:
     repository: datamonger
     path: assets/logo-large.png
@@ -83,6 +115,22 @@ content:
     owner: project
     repository: datamonger
     path: documentation/pages
+    mount: ""
+    format: gfm
+    execution:
+      mode: never
+  - id: contributing
+    owner: project
+    repository: datamonger
+    path: CONTRIBUTING.md
+    mount: ""
+    format: gfm
+    execution:
+      mode: never
+  - id: changelog
+    owner: project
+    repository: datamonger
+    path: packages/cli/CHANGELOG.md
     mount: ""
     format: gfm
     execution:

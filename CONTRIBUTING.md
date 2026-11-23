@@ -322,17 +322,17 @@ Never commit downloaded upstream dataset artifacts. Manifests record upstream or
 reviewed mirror locations and the digests of the bytes served there.
 
 1. Choose a canonical `(source, name, version)` identity. For new curated
-   datasets, follow the [curated dataset naming policy](#curated-dataset-names).
+   datasets, follow the [curated dataset naming policy](https://github.com/jolars/datamonger/blob/main/CONTRIBUTING.md#curated-dataset-names).
    If artifact identity or the complete representation recipe differs from a
    published record, use a new dataset version.
 
 2. Draft a YAML manifest from
-   [`spec/schema/manifest-v5.schema.json`](spec/schema/manifest-v5.schema.json).
+   [`spec/schema/manifest-v5.schema.json`](https://github.com/jolars/datamonger/blob/main/spec/schema/manifest-v5.schema.json).
    Supply descriptive, provenance, license, artifact, location, decoder, and
    task metadata. Do not guess a license—use `status: unknown` when the evidence
    is insufficient.
 
-   Record [preprocessing](registry/README.md#preprocessing) separately for
+   Record [preprocessing](https://github.com/jolars/datamonger/blob/main/registry/README.md#preprocessing) separately for
    upstream and Datamonger preparation. Supply known steps, parameters, and
    evidence. Use
    `unknown` when the history is not established; reserve `none` for an absence
@@ -369,7 +369,7 @@ reviewed mirror locations and the digests of the bytes served there.
    against the published asset afterward.
 
 A release-scoped metadata improvement may retain a dataset version only when it
-obeys the [release evolution rules](spec/registry.md#release-evolution).
+obeys the [release evolution rules](https://github.com/jolars/datamonger/blob/main/spec/registry.md#release-evolution).
 Incorrect component expectations or verification records require an approved
 erratum in a later registry release; earlier release bytes remain unchanged.
 
