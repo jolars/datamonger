@@ -170,18 +170,19 @@ task r:vendor
 The R release continues to use its committed dependency version until this
 refresh is reviewed and merged.
 
-Julia uses the C ABI in `crates/datamonger-ffi`, with Rust 1.82 or newer. Build
-and install a local native artifact from the repository root before testing:
+Julia installs the published C ABI through `Datamonger_jll`. To test edits to
+the core or C ABI in this checkout, build a local library with Rust 1.82 or newer
+from the repository root:
 
 ```console
 julia tools/dm_julia_core.jl
 ```
 
-The build uses the pinned core compiler in devenv. It writes an ignored local
-artifact binding under `packages/julia/deps`, leaving the release manifest
-unchanged. Rebuild after editing the core or C ABI. `DM_JULIA_CORE_LIBRARY` can
-instead select an absolute shared-library path for development. Julia checks its
-ABI version on first use. Registry and metadata operations do not load it.
+The build uses the pinned core compiler in devenv and writes an ignored artifact
+binding under `packages/julia/deps`. Rebuild after native edits. Remove the
+local binding to return to the published JLL, or set `DM_JULIA_CORE_LIBRARY` to
+an absolute library path to select a specific build. Julia checks the ABI
+version on first use.
 
 The focused Julia command from `packages/julia` is:
 
@@ -197,12 +198,10 @@ cases. The shared corpus remains the normative source for golden values. HTTP
 content decoding remains Julia's responsibility, separate from native artifact
 decompression.
 
-CI packages native libraries for Linux x86-64 and ARM64 with glibc 2.17 or
-newer, macOS Intel and Apple Silicon, and Windows x86-64. It tests each
-installed artifact with the current stable Julia and tests Julia 1.10 on
-Linux x86-64. Publishing tests all five platforms with both versions. These
-tests run outside the checkout without building Rust. See `OPERATIONS.md` for
-native release ordering.
+CI tests the published JLL outside the checkout on stable Julia for Linux
+x86-64 and ARM64, macOS Intel and Apple Silicon, and Windows x86-64. It also
+tests Julia 1.10 on Linux x86-64 and runs the Julia suite against the checkout's
+native library on Linux x86-64. See `OPERATIONS.md` for native release ordering.
 
 Focused CLI commands from `packages/cli` are:
 

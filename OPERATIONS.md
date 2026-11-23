@@ -143,28 +143,16 @@ The R release remains a reviewed CRAN handoff:
 
 ### Julia
 
-Julia native libraries have an independent `datamonger-ffi-v<version>` release.
-Publish native changes before preparing a Julia client release that adopts them:
+Julia installs the native library through `Datamonger_jll` in General. When a
+Julia change requires a newer C ABI:
 
-1. Merge the native Versionary release PR. `Publish Julia native` builds all
-   five supported platforms, tests the installed artifacts on Julia 1.10 and
-   current stable Julia, and attaches the archives and a combined
-   `Artifacts.toml` to the native GitHub Release. A failed build or test prevents
-   artifact publication. A manual dispatch can retry an existing native tag.
-   Assets are immutable; retries do not overwrite existing assets.
-2. Download that release's `Artifacts.toml` into `packages/julia/Artifacts.toml`
-   and commit it in the Julia client change. Check it before merging:
-
-   ```console
-   julia tools/dm_julia_artifacts.jl check packages/julia/Artifacts.toml
-   ```
-
-   The manifest must contain every supported platform and its archive SHA-256
-   and unpacked tree hash. Each URL must name the immutable native release.
-   Never commit a local artifact binding from `packages/julia/deps`.
-3. Confirm the Julia client CI passes with those bindings before registering
-   the Julia release. The committed manifest must be complete before tagging;
-   General installs the registered source tree, not a modified release attachment.
+1. Merge the native Versionary release PR to create the
+   `datamonger-ffi-v<version>` source tag.
+2. Update the [Datamonger recipe in Yggdrasil](https://github.com/JuliaPackaging/Yggdrasil/tree/master/D/Datamonger)
+   and wait for the new `Datamonger_jll` version to appear in General.
+3. Update the Julia client's `Datamonger_jll` compatibility bounds when needed
+   and verify that CI passes with the published JLL before requesting client
+   registration.
 
 The Julia release then uses General's Registrator handoff:
 
