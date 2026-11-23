@@ -67,9 +67,10 @@ Diplodocus executes the same source with its native knitr collector.
 The Julia package's [offline data workflow](../packages/julia/tutorials/offline-workflow.md)
 and [reproducibility guide](../packages/julia/tutorials/reproducibility.md) are
 mounted under its `tutorials/` section by the `julia-tutorials` content collection.
-They use the existing Diplodocus build and the shared API reference. Their Julia
-fences remain illustrative during site builds; the offline walkthrough can be
-run in order from a prepared repository checkout.
+Diplodocus runs the offline walkthrough’s Documenter examples in a shared Julia
+session and renders their results. The examples use checked-in fixtures and a
+temporary cache. The final examples that fetch public datasets use ordinary
+Julia fences and remain illustrative during site builds.
 
 The Python and Julia `cache_info` doctests inspect fresh temporary directories
 and verify that an empty cache has no entries or bytes. They make no network
