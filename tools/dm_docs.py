@@ -1,7 +1,6 @@
-"""Install public assets, catalog metadata, and shared markup in the documentation."""
+"""Install the catalog data, dependencies, and shared markup."""
 
 import argparse
-import re
 from contextlib import suppress
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -10,7 +9,7 @@ from shutil import copy2
 
 
 def install(documentation: Path) -> None:
-    """Complete a Diplodocus build with the website's shared assets and navigation."""
+    """Install the catalog assets and shared head markup after rendering."""
     site = documentation / "site"
     pages = sorted(site.rglob("*.html"))
     if not pages:
@@ -38,39 +37,8 @@ def install(documentation: Path) -> None:
             html = before + after.removeprefix("\n")
         if "</head>" not in html:
             raise ValueError(f"Missing </head> in {page}")
-        is_dataset = page.is_relative_to(site / "datasets")
-        html = re.sub(
-            r'<section class="nav-group" role="group" aria-label="Datasets">'
-            r".*?</section>",
-            "",
-            html,
-            flags=re.DOTALL,
-        )
-
-        def navigation(match: re.Match[str], is_dataset: bool = is_dataset) -> str:
-            links = re.sub(
-                r'<li class="catalog-nav">.*?</li>', "", match[2], flags=re.DOTALL
-            )
-            if is_dataset:
-                links = links.replace(' aria-current="true"', "")
-            current = ' aria-current="true"' if is_dataset else ""
-            catalog_link = (
-                '<li class="catalog-nav"><a href="/datasets/"'
-                f"{current}>Datasets</a></li>"
-            )
-            links = links.replace("</li>", "</li>" + catalog_link, 1)
-            return match[1] + links + match[3]
-
-        html = re.sub(
-            r'(<nav class="global-nav [^"]+"[^>]*><ul>)(.*?)(</ul></nav>)',
-            navigation,
-            html,
-            flags=re.DOTALL,
-        )
         page.write_text(html.replace("</head>", block + "</head>", 1), encoding="utf-8")
 
-    for asset in (documentation / "public").iterdir():
-        copy2(asset, site / asset.name)
     copy2(minisearch / "dist/es/index.js", site / "minisearch.js")
     copy2(minisearch / "LICENSE.txt", site / "minisearch.LICENSE.txt")
     for metadata in generated.rglob("*.json"):
@@ -79,7 +47,7 @@ def install(documentation: Path) -> None:
         target = site / "datasets" / metadata.relative_to(generated)
         target.parent.mkdir(parents=True, exist_ok=True)
         copy2(metadata, target)
-    print(f"Installed public assets and shared head markup in {len(pages)} pages.")
+    print(f"Installed catalog files and shared head markup in {len(pages)} pages.")
 
 
 class PreviewHandler(SimpleHTTPRequestHandler):

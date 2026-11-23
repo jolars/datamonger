@@ -13,18 +13,19 @@ after changing commands or help text. CI checks that the reference is current.
 ## Local preview
 
 Enter Datamonger's `devenv shell` for the locked Diplodocus CLI, Python, R,
-Julia, and the package dependencies. Update Diplodocus with
-`devenv update diplodocus`. To test a neighboring checkout instead, enter:
+Julia, and the package dependencies. Run `devenv update diplodocus` to refresh the local input. To test a neighboring
+checkout instead, enter:
 
 ```console
 devenv --override-input diplodocus path:../diplodocus shell
 ```
 
-The shell prepares the Python environment. Instantiate the Julia project and
-compile the R client's native extension before the first build or after changing
-its dependencies or C code:
+The shell prepares the Python environment. Install Sphinx in that environment,
+instantiate the Julia project, and compile the R client's native extension
+before the first build or after changing its dependencies or C code:
 
 ```console
+uv pip install sphinx
 mkdir -p /tmp/datamonger-docs-library
 julia tools/dm_julia_core.jl
 julia --project=packages/julia -e 'using Pkg; Pkg.instantiate()'
@@ -42,15 +43,14 @@ cannot include assets installed after rendering. Generated snapshots, site
 files, and npm dependencies are ignored by Git. `build` and `serve` validate
 sources, complete Julia's generated error types through the prepared runtime,
 execute Python and Julia API doctests, and use native R for package documents
-and examples. `check` remains static and reports 15 unresolved generated Julia
-types for this workspace; use `build` for complete validation.
+and examples. Use `build` to validate rendered output and execute the examples.
 
 Run `npm ci --ignore-scripts --prefix documentation` once to install the pinned
 website dependencies. After building, run `python tools/dm_docs.py` from the
-repository root to install public assets, catalog metadata, MiniSearch, shared
-HTML head markup, and the Datasets navigation link. CI runs these steps before
-deployment. For local previews, rerun the script after Diplodocus rebuilds the
-site. Keep shared head markup in `documentation/head.html`.
+repository root to install catalog metadata, MiniSearch, and the catalog’s
+HTML head markup. CI runs these steps before deployment. For local previews,
+rerun the script after Diplodocus rebuilds the site. The site config declares
+the Datasets tab, icons, and fixed public assets.
 
 The R [getting started vignette](../packages/r/vignettes/introduction.Rmd)
 introduces dataset discovery, retrieval, citations, reproducibility, and
