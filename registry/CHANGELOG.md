@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/jolars/datamonger/compare/registry-v1.7.0...registry-v1.8.0) (2026-11-22)
+
+### Features
+
+- **registry:** add XGI House committees ([`022497e`](https://github.com/jolars/datamonger/commit/022497e7d959d8f48b4b7d5094cecbf28a986302))
+- **registry:** register road networks as graphs ([`0f0d187`](https://github.com/jolars/datamonger/commit/0f0d1870a3cb03157dd89167945fba567e93d83d))
+
 ## [1.7.0](https://github.com/jolars/datamonger/compare/registry-v1.6.0...registry-v1.7.0) (2026-11-20)
 
 ### Features
