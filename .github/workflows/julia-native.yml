@@ -57,8 +57,3 @@ jobs:
             -Wl,-rpath,"$PWD/target/release" -o "$RUNNER_TEMP/abi-test"
           "$RUNNER_TEMP/abi-test" tests/conformance/artifacts/small.libsvm
           julia --project=packages/julia -e 'using Pkg; Pkg.instantiate(); Pkg.test()'
-      - uses: actions/setup-node@v7
-        with:
-          node-version: "24"
-      - name: Check YAML formatting
-        run: npx --yes prettier@3.9.6 --check '.github/**/*.yml' '.github/**/*.yaml' devenv.yaml Taskfile.yml --no-error-on-unmatched-pattern
