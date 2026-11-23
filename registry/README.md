@@ -2,9 +2,7 @@
 
 Versionary owns registry release PRs, changelogs, tags, and draft GitHub
 Releases. The publisher validates the tagged snapshot, attaches `index.json`,
-verifies the uploaded digest, and publishes the draft. See the [operations
-runbook](../OPERATIONS.md#prepare-a-registry-release) for the process and
-required independent review.
+verifies the uploaded digest, and publishes the draft.
 
 - `datasets/` contains dataset manifests.
 - `collection.yaml` selects dataset versions and any approved errata for the
@@ -32,9 +30,9 @@ datasets:
 ```
 
 List every selected version as a quoted string, from oldest to newest. The last
-entry is the default for fetches that omit a version. Release preparation
-loads each entry from `registry/datasets/<source>/<name>-<version>.yaml` and
-checks that the manifest declares the corresponding identity.
+entry is the default for fetches that omit a version. Release preparation loads
+each entry from `registry/datasets/<source>/<name>-<version>.yaml` and checks
+that the manifest declares the corresponding identity.
 
 Use `feat(registry): ...` for added datasets or capabilities and
 `fix(registry): ...` for compatible corrections. Versionary scopes commits by

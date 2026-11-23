@@ -126,8 +126,3 @@ restricted dataset bytes. If a report contains an exploitable client
 vulnerability or sensitive information, submit a [private vulnerability
 report](https://github.com/jolars/datamonger/security/advisories/new) instead of
 a public issue.
-
-Published indexes, selectors, tags, and release assets are immutable. A
-confirmed problem is documented and corrected in a later release under the
-procedures in [OPERATIONS.md](OPERATIONS.md); the affected bytes are never
-silently replaced.

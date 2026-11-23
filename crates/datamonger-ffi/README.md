@@ -6,8 +6,8 @@ retrieval, artifact integrity, cache leases, metadata, and host return types
 remain the client's responsibility.
 
 [`include/datamonger.h`](include/datamonger.h) defines ABI 1, including layouts,
-tags, errors, and ownership. A breaking layout, tag, or ownership change requires
-a new ABI version and corresponding Julia bindings. The library exports
+tags, errors, and ownership. A breaking layout, tag, or ownership change
+requires a new ABI version and corresponding Julia bindings. The library exports
 `dm_abi_version()` so clients reject incompatible libraries before passing data.
 
 Decoder calls accept verified artifact paths, declared compression, and typed
@@ -24,12 +24,13 @@ symbols. V2 omits zero-valued features, including underflowed feature values,
 while retaining the numeric compatibility rules for labels. Existing LIBSVM
 entry points continue to implement decoder version 1.
 
-Inputs are borrowed for the call and never retained. All buffers must be aligned,
-readable, and immutable, and lengths must describe their accessible storage.
-The bridge checks null pointers, alignment, lengths, UTF-8, validity bytes, and
-logical structure; it cannot validate that an arbitrary address is readable.
-Strings are UTF-8 with explicit byte lengths, so values may contain NUL bytes.
-Sparse indices and row offsets are zero-based, and dense values use row order.
+Inputs are borrowed for the call and never retained. All buffers must be
+aligned, readable, and immutable, and lengths must describe their accessible
+storage. The bridge checks null pointers, alignment, lengths, UTF-8, validity
+bytes, and logical structure; it cannot validate that an arbitrary address is
+readable. Strings are UTF-8 with explicit byte lengths, so values may contain
+NUL bytes. Sparse indices and row offsets are zero-based, and dense values use
+row order.
 
 Every operation returns one owned result, including errors and caught Rust
 panics. Result accessors borrow immutable views until `dm_result_free()`.
@@ -51,4 +52,4 @@ The Julia differential suite exercises these layouts, all logical types,
 compressed artifacts, error mapping, and copied-buffer lifetimes against its
 independent test oracle and the shared corpus. The C smoke test also compiles
 and exercises the public header. CI builds and tests native distributions for
-all supported Julia platforms; see `CONTRIBUTING.md` and `OPERATIONS.md`.
+all supported Julia platforms; see `CONTRIBUTING.md`.

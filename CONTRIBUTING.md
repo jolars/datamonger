@@ -75,15 +75,16 @@ Python results against the shared conformance corpus, compressed inputs,
 malformed artifacts, and generated inputs before a backend change can ship. CI
 builds portable wheels for all supported platforms when the Python client,
 shared Rust core, packaging configuration, or shared conformance fixtures
-change. It tests installed wheels with Python 3.14 and 3.15 on all five platforms,
-and with Python 3.11 on Linux x86-64. Versionary release PRs skip the broad build
-and test matrices and the documentation build. They still check release versions,
-lockfiles, vendored Rust sources, and client bundles. Registry release PRs validate
-their pending snapshots, and release PRs run one Linux R check when the Rust
-adapter or vendor files change. Ordinary PRs and pushes to `main` run the Linux
-Python quality checks. Publishing tests installed wheels on all five platforms
-with all three Python versions. Run `Python distributions` manually to check the
-full matrix on a selected branch, commit, or tag before a release.
+change. It tests installed wheels with Python 3.14 and 3.15 on all five
+platforms, and with Python 3.11 on Linux x86-64. Versionary release PRs skip the
+broad build and test matrices and the documentation build. They still check
+release versions, lockfiles, vendored Rust sources, and client bundles. Registry
+release PRs validate their pending snapshots, and release PRs run one Linux R
+check when the Rust adapter or vendor files change. Ordinary PRs and pushes to
+`main` run the Linux Python quality checks. Publishing tests installed wheels on
+all five platforms with all three Python versions. Run `Python distributions`
+manually to check the full matrix on a selected branch, commit, or tag before a
+release.
 
 Focused commands from `packages/r` are:
 
@@ -157,8 +158,7 @@ Versionary manages core releases independently of the language clients. Merge
 its release PR after CI passes. Versionary creates a published GitHub Release
 with a `datamonger-core-v<version>` tag, which triggers `Publish Rust core`.
 That workflow verifies the tag and crate versions, tests and packages the crate
-with Rust 1.82, and publishes to crates.io through trusted publishing. See
-`OPERATIONS.md` for the publisher configuration.
+with Rust 1.82, and publishes to crates.io through trusted publishing.
 
 After the crate is published, update the R lockfile and vendor archive:
 
@@ -171,8 +171,8 @@ The R release continues to use its committed dependency version until this
 refresh is reviewed and merged.
 
 Julia installs the published C ABI through `Datamonger_jll`. To test edits to
-the core or C ABI in this checkout, build a local library with Rust 1.82 or newer
-from the repository root:
+the core or C ABI in this checkout, build a local library with Rust 1.82 or
+newer from the repository root:
 
 ```console
 julia tools/dm_julia_core.jl
@@ -198,10 +198,10 @@ cases. The shared corpus remains the normative source for golden values. HTTP
 content decoding remains Julia's responsibility, separate from native artifact
 decompression.
 
-CI tests the published JLL outside the checkout on stable Julia for Linux
-x86-64 and ARM64, macOS Intel and Apple Silicon, and Windows x86-64. It also
-tests Julia 1.10 on Linux x86-64 and runs the Julia suite against the checkout's
-native library on Linux x86-64. See `OPERATIONS.md` for native release ordering.
+CI tests the published JLL outside the checkout on stable Julia for Linux x86-64
+and ARM64, macOS Intel and Apple Silicon, and Windows x86-64. It also tests
+Julia 1.10 on Linux x86-64 and runs the Julia suite against the checkout's
+native library on Linux x86-64.
 
 Focused CLI commands from `packages/cli` are:
 
@@ -216,8 +216,7 @@ The CLI publishes to crates.io as `datamonger`. Its package includes the source,
 bundled registry assets, README, and license. Integration tests use repository
 fixtures and run before publication. To verify the packaged crate locally, run
 `cargo publish --locked --dry-run` from `packages/cli` (add `--allow-dirty` when
-testing uncommitted changes). See `OPERATIONS.md` for the initial publication
-and trusted publisher setup.
+testing uncommitted changes).
 
 The CLI reference is generated from `packages/cli/src/cli.rs` with clapdown.
 After changing commands or help text, run
@@ -364,10 +363,9 @@ reviewed mirror locations and the digests of the bytes served there.
 
 6. Commit the registry change with `feat(registry): ...` or
    `fix(registry): ...`. Versionary prepares the release PR and its generated
-   snapshot as described in [OPERATIONS.md](OPERATIONS.md). Review and
-   independently verify the new records before merging that PR; the publisher
-   re-fetches manifests before publishing and runs the canary against the
-   published asset afterward.
+   snapshot. Review and independently verify the new records before merging that
+   PR; the publisher re-fetches manifests before publishing and runs the canary
+   against the published asset afterward.
 
 A release-scoped metadata improvement may retain a dataset version only when it
 obeys the append-only evolution rules in [`spec/identity.md`](spec/identity.md).
