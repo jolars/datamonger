@@ -1,9 +1,10 @@
 # R guide
 
-Install the client from the Datamonger checkout, starting at the repository root:
+Install Datamonger directly from GitHub with pak.
 
 ```r
-install.packages("packages/r", repos = NULL, type = "source")
+# install.packages("pak")
+pak::pak("jolars/datamonger/packages/r")
 ```
 
 Inspect dataset metadata before fetching data:

@@ -1,11 +1,10 @@
 # Julia guide
 
-Install the client from the Datamonger checkout, starting at the repository root:
+Install Datamonger into your active Julia environment directly from GitHub.
 
 ```julia
 using Pkg
-Pkg.activate("packages/julia")
-Pkg.instantiate()
+Pkg.add(url="https://github.com/jolars/datamonger.git", subdir="packages/julia")
 ```
 
 Inspect dataset metadata before fetching data:

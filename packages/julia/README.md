@@ -14,14 +14,13 @@ analysis reproducible.
 
 ## Installation
 
-Requires Julia 1.10 or newer. From a repository checkout, run these commands at
-the repository root:
+Requires Julia 1.10 or newer. Install Datamonger into your active Julia
+environment directly from GitHub.
 
 ```julia
 using Pkg
 
-Pkg.activate("packages/julia")
-Pkg.instantiate()
+Pkg.add(url="https://github.com/jolars/datamonger.git", subdir="packages/julia")
 
 using Datamonger
 ```

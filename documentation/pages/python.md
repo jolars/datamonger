@@ -1,9 +1,10 @@
 # Python guide
 
-Install the client from the Datamonger checkout, starting at the repository root:
+Install Datamonger directly from GitHub. The source build requires Git, a
+stable Rust toolchain, and a C linker.
 
 ```console
-python -m pip install ./packages/python
+python -m pip install "git+https://github.com/jolars/datamonger.git#subdirectory=packages/python"
 ```
 
 Inspect dataset metadata before fetching data:
