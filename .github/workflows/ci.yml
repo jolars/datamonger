@@ -115,7 +115,7 @@ jobs:
             changed="$RUNNER_TEMP/python-distribution-changes"
             # Include both paths of a move so moving Python files out still runs the builds.
             if git diff --no-renames --name-only -z "$comparison" > "$changed"; then
-              if git diff --quiet "$comparison" -- packages/julia/Artifacts.toml packages/julia/Project.toml; then
+              if git diff --quiet "$comparison" -- packages/julia/Project.toml; then
                 julia_release_changed=false
               fi
               if git diff --quiet "$comparison" -- packages/r/src/rust; then
@@ -427,6 +427,3 @@ jobs:
     needs: [ci-policy, python-distribution-changes]
     if: ${{ !cancelled() && (needs.ci-policy.outputs.run_checks != 'false' || needs.python-distribution-changes.outputs.julia_release_changed != 'false') }}
     uses: ./.github/workflows/julia-native.yml
-    with:
-      minimum-version-linux-only: true
-      test-committed-artifacts: ${{ needs.python-distribution-changes.outputs.julia_release_changed != 'false' }}

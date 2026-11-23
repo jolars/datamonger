@@ -1,150 +1,13 @@
-name: Julia native distributions
+name: Julia package
 
 on:
   workflow_call:
-    inputs:
-      ref:
-        required: false
-        type: string
-        default: ""
-      native-tag:
-        required: false
-        type: string
-        default: ""
-      minimum-version-linux-only:
-        description: Test Julia 1.10 on Linux x86-64 only
-        type: boolean
-        default: false
-      test-committed-artifacts:
-        type: boolean
-        default: false
 
 permissions:
   contents: read
 
 jobs:
-  build:
-    runs-on: ${{ matrix.platform.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        platform:
-          - {
-              os: ubuntu-latest,
-              julia: x86_64-linux-gnu,
-              image: quay.io/pypa/manylinux2014_x86_64,
-              library: libdatamonger_ffi.so,
-            }
-          - {
-              os: ubuntu-24.04-arm,
-              julia: aarch64-linux-gnu,
-              image: quay.io/pypa/manylinux2014_aarch64,
-              library: libdatamonger_ffi.so,
-            }
-          - {
-              os: macos-15-intel,
-              julia: x86_64-apple-darwin,
-              library: libdatamonger_ffi.dylib,
-              deployment: "10.12",
-            }
-          - {
-              os: macos-latest,
-              julia: aarch64-apple-darwin,
-              library: libdatamonger_ffi.dylib,
-              deployment: "11.0",
-            }
-          - {
-              os: windows-latest,
-              julia: x86_64-w64-mingw32,
-              library: datamonger_ffi.dll,
-            }
-    env:
-      RUSTUP_TOOLCHAIN: stable
-      MACOSX_DEPLOYMENT_TARGET: ${{ matrix.platform.deployment || '' }}
-      RUSTFLAGS: ${{ matrix.platform.os == 'windows-latest' && '-C target-feature=+crt-static' || '' }}
-      NATIVE_TAG: ${{ inputs.native-tag }}
-      JULIA_PLATFORM: ${{ matrix.platform.julia }}
-      NATIVE_LIBRARY: ${{ matrix.platform.library }}
-      BUILD_IMAGE: ${{ matrix.platform.image || '' }}
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ inputs.ref || github.sha }}
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
-      - name: Select minimum Rust compiler
-        run: |
-          rustup toolchain install 1.82.0 --profile minimal
-          echo "RUSTC=$(rustup which --toolchain 1.82.0 rustc)" >> "$GITHUB_ENV"
-      - uses: julia-actions/setup-julia@v3
-        with:
-          version: "1.10"
-      - name: Build Linux library against glibc 2.17
-        if: runner.os == 'Linux'
-        run: |
-          docker run --rm -v "$PWD:/io" -w /io "$BUILD_IMAGE" bash -ec '
-            curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
-            export PATH="/root/.cargo/bin:$PATH"
-            export RUSTUP_TOOLCHAIN=stable
-            rustup toolchain install 1.82.0 --profile minimal
-            export RUSTC="$(rustup which --toolchain 1.82.0 rustc)"
-            cargo build --release --locked --manifest-path crates/datamonger-ffi/Cargo.toml
-          '
-      - name: Build native library
-        if: runner.os != 'Linux'
-        run: cargo build --release --locked --manifest-path crates/datamonger-ffi/Cargo.toml
-      - name: Exercise the C header
-        if: runner.os == 'Linux'
-        run: |
-          cc -Wall -Wextra -Werror -I crates/datamonger-ffi/include \
-            crates/datamonger-ffi/tests/abi.c \
-            -L target/release -ldatamonger_ffi \
-            -Wl,-rpath,"$PWD/target/release" -o "$RUNNER_TEMP/abi-test"
-          "$RUNNER_TEMP/abi-test" tests/conformance/artifacts/small.libsvm
-      - name: Collect native license notices
-        run: python tools/dm_ffi_licenses.py COPYRIGHTS
-      - name: Package Julia artifact
-        run: |
-          if [[ -z "$NATIVE_TAG" ]]; then
-            NATIVE_TAG="$(python -c 'import tomllib; print("datamonger-ffi-v" + tomllib.load(open("crates/datamonger-ffi/Cargo.toml", "rb"))["package"]["version"])')"
-          fi
-          julia tools/dm_julia_artifacts.jl pack \
-            "$JULIA_PLATFORM" "target/release/$NATIVE_LIBRARY" \
-            COPYRIGHTS native-artifacts \
-            "https://github.com/jolars/datamonger/releases/download/$NATIVE_TAG"
-      - uses: actions/upload-artifact@v7
-        with:
-          name: julia-native-${{ matrix.platform.julia }}
-          path: native-artifacts/*
-          if-no-files-found: error
-
-  assemble:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ inputs.ref || github.sha }}
-      - uses: julia-actions/setup-julia@v3
-        with:
-          version: "1.10"
-      - uses: actions/download-artifact@v8
-        with:
-          pattern: julia-native-*
-          merge-multiple: true
-          path: native-artifacts
-      - run: julia tools/dm_julia_artifacts.jl merge native-artifacts native-artifacts/Artifacts.toml
-      - uses: actions/upload-artifact@v7
-        with:
-          name: julia-native-distribution
-          path: native-artifacts
-
   test:
-    needs: assemble
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     strategy:
@@ -158,11 +21,10 @@ jobs:
             macos-latest,
             windows-latest,
           ]
-        julia: ${{ fromJSON(inputs.minimum-version-linux-only && '["1"]' || '["1.10", "1"]') }}
-        include: >-
-          ${{ fromJSON(inputs.minimum-version-linux-only
-            && '[{"os":"ubuntu-latest","julia":"1.10"}]'
-            || '[]') }}
+        julia: ["1"]
+        include:
+          - os: ubuntu-latest
+            julia: "1.10"
     env:
       JULIA_PKG_USE_CLI_GIT: "true"
     defaults:
@@ -170,32 +32,33 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v7
-        with:
-          ref: ${{ inputs.ref || github.sha }}
       - uses: julia-actions/setup-julia@v3
         with:
           version: ${{ matrix.julia }}
-      - uses: actions/download-artifact@v8
-        with:
-          name: julia-native-distribution
-          path: native-artifacts
-      - name: Validate release bindings
-        run: julia tools/dm_julia_artifacts.jl check-source packages/julia
       - name: Check shared fixtures
         run: diff -r tests/conformance packages/julia/test/fixtures/conformance
-      - name: Stage package outside checkout
-        run: julia tools/dm_julia_artifacts.jl stage packages/julia native-artifacts "$RUNNER_TEMP/Datamonger"
-      - name: Test installed native artifact without Rust or a checkout
+      - name: Test with the published JLL outside the checkout
         run: |
           unset DM_JULIA_CORE_LIBRARY
+          cp -R packages/julia "$RUNNER_TEMP/Datamonger"
           cd "$RUNNER_TEMP"
           julia --project=Datamonger -e 'using Pkg; Pkg.instantiate(); Pkg.test()'
-      # Native releases must publish before the Julia package can pin their artifacts.
-      - name: Test committed release artifacts
-        if: inputs.test-committed-artifacts
+      - uses: dtolnay/rust-toolchain@master
+        if: matrix.os == 'ubuntu-latest' && matrix.julia == '1'
+        with:
+          toolchain: stable
+      - name: Test the checkout's C ABI and Julia bindings
+        if: matrix.os == 'ubuntu-latest' && matrix.julia == '1'
         run: |
-          julia tools/dm_julia_artifacts.jl stage-release packages/julia "$RUNNER_TEMP/DatamongerReleased"
-          if [[ -d "$RUNNER_TEMP/DatamongerReleased" ]]; then
-            cd "$RUNNER_TEMP"
-            julia --project=DatamongerReleased -e 'using Pkg; Pkg.instantiate(); Pkg.test()'
-          fi
+          julia tools/dm_julia_core.jl
+          cc -Wall -Wextra -Werror -I crates/datamonger-ffi/include \
+            crates/datamonger-ffi/tests/abi.c \
+            -L target/release -ldatamonger_ffi \
+            -Wl,-rpath,"$PWD/target/release" -o "$RUNNER_TEMP/abi-test"
+          "$RUNNER_TEMP/abi-test" tests/conformance/artifacts/small.libsvm
+          julia --project=packages/julia -e 'using Pkg; Pkg.instantiate(); Pkg.test()'
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - name: Check YAML formatting
+        run: npx --yes prettier@3.9.6 --check '.github/**/*.yml' '.github/**/*.yaml' devenv.yaml Taskfile.yml --no-error-on-unmatched-pattern

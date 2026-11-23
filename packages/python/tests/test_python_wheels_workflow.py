@@ -194,7 +194,6 @@ def test_unknown_history_requires_distribution_checks(
 @pytest.mark.parametrize(
     ("path", "changed"),
     [
-        ("packages/julia/Artifacts.toml", "true"),
         ("packages/julia/Project.toml", "true"),
         ("packages/julia/src/Datamonger.jl", "false"),
     ],
