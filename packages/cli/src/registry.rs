@@ -12,7 +12,15 @@ use crate::error::{Error, Result};
 
 pub const BUNDLED_INDEX: &[u8] = include_bytes!("../assets/index.json");
 const BUNDLED_SELECTOR: &[u8] = include_bytes!("../assets/selector.json");
-const SCHEMAS: [(&str, &str); 19] = [
+const SCHEMAS: [(&str, &str); 21] = [
+    (
+        "https://datamonger.dev/spec/schema/index-v9.schema.json",
+        include_str!("../assets/index-v9.schema.json"),
+    ),
+    (
+        "https://datamonger.dev/spec/schema/manifest-v9.schema.json",
+        include_str!("../assets/manifest-v9.schema.json"),
+    ),
     (
         "https://datamonger.dev/spec/schema/index-v8.schema.json",
         include_str!("../assets/index-v8.schema.json"),
