@@ -1,0 +1,557 @@
+{
+  "dataset_id": "datamonger:ma2009@1",
+  "source_doi": "10.24432/C5H89Q",
+  "source_zip_sha256": "373b33d806a83bab7258b2d3f6ceeffc02f4e1bb98cd17a0d1c938e6156944d1",
+  "license": "CC-BY-4.0",
+  "preparation_environment": {
+    "python": "3.14.7",
+    "zlib": "1.3.2"
+  },
+  "download_verification": {
+    "date": "2026-11-27",
+    "method": "Anonymous HTTPS downloads compared with the staged SHA-256 digests",
+    "canonical_verification": {
+      "canonical_form": 1,
+      "algorithm": "sha256",
+      "digest": "669e7c5d7569d51deb58836f2ee71c64843ab894d53be67bae711418204a3eec"
+    }
+  },
+  "records": [
+    {
+      "id": 24590923,
+      "doi": "10.5281/zenodo.24590923",
+      "url": "https://zenodo.org/records/24590923",
+      "title": "URL Reputation (UCI), part 1 of 2, days 0-60",
+      "state": "published",
+      "publication_date": "2026-11-27",
+      "access": {
+        "record": "public",
+        "files": "public"
+      },
+      "files": {
+        "Day0.svm.gz": {
+          "size": 1664113,
+          "sha256": "20529e911f638b8b74a3bf34ad0815938c4a7246253893772d5464627b0f93b2"
+        },
+        "Day1.svm.gz": {
+          "size": 2083617,
+          "sha256": "d4e21c051e521584b7a967120c6207f50bdd98d1c16826785e87af350edeed4b"
+        },
+        "Day2.svm.gz": {
+          "size": 2083295,
+          "sha256": "d4f4d0db1d55cd5e0bc04cfbd06f038d2408cf2ea66cc149ec22a8951293fe1a"
+        },
+        "Day3.svm.gz": {
+          "size": 2019212,
+          "sha256": "32a5dce0703de7ded873339066d94e226416d30f66be29072f14371eee5d51f9"
+        },
+        "Day4.svm.gz": {
+          "size": 2073799,
+          "sha256": "a1061bfbb7a8a148c30bc9540eab3b21ad3b77d11263761e67e747a6d933e398"
+        },
+        "Day5.svm.gz": {
+          "size": 1986755,
+          "sha256": "1edf9fc712861a05db46b8efbec3b97cf4a3cc5f9bf1635aea197d780502bd7c"
+        },
+        "Day6.svm.gz": {
+          "size": 1981926,
+          "sha256": "0b424c7b8d139e8b0c2fc6b47b417595e5bda7c3c13f84c5b8fab76fa2e4b50c"
+        },
+        "Day7.svm.gz": {
+          "size": 2128487,
+          "sha256": "101b9e133922b9cf5145b76da8d275843375003ecad1ba80965fe4cdbd98b0ef"
+        },
+        "Day8.svm.gz": {
+          "size": 2027281,
+          "sha256": "5763a01dd5b00be2c775b89cc511357ea7c913f15aaf5bac88a780b1cb5bbd4a"
+        },
+        "Day9.svm.gz": {
+          "size": 2061537,
+          "sha256": "12e25b937a35fb91fc66033d4b50372628054fba6783cc765ef3f04eea1db9f4"
+        },
+        "Day10.svm.gz": {
+          "size": 2030418,
+          "sha256": "34f4185070770a0eb63e84bccf8029e69f880213cc13785acda0278f98a8da96"
+        },
+        "Day11.svm.gz": {
+          "size": 2038184,
+          "sha256": "9b5c4423025a1ebab85f1f7a482a81e202d655a8bbd4f902170d9cff8a5c61c7"
+        },
+        "Day12.svm.gz": {
+          "size": 2041957,
+          "sha256": "f6cfd95d9caa4cead8c68a84574d8931449b6b249d7265debe67dcd9c851c13b"
+        },
+        "Day13.svm.gz": {
+          "size": 1947477,
+          "sha256": "1315cc91fdc2d8a07f9e88eee8f6245bb4c2ec06ed316ca1d12fed4512013afb"
+        },
+        "Day14.svm.gz": {
+          "size": 1987227,
+          "sha256": "cb3be7edbfbd96e6ae3db5bcfd19038ddd236fbae34422243b6c701e2232197a"
+        },
+        "Day15.svm.gz": {
+          "size": 2002706,
+          "sha256": "2aa800e3ecafdd0f86e2eab01a6e3b447c098d557d5e57371e18a0f3f3c63a9c"
+        },
+        "Day16.svm.gz": {
+          "size": 2017068,
+          "sha256": "9b5908145ee803a09e50e41fe9cb344cbfddb3059e0ace9a2ece5e6ef7c813a4"
+        },
+        "Day17.svm.gz": {
+          "size": 2001547,
+          "sha256": "8723ac1d23a575da657f29420942e27eace707101ae87948dd61ce6b82208c9b"
+        },
+        "Day18.svm.gz": {
+          "size": 1949037,
+          "sha256": "ac7cf5201b339b4b65e30d5516b3a7be1fa4e2d386d4c167393faf5935fdf94c"
+        },
+        "Day19.svm.gz": {
+          "size": 1916739,
+          "sha256": "10e02239c6243cfbb12b0c8c69f15d8cae71cd3db1626591b8f25dd0415371e8"
+        },
+        "Day20.svm.gz": {
+          "size": 2030139,
+          "sha256": "bd31306643ad78885b8321926e1c34a22e8743c1f95f25e1cebec24c4fd433e7"
+        },
+        "Day21.svm.gz": {
+          "size": 2155746,
+          "sha256": "c37d8e9c8cd86c4f346fbfc2c649eae8d038302b364c6d67187367b135d94ff1"
+        },
+        "Day22.svm.gz": {
+          "size": 2043101,
+          "sha256": "fb1e0110af2bc1080e9805e1fd511ea4a12f77e456b1b62302b0295c72b3ab25"
+        },
+        "Day23.svm.gz": {
+          "size": 1997488,
+          "sha256": "564c1c90c4f4e6dee2402363fcd9099bbaf7c3a8efa01c6b5db83e660950a039"
+        },
+        "Day24.svm.gz": {
+          "size": 2129845,
+          "sha256": "0c9084a675fb6824859bfccf22fe201635b6f59b10d024df1dfad8677c8fbd97"
+        },
+        "Day25.svm.gz": {
+          "size": 2015664,
+          "sha256": "95b03a9919e3eda9f6fb1406a4b2086410aaa1bd7e7b1dc8001be9ff0d5fab67"
+        },
+        "Day26.svm.gz": {
+          "size": 1618664,
+          "sha256": "a97d41008e1260d87d76670fbc2678229347ece9de9400cee2d9fa18236256ab"
+        },
+        "Day27.svm.gz": {
+          "size": 1932223,
+          "sha256": "3bb7058a384efeb2fe2073849f5a67dba87b0eee76f6e14cd3e1112d0c37d738"
+        },
+        "Day28.svm.gz": {
+          "size": 1966002,
+          "sha256": "66023463655a1a6a87fd5a4d464538d33cfbaecdacff4f031fc75e70f40f0405"
+        },
+        "Day29.svm.gz": {
+          "size": 1943925,
+          "sha256": "ad9d6027bc9be8cc5e691795dde28e87594edc7a2c2c0f4d7ddb5fc7c29d947a"
+        },
+        "Day30.svm.gz": {
+          "size": 2023184,
+          "sha256": "a8ce65584c5ac8778142f8dd1929b6f6e6db05540c9d28a79063d4bc988d1ee9"
+        },
+        "Day31.svm.gz": {
+          "size": 1928698,
+          "sha256": "ac63eceb0655250add3cefae9d895218a7a2446422665f138d534283935bafb5"
+        },
+        "Day32.svm.gz": {
+          "size": 1969405,
+          "sha256": "90eec81a109b9d5ec3754334ac983628e648baefbd7531d47f4faf05223ff7c2"
+        },
+        "Day33.svm.gz": {
+          "size": 1964403,
+          "sha256": "2d5350232788d590baa8d8778631218fe5ecf664786f839f2f93a5ea6bef1b09"
+        },
+        "Day34.svm.gz": {
+          "size": 2075160,
+          "sha256": "db15a70fe058d6ef8cddb7d6489a0f1cd06dd97d36cac3da4d48ba420c747120"
+        },
+        "Day35.svm.gz": {
+          "size": 2152900,
+          "sha256": "0d7e21447c584d0efbcb7c6f4b30adfb6eb00a467dd86444d8f36486b64cfd5c"
+        },
+        "Day36.svm.gz": {
+          "size": 2027131,
+          "sha256": "7f5301eb2df8c24d2b5c15d712e1e3b20ba47e2317936550c810f35d08d4e3f7"
+        },
+        "Day37.svm.gz": {
+          "size": 2022556,
+          "sha256": "e1ca93102fa86a21d7c9a224aa818f8fd7913885c1811536689c938d50e7bdfd"
+        },
+        "Day38.svm.gz": {
+          "size": 2168095,
+          "sha256": "7c90c9d74e3b3f8e12da7cf1a79c462df2bc66ebe26a98168a1ac1910f232dd0"
+        },
+        "Day39.svm.gz": {
+          "size": 2109614,
+          "sha256": "836ae8ced5e0084dd70ca82eb5d995935143a776b067410a0986eb5b9991affe"
+        },
+        "Day40.svm.gz": {
+          "size": 2075252,
+          "sha256": "42e60318415f4de2d4b8a98a0e8872171b13a2b3cf4f90353a0e8c097ef1a171"
+        },
+        "Day41.svm.gz": {
+          "size": 2059144,
+          "sha256": "77ca9f1f7c9ec058d37d4b08db518524189aa5d282f07a28eac25d696999e949"
+        },
+        "Day42.svm.gz": {
+          "size": 2080163,
+          "sha256": "8fc48968287800bebce52a5d8366bb95af8a2b888876e6d2697548c0d5d2a7b8"
+        },
+        "Day43.svm.gz": {
+          "size": 2045639,
+          "sha256": "a508933c0e688d8f30673ead43738377e1199ccf60c275e8b5806f3df921fb39"
+        },
+        "Day44.svm.gz": {
+          "size": 2080662,
+          "sha256": "c9932f290bde49c9df8f1ca62b48b1c39012c4dc639d4c6d31ad942b0918cdb2"
+        },
+        "Day45.svm.gz": {
+          "size": 15162,
+          "sha256": "00e3aa2b0d213d050ec1faa5c15dcd744c6bce65056b023d2b1052fbdf4dcb65"
+        },
+        "Day46.svm.gz": {
+          "size": 2062524,
+          "sha256": "b7c381ca20ac503054176511bbc31cb73f72fc494933e71174b7678210945627"
+        },
+        "Day47.svm.gz": {
+          "size": 2036098,
+          "sha256": "81eb1d4f8c52603a382984419776c1c35a8d61f7f139c75fb0798ee56e47fbfb"
+        },
+        "Day48.svm.gz": {
+          "size": 2129027,
+          "sha256": "d63aff3a5247fc23d592ec745a90c6972e6d27639944e6120cab4d2ecbe2a603"
+        },
+        "Day49.svm.gz": {
+          "size": 2155855,
+          "sha256": "9be755813350421e874eea2ddd177e816f1355cef43fb1b40478686e3c3a5ce4"
+        },
+        "Day50.svm.gz": {
+          "size": 2152603,
+          "sha256": "2121db2e90f9c8c3915222f5b01742d413427d4114aa7386144343a080f7b720"
+        },
+        "Day51.svm.gz": {
+          "size": 1971519,
+          "sha256": "f3e0c08a16915907405dcb29dbbcd22d4d5e436467d00e9b80e1ff14954f9ed7"
+        },
+        "Day52.svm.gz": {
+          "size": 2050201,
+          "sha256": "0dcd71d424c9da1b731a14a88adab14f4982c7453a098bca67fd30049df2b221"
+        },
+        "Day53.svm.gz": {
+          "size": 2169469,
+          "sha256": "fb15ff11ab86044a3b148e9a289277498ffc3162acb175c84865911a9d8aacae"
+        },
+        "Day54.svm.gz": {
+          "size": 2161774,
+          "sha256": "7302bb96bd1c5476e0ac38f445260d405bab5220f59cda73f5a21d99f38b2346"
+        },
+        "Day55.svm.gz": {
+          "size": 2075236,
+          "sha256": "b4afc21f72a038d948d050fb39e6db5f4064e1091fabd6cd46518b3fc7d77d6d"
+        },
+        "Day56.svm.gz": {
+          "size": 2123463,
+          "sha256": "bf284d4eacfda32915b6fd8f4d7323a5b0b78fddaf2da4b895498cf7bfdcf3ba"
+        },
+        "Day57.svm.gz": {
+          "size": 2039309,
+          "sha256": "df05e0fbe9013e8b5b2c9e180abe2f882d05d1a74b239d58a0bb70dcfd13ef47"
+        },
+        "Day58.svm.gz": {
+          "size": 2015182,
+          "sha256": "98d88d4f7d8580b42e1552cb67eaf283e2e40e25d95c17231c62f0cad8e9df17"
+        },
+        "Day59.svm.gz": {
+          "size": 2070696,
+          "sha256": "05f793d5bee849fcf6c5427b0b352f1438c0cf74da5a689c69fdb27a82535119"
+        },
+        "Day60.svm.gz": {
+          "size": 2100014,
+          "sha256": "a47fcd66034688358a6ff95897b560db765b2d25ff25af4087a03e88e37b574f"
+        },
+        "FeatureTypes": {
+          "size": 212,
+          "sha256": "3f2a1cb20b7954565aad6bdf288c8631f3b5f6d45642259136c16fbe955d9739"
+        },
+        "README.md": {
+          "size": 2089,
+          "sha256": "f324fe43b7e2c38b979459fd7f76d6d050267b0452ea2cc76ea36d13c9bbd5d4"
+        },
+        "SHA256SUMS": {
+          "size": 4964,
+          "sha256": "1a863d7f76e7ca5d91223fdff136c1e6173003632857ee53e622c4e91a846722"
+        }
+      }
+    },
+    {
+      "id": 24591026,
+      "doi": "10.5281/zenodo.24591026",
+      "url": "https://zenodo.org/records/24591026",
+      "title": "URL Reputation (UCI), part 2 of 2, days 61-120",
+      "state": "published",
+      "publication_date": "2026-11-27",
+      "access": {
+        "record": "public",
+        "files": "public"
+      },
+      "files": {
+        "Day61.svm.gz": {
+          "size": 2095935,
+          "sha256": "98b96c573f1fc343238f4b0d2f5e18b505f31927754e142eae70a6dedfe95eb5"
+        },
+        "Day62.svm.gz": {
+          "size": 2192156,
+          "sha256": "1118c0e1e12c58b451a9d90bc020c9644bd3842ec6d633cbcec500f56a863244"
+        },
+        "Day63.svm.gz": {
+          "size": 2177822,
+          "sha256": "985f9a61bd69c8b57f3eed26aafaa3ad670ef7eea9ec2a6d91acac5df8b12670"
+        },
+        "Day64.svm.gz": {
+          "size": 2180146,
+          "sha256": "34de116ae6dd17e26dbd0651515c91c5e0067486ebe28dd502bc55ca6abcbd01"
+        },
+        "Day65.svm.gz": {
+          "size": 2195689,
+          "sha256": "9b432fc6c37eb8c947088f920d7a19d9e8d2c456b16cd9f9197e106ac7e64467"
+        },
+        "Day66.svm.gz": {
+          "size": 2127804,
+          "sha256": "b563ed1f270c693f8815633cf95c143ef393a929a5352b2849cca2f1c4c87189"
+        },
+        "Day67.svm.gz": {
+          "size": 2137961,
+          "sha256": "ab0859759860f2c47b60511dc05953baed729723c1c9039ddf0aa5767a754981"
+        },
+        "Day68.svm.gz": {
+          "size": 2099392,
+          "sha256": "9b0dd485ea39666bdeca92f92c73b13467fc46e3fe2003f47697b53284305a20"
+        },
+        "Day69.svm.gz": {
+          "size": 2147408,
+          "sha256": "c93f5a1b525532375aa5e674d84fea6af5255f456ae7684cd7365178dcc9ae48"
+        },
+        "Day70.svm.gz": {
+          "size": 2160167,
+          "sha256": "e4d97a238f02381975041896e31c3a2b0e538a1e76c833aa95aae3295cd18348"
+        },
+        "Day71.svm.gz": {
+          "size": 2087292,
+          "sha256": "91e3140023ba394169bab7625cc6e78273af5c3a2a7873fa02d2aa4946997538"
+        },
+        "Day72.svm.gz": {
+          "size": 2071727,
+          "sha256": "2e4a70c2028067cf1e4b90905016fa3681e100ce04f9af8fbce8d35d9220a152"
+        },
+        "Day73.svm.gz": {
+          "size": 2072854,
+          "sha256": "5f34ad6b4f03a7a0722258c26718a88dd7de6be6707c1476496114a9eadcceb5"
+        },
+        "Day74.svm.gz": {
+          "size": 2077834,
+          "sha256": "25f6e9b1de86b072163335e241ac8c16190096a61358ba65117be25ec2eb787d"
+        },
+        "Day75.svm.gz": {
+          "size": 2080901,
+          "sha256": "bfb2747f9eecbe9f658d792ad9389b2ca563bed2669916b997e97ac14e8e8e68"
+        },
+        "Day76.svm.gz": {
+          "size": 2005324,
+          "sha256": "2c64b272975b8e1974d9a4e5a72d87c692a80a5092ee812cc3e7fdfce84af5ab"
+        },
+        "Day77.svm.gz": {
+          "size": 2007641,
+          "sha256": "e989e43115c89abde1df501bc1e6d083500cf76530416234328a5682aaef8b6b"
+        },
+        "Day78.svm.gz": {
+          "size": 2045629,
+          "sha256": "f43ab1e7406ebfc516bcbf1fa882f3606b0f7432b0d53c4a573f43d8e59eeb52"
+        },
+        "Day79.svm.gz": {
+          "size": 2001565,
+          "sha256": "2feb31232eeaf355f5e5e6e404adba5c7f4b110385479063be1005eba0d77704"
+        },
+        "Day80.svm.gz": {
+          "size": 2036592,
+          "sha256": "a34f80e482746f7ec92941e0eb6f16b505c61472439e0bc764b3fa57ff4c6291"
+        },
+        "Day81.svm.gz": {
+          "size": 2068209,
+          "sha256": "f8e2a958565e563375ea3bf5c0002ebc5201116071afbfe25c0ba578f4b60116"
+        },
+        "Day82.svm.gz": {
+          "size": 2002724,
+          "sha256": "2b4d719f8481e427f83eb3808b55780403d51a2e95ba6e3fd6875e08dad75d39"
+        },
+        "Day83.svm.gz": {
+          "size": 2056997,
+          "sha256": "0b0b1889d3f945931fbe631d7ef17638f82d85f28a158a9fc9fafb2228b7fdae"
+        },
+        "Day84.svm.gz": {
+          "size": 1963283,
+          "sha256": "9341a63ed04513fe481036ac61142f89c7d40f9bfd76d3c8a898cb382e38fd90"
+        },
+        "Day85.svm.gz": {
+          "size": 2002441,
+          "sha256": "32bbdf45802221dd373d97dd06210efa21b016be4434f59084dbea926b98164b"
+        },
+        "Day86.svm.gz": {
+          "size": 2022114,
+          "sha256": "e85742c96f488cb3678a8b623da06bef59f645c596c702dd7b4be1a046b0879d"
+        },
+        "Day87.svm.gz": {
+          "size": 1998372,
+          "sha256": "18c0a4f266c35e5eb6c3177428063f08d40de6842237288afbc634794a875e9f"
+        },
+        "Day88.svm.gz": {
+          "size": 1987672,
+          "sha256": "5ce17132983fef16b99356988dd30510c02121dfd760956a03757a1b26e7302e"
+        },
+        "Day89.svm.gz": {
+          "size": 1987394,
+          "sha256": "464ea62c07dee6bd440c654b00bf45c7b95462f7e8d50df8763f72eae561b783"
+        },
+        "Day90.svm.gz": {
+          "size": 1963297,
+          "sha256": "b50a5fd3b3ef54dada79a763cb0fd131cfcd247cde6149e5135825a39ffdcaa5"
+        },
+        "Day91.svm.gz": {
+          "size": 1982559,
+          "sha256": "09fe7c782ec45f9ad7f3985ec09df579d4621cb14363ff5ff7fa3fec23f27c47"
+        },
+        "Day92.svm.gz": {
+          "size": 2010272,
+          "sha256": "a873d5f915ef60fa7116e2bc733e7eaf5707e68068776af3f6f794a209cfca6a"
+        },
+        "Day93.svm.gz": {
+          "size": 2028268,
+          "sha256": "aa914c5b6eeff6f49a9695c41e3b1b95d5e415802d0dfeef4a58360086e20f83"
+        },
+        "Day94.svm.gz": {
+          "size": 1984581,
+          "sha256": "2b71963a6f7a5cdc8291b97db6d65c29fef423be7b1fc24a9714c67bc8ba7942"
+        },
+        "Day95.svm.gz": {
+          "size": 1773190,
+          "sha256": "12d4ce9c31be8a91037452792e0fe17bd9f4bc3d49848c4d0632c9085676256d"
+        },
+        "Day96.svm.gz": {
+          "size": 2037764,
+          "sha256": "bea4510d558ab05c1ab9edecdcce4846b353d2cb9b98e5b2d924a8e81ae8f5c7"
+        },
+        "Day97.svm.gz": {
+          "size": 2100587,
+          "sha256": "b46f4a0afd077a887776892ed1ae191e8f0755300a11e7c08e4dbb9ff847def7"
+        },
+        "Day98.svm.gz": {
+          "size": 2095109,
+          "sha256": "7361be566452e6d5342b557e3f89824effca7de1ece03198fbf447a429ad7b39"
+        },
+        "Day99.svm.gz": {
+          "size": 2162420,
+          "sha256": "96da8523b120efecb9f491bb5ae78b74f33ee90119cd02bc88c232710befb873"
+        },
+        "Day100.svm.gz": {
+          "size": 2128890,
+          "sha256": "1339e363ea00995db4143fe9f221ea4d0557c9a778a4c114a05362699bc04942"
+        },
+        "Day101.svm.gz": {
+          "size": 2136629,
+          "sha256": "5c9628694a7394d1aea0958aff89d45c9c2ee32fa65b50c5b163ada4c48d3c6a"
+        },
+        "Day102.svm.gz": {
+          "size": 2132849,
+          "sha256": "0eb90ef25b3d4e1a55a5f118ee53ac9e5c0e054a3f0dafbfe18a57f10c1549d9"
+        },
+        "Day103.svm.gz": {
+          "size": 2051807,
+          "sha256": "90d794f903d5bd7e5c51369caed79b6f0a37474db6947d2f192dc8a56c81e68f"
+        },
+        "Day104.svm.gz": {
+          "size": 1959490,
+          "sha256": "a5064fd31c3cd88251c534dbf85d29404b0fea6a716990b4d0f3d67e94dd1e1f"
+        },
+        "Day105.svm.gz": {
+          "size": 2025088,
+          "sha256": "68df154b56c1b3115d18c355ac1a0d222f2f049e6c61c8d5eb080b12171c4189"
+        },
+        "Day106.svm.gz": {
+          "size": 1982751,
+          "sha256": "1d8b890ff27b14d134e8462b1be8c43626d07db5ab279ac35a123bb859edc54b"
+        },
+        "Day107.svm.gz": {
+          "size": 1970553,
+          "sha256": "9e80717620c0fe52a142c707095a880629738e6ef0ae0fb32c2b23b9082485b9"
+        },
+        "Day108.svm.gz": {
+          "size": 2044886,
+          "sha256": "1ff24b6efdd1c23e310c73d42b98dafeb27384636b2019c0a3ee5cf2fe4a4669"
+        },
+        "Day109.svm.gz": {
+          "size": 2041670,
+          "sha256": "9640c3eca18b8c16c2f3ea67e2c1c21c892adcaa77754bfe9c7dbf9b69e15f1a"
+        },
+        "Day110.svm.gz": {
+          "size": 2022640,
+          "sha256": "a81ae1ba59f3e19c8032be4f84ff0ff130f1881e7229a810f59fce2b75cb5ff7"
+        },
+        "Day111.svm.gz": {
+          "size": 2104714,
+          "sha256": "eb0f5eeb5e2e0cc77e19e59924f73b274f59deeaa9d8e89db0ebd916529ffdde"
+        },
+        "Day112.svm.gz": {
+          "size": 2084587,
+          "sha256": "3f8f7d47ea8aace06ab7750bcf4d46b0da092b3ff9c23762d3905aff160847e3"
+        },
+        "Day113.svm.gz": {
+          "size": 2103003,
+          "sha256": "65136aff4e820f7ebe55ea954476b6c27f2ab6c45630fa6cf365897509b9bb49"
+        },
+        "Day114.svm.gz": {
+          "size": 2181060,
+          "sha256": "c7eb738228c66ce7a59f4be6140e27992199ff6baa5464224e2b106d658924bb"
+        },
+        "Day115.svm.gz": {
+          "size": 2097310,
+          "sha256": "a2b51868f505e823e5d4701caf5199d5b772fb08990dd6f2c2c7bf63f678179a"
+        },
+        "Day116.svm.gz": {
+          "size": 2132374,
+          "sha256": "2f4e5e9db07042b0830f6f3a9f4bb627968614687b2377e5013741415e136874"
+        },
+        "Day117.svm.gz": {
+          "size": 2078571,
+          "sha256": "62fcab236abf178a979d525a35575bb55c5e535ef1236800fd8814164e6cd6be"
+        },
+        "Day118.svm.gz": {
+          "size": 1986548,
+          "sha256": "cb966a145484bc617630398ad8e8bdf269570578532b2be5544a25937896e547"
+        },
+        "Day119.svm.gz": {
+          "size": 1847019,
+          "sha256": "ee4b5b8ed9d60e17d4d856b59c7b7eeb04c6a5054e4aa98483eb63e1f5c6c972"
+        },
+        "Day120.svm.gz": {
+          "size": 1903359,
+          "sha256": "3fd076d8786f51022534da908612d61bfce4512c6a51d11b858f8e9f27596692"
+        },
+        "FeatureTypes": {
+          "size": 212,
+          "sha256": "3f2a1cb20b7954565aad6bdf288c8631f3b5f6d45642259136c16fbe955d9739"
+        },
+        "README.md": {
+          "size": 2091,
+          "sha256": "e5e1e6f8eee1ec733d6497ea2bced8df891ccb24637db86bdb74ab8b6ffabb9a"
+        },
+        "SHA256SUMS": {
+          "size": 4916,
+          "sha256": "7b02581422a01c905c5fd2aac5903224fd4c5c5410828161ef66b804477c7ea7"
+        }
+      }
+    }
+  ]
+}

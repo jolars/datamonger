@@ -206,7 +206,7 @@ UCI publishes these editions under CC BY 4.0.
   [Sonar, Mines vs. Rocks](https://archive.ics.uci.edu/dataset/151/connectionist+bench+sonar+mines+vs+rocks)
 - [ ] `SUSY`. Use the original simulated events.
   [SUSY](https://archive.ics.uci.edu/dataset/279/susy)
-- [ ] `url`. Preserve the anonymized URL Reputation day files and labels.
+- [x] `url`. Preserve the anonymized URL Reputation day files and labels.
   [URL Reputation](https://archive.ics.uci.edu/dataset/187/url+reputation)
 - [ ] `vehicle`.
   [Statlog Vehicle Silhouettes](https://archive.ics.uci.edu/dataset/149/statlog+vehicle+silhouettes)
