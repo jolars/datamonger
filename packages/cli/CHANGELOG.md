@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.8.0](https://github.com/jolars/datamonger/compare/datamonger-v0.7.0...datamonger-v0.8.0) (2026-11-27)
+
+### Features
+
+- support schema 9 in the CLI ([`55d35b5`](https://github.com/jolars/datamonger/commit/55d35b578d44945f4ce9f88a20ec47ff7f90f462))
+
 ## [0.7.0](https://github.com/jolars/datamonger/compare/datamonger-v0.6.0...datamonger-v0.7.0) (2026-11-23)
 
 ### Features
