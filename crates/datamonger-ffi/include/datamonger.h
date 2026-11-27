@@ -85,6 +85,10 @@ DM_API DmResult *dm_decode_libsvm_v2(DmArtifact, DmLibsvmOptions, DmBytes prefix
 DM_API DmResult *dm_decode_libsvm_split_v2(DmArtifact train, DmArtifact test, DmLibsvmOptions);
 DM_API DmResult *dm_decode_svmlight_ranking(DmArtifact, DmLibsvmOptions, uint64_t index_base);
 DM_API DmResult *dm_decode_libsvm_multilabel(DmArtifact, DmLibsvmMultilabelOptions);
+/* Inputs are label assignments, then training vector shards, then test shards. */
+DM_API DmResult *dm_decode_sparse_label_join(const DmArtifact *inputs, size_t input_count,
+                                           size_t train_shards, uint64_t feature_count,
+                                           uint64_t label_count);
 /* emit_bytes=0 streams the digest without allocating a canonical byte buffer;
  * emit_bytes=1 also returns canonical bytes. Components are copied for the call. */
 DM_API DmResult *dm_canonical(const DmComponent *, size_t count, uint32_t emit_bytes);

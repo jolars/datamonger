@@ -434,6 +434,29 @@ pub unsafe extern "C" fn dm_decode_libsvm_multilabel(
     })
 }
 #[no_mangle]
+pub unsafe extern "C" fn dm_decode_sparse_label_join(
+    inputs: *const DmArtifact,
+    input_count: usize,
+    train_shards: usize,
+    feature_count: u64,
+    label_count: u64,
+) -> *mut DmResult {
+    boundary(|| {
+        let inputs = unsafe { borrow(inputs, input_count, ErrorKind::UnsupportedDecoder)? };
+        let readers = inputs
+            .iter()
+            .map(|&input| unsafe { reader(input) })
+            .collect::<Result<_>>()?;
+        Ok(DmResult::new(datamonger_core::decode_sparse_label_join(
+            readers,
+            train_shards,
+            feature_count,
+            label_count,
+            &mut || Ok(()),
+        )?))
+    })
+}
+#[no_mangle]
 pub unsafe extern "C" fn dm_decode_svmlight_ranking(
     artifact: DmArtifact,
     options: DmLibsvmOptions,
