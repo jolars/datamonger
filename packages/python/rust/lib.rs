@@ -263,6 +263,34 @@ fn decode_libsvm_multilabel(
 }
 
 #[pyfunction]
+fn decode_sparse_label_join(
+    py: Python<'_>,
+    inputs: Vec<(PathBuf, String)>,
+    train_shards: usize,
+    feature_count: u64,
+    label_count: u64,
+) -> PyResult<Vec<Py<PyAny>>> {
+    let inputs = inputs
+        .into_iter()
+        .map(|(path, coding)| Ok((path, compression(&coding)?)))
+        .collect::<PyResult<Vec<_>>>()?;
+    let components = run(py, |control| {
+        let readers = inputs
+            .into_iter()
+            .map(|(path, coding)| reader(path, coding))
+            .collect::<core::Result<_>>()?;
+        core::decode_sparse_label_join(
+            readers,
+            train_shards,
+            feature_count,
+            label_count,
+            &mut || control.checkpoint(),
+        )
+    })?;
+    to_python(py, components)
+}
+
+#[pyfunction]
 fn decode_svmlight_ranking(
     py: Python<'_>,
     path: PathBuf,
@@ -492,6 +520,7 @@ fn _native(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(decode_delimited, module)?)?;
     module.add_function(wrap_pyfunction!(decode_libsvm, module)?)?;
     module.add_function(wrap_pyfunction!(decode_svmlight_ranking, module)?)?;
+    module.add_function(wrap_pyfunction!(decode_sparse_label_join, module)?)?;
     module.add_function(wrap_pyfunction!(decode_libsvm_multilabel, module)?)?;
     module.add_function(wrap_pyfunction!(canonical_bytes, module)?)?;
     module.add_function(wrap_pyfunction!(canonical_sha256, module)?)?;

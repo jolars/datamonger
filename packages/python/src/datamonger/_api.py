@@ -58,6 +58,11 @@ from datamonger._registry import (
     resolve_dataset,
 )
 from datamonger._selection import active_registry
+from datamonger._sparse_labels import decode_sparse_labels
+from datamonger._sparse_labels import input_roles as sparse_label_input_roles
+from datamonger._sparse_labels import (
+    validate_artifacts as validate_sparse_label_artifacts,
+)
 from datamonger._splits import assemble_splits, split_recipes
 from datamonger._validate import (
     require_array,
@@ -531,7 +536,7 @@ def _prepare_graph_representation(
     decoder_version = representation.get("decoder_version")
     modality = "graph" if decoder == "graph-tables" else "hypergraph"
     if (
-        dataset.get("schema_version") != 8
+        dataset.get("schema_version") not in (8, 9)
         or dataset.get("modality") != modality
         or (type(decoder_version) is not int or decoder_version != 1)
     ):
@@ -552,6 +557,26 @@ def _prepare_representation(
 ) -> tuple[str, tuple[Mapping[str, Any], ...], Mapping[str, Any], tuple[str, ...]]:
     decoder = representation.get("decoder")
     decoder_version = representation.get("decoder_version")
+    if decoder == "sparse-label-join":
+        if (
+            dataset.get("schema_version") != 9
+            or dataset.get("modality") != "tabular"
+            or type(decoder_version) is not int
+            or decoder_version != 1
+        ):
+            raise UnsupportedDecoderError(
+                "sparse label joins require manifest schema 9"
+            )
+        options = _object(representation.get("options"), "representation.options")
+        roles = sparse_label_input_roles(options)
+        artifacts = _artifacts_for_representation(dataset, representation, roles)
+        validate_sparse_label_artifacts(artifacts)
+        return (
+            decoder,
+            artifacts,
+            options,
+            tuple(artifact["compression"] for artifact in artifacts),
+        )
     if (
         type(decoder_version) is not int
         or decoder_version not in (1, 2)
@@ -569,20 +594,20 @@ def _prepare_representation(
             "LIBSVM split versions 1 and 2"
         )
 
-    if decoder_version == 2 and dataset.get("schema_version") not in (5, 6, 7, 8):
+    if decoder_version == 2 and dataset.get("schema_version") not in (5, 6, 7, 8, 9):
         raise UnsupportedDecoderError(
             "decoder version 2 requires manifest schema 5 or 6"
         )
 
     if decoder == "libsvm-multilabel" and (
-        decoder_version != 1 or dataset.get("schema_version") not in (6, 7, 8)
+        decoder_version != 1 or dataset.get("schema_version") not in (6, 7, 8, 9)
     ):
         raise UnsupportedDecoderError(
             "multilabel LIBSVM version 1 requires manifest schema 6"
         )
 
     if decoder == "svmlight-ranking" and (
-        decoder_version != 1 or dataset.get("schema_version") not in (7, 8)
+        decoder_version != 1 or dataset.get("schema_version") not in (7, 8, 9)
     ):
         raise UnsupportedDecoderError(
             "SVMLight ranking version 1 requires manifest schema 7"
@@ -750,7 +775,7 @@ def fetch_data(
     recipes: tuple[Mapping[str, Any], ...] = ()
     decoder = representation.get("decoder")
     if decoder == "named-splits":
-        if dataset.get("schema_version") not in (4, 5, 6, 7, 8):
+        if dataset.get("schema_version") not in (4, 5, 6, 7, 8, 9):
             raise UnsupportedDecoderError("named-splits requires manifest schema 4")
         recipes = split_recipes(representation)
         inputs = _object(representation.get("inputs"), "representation.inputs")
@@ -779,6 +804,7 @@ def fetch_data(
             | DecodedMultilabelSparseDataset
             | DecodedRankingSparseDataset
             | DecodedGraph
+            | DecodedSplits
         ] = []
         for child_index, (decoder, child_artifacts, options, compressions) in enumerate(
             setups
@@ -789,6 +815,9 @@ def fetch_data(
                 )
                 for artifact in child_artifacts
             )
+            if decoder == "sparse-label-join":
+                children.append(decode_sparse_labels(paths, options, compressions))
+                continue
             if decoder in ("graph-tables", "hif"):
                 children.append(decode_graph(decoder, paths, options, compressions))
                 continue

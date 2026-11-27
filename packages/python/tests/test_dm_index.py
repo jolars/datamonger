@@ -1058,7 +1058,7 @@ def test_collection_preprocessing_covers_both_stages_without_changing_identity()
     collection, _ = dm_index.load_collection(ROOT)
     for path in collection["manifests"]:
         dataset = dm_index.load_yaml(ROOT / path)
-        assert dataset["schema_version"] in {3, 4, 5, 6, 7, 8}
+        assert dataset["schema_version"] in {3, 4, 5, 6, 7, 8, 9}
         assert set(dataset["preprocessing"]) == {"upstream", "datamonger"}
         identity = dataset["source"], dataset["name"], dataset["version"]
         if identity in snapshots:

@@ -124,6 +124,10 @@ class MultilabelSparseDataset:
     features: sparse.csr_matrix
     response: sparse.csr_matrix
     label_index_base: int
+    document_id: npt.NDArray[np.int64] | None = None
+    """Document IDs in row order when returned by a sparse label join."""
+    label_codes: tuple[str, ...] | None = None
+    """Label codes in response column order when supplied by the decoder."""
 
 
 @dataclass(frozen=True)

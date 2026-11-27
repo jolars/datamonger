@@ -301,3 +301,45 @@ def test_ranking_named_splits(tmp_path: Path) -> None:
     older["schema_version"] = 6
     with pytest.raises(ValueError, match="manifest"):
         dm_index.validate_manifest(older)
+
+
+def test_sparse_label_join_public_fetch(tmp_path: Path) -> None:
+    from datamonger import MultilabelSparseDataset
+
+    case = json.loads((CORPUS / "sparse-label-join.json").read_bytes())
+    manifest = case["manifest"]
+    dm_index.validate_manifest(manifest)
+    registry = seed(case, tmp_path, "gzip")
+    result = fetch_data(
+        "conformance:sparse-label-join@1",
+        registry=registry,
+        cache_dir=tmp_path,
+        offline=True,
+        return_info=True,
+    )
+    assert isinstance(result.data, DatasetSplits)
+    assert list(result.data) == ["train", "test"]
+    train, test = result.data["train"], result.data["test"]
+    assert isinstance(train, MultilabelSparseDataset)
+    assert isinstance(test, MultilabelSparseDataset)
+    assert train.label_codes == test.label_codes == ("A", "Z")
+    assert train.document_id is not None and train.document_id.tolist() == [20, 10]
+    assert test.document_id is not None and test.document_id.tolist() == [30]
+    assert train.features.toarray().tolist() == [[0, 0.125, 0, 0], [0.5, 0, 0, 0]]
+    assert train.response.toarray().tolist() == [[0, 1], [1, 1]]
+    assert test.features.nnz == 0
+    assert test.response.toarray().tolist() == [[1, 0]]
+    assert result.info.verification == "decoded"
+    assert set(result.info.artifact_digests) == set(case["artifact_paths"])
+
+    manifest["representation"]["options"]["test"] = ["train_one"]
+    with pytest.raises(ValueError, match="distinct inputs"):
+        dm_index.validate_manifest(manifest)
+    invalid_registry = seed(case, tmp_path)
+    with pytest.raises(UnsupportedDecoderError, match="distinct"):
+        fetch_data(
+            "conformance:sparse-label-join@1",
+            registry=invalid_registry,
+            cache_dir=tmp_path,
+            offline=True,
+        )

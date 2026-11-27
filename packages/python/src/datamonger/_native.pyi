@@ -42,3 +42,9 @@ def decode_hif(
         tuple[list[tuple[str, str]], bool],
     ],
 ) -> list[LogicalComponent]: ...
+def decode_sparse_label_join(
+    inputs: Sequence[tuple[Path, str]],
+    train_shards: int,
+    feature_count: int,
+    label_count: int,
+) -> list[LogicalValueComponent]: ...
