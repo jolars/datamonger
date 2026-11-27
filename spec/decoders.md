@@ -361,3 +361,46 @@ Canonical form 1 starts with a length-one, valid boolean vector named
 `nodes/`, then `edges/` for graphs or `hyperedges/` and `incidences/` for
 hypergraphs. Public tables expose the original column names. Turning off
 decoded verification still requires verified artifact bytes and valid topology.
+
+## Sparse label join version 1
+
+Manifest schema 9 supports `sparse-label-join` version 1 for sparse feature
+vectors and multilabel assignments that share document IDs.
+
+The options are `feature_count` and `label_count` (positive integers at most
+2^53 − 1), plus nonempty ordered arrays `train` and `test`. The arrays name
+the vector input roles in shard order. The input roles consist of `labels` and
+the roles in those arrays. Roles and their referenced artifacts must be
+distinct.
+
+- The `label-assignments` artifact contains three fields per record,
+  `label_code document_id 1`. Codes contain one or more ASCII letters or
+  digits. The number of distinct codes must equal `label_count`.
+- Each `id-sparse` vector record contains a document ID followed by zero or
+  more LIBSVM v2 feature fields. Feature indices are one-based. Document IDs
+  in both formats are positive signed-64-bit decimal integers with no leading
+  zero. Fields are separated by ASCII whitespace within a physical line.
+  Records use LF or CRLF, and the final line terminator may be omitted.
+
+Each ID must occur in exactly one vector record across all shards and have at
+least one assignment. Repeated document–label pairs and assignment IDs
+without vectors are errors. Label columns follow lexicographic code order.
+Assigned labels have value one and absent labels are structural zeros. Vector
+rows retain their original order within each shard.
+
+Canonical form 1 encodes the following components in order.
+
+| Component | Logical type and shape |
+| --- | --- |
+| `train/features` | float64 CSR with `feature_count` columns |
+| `train/response` | float64 CSR with `label_count` columns |
+| `train/document_id` | int64 vector aligned with training rows |
+| `test/features` | float64 CSR with `feature_count` columns |
+| `test/response` | float64 CSR with `label_count` columns |
+| `test/document_id` | int64 vector aligned with test rows |
+| `label_codes` | string vector aligned with response columns |
+
+Clients return named training and test splits. Each split exposes
+`features`, `response`, `label_index_base` (0), `document_id`, and
+`label_codes`. Julia and R use one-based native matrix indexing. Tasks refer
+to the feature and response matrices by split.
