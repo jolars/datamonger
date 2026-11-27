@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.0](https://github.com/jolars/datamonger/compare/registry-v1.8.0...registry-v1.9.0) (2026-11-27)
+
+### Features
+
+- **registry:** add RCV1-v2 topics ([`5d8c85f`](https://github.com/jolars/datamonger/commit/5d8c85f49eb543282a7d86c42b00c0ec399be3ae))
+- **registry:** add UCI URL Reputation dataset ([`fdf2fef`](https://github.com/jolars/datamonger/commit/fdf2fefa19c28ec333c5d9fd7dda7a69bef87eff))
+
 ## [1.8.0](https://github.com/jolars/datamonger/compare/registry-v1.7.0...registry-v1.8.0) (2026-11-22)
 
 ### Features
