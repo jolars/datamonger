@@ -1,11 +1,11 @@
 {
   "manifest-version": 1,
   "path": "packages/python",
-  "baseline-sha": "9ec8565dbdec6e722e7c2614499339e013d8ce4e",
+  "baseline-sha": "acb7aab8f660f7c2483e2adde84d87fa981f4c00",
   "release-target": {
     "path": "packages/python",
-    "version": "0.4.0",
-    "tag": "datamonger-python-v0.4.0"
+    "version": "0.5.0",
+    "tag": "datamonger-python-v0.5.0"
   },
   "release-branch": "versionary/release-datamonger-python-c929c6864141"
 }
