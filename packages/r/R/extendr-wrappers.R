@@ -7,6 +7,8 @@ NULL
 
 dm_decode <- function(decoder, paths, compressions, options, hash) .Call(wrap__dm_decode, decoder, paths, compressions, options, hash)
 
+dm_supports_sparse_label_join <- function() .Call(wrap__dm_supports_sparse_label_join)
+
 dm_supports_libsvm_v2 <- function() .Call(wrap__dm_supports_libsvm_v2)
 
 dm_supports_libsvm_multilabel <- function() .Call(wrap__dm_supports_libsvm_multilabel)

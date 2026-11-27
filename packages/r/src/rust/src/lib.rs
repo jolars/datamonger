@@ -387,6 +387,21 @@ fn dm_decode(
                 &delimited_options(&options)?,
                 &mut control,
             )?,
+            #[cfg(sparse_label_join)]
+            "sparse-label-join" => {
+                let readers = paths
+                    .iter()
+                    .zip(&compressions)
+                    .map(|(path, coding)| reader(path, coding))
+                    .collect::<core::Result<_>>()?;
+                core::decode_sparse_label_join(
+                    readers,
+                    dimension(&options, "train_shards")? as usize,
+                    dimension(&options, "feature_count")?,
+                    dimension(&options, "label_count")?,
+                    &mut control,
+                )?
+            }
             "graph-tables" if paths.len() == 2 => {
                 let nodes = core::decode_delimited_with_control(
                     reader(&paths[0], &compressions[0])?,
@@ -544,9 +559,16 @@ fn dm_supports_svmlight_ranking() -> bool {
     cfg!(local_core_v2)
 }
 
+// Report whether the linked core exposes the sparse label join decoder.
+#[extendr]
+fn dm_supports_sparse_label_join() -> bool {
+    cfg!(sparse_label_join)
+}
+
 extendr_module! {
     mod datamonger;
     fn dm_decode;
+    fn dm_supports_sparse_label_join;
     fn dm_supports_libsvm_v2;
     fn dm_supports_libsvm_multilabel;
     fn dm_supports_svmlight_ranking;

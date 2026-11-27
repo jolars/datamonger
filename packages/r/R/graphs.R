@@ -9,7 +9,7 @@
   graph <- identical(decoder, "graph-tables")
   modality <- if (graph) "graph" else "hypergraph"
   fail <- function(message) .abort_category("unsupported-decoder", message)
-  if (!identical(dataset$schema_version, 8L) ||
+  if (!(dataset$schema_version %in% c(8L, 9L)) ||
       !identical(dataset$modality, modality) ||
       !identical(representation$decoder_version, 1L)) {
     fail("graph and HIF recipes require manifest schema 8")

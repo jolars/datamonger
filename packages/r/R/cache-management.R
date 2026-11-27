@@ -27,7 +27,8 @@
         identical(parsed$schema_version, 5L) ||
         identical(parsed$schema_version, 6L) ||
         identical(parsed$schema_version, 7L) ||
-        identical(parsed$schema_version, 8L))
+        identical(parsed$schema_version, 8L) ||
+        identical(parsed$schema_version, 9L))
   ) {
     return(list(release = NULL, references = list()))
   }

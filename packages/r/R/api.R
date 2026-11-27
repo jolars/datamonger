@@ -383,8 +383,12 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
     return(.graph_setup(dataset, representation))
   }
 
+  if (identical(decoder, "sparse-label-join")) {
+    return(.sparse_label_setup(dataset, representation))
+  }
+
   if (identical(decoder, "named-splits")) {
-    if (!(dataset$schema_version %in% c(4L, 5L, 6L, 7L, 8L))) {
+    if (!(dataset$schema_version %in% c(4L, 5L, 6L, 7L, 8L, 9L))) {
       .abort_category(
         "unsupported-decoder",
         "named-splits requires manifest schema 4"
@@ -430,7 +434,7 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
 
   if (
     identical(representation$decoder_version, 2L) &&
-      !(dataset$schema_version %in% c(5L, 6L, 7L, 8L))
+      !(dataset$schema_version %in% c(5L, 6L, 7L, 8L, 9L))
   ) {
     .abort_category(
       "unsupported-decoder",
@@ -452,7 +456,7 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
   if (identical(decoder, "svmlight-ranking")) {
     if (
       !identical(representation$decoder_version, 1L) ||
-        !(dataset$schema_version %in% c(7L, 8L))
+        !(dataset$schema_version %in% c(7L, 8L, 9L))
     ) {
       .abort_category(
         "unsupported-decoder",
@@ -469,7 +473,7 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
   if (identical(decoder, "libsvm-multilabel")) {
     if (
       !identical(representation$decoder_version, 1L) ||
-        !(dataset$schema_version %in% c(6L, 7L, 8L))
+        !(dataset$schema_version %in% c(6L, 7L, 8L, 9L))
     ) {
       .abort_category(
         "unsupported-decoder",
@@ -582,6 +586,10 @@ list_data <- function(registry = NULL, cache_dir = NULL, offline = FALSE) {
 #' Multilabel results have sparse `features` and `response` matrices and a
 #' `label_index_base`. Source label `k` maps to column
 #' `k - label_index_base + 1`.
+#'
+#' Sparse label joins return named train and test splits. Each split also
+#' contains the row-aligned `document_id` vector and the `label_codes` vector
+#' in response column order.
 #'
 #' Ranking results have class `datamonger_ranking_sparse_dataset` and contain
 #' sparse `features`, a relevance vector `response`, and a row-aligned int64

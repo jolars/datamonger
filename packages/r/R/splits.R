@@ -92,6 +92,10 @@
     ))
   }
 
+  if (identical(setup$decoder, "sparse-label-join")) {
+    return(.decode_sparse_labels(setup, paths, hash))
+  }
+
   if (setup$decoder %in% c("graph-tables", "hif")) {
     return(.decode_graph(setup, paths, hash))
   }

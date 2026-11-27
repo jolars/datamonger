@@ -85,6 +85,10 @@ Multilabel results have sparse \code{features} and \code{response} matrices and 
 \code{label_index_base}. Source label \code{k} maps to column
 \code{k - label_index_base + 1}.
 
+Sparse label joins return named train and test splits. Each split also
+contains the row-aligned \code{document_id} vector and the \code{label_codes} vector
+in response column order.
+
 Ranking results have class \code{datamonger_ranking_sparse_dataset} and contain
 sparse \code{features}, a relevance vector \code{response}, and a row-aligned int64
 vector \code{query_id}.

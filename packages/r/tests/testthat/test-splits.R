@@ -180,3 +180,25 @@ test_that("ranking public fetch verifies row-aligned query IDs", {
     case$manifest$representation$expect$verification[[1]]$digest
   )
 })
+
+test_that("sparse label joins preserve shard order and document IDs", {
+  if (!dm_internal("dm_supports_sparse_label_join")()) {
+    skip("requires a core with sparse label join support")
+  }
+  case <- read_fixture_json("conformance", "sparse-label-join.json")
+  cache_dir <- tempfile("datamonger-sparse-label-join-")
+  registry <- seed_decoder_case(case, cache_dir, "gzip")
+  result <- fetch_data(
+    "conformance:sparse-label-join@1", registry = registry,
+    cache_dir = cache_dir, offline = TRUE, return_info = TRUE
+  )
+  expect_identical(names(result$data), c("train", "test"))
+  expect_equal(as.numeric(result$data$train$document_id), c(20, 10))
+  expect_equal(as.numeric(result$data$test$document_id), 30)
+  expect_identical(result$data$train$label_codes, c("A", "Z"))
+  expect_equal(as.matrix(result$data$train$features), rbind(
+    c(0, 0.125, 0, 0), c(0.5, 0, 0, 0)
+  ))
+  expect_equal(as.matrix(result$data$train$response), rbind(c(0, 1), c(1, 1)))
+  expect_identical(result$info$verification, "decoded")
+})
