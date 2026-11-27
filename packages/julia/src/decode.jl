@@ -196,8 +196,7 @@ function _sparse_label_setup(dataset, representation)
         get(dataset, "modality", nothing) == "tabular" &&
         get(representation, "decoder_version", nothing) === 1 ||
         fail("sparse label joins require manifest schema 9 and decoder version 1")
-    _native_symbol(:dm_abi_version)
-    Libdl.dlsym_e(_NATIVE_LIBRARY[], :dm_decode_sparse_label_join) != C_NULL ||
+    _supports_sparse_label_join() ||
         fail("sparse label joins require an updated native artifact")
     options = get(representation, "options", nothing)
     options isa AbstractDict && Set(keys(options)) == Set(["train", "test", "feature_count", "label_count"]) ||
