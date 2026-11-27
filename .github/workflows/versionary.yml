@@ -63,11 +63,19 @@ jobs:
         with:
           token: ${{ secrets.RELEASE_TOKEN }}
 
-      - name: Request Julia registration
+      - name: Set up Julia for the registration check
+        id: registration-julia
         if: >-
-          steps.versionary.outputs.release_ready == 'true' ||
-          (github.event_name == 'workflow_dispatch' && inputs.retry-registration &&
-           steps.versionary.outputs.external_release_targets != '[]')
+          steps.versionary.outputs.external_release_targets != '' &&
+          steps.versionary.outputs.external_release_targets != '[]' &&
+          (steps.versionary.outputs.release_ready == 'true' ||
+           (github.event_name == 'workflow_dispatch' && inputs.retry-registration))
+        uses: julia-actions/setup-julia@v3
+        with:
+          version: "1"
+
+      - name: Request Julia registration
+        if: steps.registration-julia.outcome == 'success'
         uses: actions/github-script@v9
         env:
           EXTERNAL_RELEASE_TARGETS: ${{ steps.versionary.outputs.external_release_targets }}
@@ -76,8 +84,9 @@ jobs:
           github-token: ${{ github.token }}
           script: |
             const request = require('./.github/scripts/request-julia-registration.cjs');
+            const checkJll = require('./.github/scripts/check-julia-registration-jll.cjs');
             await request({
-              github, context, core,
+              github, context, core, checkJll,
               targets: JSON.parse(process.env.EXTERNAL_RELEASE_TARGETS),
               retry: process.env.RETRY_REGISTRATION === 'true',
             });

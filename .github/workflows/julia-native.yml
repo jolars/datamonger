@@ -48,6 +48,8 @@ jobs:
         with:
           toolchain: stable
       - name: Test the checkout's C ABI and Julia bindings
+        env:
+          DM_REQUIRE_SPARSE_LABEL_JOIN: "true"
         if: matrix.os == 'ubuntu-latest' && matrix.julia == '1'
         run: |
           julia tools/dm_julia_core.jl

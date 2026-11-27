@@ -8,7 +8,7 @@ const target = {
   sha: "a".repeat(40),
   notes: "Reviewed release notes.",
 };
-function setup() {
+function setup({ checkJll = () => true } = {}) {
   const comments = [];
   const sent = [];
   const listCommentsForCommit = () => {};
@@ -41,6 +41,7 @@ function setup() {
         context: { repo: { owner: "jolars", repo: "datamonger" } },
         core: { info() {} },
         targets,
+        checkJll,
         retry,
       }),
   };
@@ -96,4 +97,19 @@ test("propagates API failures for workflow retries", async () => {
     throw new Error("GitHub unavailable");
   };
   await assert.rejects(run(), /GitHub unavailable/);
+});
+test("defers registration until the published JLL supports the saved commit", async () => {
+  let ready = false;
+  const { run, sent } = setup({
+    checkJll: (sha) => {
+      assert.equal(sha, target.sha);
+      return ready;
+    },
+  });
+  await run();
+  await run([target], true);
+  assert.equal(sent.length, 0);
+  ready = true;
+  await run([target], true);
+  assert.equal(sent.length, 1);
 });

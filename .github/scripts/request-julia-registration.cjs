@@ -3,6 +3,7 @@ module.exports = async function requestJuliaRegistration({
   context,
   core,
   targets,
+  checkJll,
   retry = false,
 }) {
   if (!Array.isArray(targets)) {
@@ -41,6 +42,10 @@ module.exports = async function requestJuliaRegistration({
     );
     if (requested && !retry) {
       core.info(`Registration was already requested for ${target.tag}.`);
+      continue;
+    }
+    if (!(await checkJll(target.sha))) {
+      core.info(`Waiting for the published JLL required by ${target.tag}.`);
       continue;
     }
     await github.rest.repos.createCommitComment({

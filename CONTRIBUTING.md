@@ -203,6 +203,13 @@ and ARM64, macOS Intel and Apple Silicon, and Windows x86-64. It also tests
 Julia 1.10 on Linux x86-64 and runs the Julia suite against the checkout's
 native library on Linux x86-64.
 
+When a new decoder adds a native symbol, require its tests against the
+checkout's library and skip them in the published-JLL job until that JLL
+supplies the symbol. Publish the FFI release and its corresponding
+`Datamonger_jll`, then update Julia's JLL compatibility before merging the
+Julia release PR. The registration workflow checks the published JLL resolved
+by the saved release commit before requesting registration.
+
 Focused CLI commands from `packages/cli` are:
 
 ```console
