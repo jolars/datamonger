@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.0](https://github.com/jolars/datamonger/compare/datamonger-core-v0.4.0...datamonger-core-v0.5.0) (2026-11-27)
+
+### Features
+
+- decode sparse label joins ([`21c23d2`](https://github.com/jolars/datamonger/commit/21c23d2de621e4d2d99a82e5f46feb1dfff67502))
+
 ## [0.4.0](https://github.com/jolars/datamonger/compare/datamonger-core-v0.3.0...datamonger-core-v0.4.0) (2026-11-20)
 
 ### Features

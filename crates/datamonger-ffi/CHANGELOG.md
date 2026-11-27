@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.5.0](https://github.com/jolars/datamonger/compare/datamonger-ffi-v0.4.0...datamonger-ffi-v0.5.0) (2026-11-27)
+
+### Features
+
+- expose sparse label joins through the C ABI ([`e1b37e1`](https://github.com/jolars/datamonger/commit/e1b37e12e33f5640e8b1b6a34a0ed9766c3c9326))
+
+### Dependencies
+
+- updated crates/datamonger-core to v0.5.0
+
 ## [0.4.0](https://github.com/jolars/datamonger/compare/datamonger-ffi-v0.3.1...datamonger-ffi-v0.4.0) (2026-11-22)
 
 ### Features
