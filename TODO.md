@@ -419,7 +419,7 @@ Four studies already have curated releases.
   age group as aggregate facts.
   [Appleton et al.](https://doi.org/10.1080/00031305.1996.10473563),
   [Teaching dataset provenance](https://www.mosaic-web.org/mosaicData/reference/Whickham.html)
-- [ ] `Yeoh2002`. Use the processed study measurements and labels from the
+- [x] `Yeoh2002`. Use the processed study measurements and labels from the
   archived LGPL-2-or-later `stjudem` data package.
   [Bioconductor archive](https://mirrors.nju.edu.cn/bioconductor/packages/3.5/data/experiment/html/stjudem.html)
 

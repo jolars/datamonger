@@ -1,0 +1,31 @@
+{
+  "dataset_id": "datamonger:yeoh2002@1",
+  "id": "24602156",
+  "state": "published",
+  "url": "https://zenodo.org/records/24602156",
+  "access": {
+    "record": "public",
+    "files": "public",
+    "status": "open"
+  },
+  "files_sha256": {
+    "data.csv.gz": "468b1df659efafcf6de42e1c3cadb51dfcabf3e3c187c6ada6eefffa16ef2758",
+    "README.md": "f86a9cd12cf92bf9f2b15d3779a28d2b8f4839ba4e092451a0d7c9c3676792ee",
+    "provenance.json": "b8a5be4ccf71c2d4ca4e058f5a5dd010e5c17fc4563d310bda90b0997aab67a1",
+    "stjudem_1.16.0.tar.gz": "1b0a25f1ccf1f3d54f2430ed2a406d6afde25b32dddc0f64d525088fb07c0732",
+    "convert.R": "a8dfdbbb240461a616053a9a756facc65c48c1a3013e24a3e6addbf56fdfe2a1",
+    "COPYING.LIB": "86dc99d7e5060915ab1dfc1378b7dd351c62088bfa74067e8aa1868c6fdba7d8",
+    "LICENSE": "bfc2dd3b099506cc71e65e8af09e3f9b3860d8fddf59801b30313c5d21caac36"
+  },
+  "rights_review": "Source terms reviewed in curation/yeoh2002/1/RIGHTS.md.",
+  "rights": [
+    {
+      "id": "lgpl-2.0-or-later"
+    }
+  ],
+  "download_verification": "anonymous-public",
+  "doi": "10.5281/zenodo.24602156",
+  "data_url": "https://zenodo.org/api/records/24602156/files/data.csv.gz/content",
+  "verified_by": "Codex (automated download verification)",
+  "verified_at": "2026-11-27"
+}

@@ -1,0 +1,91 @@
+schema_version: 5
+source: datamonger
+name: yeoh2002
+version: '1'
+title: Gene expression and pediatric acute lymphoblastic leukemia subtype
+description: >-
+  Processed Affymetrix HG-U95Av2 expression values for 248 diagnostic bone
+  marrow samples in six acute lymphoblastic leukemia subtypes. The portable
+  representation retains 12,625 probe sets, sample identifiers, and subtype
+  labels from Bioconductor's stjudem data package.
+modality: tabular
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - https://mirrors.nju.edu.cn/bioconductor/packages/3.5/data/experiment/html/stjudem.html
+    steps:
+    - kind: normalization
+      description: The package applies variance-stabilizing normalization at probe level.
+      parameters:
+        method: vsn
+    - kind: aggregation
+      description: The package summarizes normalized probes into probe-set expression.
+      parameters:
+        method: median polish
+  datamonger:
+    status: documented
+    evidence:
+    - curation/yeoh2002/1/DATASET.md
+    - curation/yeoh2002/1/convert.R
+    steps:
+    - kind: sample-selection
+      description: Select the six labeled subtypes that define Iowa's measured cohort.
+      parameters:
+        labels: BCR, E2A, Hyperdip, MLL, T, TEL
+    notes: >-
+      Export samples as rows with source IDs and probe names. Preserve precision,
+      labels, and order without further normalization or imputation.
+provenance:
+  provider: Datamonger, derived from Bioconductor's stjudem data package
+  upstream_name: stjude
+  upstream_id: stjudem
+  upstream_version: '1.16.0'
+  landing_page: https://mirrors.nju.edu.cn/bioconductor/packages/3.5/data/experiment/html/stjudem.html
+  retrieved_at: '2026-11-27'
+  authors:
+  - Eng-Juh Yeoh
+  - Mary E. Ross
+  - Sheila A. Shurtleff
+  - W. Kent Williams
+  - Divyen Patel
+  - Rami Mahfouz
+  - Fred G. Behm
+  - Susana C. Raimondi
+  - Mary V. Relling
+  - Anami Patel
+  - Cheng Cheng
+  - Dario Campana
+  - Dawn Wilkins
+  - Xiaodong Zhou
+  - Jinyan Li
+  - Huiqing Liu
+  - Ching-Hon Pui
+  - William E. Evans
+  - Clayton Naeve
+  - Limsoon Wong
+  - James R. Downing
+  citations:
+  - role: paper
+    recommended: true
+    citation: >-
+      Yeoh EJ et al. (2002). Classification, subtype discovery, and prediction
+      of outcome in pediatric acute lymphoblastic leukemia by gene expression
+      profiling. Cancer Cell 1(2):133–143. doi:10.1016/S1535-6108(02)00032-6.
+  - role: dataset
+    recommended: true
+    citation: >-
+      Georgi B, Heinig M, Schmeier S, and Toedling J. Microarray Data from Yeoh
+      et al. in MACAT format. Bioconductor stjudem 1.16.0.
+      doi:10.18129/B9.bioc.stjudem.
+license:
+  status: known
+  identifier: LGPL-2.0-or-later
+  url: https://spdx.org/licenses/LGPL-2.0-or-later.html
+  evidence: >-
+    Bioconductor's 3.5 release page and the source archive's DESCRIPTION both
+    declare LGPL (>= 2) for stjudem, the experiment-data package that contains
+    the processed measurements and labels. See curation/yeoh2002/1/RIGHTS.md
+    for the scope of the review.
+  reviewed_by: Codex (automated source review)
+  reviewed_at: '2026-11-27'

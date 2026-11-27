@@ -27,6 +27,8 @@ datasets:
       versions: ["1", "2"]
     sharma2026-texas:
       versions: ["1", "2"]
+    yeoh2002:
+      versions: ["1"]
 
   huggingface:
     tribler-ltr:
