@@ -8,7 +8,7 @@
   "devDependencies": {
     "@playwright/test": "1.65.1",
     "minisearch": "7.2.0",
-    "wrangler": "4.164.0"
+    "wrangler": "4.168.0"
   },
   "overrides": {
     "miniflare": {
