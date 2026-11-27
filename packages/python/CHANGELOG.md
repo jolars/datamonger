@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.0](https://github.com/jolars/datamonger/compare/datamonger-python-v0.4.0...datamonger-python-v0.5.0) (2026-11-27)
+
+### Features
+
+- fetch sparse label joins in Python ([`a40a745`](https://github.com/jolars/datamonger/commit/a40a745cc8647002011afca897f85c1e96288a0c))
+
 ## [0.4.0](https://github.com/jolars/datamonger/compare/datamonger-python-v0.3.0...datamonger-python-v0.4.0) (2026-11-23)
 
 ### Features
