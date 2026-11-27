@@ -1,3 +1,12 @@
+# datamonger 0.3.0
+
+## Features
+
+- fetch sparse label joins in R ([`10bf049`](https://github.com/jolars/datamonger/commit/10bf0491627818e10965aa9aca0d0e50c8025b88))
+- bundle registry 1.7.0 (#74) ([`ec6d033`](https://github.com/jolars/datamonger/commit/ec6d0331ba80541737bedaf8a96207461529cafe))
+- fetch graphs and hypergraphs in R ([`09c325f`](https://github.com/jolars/datamonger/commit/09c325fb9ddd823acaaa61a9cc5113c21a0383f9))
+- **r:** update datamonger_core to 0.4 ([`40d5c50`](https://github.com/jolars/datamonger/commit/40d5c500af707fa80333da91cdff8bbe8bd4ba48))
+
 # datamonger 0.2.0
 
 ## Features
