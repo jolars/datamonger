@@ -1,0 +1,163 @@
+{
+  "id": "sparse-label-join",
+  "manifest": {
+    "schema_version": 9,
+    "source": "conformance",
+    "name": "sparse-label-join",
+    "version": "1",
+    "title": "Sparse label join conformance",
+    "description": "Synthetic inputs for checking multilabel joins and shard order.",
+    "modality": "tabular",
+    "provenance": {
+      "provider": "Datamonger",
+      "upstream_name": "Sparse join fixture",
+      "retrieved_at": "2026-11-27",
+      "landing_page": "https://example.invalid/"
+    },
+    "license": {
+      "status": "unknown"
+    },
+    "artifacts": [
+      {
+        "name": "labels",
+        "format": "label-assignments",
+        "compression": "none",
+        "distribution": "upstream-only",
+        "downloads": [
+          {
+            "kind": "upstream",
+            "url": "https://example.invalid/labels"
+          }
+        ],
+        "size": 28,
+        "sha256": "68ea488d86a2ace6f228b9ba6cec98f43914469689244603c19771740849a1c0"
+      },
+      {
+        "name": "train_one",
+        "format": "id-sparse",
+        "compression": "none",
+        "distribution": "upstream-only",
+        "downloads": [
+          {
+            "kind": "upstream",
+            "url": "https://example.invalid/train_one"
+          }
+        ],
+        "size": 11,
+        "sha256": "5c4a2a03471655838468bde2be87c9a016b43d51b338c4a1ae967830f785d1e3"
+      },
+      {
+        "name": "train_two",
+        "format": "id-sparse",
+        "compression": "none",
+        "distribution": "upstream-only",
+        "downloads": [
+          {
+            "kind": "upstream",
+            "url": "https://example.invalid/train_two"
+          }
+        ],
+        "size": 13,
+        "sha256": "6903bac38fc2945eee1a31b25e46243f0e2051eb72c4289266029564e2a16bed"
+      },
+      {
+        "name": "test",
+        "format": "id-sparse",
+        "compression": "none",
+        "distribution": "upstream-only",
+        "downloads": [
+          {
+            "kind": "upstream",
+            "url": "https://example.invalid/test"
+          }
+        ],
+        "size": 3,
+        "sha256": "f4ccd05b3271c386ee55d9876c7450012a3b361e5065c09dc22075e38b3cc35c"
+      }
+    ],
+    "representation": {
+      "decoder": "sparse-label-join",
+      "decoder_version": 1,
+      "inputs": {
+        "labels": "labels",
+        "train_one": "train_one",
+        "train_two": "train_two",
+        "test": "test"
+      },
+      "options": {
+        "train": [
+          "train_one",
+          "train_two"
+        ],
+        "test": [
+          "test"
+        ],
+        "feature_count": 4,
+        "label_count": 2
+      },
+      "expect": {
+        "components": [
+          {
+            "name": "train/features",
+            "kind": "sparse_matrix",
+            "type": "float64",
+            "rows": 2,
+            "columns": 4
+          },
+          {
+            "name": "train/response",
+            "kind": "sparse_matrix",
+            "type": "float64",
+            "rows": 2,
+            "columns": 2
+          },
+          {
+            "name": "train/document_id",
+            "kind": "vector",
+            "type": "int64",
+            "length": 2
+          },
+          {
+            "name": "test/features",
+            "kind": "sparse_matrix",
+            "type": "float64",
+            "rows": 1,
+            "columns": 4
+          },
+          {
+            "name": "test/response",
+            "kind": "sparse_matrix",
+            "type": "float64",
+            "rows": 1,
+            "columns": 2
+          },
+          {
+            "name": "test/document_id",
+            "kind": "vector",
+            "type": "int64",
+            "length": 1
+          },
+          {
+            "name": "label_codes",
+            "kind": "vector",
+            "type": "string",
+            "length": 2
+          }
+        ],
+        "verification": [
+          {
+            "canonical_form": 1,
+            "algorithm": "sha256",
+            "digest": "95e2c146dbe2b20302cb91a5cf8d11799423389218ed30267146873a14bdae1e"
+          }
+        ]
+      }
+    }
+  },
+  "artifact_paths": {
+    "labels": "artifacts/sparse-join-labels.txt",
+    "train_one": "artifacts/sparse-join-train_one.txt",
+    "train_two": "artifacts/sparse-join-train_two.txt",
+    "test": "artifacts/sparse-join-test.txt"
+  }
+}

@@ -50,3 +50,8 @@ matrices under canonical form 1.
 `graphs.json` exercises graph tables and HIF through a schema 8 registry.
 The goldens encode hand-specified topology columns with the independent
 Python canonical encoder.
+
+`sparse-label-join.json` exercises schema 9 with two ordered training shards
+and one test shard. Its expected digest covers the sparse values, document
+IDs, and lexicographically ordered label codes and was checked with the
+independent Python canonical encoder.
