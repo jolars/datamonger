@@ -399,6 +399,23 @@ def _validate_dataset(dataset: Mapping[str, Any]) -> None:
                 "delimiter"
             ]:
                 raise ValueError("graph table format and delimiter disagree")
+    elif decoder == "sparse-label-join":
+        join_roles = ["labels", *options["train"], *options["test"]]
+        if (
+            dataset.get("modality") != "tabular"
+            or len(join_roles) != len(set(join_roles))
+            or set(join_roles) != set(inputs)
+            or len(set(inputs.values())) != len(inputs)
+        ):
+            raise ValueError(
+                "sparse label joins require distinct inputs for all declared roles"
+            )
+        for role, name in inputs.items():
+            expected_format = "label-assignments" if role == "labels" else "id-sparse"
+            if artifact_by_name[name]["format"] != expected_format:
+                raise ValueError(
+                    "sparse label join artifact format disagrees with its role"
+                )
     elif decoder == "hif":
         if artifact_by_name[inputs["data"]]["format"] != "hif":
             raise ValueError("HIF requires a HIF artifact")
@@ -437,6 +454,46 @@ def _validate_dataset(dataset: Mapping[str, Any]) -> None:
 
     if decoder in {"graph-tables", "hif"}:
         _validate_graph_components(decoder, options, component_records)
+    elif decoder == "sparse-label-join":
+        join_components: list[dict[str, Any]] = []
+        for split in ("train", "test"):
+            split_rows = component_by_name.get(f"{split}/features", {}).get("rows")
+            join_components.extend(
+                [
+                    {
+                        "name": f"{split}/features",
+                        "kind": "sparse_matrix",
+                        "type": "float64",
+                        "rows": split_rows,
+                        "columns": options["feature_count"],
+                    },
+                    {
+                        "name": f"{split}/response",
+                        "kind": "sparse_matrix",
+                        "type": "float64",
+                        "rows": split_rows,
+                        "columns": options["label_count"],
+                    },
+                    {
+                        "name": f"{split}/document_id",
+                        "kind": "vector",
+                        "type": "int64",
+                        "length": split_rows,
+                    },
+                ]
+            )
+        join_components.append(
+            {
+                "name": "label_codes",
+                "kind": "vector",
+                "type": "string",
+                "length": options["label_count"],
+            }
+        )
+        if component_records != join_components:
+            raise ValueError(
+                "sparse label join components disagree with the decoder recipe"
+            )
     elif decoder == "delimited-text":
         columns = [
             _mapping(raw, "column")
@@ -623,7 +680,7 @@ def _validate_named_splits(dataset: Mapping[str, Any]) -> None:
 
 def _versioned_schema(record: Mapping[str, Any], name: str) -> str:
     version = record.get("schema_version")
-    if type(version) is not int or version not in (1, 2, 3, 4, 5, 6, 7, 8):
+    if type(version) is not int or version not in (1, 2, 3, 4, 5, 6, 7, 8, 9):
         raise ValueError(f"unsupported {name} schema_version {version!r}")
     return f"{name}-v{version}.schema.json"
 

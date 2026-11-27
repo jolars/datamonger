@@ -77,7 +77,7 @@ def load_snapshot(
         raise ValueError("registry index digest does not match the selector")
     index = json.loads(index_bytes)
     schema_version = index.get("schema_version")
-    if type(schema_version) is not int or not 1 <= schema_version <= 8:
+    if type(schema_version) is not int or not 1 <= schema_version <= 9:
         raise ValueError("unsupported registry index schema")
     validate(index, f"index-v{schema_version}.schema.json")
     if index["release"] != selector["release"]:

@@ -42,6 +42,7 @@ from datamonger._models import (
     Registry,
 )
 from datamonger._registry import validate_registry_selector
+from datamonger._sparse_labels import decode_sparse_labels
 from datamonger._splits import assemble_splits, split_recipes
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -190,7 +191,7 @@ def _read_index(path: Path, registry: Registry, root: Path) -> Mapping[str, Any]
         )
     if type(index.get("schema_version")) is not int or index.get(
         "schema_version"
-    ) not in (1, 2, 3, 4, 5, 6, 7, 8):
+    ) not in (1, 2, 3, 4, 5, 6, 7, 8, 9):
         raise UnsupportedRegistryError(
             f"unsupported registry schema {index.get('schema_version')!r}"
         )
@@ -207,7 +208,7 @@ def _read_index(path: Path, registry: Registry, root: Path) -> Mapping[str, Any]
         schema = dataset.get("schema_version")
         if (
             type(schema) is not int
-            or schema not in (1, 2, 3, 4, 5, 6, 7, 8)
+            or schema not in (1, 2, 3, 4, 5, 6, 7, 8, 9)
             or schema > index["schema_version"]
         ):
             raise UnsupportedRegistryError(
@@ -293,7 +294,7 @@ def _decode_dataset(
     decoder = representation.get("decoder")
     decoded: Decoded
     if decoder == "named-splits":
-        if dataset.get("schema_version") not in (4, 5, 6, 7, 8):
+        if dataset.get("schema_version") not in (4, 5, 6, 7, 8, 9):
             raise UnsupportedDecoderError("named-splits requires manifest schema 4")
         recipes = split_recipes(representation)
         children = []
@@ -347,14 +348,14 @@ def _decode_dataset(
             raise DecodedIntegrityError(
                 "no location supplied verified bytes for artifact"
             ) from error
-        decoded = (
-            decode_graph(decoder, paths, options, compressions)
-            if is_graph
-            else _decode_leaf(
+        if decoder == "sparse-label-join":
+            decoded = decode_sparse_labels(paths, options, compressions)
+        elif is_graph:
+            decoded = decode_graph(decoder, paths, options, compressions)
+        else:
+            decoded = _decode_leaf(
                 decoder, paths, options, compressions, representation["decoder_version"]
             )
-        )
-
     expect = _mapping(representation.get("expect"), "representation expectation")
     _validate_components(
         decoded.components,

@@ -41,6 +41,8 @@ from datamonger._models import (
     LogicalSparseMatrix,
     LogicalValueComponent,
 )
+from datamonger._sparse_labels import decode_sparse_labels
+from datamonger._sparse_labels import input_roles as sparse_label_input_roles
 from datamonger._splits import assemble_splits, split_recipes
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -55,6 +57,7 @@ _SUPPORTED_DECODERS = {
     "named-splits",
     "graph-tables",
     "hif",
+    "sparse-label-join",
 }
 _SAMPLE_ROWS = 3
 _SPARSE_SAMPLE_VALUES = 8
@@ -183,6 +186,7 @@ def _prepare_draft(source: Mapping[str, Any], retrieved_at: date) -> dict[str, A
                 "svmlight-ranking",
                 "graph-tables",
                 "hif",
+                "sparse-label-join",
             }
             and representation["decoder_version"] != 1
         )
@@ -190,14 +194,21 @@ def _prepare_draft(source: Mapping[str, Any], retrieved_at: date) -> dict[str, A
         raise ValueError(
             "dm-add supports delimited-text, libsvm, and libsvm-split "
             "versions 1 and 2. It also supports version 1 of named-splits, "
-            "libsvm-multilabel, svmlight-ranking, graph-tables, and hif"
+            "libsvm-multilabel, svmlight-ranking, graph-tables, hif, and "
+            "sparse-label-join"
         )
     inputs = _mapping(representation["inputs"], "representation.inputs")
     roles = {"train", "test"} if decoder == "libsvm-split" else {"data"}
     if decoder == "named-splits":
-        if manifest["schema_version"] not in (4, 5, 6, 7, 8):
+        if manifest["schema_version"] not in (4, 5, 6, 7, 8, 9):
             raise ValueError("named-splits requires manifest schema 4")
         roles = {split["name"] for split in split_recipes(representation)}
+    if decoder == "sparse-label-join":
+        roles = set(
+            sparse_label_input_roles(
+                _mapping(representation["options"], "representation.options")
+            )
+        )
     if decoder == "graph-tables":
         roles = {"nodes", "edges"}
     if set(inputs) != roles:
@@ -331,6 +342,12 @@ def _decode(
     representation = _mapping(manifest["representation"], "representation")
     decoder = _string(representation["decoder"], "representation.decoder")
 
+    if decoder == "sparse-label-join":
+        _, selected, options, compressions = _prepare_representation(
+            manifest, representation
+        )
+        paths = [artifacts[artifact["name"]].path for artifact in selected]
+        return decode_sparse_labels(paths, options, compressions)
     if decoder in {"graph-tables", "hif"}:
         decoder, selected, options, compressions = _prepare_graph_representation(
             decoder, manifest, representation
