@@ -1,0 +1,177 @@
+schema_version: 9
+source: datamonger
+name: lewis2004
+version: '1'
+title: RCV1-v2 Topics
+description: >-
+  Multilabel topic classification benchmark from the Reuters English-language newswire
+  corpus. The original LYRL2004 split contains 23,149 training documents and 781,265 test
+  documents. Both splits use 47,236 weighted term features and the same 103 topic codes.
+  Document IDs align with the matrix rows.
+modality: tabular
+provenance:
+  provider: Lewis et al. (JMLR appendices), via the files used by scikit-learn
+  upstream_name: RCV1-v2/LYRL2004
+  landing_page: https://jmlr.org/papers/v5/lewis04a.html
+  authors:
+  - David D. Lewis
+  - Yiming Yang
+  - Tony G. Rose
+  - Fan Li
+  citations:
+  - citation: >-
+      Lewis, D. D., Yang, Y., Rose, T. G., and Li, F. (2004). RCV1: A New Benchmark
+      Collection for Text Categorization Research. Journal of Machine Learning Research 5,
+      361–397. https://jmlr.org/papers/v5/lewis04a.html
+    role: paper
+  citation_instructions: Acknowledge Reuters as the source corpus provider.
+  retrieved_at: '2026-11-27'
+license:
+  status: unknown
+  url: https://jmlr.org/papers/volume5/lewis04a/lewis04a.pdf
+  evidence: >-
+    Section 7 reports Reuters' permission for the authors to distribute the token and
+    vector files without a license agreement. The reviewed sources do not establish
+    downstream redistribution terms for these vectors and topic assignments.
+preprocessing:
+  upstream:
+    status: documented
+    evidence:
+    - https://jmlr.org/papers/volume5/lewis04a/lewis04a.pdf
+    steps:
+    - kind: feature-extraction
+      description: >-
+        Use the paper's cosine-normalized log term frequency by inverse document frequency
+        weights over stemmed terms with the original chronological split.
+  datamonger:
+    status: documented
+    evidence:
+    - spec/decoders.md#sparse-label-join-version-1
+    steps:
+    - kind: label-encoding
+      description: >-
+        Join Appendix 8 topics to Appendix 13 vectors by document ID. Encode topic columns
+        in lexicographic order and preserve vector order within each shard.
+artifacts:
+- name: labels
+  format: label-assignments
+  compression: gzip
+  size: 7272130
+  sha256: 2a98e5e5d8b770bded93afc8930d88299474317fe14181aee1466cc754d0d1c1
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://ndownloader.figshare.com/files/5976048
+- name: train
+  format: id-sparse
+  compression: gzip
+  size: 18594396
+  sha256: 5468f656d0ba7a83afc7ad44841cf9a53048a5c083eedc005dcdb5cc768924ae
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://ndownloader.figshare.com/files/5976057
+- name: test_0
+  format: id-sparse
+  compression: gzip
+  size: 159714548
+  sha256: ed40f7e418d10484091b059703eeb95ae3199fe042891dcec4be6696b9968374
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://ndownloader.figshare.com/files/5976069
+- name: test_1
+  format: id-sparse
+  compression: gzip
+  size: 161711007
+  sha256: 87700668ae45d45d5ca1ef6ae9bd81ab0f5ec88cc95dcef9ae7838f727a13aa6
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://ndownloader.figshare.com/files/5976066
+- name: test_2
+  format: id-sparse
+  compression: gzip
+  size: 158418861
+  sha256: 48143ac703cbe33299f7ae9f4995db49a258690f60e5debbff8995c34841c7f5
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://ndownloader.figshare.com/files/5976063
+- name: test_3
+  format: id-sparse
+  compression: gzip
+  size: 149356640
+  sha256: dfcb0d658311481523c6e6ca0c3f5a3e1d3d12cde5d7a8ce629a9006ec7dbb39
+  distribution: upstream-only
+  downloads:
+  - kind: upstream
+    url: https://ndownloader.figshare.com/files/5976060
+representation:
+  decoder: sparse-label-join
+  decoder_version: 1
+  inputs:
+    labels: labels
+    train: train
+    test_0: test_0
+    test_1: test_1
+    test_2: test_2
+    test_3: test_3
+  options:
+    feature_count: 47236
+    label_count: 103
+    train:
+    - train
+    test:
+    - test_0
+    - test_1
+    - test_2
+    - test_3
+  expect:
+    components:
+    - name: train/features
+      kind: sparse_matrix
+      type: float64
+      rows: 23149
+      columns: 47236
+    - name: train/response
+      kind: sparse_matrix
+      type: float64
+      rows: 23149
+      columns: 103
+    - name: train/document_id
+      kind: vector
+      type: int64
+      length: 23149
+    - name: test/features
+      kind: sparse_matrix
+      type: float64
+      rows: 781265
+      columns: 47236
+    - name: test/response
+      kind: sparse_matrix
+      type: float64
+      rows: 781265
+      columns: 103
+    - name: test/document_id
+      kind: vector
+      type: int64
+      length: 781265
+    - name: label_codes
+      kind: vector
+      type: string
+      length: 103
+    verification:
+    - canonical_form: 1
+      algorithm: sha256
+      digest: 6831eb1f9b70a4712e5c05b1546ebf8c985aa8827d094a32610b1ef43bc4bf7f
+tasks:
+- name: default
+  type: classification
+  splits:
+    train:
+      features: train/features
+      target: train/response
+    test:
+      features: test/features
+      target: test/response

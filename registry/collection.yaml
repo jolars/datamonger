@@ -15,6 +15,8 @@ datasets:
       versions: ["1"]
     ma2009:
       versions: ["1"]
+    lewis2004:
+      versions: ["1"]
     rhee2006:
       versions: ["1"]
     scheetz2006:
