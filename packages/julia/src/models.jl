@@ -94,12 +94,22 @@ struct SparseDatasetSplit{T<:Union{Int64,Float64},M1<:AbstractMatrix{Float64},M2
     test::SparseDataset{T,M2}
 end
 
-"""Sparse features and class indicators aligned by observation."""
+"""
+Sparse features and class indicators aligned by observation.
+
+Sparse label joins also supply `document_id` in row order and `label_codes`
+in response column order.
+"""
 struct MultilabelSparseDataset{F<:AbstractMatrix{Float64},R<:AbstractMatrix{Float64}}
     features::F
     response::R
     label_index_base::Int
+    document_id::Union{Nothing,Vector{Int64}}
+    label_codes::Union{Nothing,Vector{String}}
 end
+
+MultilabelSparseDataset(features, response, label_index_base) =
+    MultilabelSparseDataset(features, response, label_index_base, nothing, nothing)
 
 """Sparse features, relevance scores, and row-aligned query IDs."""
 struct RankingSparseDataset{T<:Union{Int64,Float64},M<:AbstractMatrix{Float64}}

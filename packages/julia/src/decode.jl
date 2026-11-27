@@ -189,3 +189,59 @@ function decode_svmlight_ranking(path, options; compression="none")
         return Decoded(data, components)
     end
 end
+
+function _sparse_label_setup(dataset, representation)
+    fail(message) = throw(UnsupportedDecoderError(message))
+    get(dataset, "schema_version", nothing) === 9 &&
+        get(dataset, "modality", nothing) == "tabular" &&
+        get(representation, "decoder_version", nothing) === 1 ||
+        fail("sparse label joins require manifest schema 9 and decoder version 1")
+    _native_symbol(:dm_abi_version)
+    Libdl.dlsym_e(_NATIVE_LIBRARY[], :dm_decode_sparse_label_join) != C_NULL ||
+        fail("sparse label joins require an updated native artifact")
+    options = get(representation, "options", nothing)
+    options isa AbstractDict && Set(keys(options)) == Set(["train", "test", "feature_count", "label_count"]) ||
+        fail("invalid sparse label join options")
+    all(key -> typeof(options[key]) === Int && 1 <= options[key] < 2^53, ("feature_count", "label_count")) ||
+        fail("invalid sparse label join dimensions")
+    roles = ["labels"]
+    for split in ("train", "test")
+        shards = options[split]
+        shards isa AbstractVector && !isempty(shards) &&
+            all(role -> role isa String && !isempty(role), shards) ||
+            fail("each split requires ordered input roles")
+        append!(roles, shards)
+    end
+    allunique(roles) || fail("sparse label join roles must be distinct")
+    artifacts = _representation_artifacts(dataset, representation, roles)
+    allunique(a["name"] for a in artifacts) || fail("sparse label join artifacts must be distinct")
+    compressions = String[]
+    for (i, artifact) in enumerate(artifacts)
+        get(artifact, "format", nothing) == (i == 1 ? "label-assignments" : "id-sparse") ||
+            fail("invalid sparse label join artifact format")
+        coding = get(artifact, "compression", nothing)
+        coding in ("none", "gzip", "bzip2") || fail("unsupported artifact compression")
+        push!(compressions, coding)
+    end
+    return (; representation, decoder="sparse-label-join", options, artifacts, compressions)
+end
+
+function _decode_sparse_labels(setup, paths)
+    paths = String.(paths)
+    artifacts = _native_artifact.(paths, setup.compressions)
+    options = setup.options
+    GC.@preserve paths artifacts begin
+        result = ccall(_native_symbol(:dm_decode_sparse_label_join), Ptr{Cvoid},
+            (Ptr{_NativeArtifact}, Csize_t, Csize_t, UInt64, UInt64),
+            pointer(artifacts), length(artifacts), length(options["train"]),
+            options["feature_count"], options["label_count"])
+        components = _with_native_result(_native_components, result)
+        data = Dict{String,Union{DataFrame,SparseDataset,MultilabelSparseDataset,RankingSparseDataset}}()
+        for (split, start) in (("train", 1), ("test", 4))
+            data[split] = MultilabelSparseDataset(
+                _sparse_matrix(components[start]), _sparse_matrix(components[start + 1]),
+                0, components[start + 2].values, components[end].values)
+        end
+        return Decoded(DatasetSplits(["train", "test"], data), components)
+    end
+end

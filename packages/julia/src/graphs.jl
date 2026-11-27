@@ -30,7 +30,7 @@ end
 function _graph_setup(dataset, representation, decoder)
     graph = decoder == "graph-tables"
     modality = graph ? "graph" : "hypergraph"
-    get(dataset, "schema_version", nothing) === 8 && get(dataset, "modality", nothing) == modality &&
+    get(dataset, "schema_version", nothing) in (8, 9) && get(dataset, "modality", nothing) == modality &&
         get(representation, "decoder_version", nothing) === 1 ||
         _graph_error("graph and HIF recipes require manifest schema 8")
     roles = graph ? ("nodes", "edges") : ("data",)

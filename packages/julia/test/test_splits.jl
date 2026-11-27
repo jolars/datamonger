@@ -115,3 +115,21 @@ end
         @test_skip Datamonger._supports_svmlight_ranking()
     end
 end
+
+@testset "Sparse label join public fetch" begin
+    case = read_json("conformance", "sparse-label-join.json")
+    mktempdir() do cache_dir
+        registry = seed_split_case(case, cache_dir, "gzip")
+        result = fetch_data("conformance:sparse-label-join@1"; registry, cache_dir,
+                            offline=true, return_info=true)
+        @test collect(keys(result.data)) == ["train", "test"]
+        train, test = result.data["train"], result.data["test"]
+        @test train.document_id == [20, 10]
+        @test test.document_id == [30]
+        @test train.label_codes == test.label_codes == ["A", "Z"]
+        @test Matrix(train.features) == [0 0.125 0 0; 0.5 0 0 0]
+        @test Matrix(train.response) == [0 1; 1 1]
+        @test Matrix(test.response) == [1 0]
+        @test result.info.verification == :decoded
+    end
+end
