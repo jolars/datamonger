@@ -39,8 +39,9 @@ pub use decode::{
     decode_libsvm_split_version_with_options, decode_libsvm_split_with_control,
     decode_libsvm_split_with_options, decode_libsvm_version_with_control,
     decode_libsvm_version_with_options, decode_libsvm_with_control, decode_libsvm_with_options,
-    decode_svmlight_ranking_with_control, parse_binary64, Column, DecodeOptions, DelimitedLayout,
-    DelimitedOptions, LabelType, LibsvmMultilabelOptions, LibsvmOptions,
+    decode_sparse_label_join, decode_svmlight_ranking_with_control, parse_binary64, Column,
+    DecodeOptions, DelimitedLayout, DelimitedOptions, LabelType, LibsvmMultilabelOptions,
+    LibsvmOptions,
 };
 pub use error::{Error, ErrorKind, Result};
 pub use graph::{assemble_graph, assemble_hypergraph, decode_hif, HifColumns, HifOptions};

@@ -1,5 +1,5 @@
 use std::borrow::Cow;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::io::BufRead;
 
 use crate::{Component, Control, DataType, Error, ErrorKind, Result, Shape, Values};
@@ -957,4 +957,160 @@ pub fn decode_libsvm_multilabel_with_control<R: BufRead>(
             indicators,
         ),
     ])
+}
+
+/// Join a label assignment file to ordered training and test vector shards.
+///
+/// Inputs contain the assignments, then the training shards, then the test
+/// shards. Document IDs are positive integers and label codes are assigned
+/// zero-based columns in lexicographic order.
+pub fn decode_sparse_label_join<R: BufRead>(
+    mut inputs: Vec<R>,
+    train_shards: usize,
+    feature_count: u64,
+    label_count: u64,
+    control: &mut impl Control,
+) -> Result<Vec<Component>> {
+    let limit = (1_u64 << 53) - 1;
+    if !(1..=limit).contains(&feature_count)
+        || !(1..=limit).contains(&label_count)
+        || !(1..inputs.len().saturating_sub(1)).contains(&train_shards)
+    {
+        return Err(unsupported("invalid sparse label join recipe"));
+    }
+    control.checkpoint()?;
+    let mut codes = HashMap::<String, usize>::new();
+    let mut assignments = HashMap::<i64, Vec<usize>>::new();
+    let test = inputs.split_off(1 + train_shards);
+    let mut records = Records::new(inputs.remove(0));
+    let mut row = 0;
+    records.for_each(|record, _| {
+        let mut fields = record.split_ascii_whitespace();
+        let (Some(code), Some(document), Some("1"), None) =
+            (fields.next(), fields.next(), fields.next(), fields.next())
+        else {
+            return Err(decode_error("invalid label assignment"));
+        };
+        if !code.bytes().all(|byte| byte.is_ascii_alphanumeric()) {
+            return Err(decode_error("invalid label code"));
+        }
+        let document = sparse_document_id(document)?;
+        let code_index = if let Some(&index) = codes.get(code) {
+            index
+        } else {
+            let index = codes.len();
+            codes.insert(code.to_owned(), index);
+            index
+        };
+        assignments.entry(document).or_default().push(code_index);
+        row += 1;
+        if row % 1024 == 0 {
+            control.checkpoint()?;
+        }
+        Ok(())
+    })?;
+    if codes.len() as u64 != label_count {
+        return Err(decode_error("label count disagrees with the recipe"));
+    }
+    let mut ordered_codes: Vec<_> = codes.into_iter().collect();
+    ordered_codes.sort_unstable();
+    let mut label_indices = vec![0; ordered_codes.len()];
+    for (column, (_, index)) in ordered_codes.iter().enumerate() {
+        label_indices[*index] = column as u64;
+    }
+
+    let mut components = Vec::new();
+    for (split, readers) in [("train", inputs), ("test", test)] {
+        let mut feature_offsets = vec![0];
+        let mut response_offsets = vec![0];
+        let mut indices = Vec::new();
+        let mut labels = Vec::new();
+        let mut weights = Vec::new();
+        let mut ids = Vec::new();
+        for reader in readers {
+            Records::new(reader).for_each(|record, _| {
+                let mut fields = record.split_ascii_whitespace();
+                let document = sparse_document_id(
+                    fields
+                        .next()
+                        .ok_or_else(|| decode_error("blank ID-prefixed vector record"))?,
+                )?;
+                let topics = assignments.remove(&document).ok_or_else(|| {
+                    decode_error(format!("document {document} is repeated or has no labels"))
+                })?;
+                let start = labels.len();
+                labels.extend(topics.into_iter().map(|topic| label_indices[topic]));
+                labels[start..].sort_unstable();
+                if labels[start..].windows(2).any(|pair| pair[0] == pair[1]) {
+                    return Err(decode_error(format!(
+                        "duplicate label for document {document}"
+                    )));
+                }
+                libsvm_features(
+                    fields,
+                    feature_count,
+                    2,
+                    1,
+                    DecodeOptions::default(),
+                    &mut indices,
+                    &mut weights,
+                )?;
+                feature_offsets.push(weights.len() as u64);
+                response_offsets.push(labels.len() as u64);
+                ids.push(document);
+                if ids.len() % 1024 == 0 {
+                    control.checkpoint()?;
+                }
+                Ok(())
+            })?;
+        }
+        let rows = ids.len() as u64;
+        let matrix = |name, columns, row_offsets, column_indices, values| Component {
+            name: format!("{split}/{name}"),
+            shape: Shape::Sparse {
+                rows,
+                columns,
+                row_offsets,
+                column_indices,
+            },
+            values: Values::Float64(values),
+            valid: Vec::new(),
+        };
+        let indicators = vec![1.0; labels.len()];
+        components.extend([
+            matrix("features", feature_count, feature_offsets, indices, weights),
+            matrix(
+                "response",
+                label_count,
+                response_offsets,
+                labels,
+                indicators,
+            ),
+            Component {
+                name: format!("{split}/document_id"),
+                shape: Shape::Vector,
+                valid: vec![true; ids.len()],
+                values: Values::Int64(ids),
+            },
+        ]);
+    }
+    if !assignments.is_empty() {
+        return Err(decode_error("label assignments reference absent documents"));
+    }
+    control.checkpoint()?;
+    components.push(Component {
+        name: "label_codes".into(),
+        shape: Shape::Vector,
+        valid: vec![true; ordered_codes.len()],
+        values: Values::String(ordered_codes.into_iter().map(|(code, _)| code).collect()),
+    });
+    Ok(components)
+}
+
+fn sparse_document_id(token: &str) -> Result<i64> {
+    feature_index(token)
+        .ok()
+        .and_then(|value| i64::try_from(value).ok())
+        .filter(|&value| value > 0)
+        .ok_or_else(|| decode_error("invalid document ID"))
 }
