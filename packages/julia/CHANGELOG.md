@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.0](https://github.com/jolars/datamonger/compare/datamonger-julia-v0.1.0...datamonger-julia-v0.2.0) (2026-11-27)
+
+### Features
+
+- fetch sparse label joins in Julia ([`7965c1b`](https://github.com/jolars/datamonger/commit/7965c1be4e72f37bf058fe1656b48fae4d374a2f))
+
 ## [0.1.0](https://github.com/jolars/datamonger/compare/datamonger-julia-v0.0.0...datamonger-julia-v0.1.0) (2026-11-02)
 
 ### Features
